@@ -42,10 +42,10 @@ const cameraColumns = [
 ];
 const providers = ["Best model per task", "Higgsfield only", "Manual routing"];
 const productionFlow = [
-  { step: "Script", source: "Toonflow", detail: "Novel, brief, beat sheet" },
-  { step: "Storyboard", source: "Toonflow", detail: "Shots, assets, duration" },
-  { step: "Node Graph", source: "ComfyUI", detail: "Prompt, model, sampler" },
-  { step: "Timeline", source: "Remotion", detail: "Tracks, fps, render" }
+  { step: "Script", detail: "Novel, brief, beat sheet" },
+  { step: "Storyboard", detail: "Shots, assets, duration" },
+  { step: "Node Graph", detail: "Prompt, model, sampler" },
+  { step: "Timeline", detail: "Tracks, fps, render" }
 ];
 const workflowNodes = [
   { id: "prompt", title: "Prompt Builder", meta: "script + shot intent" },
@@ -114,7 +114,6 @@ export default function Home() {
           >
             <span>{String(index + 1).padStart(2, "0")}</span>
             <strong>{item.step}</strong>
-            <small>{item.source}</small>
           </motion.button>
         ))}
       </section>
@@ -345,7 +344,6 @@ function PipelinePanel() {
             <motion.button key={item.step} className="flow-card" whileHover={{ y: -3 }}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <strong>{item.step}</strong>
-              <em>{item.source}</em>
               <small>{item.detail}</small>
             </motion.button>
           ))}
