@@ -151,6 +151,54 @@ button {
   border-bottom: 1px solid;
 }
 
+.production-strip {
+  position: fixed;
+  left: 50%;
+  bottom: 233px;
+  z-index: 9;
+  width: min(900px, calc(100vw - 80px));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.production-strip button {
+  min-width: 0;
+  min-height: 58px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(17, 20, 23, 0.68);
+  backdrop-filter: blur(18px);
+  text-align: left;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
+}
+
+.production-strip span,
+.production-strip small {
+  display: block;
+  color: var(--muted);
+}
+
+.production-strip span {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.production-strip strong {
+  display: block;
+  margin-top: 5px;
+  color: white;
+  font-size: 14px;
+}
+
+.production-strip small {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .studio-dock {
   position: fixed;
   left: 50%;
@@ -340,6 +388,12 @@ textarea::placeholder {
   color: var(--text);
   font-size: 12px;
   font-weight: 820;
+}
+
+.controls button.active-control {
+  border-color: rgba(255, 255, 255, 0.68);
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.36);
 }
 
 .controls strong {

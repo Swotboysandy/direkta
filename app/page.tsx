@@ -104,6 +104,21 @@ export default function Home() {
         <h1>What would you shoot<br />with infinite budget?</h1>
       </section>
 
+      <section className="production-strip" aria-label="Production workflow">
+        {productionFlow.map((item, index) => (
+          <motion.button
+            key={item.step}
+            onClick={() => setModal("pipeline")}
+            whileHover={{ y: -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{item.step}</strong>
+            <small>{item.source}</small>
+          </motion.button>
+        ))}
+      </section>
+
       <AnimatePresence>
         {modal && (
           <>
@@ -186,7 +201,7 @@ export default function Home() {
           <div className="controls">
             {mode === "video" ? (
               <>
-                <button onClick={() => setModal("pipeline")}>
+                <button className={clsx(modal === "pipeline" && "active-control")} onClick={() => setModal("pipeline")}>
                   <Wand2 size={14} />
                   Direkta Studio
                 </button>
