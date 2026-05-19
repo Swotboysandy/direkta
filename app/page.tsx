@@ -13,23 +13,32 @@ import {
   Video,
   Wand2
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 
 type Modal = "keys" | "genre" | "style" | "camera" | null;
 type ProviderMode = "hybrid" | "higgsfield" | "custom";
 
-const genres = ["Drama", "Epic", "General", "Action", "Horror", "Comedy"];
+const genres = ["Noir", "Drama", "Epic", "General", "Action", "Horror", "Comedy", "Sci-Fi", "Romance", "Documentary"];
 const styleColumns = [
-  { title: "Color Palette", values: ["Hyper Neon", "Teal Orange Epic", "Neutral Film"] },
-  { title: "Lighting", values: ["Auto", "Soft Cross", "Window Fall"] },
-  { title: "Camera Moveset", values: ["Silent Machine", "One Take", "Epic Scale"] }
+  {
+    title: "Color Palette",
+    values: ["Auto", "Naturalistic Clean", "Bleached Warm", "Hyper Neon", "Teal Orange Epic", "Sodium Decay", "Cold Steel", "Bleach Bypass", "Classic B/W"]
+  },
+  {
+    title: "Lighting",
+    values: ["Auto", "Soft Cross", "Contre Jour", "Overhead Fall", "Window", "Practicals", "Silhouette", "Moon Bounce", "Hard Noon"]
+  },
+  {
+    title: "Camera Moveset",
+    values: ["Auto", "Classic Static", "Silent Machine", "One Take", "Epic Scale", "Intimate Observer", "Impossible Camera", "Documentary Snap", "Dreamy Flow"]
+  }
 ];
 const cameraColumns = [
-  { title: "Camera", values: ["Auto", "Raw 16mm", "Studio Digital"] },
-  { title: "Lens", values: ["Auto", "Clinical Sharp", "Anamorphic"] },
-  { title: "Focal Length", values: ["mm", "75", "50", "35"] },
-  { title: "Aperture", values: ["Auto", "f/11", "f/1.4", "f/4"] }
+  { title: "Camera", values: ["Auto", "Studio Digital S35", "Raw 16mm", "IMAX Plate", "Handheld MiniDV", "Vintage VHS", "Alexa 65"] },
+  { title: "Lens", values: ["Auto", "Clinical Sharp", "Extreme Macro", "Anamorphic", "Warm Halation", "Vintage Haze", "Soft Portrait"] },
+  { title: "Focal Length", values: ["mm", "8", "14", "24", "35", "50", "75", "100", "135"] },
+  { title: "Aperture", values: ["Auto", "f/11", "f/8", "f/5.6", "f/4", "f/2.8", "f/1.4", "f/1.0"] }
 ];
 const providers = ["Best model per task", "Higgsfield only", "Manual routing"];
 
@@ -88,9 +97,9 @@ export default function Home() {
             />
             <motion.section
               className={clsx("settings-panel", modal)}
-              initial={{ opacity: 0, y: 24, clipPath: "inset(20% 4% 0% 4% round 22px)" }}
-              animate={{ opacity: 1, y: 0, clipPath: "inset(0% 0% 0% 0% round 22px)" }}
-              exit={{ opacity: 0, y: 18, clipPath: "inset(15% 4% 0% 4% round 22px)" }}
+              initial={{ opacity: 0, x: "-50%", y: 24, clipPath: "inset(20% 4% 0% 4% round 22px)" }}
+              animate={{ opacity: 1, x: "-50%", y: 0, clipPath: "inset(0% 0% 0% 0% round 22px)" }}
+              exit={{ opacity: 0, x: "-50%", y: 18, clipPath: "inset(15% 4% 0% 4% round 22px)" }}
               transition={{ type: "spring", stiffness: 280, damping: 28 }}
             >
               {modal === "keys" && <KeyVault providerMode={providerMode} setProviderMode={setProviderMode} />}
@@ -203,12 +212,26 @@ export default function Home() {
 }
 
 function StylePanel({ style, setStyle }: { style: string; setStyle: (value: string) => void }) {
+  const [selected, setSelected] = useState([4, 1, 3]);
+
+  function updateColumn(columnIndex: number, itemIndex: number) {
+    updateSelection(selected, setSelected, columnIndex, itemIndex, (next) => {
+      setStyle(next.map((item, index) => styleColumns[index].values[item]).join(", "));
+    });
+  }
+
   return (
     <>
       <PanelHeader title="Style Settings" />
       <div className="style-columns">
-        {styleColumns.map((column) => (
-          <SliderColumn key={column.title} title={column.title} values={column.values} selected={style} onSelect={setStyle} />
+        {styleColumns.map((column, columnIndex) => (
+          <SliderColumn
+            key={column.title}
+            title={column.title}
+            values={column.values}
+            activeIndex={selected[columnIndex]}
+            onSelect={(itemIndex) => updateColumn(columnIndex, itemIndex)}
+          />
         ))}
       </div>
     </>
@@ -216,39 +239,67 @@ function StylePanel({ style, setStyle }: { style: string; setStyle: (value: stri
 }
 
 function GenrePanel({ genre, setGenre }: { genre: string; setGenre: (value: string) => void }) {
+  const activeIndex = Math.max(0, genres.indexOf(genre));
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: Math.max(0, activeIndex * 57 - 22), behavior: "smooth" });
+  }, [activeIndex]);
+
+  function move(direction: number) {
+    const next = wrapIndex(activeIndex + direction, genres.length);
+    setGenre(genres[next]);
+  }
+
   return (
     <>
       <PanelHeader title="Genre" subtle="" />
       <div className="genre-panel">
         <motion.div className="genre-orb" animate={{ rotate: 360 }} transition={{ duration: 22, repeat: Infinity, ease: "linear" }} />
-        <div className="genre-list">
+        <button className="genre-arrow up" onClick={() => move(-1)} aria-label="Previous genre">^</button>
+        <div ref={listRef} className="genre-list" onWheel={(event) => event.deltaY > 0 ? move(1) : move(-1)}>
           {genres.map((item, index) => (
             <button key={item} className={clsx(item === genre && "active")} onClick={() => setGenre(item)}>
               <span className="mini-thumb" />
               <strong>{item}</strong>
-              {index === 2 && <em>selected</em>}
+              {index === activeIndex && <em>selected</em>}
             </button>
           ))}
         </div>
+        <button className="genre-arrow down" onClick={() => move(1)} aria-label="Next genre">v</button>
       </div>
     </>
   );
 }
 
 function CameraPanel({ camera, setCamera }: { camera: string; setCamera: (value: string) => void }) {
+  const [selected, setSelected] = useState([1, 1, 6, 1]);
+
+  function updateColumn(columnIndex: number, itemIndex: number) {
+    updateSelection(selected, setSelected, columnIndex, itemIndex, (next) => {
+      setCamera(cameraColumns[1].values[next[1]]);
+    });
+  }
+
   return (
     <>
       <PanelHeader title="Camera Settings" />
       <div className="camera-columns">
-        {cameraColumns.map((column) => (
-          <SliderColumn key={column.title} title={column.title} values={column.values} selected={camera} onSelect={setCamera} />
+        {cameraColumns.map((column, columnIndex) => (
+          <SliderColumn
+            key={column.title}
+            title={column.title}
+            values={column.values}
+            activeIndex={selected[columnIndex]}
+            onSelect={(itemIndex) => updateColumn(columnIndex, itemIndex)}
+          />
         ))}
       </div>
     </>
   );
 }
 
-function PanelHeader({ title, subtle = "Manual Style · Off" }: { title: string; subtle?: string }) {
+function PanelHeader({ title, subtle = "Manual Style - Off" }: { title: string; subtle?: string }) {
   return (
     <header className="panel-header">
       <h2>{title}</h2>
@@ -260,28 +311,40 @@ function PanelHeader({ title, subtle = "Manual Style · Off" }: { title: string;
 function SliderColumn({
   title,
   values,
-  selected,
+  activeIndex,
   onSelect
 }: {
   title: string;
   values: string[];
-  selected: string;
-  onSelect: (value: string) => void;
+  activeIndex: number;
+  onSelect: (index: number) => void;
 }) {
+  const windowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    windowRef.current?.scrollTo({ top: Math.max(0, activeIndex * 106 - 9), behavior: "smooth" });
+  }, [activeIndex]);
+
+  function move(direction: number) {
+    onSelect(wrapIndex(activeIndex + direction, values.length));
+  }
+
   return (
     <div className="slider-column">
       <span>{title}</span>
-      <button className="arrow-button" aria-label={`Previous ${title}`}>
+      <button className="arrow-button" onClick={() => move(-1)} aria-label={`Previous ${title}`}>
         ^
       </button>
-      <div className="slider-window">
+      <div ref={windowRef} className="slider-window" onWheel={(event) => event.deltaY > 0 ? move(1) : move(-1)}>
         {values.map((item, index) => {
-          const active = selected.includes(item) || item === selected || index === 1;
+          const active = index === activeIndex;
+          const distance = Math.min(Math.abs(index - activeIndex), 3);
           return (
             <motion.button
               key={item}
               className={clsx("slider-item", active && "active")}
-              onClick={() => onSelect(item)}
+              data-distance={distance}
+              onClick={() => onSelect(index)}
               whileHover={{ scale: active ? 1.02 : 0.96 }}
             >
               <span className="thumb" />
@@ -290,7 +353,7 @@ function SliderColumn({
           );
         })}
       </div>
-      <button className="arrow-button" aria-label={`Next ${title}`}>
+      <button className="arrow-button" onClick={() => move(1)} aria-label={`Next ${title}`}>
         v
       </button>
     </div>
@@ -331,4 +394,20 @@ function nextValue(values: string[], current: string, setValue: (value: string) 
   const next = values[(values.indexOf(current) + 1) % values.length];
   setValue(next);
   return next;
+}
+
+function updateSelection(
+  selected: number[],
+  setSelected: Dispatch<SetStateAction<number[]>>,
+  columnIndex: number,
+  itemIndex: number,
+  afterUpdate: (next: number[]) => void
+) {
+  const next = selected.map((value, index) => (index === columnIndex ? itemIndex : value));
+  setSelected(next);
+  afterUpdate(next);
+}
+
+function wrapIndex(index: number, length: number) {
+  return (index + length) % length;
 }

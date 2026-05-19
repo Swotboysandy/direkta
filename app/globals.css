@@ -359,9 +359,8 @@ textarea::placeholder {
   bottom: 210px;
   z-index: 14;
   width: min(900px, calc(100vw - 80px));
-  min-height: 386px;
+  height: 386px;
   overflow: hidden;
-  transform: translateX(-50%);
   border: 1px solid var(--line);
   border-radius: 22px;
   background:
@@ -436,9 +435,9 @@ textarea::placeholder {
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: 38px 34px 1fr 34px;
+  grid-template-rows: 32px 30px 1fr 30px;
   justify-items: center;
-  padding: 18px 12px 16px;
+  padding: 16px 12px 14px;
   border-right: 1px solid rgba(255, 255, 255, 0.045);
 }
 
@@ -468,22 +467,35 @@ textarea::placeholder {
 
 .slider-window {
   width: 100%;
-  display: grid;
-  align-content: center;
-  gap: 18px;
+  height: 218px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 54px 0;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+}
+
+.slider-window::-webkit-scrollbar,
+.genre-list::-webkit-scrollbar {
+  display: none;
 }
 
 .slider-item {
   width: min(158px, 86%);
-  height: 96px;
+  min-height: 92px;
   margin: 0 auto;
   position: relative;
   overflow: hidden;
   border-radius: 52px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #24272a, #0f1113);
-  opacity: 0.36;
-  transform: scale(0.9);
+  opacity: 0.16;
+  transform: scale(0.82);
+  scroll-snap-align: center;
+  flex: 0 0 auto;
 }
 
 .slider-item.active {
@@ -491,6 +503,16 @@ textarea::placeholder {
   transform: scale(1);
   border-color: rgba(255, 255, 255, 0.38);
   box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.04);
+}
+
+.slider-item[data-distance="1"] {
+  opacity: 0.42;
+  transform: scale(0.9);
+}
+
+.slider-item[data-distance="2"] {
+  opacity: 0.24;
+  transform: scale(0.84);
 }
 
 .slider-item .thumb {
@@ -548,14 +570,21 @@ textarea::placeholder {
 .genre-list {
   position: absolute;
   right: 92px;
-  top: 34px;
+  top: 18px;
   width: 246px;
-  display: grid;
-  gap: 12px;
+  height: 296px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 66px 0;
+  scrollbar-width: none;
+  scroll-snap-type: y mandatory;
 }
 
 .genre-list button {
-  height: 48px;
+  min-height: 48px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -564,10 +593,33 @@ textarea::placeholder {
   color: var(--dim);
   font-size: 18px;
   font-weight: 780;
+  scroll-snap-align: center;
+  opacity: 0.34;
 }
 
 .genre-list button.active {
   color: white;
+  opacity: 1;
+}
+
+.genre-arrow {
+  position: absolute;
+  right: 174px;
+  z-index: 4;
+  width: 42px;
+  height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #2a2d30, #151719);
+  color: white;
+}
+
+.genre-arrow.up {
+  top: 68px;
+}
+
+.genre-arrow.down {
+  bottom: 48px;
 }
 
 .mini-thumb {
