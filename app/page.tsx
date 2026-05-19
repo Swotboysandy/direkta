@@ -5,17 +5,9 @@ import {
   Aperture,
   Camera,
   Check,
-  Clapperboard,
-  Film,
-  Grid2X2,
-  Heart,
   ImageIcon,
   KeyRound,
-  Layers2,
-  Monitor,
   Music2,
-  Plus,
-  Settings2,
   Sparkles,
   Upload,
   Video,
@@ -28,8 +20,7 @@ import clsx from "clsx";
 type Modal = "keys" | "style" | "camera" | null;
 type ProviderMode = "hybrid" | "higgsfield" | "custom";
 
-const nav = ["Explore", "Image", "Video", "Audio", "Supercomputer", "Cinema Studio", "AI Influencer", "Canvas", "Apps"];
-const stylePresets = ["One Take", "Soft Cross", "Teal Orange", "Clean Noir"];
+const stylePresets = ["One Take", "Soft Cross", "Clean Noir", "Neutral Film"];
 const cameraPresets = ["Auto", "Clinical Sharp", "35 mm", "Studio Digital S35"];
 const providers = ["Best model per task", "Higgsfield only", "Manual routing"];
 
@@ -37,11 +28,11 @@ export default function Home() {
   const [modal, setModal] = useState<Modal>(null);
   const [mode, setMode] = useState<"image" | "video">("video");
   const [providerMode, setProviderMode] = useState<ProviderMode>("hybrid");
-  const [style, setStyle] = useState("One Take, Soft Cross, Teal Orange");
+  const [style, setStyle] = useState("One Take, Soft Cross");
   const [camera, setCamera] = useState("Clinical Sharp");
   const [duration, setDuration] = useState("8s");
   const [quality, setQuality] = useState("1080p");
-  const [batch, setBatch] = useState(4);
+  const [batch, setBatch] = useState(1);
   const [generated, setGenerated] = useState(0);
   const [prompt, setPrompt] = useState("");
   const [toast, setToast] = useState("");
@@ -58,65 +49,23 @@ export default function Home() {
   }
 
   return (
-    <main className="cinema-shell">
-      <header className="top-nav">
-        <button className="logo" aria-label="Home">
-          <Aperture size={22} />
+    <main className="direkta-shell">
+      <header className="topbar">
+        <button className="brand" aria-label="Direkta home">
+          <Aperture size={20} />
+          <span>Direkta</span>
         </button>
-        <nav aria-label="Product navigation">
-          {nav.map((item) => (
-            <button key={item} className={clsx(item === "Cinema Studio" && "active", item === "Supercomputer" && "cyan")}>
-              {item === "Supercomputer" && <Grid2X2 size={13} />}
-              {item}
-              {item === "Supercomputer" && <span>New</span>}
-            </button>
-          ))}
-        </nav>
-        <div className="top-actions">
-          <button onClick={() => setModal("keys")}>
-            <KeyRound size={14} />
-            Keys
-          </button>
-          <button className="login">Login</button>
-          <button className="signup">Sign up</button>
-        </div>
+        <button className="icon-button" onClick={() => setModal("keys")} aria-label="Open key vault">
+          <KeyRound size={16} />
+        </button>
       </header>
 
-      <aside className="project-rail">
-        <button className="rail-line">
-          <Monitor size={15} />
-          Hide
-        </button>
-        <button className="new-project">
-          <Plus size={16} />
-          New project
-        </button>
-        <span className="rail-label">Projects</span>
-        <button className="generation-pill">
-          <Layers2 size={16} />
-          My Generations
-        </button>
-        <div className="empty-project">
-          <div className="folder-stack">
-            <Plus size={18} />
-          </div>
-          <strong>No projects yet</strong>
-          <p>Create a project to organize your images, videos, and audio.</p>
-          <button>
-            <Plus size={13} />
-            Create project
-          </button>
-        </div>
-      </aside>
-
-      <section className="center-prompt" aria-label="Cinema prompt">
-        <div>
-          <span>Cinema Studio 3.5</span>
-          <h1>What would you shoot<br />with infinite budget?</h1>
-        </div>
+      <section className="hero-copy" aria-label="Cinema prompt">
+        <span>Cinema Studio</span>
+        <h1>What would you shoot<br />with infinite budget?</h1>
       </section>
 
-      <section className="studio-composer">
+      <section className="studio-dock">
         <div className="mode-switch">
           <button className={clsx(mode === "image" && "active")} onClick={() => setMode("image")}>
             <ImageIcon size={15} />
@@ -128,18 +77,11 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="composer-card">
-          <div className="composer-tags">
-            <button onClick={() => setModal("style")}>
-              Style: <strong>{style}</strong>
-            </button>
-            <button onClick={() => setModal("camera")}>
-              Camera: <strong>{camera}</strong>
-            </button>
-            <button onClick={() => setModal("keys")}>
-              <KeyRound size={13} />
-              {providerLabel}
-            </button>
+        <div className="composer">
+          <div className="chips">
+            <button onClick={() => setModal("style")}>Style: {style}</button>
+            <button onClick={() => setModal("camera")}>Camera: {camera}</button>
+            <button onClick={() => setModal("keys")}>{providerLabel}</button>
           </div>
 
           <div className="composer-main">
@@ -149,24 +91,24 @@ export default function Home() {
             <textarea
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
-              placeholder="Describe your scene - use @ to add characters & locations"
+              placeholder="Describe your scene"
             />
-            <div className="camera-card">
+            <button className="camera-card" onClick={() => setModal("camera")}>
               <Camera size={15} />
               <strong>Studio Digital S35</strong>
               <span>35 mm, f/4</span>
-            </div>
-            <motion.button className="generate" onClick={generate} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+            </button>
+            <motion.button className="generate" onClick={generate} whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.98 }}>
               Generate
               <Sparkles size={15} />
-              {generated > 0 ? generated : 2}
+              {generated || 1}
             </motion.button>
           </div>
 
-          <div className="composer-controls">
+          <div className="controls">
             <button>
               <Wand2 size={14} />
-              Cinema Studio 3.5
+              Cinema Studio
             </button>
             <button onClick={() => setDuration(duration === "8s" ? "12s" : "8s")}>{duration}</button>
             <button onClick={() => setQuality(quality === "1080p" ? "2K" : "1080p")}>{quality}</button>
@@ -186,27 +128,16 @@ export default function Home() {
       <AnimatePresence>
         {modal && (
           <ModalShell title={modalTitle(modal)} onClose={() => setModal(null)}>
-            {modal === "keys" && (
-              <KeyVault providerMode={providerMode} setProviderMode={setProviderMode} />
-            )}
-            {modal === "style" && (
-              <PresetPicker values={stylePresets} value={style} onChange={setStyle} />
-            )}
-            {modal === "camera" && (
-              <PresetPicker values={cameraPresets} value={camera} onChange={setCamera} />
-            )}
+            {modal === "keys" && <KeyVault providerMode={providerMode} setProviderMode={setProviderMode} />}
+            {modal === "style" && <PresetPicker values={stylePresets} value={style} onChange={setStyle} />}
+            {modal === "camera" && <PresetPicker values={cameraPresets} value={camera} onChange={setCamera} />}
           </ModalShell>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {toast && (
-          <motion.div
-            className="toast"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-          >
+          <motion.div className="toast" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <Check size={14} />
             {toast}
           </motion.div>
@@ -219,12 +150,7 @@ export default function Home() {
 function ModalShell({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <motion.div
-        className="modal-panel"
-        initial={{ scale: 0.96, y: 18 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.96, y: 14 }}
-      >
+      <motion.div className="modal-panel" initial={{ scale: 0.96, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }}>
         <header>
           <h2>{title}</h2>
           <button onClick={onClose} aria-label="Close">
