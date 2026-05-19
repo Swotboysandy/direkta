@@ -151,22 +151,28 @@ button {
   border-bottom: 1px solid;
 }
 
-.production-strip {
+.workflow-rail {
   position: fixed;
-  left: 50%;
-  bottom: 233px;
+  top: 50%;
   z-index: 9;
-  width: min(900px, calc(100vw - 80px));
-  transform: translateX(-50%);
+  width: 220px;
+  transform: translateY(-50%);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
-.production-strip button {
+.workflow-rail.left {
+  left: 24px;
+}
+
+.workflow-rail.right {
+  right: 24px;
+}
+
+.workflow-rail button {
   min-width: 0;
-  min-height: 58px;
-  padding: 9px 12px;
+  min-height: 88px;
+  padding: 13px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(17, 20, 23, 0.68);
@@ -175,22 +181,31 @@ button {
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
 }
 
-.production-strip span,
-.production-strip small {
+.workflow-rail span,
+.workflow-rail small {
   display: block;
   color: var(--muted);
 }
 
-.production-strip span {
+.workflow-rail span {
   font-size: 10px;
   font-weight: 900;
 }
 
-.production-strip strong {
+.workflow-rail strong {
   display: block;
-  margin-top: 5px;
+  margin-top: 8px;
   color: white;
   font-size: 14px;
+}
+
+.workflow-rail small {
+  margin-top: 8px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .studio-dock {
@@ -416,6 +431,10 @@ textarea::placeholder {
     var(--panel);
   box-shadow: var(--shadow);
   backdrop-filter: blur(22px);
+}
+
+.settings-panel.pipeline {
+  width: min(1100px, calc(100vw - 320px));
 }
 
 .settings-panel::before,
@@ -691,58 +710,83 @@ textarea::placeholder {
 .pipeline-panel {
   height: 332px;
   display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  grid-template-rows: 116px 1fr;
+  grid-template-columns: 0.9fr 1fr 1.2fr 1.1fr;
   gap: 12px;
   padding: 14px;
 }
 
-.flow-lanes {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.flow-card,
+.board-card,
 .node-card,
 .track-row button {
   border: 1px solid var(--line);
   background: rgba(26, 29, 32, 0.86);
 }
 
-.flow-card {
+.board-card {
   min-width: 0;
+  overflow: hidden;
   padding: 12px;
-  border-radius: 16px;
+  border-radius: 18px;
+}
+
+.board-card h3 {
+  margin: 0 0 12px;
+  color: white;
+  font-size: 13px;
+}
+
+.script-board,
+.storyboard-board {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.script-board button,
+.storyboard-board button {
+  min-width: 0;
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(8, 10, 12, 0.36);
   text-align: left;
 }
 
-.flow-card span,
-.flow-card em,
-.flow-card small {
+.script-board strong,
+.script-board span,
+.storyboard-board strong,
+.storyboard-board span,
+.storyboard-board em {
   display: block;
-  color: var(--muted);
-}
-
-.flow-card span {
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.flow-card strong {
-  display: block;
-  margin-top: 8px;
-  color: white;
-  font-size: 15px;
-}
-
-.flow-card small {
-  margin-top: 10px;
   overflow: hidden;
-  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.script-board strong,
+.storyboard-board strong {
+  color: white;
+  font-size: 12px;
+}
+
+.script-board span,
+.storyboard-board span {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.storyboard-board div {
+  display: grid;
+  gap: 9px;
+}
+
+.storyboard-board em {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .node-board {
@@ -752,9 +796,6 @@ textarea::placeholder {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-content: center;
   gap: 10px;
-  padding: 30px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
   background:
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
@@ -807,9 +848,6 @@ textarea::placeholder {
 .timeline-preview {
   display: grid;
   gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
   background: rgba(8, 10, 12, 0.36);
 }
 

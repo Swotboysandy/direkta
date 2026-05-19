@@ -42,10 +42,10 @@ const cameraColumns = [
 ];
 const providers = ["Best model per task", "Higgsfield only", "Manual routing"];
 const productionFlow = [
-  { step: "Script", detail: "Novel, brief, beat sheet" },
-  { step: "Storyboard", detail: "Shots, assets, duration" },
-  { step: "Node Graph", detail: "Prompt, model, sampler" },
-  { step: "Timeline", detail: "Tracks, fps, render" }
+  { step: "Script", detail: "Novel, brief, beat sheet", side: "left" },
+  { step: "Storyboard", detail: "Shots, assets, duration", side: "left" },
+  { step: "Node Graph", detail: "Prompt, model, sampler", side: "right" },
+  { step: "Timeline", detail: "Tracks, fps, render", side: "right" }
 ];
 const workflowNodes = [
   { id: "prompt", title: "Prompt Builder", meta: "script + shot intent" },
@@ -60,6 +60,16 @@ const timelineTracks = [
   { name: "Video", clips: ["Opening", "Reveal", "Final beat"] },
   { name: "Music", clips: ["Theme", "Rise", "Hit"] },
   { name: "Voice", clips: ["Narration", "Dialogue"] }
+];
+const scriptBeats = [
+  { title: "Cold Open", body: "Introduce the world, character goal, and visual hook." },
+  { title: "Conflict", body: "Raise stakes and define what the character can lose." },
+  { title: "Turn", body: "Reveal the cinematic moment that changes the scene." }
+];
+const storyboardShots = [
+  { shot: "01", title: "Wide Establishing", meta: "8s / 24mm / slow push" },
+  { shot: "02", title: "Character Lock", meta: "6s / 50mm / eye-line" },
+  { shot: "03", title: "Impact Frame", meta: "5s / 75mm / hard cut" }
 ];
 
 export default function Home() {
@@ -104,19 +114,8 @@ export default function Home() {
         <h1>What would you shoot<br />with infinite budget?</h1>
       </section>
 
-      <section className="production-strip" aria-label="Production workflow">
-        {productionFlow.map((item, index) => (
-          <motion.button
-            key={item.step}
-            onClick={() => setModal("pipeline")}
-            whileHover={{ y: -4, scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{item.step}</strong>
-          </motion.button>
-        ))}
-      </section>
+      <WorkflowRail side="left" setModal={setModal} />
+      <WorkflowRail side="right" setModal={setModal} />
 
       <AnimatePresence>
         {modal && (
@@ -246,6 +245,27 @@ export default function Home() {
   );
 }
 
+function WorkflowRail({ side, setModal }: { side: "left" | "right"; setModal: (modal: Modal) => void }) {
+  return (
+    <aside className={clsx("workflow-rail", side)} aria-label={`${side} workflow boards`}>
+      {productionFlow
+        .filter((item) => item.side === side)
+        .map((item) => (
+          <motion.button
+            key={item.step}
+            onClick={() => setModal("pipeline")}
+            whileHover={{ x: side === "left" ? 4 : -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span>{String(productionFlow.indexOf(item) + 1).padStart(2, "0")}</span>
+            <strong>{item.step}</strong>
+            <small>{item.detail}</small>
+          </motion.button>
+        ))}
+    </aside>
+  );
+}
+
 function StylePanel({ style, setStyle }: { style: string; setStyle: (value: string) => void }) {
   const [selected, setSelected] = useState([4, 1, 3]);
 
@@ -339,16 +359,29 @@ function PipelinePanel() {
     <>
       <PanelHeader title="Direkta Studio" subtle="Production graph" />
       <div className="pipeline-panel">
-        <div className="flow-lanes">
-          {productionFlow.map((item, index) => (
-            <motion.button key={item.step} className="flow-card" whileHover={{ y: -3 }}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{item.step}</strong>
-              <small>{item.detail}</small>
-            </motion.button>
+        <div className="script-board board-card">
+          <h3>Script Board</h3>
+          {scriptBeats.map((beat) => (
+            <button key={beat.title}>
+              <strong>{beat.title}</strong>
+              <span>{beat.body}</span>
+            </button>
           ))}
         </div>
-        <div className="node-board">
+        <div className="storyboard-board board-card">
+          <h3>Storyboard</h3>
+          <div>
+            {storyboardShots.map((shot) => (
+              <button key={shot.shot}>
+                <em>{shot.shot}</em>
+                <strong>{shot.title}</strong>
+                <span>{shot.meta}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="node-board board-card">
+          <h3>Node Graph</h3>
           {workflowNodes.map((node, index) => (
             <motion.button
               key={node.id}
@@ -365,7 +398,8 @@ function PipelinePanel() {
             <path d="M60 72 C 73 72, 72 34, 83 34" />
           </svg>
         </div>
-        <div className="timeline-preview">
+        <div className="timeline-preview board-card">
+          <h3>Timeline</h3>
           {timelineTracks.map((track, index) => (
             <div key={track.name} className="track-row">
               <span>{track.name}</span>
