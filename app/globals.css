@@ -640,6 +640,175 @@ textarea::placeholder {
   clip: rect(0, 0, 0, 0);
 }
 
+.pipeline-panel {
+  height: 332px;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  grid-template-rows: 116px 1fr;
+  gap: 12px;
+  padding: 14px;
+}
+
+.flow-lanes {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.flow-card,
+.node-card,
+.track-row button {
+  border: 1px solid var(--line);
+  background: rgba(26, 29, 32, 0.86);
+}
+
+.flow-card {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 16px;
+  text-align: left;
+}
+
+.flow-card span,
+.flow-card em,
+.flow-card small {
+  display: block;
+  color: var(--muted);
+}
+
+.flow-card span {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.flow-card strong {
+  display: block;
+  margin-top: 8px;
+  color: white;
+  font-size: 15px;
+}
+
+.flow-card em {
+  margin-top: 3px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.flow-card small {
+  margin-top: 10px;
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-board {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: center;
+  gap: 10px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    rgba(8, 10, 12, 0.36);
+  background-size: 34px 34px;
+}
+
+.node-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.node-lines path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 0.45;
+}
+
+.node-card {
+  position: relative;
+  z-index: 1;
+  min-height: 54px;
+  padding: 9px 10px;
+  border-radius: 13px;
+  text-align: left;
+}
+
+.node-card strong,
+.node-card span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-card strong {
+  color: white;
+  font-size: 12px;
+}
+
+.node-card span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.timeline-preview {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(8, 10, 12, 0.36);
+}
+
+.track-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.track-row > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.track-row div {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.track-row button {
+  min-width: 58px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 999px;
+  color: white;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-preview > strong {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

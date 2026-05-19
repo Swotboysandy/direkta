@@ -16,7 +16,7 @@ import {
 import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 
-type Modal = "keys" | "genre" | "style" | "camera" | null;
+type Modal = "keys" | "genre" | "style" | "camera" | "pipeline" | null;
 type ProviderMode = "hybrid" | "higgsfield" | "custom";
 
 const genres = ["Noir", "Drama", "Epic", "General", "Action", "Horror", "Comedy", "Sci-Fi", "Romance", "Documentary"];
@@ -41,6 +41,26 @@ const cameraColumns = [
   { title: "Aperture", values: ["Auto", "f/11", "f/8", "f/5.6", "f/4", "f/2.8", "f/1.4", "f/1.0"] }
 ];
 const providers = ["Best model per task", "Higgsfield only", "Manual routing"];
+const productionFlow = [
+  { step: "Script", source: "Toonflow", detail: "Novel, brief, beat sheet" },
+  { step: "Storyboard", source: "Toonflow", detail: "Shots, assets, duration" },
+  { step: "Node Graph", source: "ComfyUI", detail: "Prompt, model, sampler" },
+  { step: "Timeline", source: "Remotion", detail: "Tracks, fps, render" }
+];
+const workflowNodes = [
+  { id: "prompt", title: "Prompt Builder", meta: "script + shot intent" },
+  { id: "character", title: "Character Lock", meta: "face, outfit, seed" },
+  { id: "style", title: "Style Pass", meta: "palette + lighting" },
+  { id: "image", title: "Image Gen", meta: "keyframe assets" },
+  { id: "video", title: "Video Gen", meta: "motion + camera" },
+  { id: "audio", title: "Music Cue", meta: "score + ambience" },
+  { id: "render", title: "Render", meta: "timeline export" }
+];
+const timelineTracks = [
+  { name: "Video", clips: ["Opening", "Reveal", "Final beat"] },
+  { name: "Music", clips: ["Theme", "Rise", "Hit"] },
+  { name: "Voice", clips: ["Narration", "Dialogue"] }
+];
 
 export default function Home() {
   const [modal, setModal] = useState<Modal>(null);
@@ -106,6 +126,7 @@ export default function Home() {
               {modal === "genre" && <GenrePanel genre={genre} setGenre={setGenre} />}
               {modal === "style" && <StylePanel style={style} setStyle={setStyle} />}
               {modal === "camera" && <CameraPanel camera={camera} setCamera={setCamera} />}
+              {modal === "pipeline" && <PipelinePanel />}
             </motion.section>
           </>
         )}
@@ -165,7 +186,7 @@ export default function Home() {
           <div className="controls">
             {mode === "video" ? (
               <>
-                <button onClick={() => setGenre(nextValue(genres, genre, setGenre))}>
+                <button onClick={() => setModal("pipeline")}>
                   <Wand2 size={14} />
                   Direkta Studio
                 </button>
@@ -294,6 +315,58 @@ function CameraPanel({ camera, setCamera }: { camera: string; setCamera: (value:
             onSelect={(itemIndex) => updateColumn(columnIndex, itemIndex)}
           />
         ))}
+      </div>
+    </>
+  );
+}
+
+function PipelinePanel() {
+  return (
+    <>
+      <PanelHeader title="Direkta Studio" subtle="Production graph" />
+      <div className="pipeline-panel">
+        <div className="flow-lanes">
+          {productionFlow.map((item, index) => (
+            <motion.button key={item.step} className="flow-card" whileHover={{ y: -3 }}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{item.step}</strong>
+              <em>{item.source}</em>
+              <small>{item.detail}</small>
+            </motion.button>
+          ))}
+        </div>
+        <div className="node-board">
+          {workflowNodes.map((node, index) => (
+            <motion.button
+              key={node.id}
+              className="node-card"
+              whileHover={{ scale: 1.04 }}
+            >
+              <strong>{node.title}</strong>
+              <span>{node.meta}</span>
+            </motion.button>
+          ))}
+          <svg className="node-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M16 34 C 28 34, 25 34, 37 34 S 49 34, 60 34 S 72 34, 83 34" />
+            <path d="M16 72 C 32 72, 36 48, 60 34" />
+            <path d="M60 72 C 73 72, 72 34, 83 34" />
+          </svg>
+        </div>
+        <div className="timeline-preview">
+          {timelineTracks.map((track, index) => (
+            <div key={track.name} className="track-row">
+              <span>{track.name}</span>
+              <div>
+                {track.clips.map((clip, clipIndex) => (
+                  <button key={clip} style={{ width: `${24 + clip.length * 4}%`, opacity: 1 - clipIndex * 0.12 }}>
+                    {clip}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <strong>24 fps / 16:9 / queued render</strong>
+        </div>
       </div>
     </>
   );
