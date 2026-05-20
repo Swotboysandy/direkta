@@ -1,21 +1,31 @@
 {
-  "name": "direkta-cinema-ai",
-  "version": "0.1.0",
+  "name": "zinema",
+  "version": "0.2.0",
   "private": true,
+  "description": "Node.js port of Toonflow: infinite-canvas AI workbench for short-form video production.",
   "scripts": {
     "dev": "next dev",
     "start": "next start",
     "build": "next build",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit --incremental false"
+    "typecheck": "tsc --noEmit --incremental false",
+    "db:reset": "node -e \"require('fs').rmSync('data/zinema.sqlite',{force:true});require('fs').rmSync('data/zinema.sqlite-journal',{force:true});console.log('db reset')\""
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.0.0",
+    "@ai-sdk/google": "^1.0.0",
+    "@ai-sdk/openai": "^1.0.0",
+    "ai": "^4.0.0",
     "clsx": "^2.1.1",
+    "fast-glob": "^3.3.3",
     "framer-motion": "^12.39.0",
+    "gray-matter": "^4.0.3",
     "lucide-react": "^0.468.0",
+    "nanoid": "^5.0.7",
     "next": "^15.1.8",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

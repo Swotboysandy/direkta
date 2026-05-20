@@ -9,15 +9,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Direkta Cinema AI",
-  description: "Movie making AI platform with consistent characters, music, grading, storyboard and export."
+  title: "Zinema",
+  description: "Open-source AI workbench that turns stories into animated short dramas. Node.js port of Toonflow."
 };
 
-export default function RootLayout({
-  children
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={inter.variable}>
       <body>{children}</body>

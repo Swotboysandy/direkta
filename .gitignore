@@ -14,3 +14,9 @@ pnpm-debug.log*
 Thumbs.db
 artifacts
 .codex
+.claude
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/*.sqlite-journal
+data/oss/
