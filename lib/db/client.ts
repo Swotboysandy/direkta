@@ -1,18 +1,19 @@
-import { DatabaseSync } from "node:sqlite";
+import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "zinema.sqlite");
+type Db = ReturnType<typeof Database>;
 
-let _db: DatabaseSync | null = null;
+let _db: Db | null = null;
 
-export function getDb(): DatabaseSync {
+export function getDb(): Db {
   if (_db) return _db;
 
   fs.mkdirSync(DATA_DIR, { recursive: true });
 
-  const db = new DatabaseSync(DB_PATH);
+  const db = new Database(DB_PATH);
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
 
@@ -22,7 +23,7 @@ export function getDb(): DatabaseSync {
   return db;
 }
 
-function migrate(db: DatabaseSync) {
+function migrate(db: Db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
@@ -101,14 +102,14 @@ function migrate(db: DatabaseSync) {
   ensureColumn(db, "vendors", "kind", "TEXT NOT NULL DEFAULT 'text'");
 }
 
-function ensureColumn(db: DatabaseSync, table: string, column: string, decl: string) {
+function ensureColumn(db: Db, table: string, column: string, decl: string) {
   const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
   if (rows.some((row) => row.name === column)) return;
   db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
 }
 
 function ensureVendor(
-  db: DatabaseSync,
+  db: Db,
   id: string,
   label: string,
   provider: string,
@@ -123,7 +124,7 @@ function ensureVendor(
   ).run(id, label, provider, model, "", null, enabled, kind);
 }
 
-function seed(db: DatabaseSync) {
+function seed(db: Db) {
   ensureVendor(db, "anthropic-default", "Anthropic Claude", "anthropic", "claude-sonnet-4-6", "text", 1);
   ensureVendor(db, "openai-default", "OpenAI GPT", "openai", "gpt-4o-mini", "text", 0);
   ensureVendor(db, "google-default", "Google Gemini", "google", "gemini-2.0-flash", "text", 0);

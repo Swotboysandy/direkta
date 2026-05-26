@@ -1,5 +1,4 @@
 import { nanoid } from "nanoid";
-import type { SQLInputValue } from "node:sqlite";
 import { getDb } from "./client";
 import type {
   Asset,
@@ -13,6 +12,7 @@ import type {
 } from "../types";
 
 type Row = Record<string, unknown>;
+type SQLInputValue = string | number | bigint | Buffer | null;
 
 function rowToNode(row: Row): CanvasNode {
   return {
