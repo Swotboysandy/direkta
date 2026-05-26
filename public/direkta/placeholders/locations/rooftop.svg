@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+    
+    <defs>
+      <radialGradient id="bg-rooftop" cx="46%" cy="38%" r="76%">
+        <stop offset="0%" stop-color="#171726"/>
+        <stop offset="100%" stop-color="#05050a"/>
+      </radialGradient>
+      <linearGradient id="flare-rooftop" x1="0" x2="1">
+        <stop offset="0%" stop-color="#d94343" stop-opacity="0"/>
+        <stop offset="48%" stop-color="#d94343" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#d94343" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="grain-rooftop">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/>
+        <feColorMatrix values="0 0 0 0 0.93 0 0 0 0 0.9 0 0 0 0 0.82 0 0 0 0.16 0"/>
+      </filter>
+    </defs>
+    <rect width="960" height="600" fill="url(#bg-rooftop)"/>
+    <rect width="960" height="600" filter="url(#grain-rooftop)" opacity="0.65"/>
+    <rect y="0" width="960" height="58" fill="#000" opacity="0.54"/>
+    <rect y="542" width="960" height="58" fill="#000" opacity="0.54"/>
+    <g transform="translate(120 70) scale(1.0)"><path d="M40 390 L120 330 L190 375 L280 290 L360 360 L470 305 L570 365 L680 315 V540 H40 Z" fill="#07070b" opacity="0.8"/><circle cx="570" cy="110" r="42" fill="#d94343" opacity="0.24"/></g>
+    <path d="M0 460 L960 260" stroke="url(#flare-rooftop)" stroke-width="26" opacity="0.2"/>
+    <rect x="28" y="28" width="904" height="544" fill="none" stroke="#ede7d9" stroke-opacity="0.16" stroke-width="2"/>
+    <text x="36" y="536" text-anchor="start" fill="#ede7d9" font-family="JetBrains Mono, monospace" font-size="22" letter-spacing="3">ROOFTOP</text>
+    <text x="36" y="74" text-anchor="start" fill="#d94343" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="3">LOCATION PLACEHOLDER</text>
+  </svg>

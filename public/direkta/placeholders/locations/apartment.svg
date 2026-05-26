@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+    
+    <defs>
+      <radialGradient id="bg-apartment" cx="46%" cy="38%" r="76%">
+        <stop offset="0%" stop-color="#3a2b12"/>
+        <stop offset="100%" stop-color="#080605"/>
+      </radialGradient>
+      <linearGradient id="flare-apartment" x1="0" x2="1">
+        <stop offset="0%" stop-color="#f2b53c" stop-opacity="0"/>
+        <stop offset="48%" stop-color="#f2b53c" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#f2b53c" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="grain-apartment">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/>
+        <feColorMatrix values="0 0 0 0 0.93 0 0 0 0 0.9 0 0 0 0 0.82 0 0 0 0.16 0"/>
+      </filter>
+    </defs>
+    <rect width="960" height="600" fill="url(#bg-apartment)"/>
+    <rect width="960" height="600" filter="url(#grain-apartment)" opacity="0.65"/>
+    <rect y="0" width="960" height="58" fill="#000" opacity="0.54"/>
+    <rect y="542" width="960" height="58" fill="#000" opacity="0.54"/>
+    <g transform="translate(120 70) scale(1.0)"><rect x="430" y="70" width="190" height="280" fill="#09090a" stroke="#f2b53c" stroke-opacity="0.35"/><line x1="525" y1="70" x2="525" y2="350" stroke="#f2b53c" opacity="0.25"/><line x1="430" y1="210" x2="620" y2="210" stroke="#f2b53c" opacity="0.25"/></g>
+    <path d="M0 460 L960 260" stroke="url(#flare-apartment)" stroke-width="26" opacity="0.2"/>
+    <rect x="28" y="28" width="904" height="544" fill="none" stroke="#ede7d9" stroke-opacity="0.16" stroke-width="2"/>
+    <text x="36" y="536" text-anchor="start" fill="#ede7d9" font-family="JetBrains Mono, monospace" font-size="22" letter-spacing="3">APARTMENT</text>
+    <text x="36" y="74" text-anchor="start" fill="#f2b53c" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="3">LOCATION PLACEHOLDER</text>
+  </svg>

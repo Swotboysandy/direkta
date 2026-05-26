@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="502" viewBox="0 0 1200 502">
+    
+    <defs>
+      <radialGradient id="bg-seq3" cx="46%" cy="38%" r="76%">
+        <stop offset="0%" stop-color="#16161c"/>
+        <stop offset="100%" stop-color="#050507"/>
+      </radialGradient>
+      <linearGradient id="flare-seq3" x1="0" x2="1">
+        <stop offset="0%" stop-color="#f2b53c" stop-opacity="0"/>
+        <stop offset="48%" stop-color="#f2b53c" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#f2b53c" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="grain-seq3">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/>
+        <feColorMatrix values="0 0 0 0 0.93 0 0 0 0 0.9 0 0 0 0 0.82 0 0 0 0.16 0"/>
+      </filter>
+    </defs>
+    <rect width="1200" height="502" fill="url(#bg-seq3)"/>
+    <rect width="1200" height="502" filter="url(#grain-seq3)" opacity="0.7"/>
+    <rect x="40" y="152" width="1120" height="160" fill="#08080a" stroke="#2a2a33"/>
+    <g transform="translate(64 185)">
+      <rect width="180" height="76" fill="#192433" stroke="#2a2a33"/>
+      <rect y="0" width="180" height="10" fill="#000" opacity="0.55"/>
+      <rect y="66" width="180" height="10" fill="#000" opacity="0.55"/>
+      <text x="12" y="48" fill="#ede7d9" font-size="18" font-family="Anton, Impact, sans-serif" letter-spacing="1">B01</text>
+    </g><g transform="translate(274 185)">
+      <rect width="180" height="76" fill="#242036" stroke="#2a2a33"/>
+      <rect y="0" width="180" height="10" fill="#000" opacity="0.55"/>
+      <rect y="66" width="180" height="10" fill="#000" opacity="0.55"/>
+      <text x="12" y="48" fill="#ede7d9" font-size="18" font-family="Anton, Impact, sans-serif" letter-spacing="1">B02</text>
+    </g><g transform="translate(484 185)">
+      <rect width="180" height="76" fill="#24262a" stroke="#2a2a33"/>
+      <rect y="0" width="180" height="10" fill="#000" opacity="0.55"/>
+      <rect y="66" width="180" height="10" fill="#000" opacity="0.55"/>
+      <text x="12" y="48" fill="#ede7d9" font-size="18" font-family="Anton, Impact, sans-serif" letter-spacing="1">B03</text>
+    </g><g transform="translate(694 185)">
+      <rect width="180" height="76" fill="#3a2b12" stroke="#2a2a33"/>
+      <rect y="0" width="180" height="10" fill="#000" opacity="0.55"/>
+      <rect y="66" width="180" height="10" fill="#000" opacity="0.55"/>
+      <text x="12" y="48" fill="#ede7d9" font-size="18" font-family="Anton, Impact, sans-serif" letter-spacing="1">B04</text>
+    </g><g transform="translate(904 185)">
+      <rect width="180" height="76" fill="#192433" stroke="#2a2a33"/>
+      <rect y="0" width="180" height="10" fill="#000" opacity="0.55"/>
+      <rect y="66" width="180" height="10" fill="#000" opacity="0.55"/>
+      <text x="12" y="48" fill="#ede7d9" font-size="18" font-family="Anton, Impact, sans-serif" letter-spacing="1">B05</text>
+    </g>
+    <path d="M80 352 H1120" stroke="#f2b53c" stroke-width="4" stroke-dasharray="12 12" opacity="0.7"/>
+    <text x="60" y="92" text-anchor="start" fill="#ede7d9" font-family="JetBrains Mono, monospace" font-size="26" letter-spacing="3">ANIMATIC V1 - BLOCK 1</text>
+    <text x="60" y="126" text-anchor="start" fill="#f2b53c" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="3">ANIMATIC PLACEHOLDER</text>
+  </svg>

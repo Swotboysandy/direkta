@@ -1,6 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
+import { seedLisbonPact } from "./seed-lisbon";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "zinema.sqlite");
@@ -28,7 +29,12 @@ function migrate(db: DatabaseSync) {
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       premise TEXT NOT NULL DEFAULT '',
+      logline TEXT NOT NULL DEFAULT '',
+      format TEXT NOT NULL DEFAULT 'Short Film',
+      length_estimate TEXT NOT NULL DEFAULT 'Under 5 min',
       aspect_ratio TEXT NOT NULL DEFAULT '16:9',
+      script TEXT NOT NULL DEFAULT '',
+      script_submitted INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -84,7 +90,9 @@ function migrate(db: DatabaseSync) {
 
     CREATE TABLE IF NOT EXISTS assets (
       id TEXT PRIMARY KEY,
-      node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+      node_id TEXT REFERENCES nodes(id) ON DELETE CASCADE,
+      target_kind TEXT NOT NULL DEFAULT 'node',
+      target_id TEXT,
       kind TEXT NOT NULL,
       url TEXT NOT NULL,
       prompt TEXT NOT NULL DEFAULT '',
@@ -94,11 +102,225 @@ function migrate(db: DatabaseSync) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_assets_node ON assets(node_id, created_at DESC);
+
+    /* === DIREKTA V1 === */
+
+    CREATE TABLE IF NOT EXISTS beats (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      n INTEGER NOT NULL,
+      scene_heading TEXT NOT NULL DEFAULT '',
+      title TEXT NOT NULL DEFAULT '',
+      summary TEXT NOT NULL DEFAULT '',
+      characters TEXT NOT NULL DEFAULT '[]',
+      location_id TEXT,
+      mood TEXT NOT NULL DEFAULT '[]',
+      props TEXT NOT NULL DEFAULT '[]',
+      notes TEXT NOT NULL DEFAULT '',
+      flag TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_beats_project ON beats(project_id, n);
+
+    CREATE TABLE IF NOT EXISTS characters (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'Supporting',
+      scene_count INTEGER NOT NULL DEFAULT 0,
+      dialogue INTEGER NOT NULL DEFAULT 1,
+      brief TEXT NOT NULL DEFAULT '{}',
+      soul_id_state TEXT NOT NULL DEFAULT 'empty',
+      soul_id_progress REAL NOT NULL DEFAULT 0,
+      consistency REAL,
+      error TEXT,
+      refs TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_characters_project ON characters(project_id);
+
+    CREATE TABLE IF NOT EXISTS locations (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      int_ext TEXT NOT NULL DEFAULT 'INT',
+      time_of_day TEXT,
+      scene_count INTEGER NOT NULL DEFAULT 0,
+      soul_id_state TEXT NOT NULL DEFAULT 'empty',
+      soul_id_progress REAL NOT NULL DEFAULT 0,
+      refs TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_locations_project ON locations(project_id);
+
+    CREATE TABLE IF NOT EXISTS bible (
+      project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+      characters_doc TEXT NOT NULL DEFAULT '',
+      world_doc TEXT NOT NULL DEFAULT '',
+      tone_doc TEXT NOT NULL DEFAULT '',
+      word_count INTEGER NOT NULL DEFAULT 0,
+      built INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS storyboard_variants (
+      id TEXT PRIMARY KEY,
+      beat_id TEXT NOT NULL REFERENCES beats(id) ON DELETE CASCADE,
+      n INTEGER NOT NULL,
+      asset_id TEXT,
+      prompt TEXT NOT NULL DEFAULT '',
+      state TEXT NOT NULL DEFAULT 'waiting',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_variants_beat ON storyboard_variants(beat_id, n);
+
+    CREATE TABLE IF NOT EXISTS storyboard_rows (
+      beat_id TEXT PRIMARY KEY REFERENCES beats(id) ON DELETE CASCADE,
+      state TEXT NOT NULL DEFAULT 'waiting',
+      selected_variant_id TEXT,
+      style TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS stitch_nodes (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      beat_id TEXT REFERENCES beats(id) ON DELETE CASCADE,
+      x REAL NOT NULL DEFAULT 0,
+      y REAL NOT NULL DEFAULT 0,
+      duration REAL NOT NULL DEFAULT 3.0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_stitch_nodes_project ON stitch_nodes(project_id);
+
+    CREATE TABLE IF NOT EXISTS transitions (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      from_node_id TEXT NOT NULL REFERENCES stitch_nodes(id) ON DELETE CASCADE,
+      to_node_id TEXT NOT NULL REFERENCES stitch_nodes(id) ON DELETE CASCADE,
+      style TEXT NOT NULL DEFAULT 'cut',
+      state TEXT NOT NULL DEFAULT 'pending',
+      clip_asset_id TEXT,
+      duration REAL NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_transitions_project ON transitions(project_id);
+
+    CREATE TABLE IF NOT EXISTS proposals (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      agent TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      target_kind TEXT,
+      target_id TEXT,
+      payload TEXT NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_proposals_project ON proposals(project_id, status);
+
+    CREATE TABLE IF NOT EXISTS clarifications (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      target_kind TEXT,
+      target_id TEXT,
+      question TEXT NOT NULL,
+      options TEXT NOT NULL DEFAULT '[]',
+      resolution TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS activity (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      agent TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'info',
+      text TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_activity_project ON activity(project_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS snippets (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL DEFAULT '',
+      use_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
+
+  // Backwards-compatible column upgrades for pre-existing databases.
+  ensureColumn(db, "projects", "logline", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "format", "TEXT NOT NULL DEFAULT 'Short Film'");
+  ensureColumn(db, "projects", "length_estimate", "TEXT NOT NULL DEFAULT 'Under 5 min'");
+  ensureColumn(db, "projects", "script", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "script_submitted", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(db, "assets", "target_kind", "TEXT NOT NULL DEFAULT 'node'");
+  ensureColumn(db, "assets", "target_id", "TEXT");
 
   // Lightweight column upgrades for pre-existing databases.
   ensureColumn(db, "projects", "aspect_ratio", "TEXT NOT NULL DEFAULT '16:9'");
   ensureColumn(db, "vendors", "kind", "TEXT NOT NULL DEFAULT 'text'");
+
+  /* === Movie Bible spec (DIREKTA_MOVIE_BIBLE.md) === */
+  // projects: title-page fields + synopses + production meta
+  ensureColumn(db, "projects", "genre", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "tagline", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "director_name", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "draft_version", "TEXT NOT NULL DEFAULT 'v1'");
+  ensureColumn(db, "projects", "short_synopsis", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "full_synopsis", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "time_period", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "budget_tier", "TEXT NOT NULL DEFAULT 'indie'");
+
+  // bible: tone, world, visual language, production notes
+  ensureColumn(db, "bible", "themes", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "bible", "comparable_films", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "bible", "what_makes_different", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "world_rules", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "atmosphere", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "visual_palette", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "bible", "cinematography_notes", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "lighting_philosophy", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "editorial_rhythm", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "visual_motifs", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "bible", "production_challenges", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "vfx_requirements", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "bible", "casting_direction", "TEXT NOT NULL DEFAULT ''");
+
+  // stitch_nodes: variant_id so a single beat can contribute multiple cuts to stitch
+  ensureColumn(db, "stitch_nodes", "variant_id", "TEXT");
+
+  // characters: psychology, arc, voice, wardrobe, key quote, relationships
+  ensureColumn(db, "characters", "background", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "psychology_want", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "psychology_fear", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "psychology_wound", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "arc_start", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "arc_middle", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "arc_end", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "voice", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "key_quote", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "wardrobe_direction", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "characters", "relationships", "TEXT NOT NULL DEFAULT '[]'");
+
+  // Indexes that depend on upgraded columns must run after ensureColumn.
+  db.exec("CREATE INDEX IF NOT EXISTS idx_assets_target ON assets(target_kind, target_id)");
 }
 
 function ensureColumn(db: DatabaseSync, table: string, column: string, decl: string) {
@@ -133,15 +355,5 @@ function seed(db: DatabaseSync) {
   ensureVendor(db, "runway-default", "Runway Gen-3", "runway", "gen3a_turbo", "video", 0);
   ensureVendor(db, "minimax-default", "MiniMax Hailuo", "minimax", "video-01", "video", 0);
 
-  const projects = db.prepare("SELECT COUNT(*) AS n FROM projects").get() as { n: number };
-  if (projects.n === 0) {
-    db.prepare(
-      "INSERT INTO projects (id, title, premise, aspect_ratio) VALUES (?, ?, ?, ?)"
-    ).run(
-      "demo",
-      "Runaway Heiress",
-      "A pressured heir escapes a royal city while a loyal guard rewrites her route.",
-      "16:9"
-    );
-  }
+  seedLisbonPact(db);
 }

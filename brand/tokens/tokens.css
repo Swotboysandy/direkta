@@ -1,0 +1,141 @@
+/* ============================================================
+   DIREKTA — Design Tokens
+   v1.0 · Playful Retro Modern
+   ------------------------------------------------------------
+   Single source of truth. Every component reads from these
+   custom properties — DO NOT hard-code values elsewhere.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  /* ─── Core palette ─────────────────────────────────────── */
+  --cream:        #F5EDDC;   /* page background */
+  --cream-warm:   #FFFBF1;   /* card surface — slightly lighter than --cream */
+  --cream-deep:   #EAD8B5;   /* track / scrub background, dividers on cream */
+
+  --cocoa:        #2A1A12;   /* primary ink — text, hairlines */
+  --cocoa-soft:   #4A382C;
+  --cocoa-mute:   #7A6855;   /* secondary text, captions */
+
+  --tomato:       #E84A35;   /* primary accent — CTAs, error */
+  --tomato-deep:  #B6321F;   /* tomato pressed / hover-down */
+
+  --mustard:      #F2B83C;   /* secondary accent — in-progress, highlights */
+  --mustard-deep: #C7901C;
+
+  --viridian:     #3DA89B;   /* tertiary accent — success, complete */
+  --viridian-deep:#26786E;
+
+  /* ─── Semantic aliases (USE THESE in components) ────────── */
+  --bg:           var(--cream);
+  --surface:      var(--cream-warm);
+  --surface-2:    var(--cream-deep);
+  --ink:          var(--cocoa);
+  --ink-soft:     var(--cocoa-soft);
+  --mute:         var(--cocoa-mute);
+
+  --accent:       var(--tomato);
+  --accent-hover: var(--tomato-deep);
+  --accent-2:     var(--mustard);
+  --accent-3:     var(--viridian);
+
+  --on-accent:    var(--cream-warm);  /* text colour on tomato fills */
+  --on-accent-2:  var(--cocoa);       /* text colour on mustard fills */
+  --on-accent-3:  var(--cream-warm);  /* text colour on viridian fills */
+  --on-ink:       var(--cream);
+
+  --signal-success: var(--viridian);
+  --signal-warning: var(--mustard);
+  --signal-danger:  var(--tomato);
+
+  /* ─── Type ─────────────────────────────────────────────── */
+  --font-display: "Bagel Fat One", "Lilita One", "Alfa Slab One", Impact, serif;
+  --font-ui:      "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Type scale — display headlines stay big, body sits at 15px */
+  --t-display-l: clamp(56px, 8vw, 96px);
+  --t-display-m: clamp(44px, 5.5vw, 64px);
+  --t-h1:        clamp(36px, 4vw, 48px);
+  --t-h2:        28px;
+  --t-h3:        22px;
+  --t-h4:        18px;
+  --t-body-l:    17px;
+  --t-body:      15px;
+  --t-body-s:    13px;
+  --t-cap:       11px;
+  --t-eyebrow:   10px;   /* mono uppercase eyebrows */
+
+  --leading-tight: 1.05;
+  --leading-snug:  1.25;
+  --leading-body:  1.5;
+
+  --tracking-display: 0.01em;
+  --tracking-eyebrow: 0.22em;
+  --tracking-mono:    0.06em;
+
+  /* ─── Shape ────────────────────────────────────────────── */
+  --r-sm:    8px;
+  --r-md:    16px;   /* DEFAULT — cards, buttons */
+  --r-lg:    24px;
+  --r-pill:  999px;
+
+  --radius:  var(--r-md);  /* alias for default */
+
+  /* Outline weight — Live tweak set this to 0; keep a hairline available */
+  --hairline: 1px;
+
+  /* ─── Spacing scale ────────────────────────────────────── */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  24px;
+  --sp-6:  32px;
+  --sp-7:  48px;
+  --sp-8:  64px;
+  --sp-9:  96px;
+
+  /* ─── Elevation ────────────────────────────────────────── */
+  /* Soft pillow shadows — no offset block. Three depths. */
+  --shadow-1: 0 2px  6px rgba(42, 26, 18, 0.06),  0 1px 2px rgba(42, 26, 18, 0.04);
+  --shadow-2: 0 6px 14px rgba(42, 26, 18, 0.10),  0 2px 4px rgba(42, 26, 18, 0.06);
+  --shadow-3: 0 14px 32px rgba(42, 26, 18, 0.14), 0 4px 8px rgba(42, 26, 18, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(232, 74, 53, 0.30);
+
+  /* ─── Motion ───────────────────────────────────────────── */
+  --dur-1:  120ms;
+  --dur-2:  220ms;
+  --dur-3:  360ms;
+  --dur-4:  520ms;
+  --ease-out:  cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in:   cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─── Tilt — the brand's signature card rotation ───────── */
+  --tilt-card-a: -0.6deg;
+  --tilt-card-b:  0.5deg;
+  --tilt-card-c: -0.3deg;
+
+  /* ─── Layout ───────────────────────────────────────────── */
+  --gutter:   24px;
+  --page-pad: 32px;
+  --max-w:    1440px;
+}
+
+/* ============================================================
+   BASE RESET (opt-in — include only if you don't have your own)
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--accent); color: var(--on-accent); }

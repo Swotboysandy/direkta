@@ -1,0 +1,107 @@
+/* ============================================================
+   DIREKTA — Type scale
+   Depends on: ../tokens/tokens.css
+   ============================================================ */
+
+/* Display ─────────────────────────────────────────────────── */
+.t-display-l {
+  font-family: var(--font-display);
+  font-size: var(--t-display-l);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+}
+.t-display-m {
+  font-family: var(--font-display);
+  font-size: var(--t-display-m);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+}
+
+/* Headings ────────────────────────────────────────────────── */
+.t-h1, h1 {
+  font-family: var(--font-display);
+  font-size: var(--t-h1);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+  margin: 0;
+}
+.t-h2, h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-h2);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  margin: 0;
+}
+.t-h3, h3 {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  margin: 0;
+}
+.t-h4, h4 {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: var(--t-h4);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Body ────────────────────────────────────────────────────── */
+.t-body-l, p.lead {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: var(--t-body-l);
+  line-height: var(--leading-body);
+  color: var(--ink);
+}
+.t-body, p {
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: var(--t-body);
+  line-height: var(--leading-body);
+  color: var(--ink);
+}
+.t-body-s {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: var(--t-body-s);
+  line-height: var(--leading-body);
+  color: var(--ink);
+}
+
+/* Captions, mono ─────────────────────────────────────────── */
+.t-cap {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--t-cap);
+  color: var(--mute);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--t-body-s);
+  letter-spacing: var(--tracking-mono);
+  color: var(--ink);
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: var(--t-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--mute);
+}
+
+/* Colour helpers ─────────────────────────────────────────── */
+.t-on-accent   { color: var(--on-accent); }
+.t-on-accent-2 { color: var(--on-accent-2); }
+.t-on-accent-3 { color: var(--on-accent-3); }
+.t-mute        { color: var(--mute); }
+.t-accent      { color: var(--accent); }
+.t-success     { color: var(--signal-success); }
+.t-warning     { color: var(--signal-warning); }
+.t-danger      { color: var(--signal-danger); }

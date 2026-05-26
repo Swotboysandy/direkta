@@ -1,0 +1,976 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Film,
+  Flag,
+  Layers,
+  RefreshCcw,
+  Settings2,
+  Sparkles,
+  Wand2,
+  X,
+  ZoomIn
+} from "lucide-react";
+import type { AspectRatio, Beat, Project, WorkspaceId } from "../../lib/types";
+
+interface StoryboardRow {
+  beat_id: string;
+  state: "waiting" | "generating" | "complete" | "error";
+  selected_variant_id: string | null;
+  style: BeatStyle;
+}
+
+interface StoryboardVariant {
+  id: string;
+  beat_id: string;
+  n: number;
+  prompt: string;
+  state: string;
+  asset_id: string | null;
+  asset_url: string | null;
+}
+
+interface BeatStyle {
+  visual?: string;
+  aspect?: AspectRatio;
+  light?: string;
+  temp?: string;
+  camera?: string;
+  prompt_override?: string;
+  camera_angle?: string;
+  lens?: string;
+  movement?: string;
+  shot_size?: string;
+}
+
+interface GlobalStyle {
+  visual: string;
+  aspect: AspectRatio;
+  light: string;
+  temp: string;
+  camera: string;
+}
+
+interface Props {
+  project: Project;
+  onSwitchWorkspace: (ws: WorkspaceId) => void;
+}
+
+const VISUAL_OPTIONS = ["Naturalistic", "Noir", "High contrast", "Documentary", "Stylised", "Hyperreal"];
+const ASPECT_OPTIONS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5", "21:9"];
+const LIGHT_OPTIONS = ["Natural", "Golden hour", "Overcast", "Hard shadows", "Low key", "High key", "Dawn", "Dusk"];
+const TEMP_OPTIONS = ["Cool", "Neutral", "Warm"];
+const CAMERA_OPTIONS = ["Wide", "Medium", "Close", "Extreme close", "Mixed"];
+const SHOT_SIZE_OPTIONS = ["Wide", "Medium", "Close", "Extreme close", "Two-shot", "Over-shoulder", "Insert", "Establishing"];
+const LENS_OPTIONS = ["24mm", "35mm", "50mm", "85mm", "135mm"];
+const MOVEMENT_OPTIONS = ["Locked", "Pan", "Tilt", "Dolly", "Handheld", "Push in", "Pull out", "Whip"];
+const ANGLE_OPTIONS = ["Eye level", "Low", "High", "Dutch", "Bird's eye", "Worm's eye"];
+
+export function Storyboard({ project, onSwitchWorkspace }: Props) {
+  const [beats, setBeats] = useState<Beat[]>([]);
+  const [rows, setRows] = useState<StoryboardRow[]>([]);
+  const [variants, setVariants] = useState<StoryboardVariant[]>([]);
+  const [stitchedVariantIds, setStitchedVariantIds] = useState<Set<string>>(new Set());
+  const [lightbox, setLightbox] = useState<{ beat: Beat; variant: StoryboardVariant } | null>(null);
+  const [expandedBeat, setExpandedBeat] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ kind: "success" | "info" | "error"; text: string } | null>(null);
+  const [globalStyle, setGlobalStyle] = useState<GlobalStyle>({
+    visual: "Noir",
+    aspect: project.aspect_ratio,
+    light: "Low key",
+    temp: "Cool",
+    camera: "Mixed"
+  });
+
+  const reload = useCallback(async () => {
+    const res = await fetch(`/api/projects/${project.id}/storyboard`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setBeats(data.beats);
+    setRows(
+      (data.rows as Array<{ beat_id: string; state: StoryboardRow["state"]; selected_variant_id: string | null; style: BeatStyle | Record<string, unknown> }>).map(
+        (r) => ({ ...r, style: (r.style ?? {}) as BeatStyle })
+      )
+    );
+    setVariants(data.variants);
+
+    // Track which variants are already on the stitch board so the UI can flag them.
+    const stitch = await fetch(`/api/projects/${project.id}/stitch`);
+    if (stitch.ok) {
+      const sd = await stitch.json();
+      const ids = new Set<string>(
+        (sd.nodes as Array<{ variant_id: string | null }>).map((n) => n.variant_id ?? "").filter(Boolean)
+      );
+      setStitchedVariantIds(ids);
+    }
+  }, [project.id]);
+
+  function flashToast(kind: "success" | "info" | "error", text: string) {
+    setToast({ kind, text });
+    setTimeout(() => setToast((t) => (t?.text === text ? null : t)), 2800);
+  }
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  const rowByBeat = useMemo(() => Object.fromEntries(rows.map((r) => [r.beat_id, r])), [rows]);
+  const variantsByBeat = useMemo(() => {
+    const map: Record<string, StoryboardVariant[]> = {};
+    for (const v of variants) {
+      if (!map[v.beat_id]) map[v.beat_id] = [];
+      map[v.beat_id].push(v);
+    }
+    for (const list of Object.values(map)) list.sort((a, b) => a.n - b.n);
+    return map;
+  }, [variants]);
+
+  const selectedCount = rows.filter((r) => r.selected_variant_id).length;
+  const completeCount = rows.filter((r) => r.state === "complete").length;
+
+  async function addVariantToStitch(variant: StoryboardVariant) {
+    // Optimistic update — mark the variant as stitched before the network round-trip.
+    setStitchedVariantIds((prev) => new Set(prev).add(variant.id));
+    // Mirror the "selected" concept for any downstream code that still reads it.
+    setRows((prev) =>
+      prev.map((r) => (r.beat_id === variant.beat_id ? { ...r, selected_variant_id: variant.id } : r))
+    );
+    fetch(`/api/storyboard/rows/${variant.beat_id}/select`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ variant_id: variant.id })
+    }).catch(() => {});
+
+    const res = await fetch(`/api/stitch/nodes`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ variant_id: variant.id })
+    });
+    if (!res.ok) {
+      flashToast("error", "Failed to add to Stitch.");
+      return;
+    }
+    const data = (await res.json()) as { action: string; beat_n: number; scene_number: number };
+    if (data.action === "exists") {
+      flashToast("info", `Already on Stitch · Scene ${data.scene_number}`);
+    } else {
+      flashToast("success", `Added · Beat ${String(data.beat_n).padStart(2, "0")} V${String(variant.n).padStart(2, "0")} → Scene ${data.scene_number}`);
+    }
+  }
+
+  async function removeVariantFromStitch(variant: StoryboardVariant) {
+    setStitchedVariantIds((prev) => {
+      const next = new Set(prev);
+      next.delete(variant.id);
+      return next;
+    });
+    await fetch(`/api/stitch/nodes?variant_id=${encodeURIComponent(variant.id)}`, {
+      method: "DELETE"
+    }).catch(() => {});
+    flashToast("info", `Removed V${String(variant.n).padStart(2, "0")} from Stitch`);
+  }
+
+  async function patchRow(beatId: string, patch: { style?: BeatStyle }) {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.beat_id === beatId ? { ...r, style: { ...r.style, ...(patch.style ?? {}) } } : r
+      )
+    );
+    await fetch(`/api/storyboard/rows/${beatId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(patch)
+    }).catch(() => {});
+  }
+
+  async function patchVariant(variantId: string, patch: { prompt?: string }) {
+    setVariants((prev) => prev.map((v) => (v.id === variantId ? { ...v, ...patch } : v)));
+    await fetch(`/api/storyboard/variants/${variantId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(patch)
+    }).catch(() => {});
+  }
+
+  async function generate(beatId: string, prompt: string) {
+    await fetch(`/api/storyboard/rows/${beatId}/generate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ variants: 4, prompt })
+    });
+    await reload();
+  }
+
+
+  return (
+    <div className="main-inner storyboard">
+      <header className="page-head">
+        <div>
+          <span className="t-eyebrow crumb">04 / WORKSPACE · STORYBOARD</span>
+          <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Storyboard</h1>
+          <p className="lead" style={{ marginTop: "var(--sp-3)", maxWidth: "64ch" }}>
+            The Cinematographer rolls 4 variants per beat. Pick a winner. Click a beat to edit its
+            prompt and camera direction, or open any frame to refine a single take.
+          </p>
+        </div>
+        <div className="actions">
+          <span className="pip-state" data-status={completeCount === beats.length && beats.length > 0 ? "done" : "working"}>
+            {selectedCount} / {beats.length || "—"} SELECTED
+          </span>
+          <button className="btn">
+            <Settings2 size={14} /> Style direction
+          </button>
+          <button
+            className="btn btn-primary"
+            disabled={selectedCount === 0}
+            onClick={() => onSwitchWorkspace("stitch")}
+          >
+            Continue to Stitch <ArrowRight size={14} />
+          </button>
+        </div>
+      </header>
+
+      <div className="page-body" style={{ paddingBottom: 200 }}>
+        <GlobalStyleStrip style={globalStyle} onChange={setGlobalStyle} />
+
+        <div className="storyboard-section-head">
+          <span className="t-eyebrow">BEATS · 1 — {beats.length}</span>
+          <span className="t-mute" style={{ fontSize: "var(--t-body-s)" }}>
+            Click a beat row to expand prompt + camera direction
+          </span>
+        </div>
+
+        <div className="storyboard-beats">
+          {beats.map((beat) => {
+            const row = rowByBeat[beat.id];
+            const v = variantsByBeat[beat.id] ?? [];
+            const expanded = expandedBeat === beat.id;
+            return (
+              <BeatRow
+                key={beat.id}
+                beat={beat}
+                row={row}
+                variants={v}
+                stitchedVariantIds={stitchedVariantIds}
+                expanded={expanded}
+                globalStyle={globalStyle}
+                onToggleExpand={() => setExpandedBeat(expanded ? null : beat.id)}
+                onAddToStitch={(variant) => addVariantToStitch(variant)}
+                onRemoveFromStitch={(variant) => removeVariantFromStitch(variant)}
+                onLightbox={(variant) => setLightbox({ beat, variant })}
+                onPatchRow={(patch) => patchRow(beat.id, patch)}
+                onGenerate={(prompt) => generate(beat.id, prompt)}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      <BottomStrip
+        beats={beats}
+        variants={variants}
+        stitchedVariantIds={stitchedVariantIds}
+      />
+
+      {toast && (
+        <div
+          className="storyboard-toast"
+          data-kind={toast.kind}
+          role="status"
+          aria-live="polite"
+        >
+          {toast.text}
+        </div>
+      )}
+
+      {lightbox && (
+        <FrameLightbox
+          beat={lightbox.beat}
+          variant={lightbox.variant}
+          aspect={project.aspect_ratio}
+          row={rowByBeat[lightbox.beat.id]}
+          onClose={() => setLightbox(null)}
+          onPatchVariant={(p) => patchVariant(lightbox.variant.id, p)}
+          onRegenerate={() => generate(lightbox.beat.id, lightbox.variant.prompt)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ───────────────────────── Global Style Strip ───────────────────────── */
+
+function GlobalStyleStrip({
+  style,
+  onChange
+}: {
+  style: GlobalStyle;
+  onChange: (next: GlobalStyle) => void;
+}) {
+  return (
+    <div className="storyboard-style-strip">
+      <StyleCell label="Visual" value={style.visual} options={VISUAL_OPTIONS} onChange={(v) => onChange({ ...style, visual: v })} />
+      <StyleCell label="Aspect" value={style.aspect} options={ASPECT_OPTIONS} onChange={(v) => onChange({ ...style, aspect: v as AspectRatio })} />
+      <StyleCell label="Light" value={style.light} options={LIGHT_OPTIONS} onChange={(v) => onChange({ ...style, light: v })} />
+      <StyleCell label="Temp" value={style.temp} options={TEMP_OPTIONS} onChange={(v) => onChange({ ...style, temp: v })} />
+      <StyleCell label="Camera" value={style.camera} options={CAMERA_OPTIONS} onChange={(v) => onChange({ ...style, camera: v })} />
+      <div style={{ padding: "12px 18px", display: "flex", alignItems: "center" }}>
+        <span className="pip-state" data-status="working">
+          <Wand2 size={10} /> APPLIED TO ALL
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StyleCell({
+  label,
+  value,
+  options,
+  onChange
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div className="storyboard-style-cell">
+      <span className="t-eyebrow">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          background: "transparent",
+          fontFamily: "var(--font-display)",
+          fontSize: "var(--t-h4)",
+          color: "var(--ink)",
+          border: "none",
+          padding: 0,
+          boxShadow: "none",
+          cursor: "pointer",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em"
+        }}
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/* ───────────────────────── Beat Row ───────────────────────── */
+
+function BeatRow({
+  beat,
+  row,
+  variants,
+  stitchedVariantIds,
+  expanded,
+  globalStyle,
+  onToggleExpand,
+  onAddToStitch,
+  onRemoveFromStitch,
+  onLightbox,
+  onPatchRow,
+  onGenerate
+}: {
+  beat: Beat;
+  row: StoryboardRow | undefined;
+  variants: StoryboardVariant[];
+  stitchedVariantIds: Set<string>;
+  expanded: boolean;
+  globalStyle: GlobalStyle;
+  onToggleExpand: () => void;
+  onAddToStitch: (variant: StoryboardVariant) => Promise<void> | void;
+  onRemoveFromStitch: (variant: StoryboardVariant) => Promise<void> | void;
+  onLightbox: (variant: StoryboardVariant) => void;
+  onPatchRow: (patch: { style?: BeatStyle }) => void;
+  onGenerate: (prompt: string) => void;
+}) {
+  const state = row?.state ?? "waiting";
+  const beatStyle = row?.style ?? {};
+  const stitchedCount = variants.filter((v) => stitchedVariantIds.has(v.id)).length;
+
+  return (
+    <div className="storyboard-beat-row" data-state={state} data-expanded={expanded}>
+      <div className="storyboard-beat-label">
+        <span className="t-eyebrow">BEAT {String(beat.n).padStart(2, "0")}</span>
+        <div className="storyboard-beat-title">{beat.title}</div>
+        <div className="storyboard-beat-scene">{beat.scene_heading}</div>
+        <div className="tag-strip" style={{ marginTop: "var(--sp-2)" }}>
+          {beat.characters.map((c) => (
+            <span key={c} className="tag">{c}</span>
+          ))}
+        </div>
+        {beat.flag && (
+          <span className="pip-state" data-status="error" style={{ alignSelf: "flex-start" }}>
+            <Flag size={10} /> {beat.flag.toUpperCase()}
+          </span>
+        )}
+        <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "auto", flexWrap: "wrap" }}>
+          {stitchedCount > 0 && (
+            <span className="pip-state" data-status="done" title="Variants from this beat that are on the Stitch board">
+              <Film size={10} /> {stitchedCount} ON STITCH
+            </span>
+          )}
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={onToggleExpand}
+            style={{ marginLeft: stitchedCount > 0 ? 0 : "auto" }}
+          >
+            {expanded ? (
+              <>
+                <ChevronUp size={12} /> Collapse
+              </>
+            ) : (
+              <>
+                <ChevronDown size={12} /> Edit
+              </>
+            )}
+          </button>
+        </div>
+        <p className="t-mute" style={{ fontSize: 11, lineHeight: 1.4 }}>
+          Click <strong>Add to Stitch</strong> on any frame below to push it as <strong>Scene {beat.n}</strong>. Multiple cuts of the same beat allowed.
+        </p>
+      </div>
+
+      <div className="storyboard-frames">
+        {[0, 1, 2, 3].map((idx) => {
+          const variant = variants[idx];
+          if (!variant || state === "waiting") {
+            return (
+              <div key={idx} className="storyboard-frame storyboard-frame-empty">
+                <span className="t-eyebrow">{state === "waiting" ? "WAITING" : "—"}</span>
+              </div>
+            );
+          }
+          if (state === "generating") {
+            return (
+              <div key={variant.id} className="storyboard-frame storyboard-frame-generating shimmer">
+                <span className="t-eyebrow">COMPOSING…</span>
+              </div>
+            );
+          }
+          if (state === "error") {
+            return (
+              <div key={variant.id} className="storyboard-frame storyboard-frame-error">
+                <span className="t-eyebrow">ERROR</span>
+              </div>
+            );
+          }
+          const onStitch = stitchedVariantIds.has(variant.id);
+          return (
+            <div
+              key={variant.id}
+              className="storyboard-frame"
+              data-selected={onStitch}
+              data-flagged={beat.flag === "continuity" && variant.n - 1 === 3}
+            >
+              {variant.asset_url && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={variant.asset_url} alt={`${beat.title} variant ${variant.n}`} />
+              )}
+              <div className="storyboard-frame-actions">
+                <button
+                  className="storyboard-frame-btn"
+                  data-primary={!onStitch}
+                  title={onStitch ? "Remove from Stitch" : `Add to Stitch as Scene ${beat.n}`}
+                  onClick={() => (onStitch ? onRemoveFromStitch(variant) : onAddToStitch(variant))}
+                >
+                  {onStitch ? <X size={14} /> : <Film size={14} />}
+                </button>
+                <button
+                  className="storyboard-frame-btn"
+                  title="Open detail"
+                  onClick={() => onLightbox(variant)}
+                >
+                  <ZoomIn size={14} />
+                </button>
+                <button
+                  className="storyboard-frame-btn"
+                  title="Regenerate this variant"
+                  onClick={() => onLightbox(variant)}
+                >
+                  <RefreshCcw size={14} />
+                </button>
+              </div>
+              <span className="storyboard-frame-label" data-selected={onStitch}>
+                V{String(variant.n).padStart(2, "0")}
+                {onStitch ? ` · ON STITCH · SCENE ${beat.n}` : ""}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {expanded && (
+        <BeatEditor
+          beat={beat}
+          beatStyle={beatStyle}
+          globalStyle={globalStyle}
+          state={state}
+          onPatchRow={onPatchRow}
+          onGenerate={onGenerate}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ───────────────────────── Beat Editor ───────────────────────── */
+
+function BeatEditor({
+  beat,
+  beatStyle,
+  globalStyle,
+  state,
+  onPatchRow,
+  onGenerate
+}: {
+  beat: Beat;
+  beatStyle: BeatStyle;
+  globalStyle: GlobalStyle;
+  state: StoryboardRow["state"];
+  onPatchRow: (patch: { style?: BeatStyle }) => void;
+  onGenerate: (prompt: string) => void;
+}) {
+  const [prompt, setPrompt] = useState(
+    beatStyle.prompt_override || defaultPromptFor(beat, beatStyle, globalStyle)
+  );
+
+  const isGenerating = state === "generating";
+
+  return (
+    <div className="beat-editor">
+      <div className="beat-editor-section">
+        <div className="beat-editor-section-head">
+          <Sparkles size={14} />
+          <span className="t-eyebrow">IMAGE PROMPT</span>
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={() => setPrompt(defaultPromptFor(beat, beatStyle, globalStyle))}
+            style={{ marginLeft: "auto" }}
+          >
+            <RefreshCcw size={11} /> Reset to default
+          </button>
+        </div>
+        <textarea
+          className="beat-editor-prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onBlur={() => onPatchRow({ style: { prompt_override: prompt } })}
+          rows={4}
+          placeholder="Cinematographer prompt — what should the model compose?"
+        />
+        <span className="t-mute" style={{ fontSize: 11 }}>
+          {prompt.length} chars · auto-saves on blur
+        </span>
+      </div>
+
+      <div className="beat-editor-section">
+        <div className="beat-editor-section-head">
+          <Eye size={14} />
+          <span className="t-eyebrow">CAMERA DIRECTION</span>
+        </div>
+        <div className="beat-editor-grid">
+          <EditorSelect
+            label="Shot size"
+            value={beatStyle.shot_size ?? "Wide"}
+            options={SHOT_SIZE_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { shot_size: v } })}
+          />
+          <EditorSelect
+            label="Angle"
+            value={beatStyle.camera_angle ?? "Eye level"}
+            options={ANGLE_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { camera_angle: v } })}
+          />
+          <EditorSelect
+            label="Lens"
+            value={beatStyle.lens ?? "35mm"}
+            options={LENS_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { lens: v } })}
+          />
+          <EditorSelect
+            label="Movement"
+            value={beatStyle.movement ?? "Locked"}
+            options={MOVEMENT_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { movement: v } })}
+          />
+        </div>
+      </div>
+
+      <div className="beat-editor-section">
+        <div className="beat-editor-section-head">
+          <Layers size={14} />
+          <span className="t-eyebrow">STYLE OVERRIDE · THIS BEAT ONLY</span>
+          <span className="t-mute" style={{ marginLeft: "auto", fontSize: 11 }}>
+            Leave blank to inherit project style
+          </span>
+        </div>
+        <div className="beat-editor-grid">
+          <EditorSelect
+            label="Visual"
+            value={beatStyle.visual ?? globalStyle.visual}
+            options={VISUAL_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { visual: v } })}
+          />
+          <EditorSelect
+            label="Light"
+            value={beatStyle.light ?? globalStyle.light}
+            options={LIGHT_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { light: v } })}
+          />
+          <EditorSelect
+            label="Temp"
+            value={beatStyle.temp ?? globalStyle.temp}
+            options={TEMP_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { temp: v } })}
+          />
+          <EditorSelect
+            label="Aspect"
+            value={beatStyle.aspect ?? globalStyle.aspect}
+            options={ASPECT_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { aspect: v as AspectRatio } })}
+          />
+        </div>
+      </div>
+
+      <div className="beat-editor-actions">
+        <span className="t-mute" style={{ fontSize: "var(--t-body-s)" }}>
+          {isGenerating
+            ? "Cinematographer is rolling 4 variants…"
+            : "Generation is gated on an image vendor with an API key. Without one, this runs in simulation mode."}
+        </span>
+        <button
+          className="btn btn-sm"
+          onClick={() => onPatchRow({ style: { prompt_override: prompt } })}
+        >
+          Save prompt
+        </button>
+        <button
+          className="btn btn-sm btn-primary"
+          disabled={isGenerating}
+          onClick={() => onGenerate(prompt)}
+        >
+          <Wand2 size={12} /> {isGenerating ? "Rolling…" : "Generate 4 variants"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EditorSelect({
+  label,
+  value,
+  options,
+  onChange
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (next: string) => void;
+}) {
+  return (
+    <label className="beat-editor-field">
+      <span className="t-eyebrow">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function defaultPromptFor(beat: Beat, beatStyle: BeatStyle, globalStyle: GlobalStyle): string {
+  const visual = beatStyle.visual ?? globalStyle.visual;
+  const light = beatStyle.light ?? globalStyle.light;
+  const temp = beatStyle.temp ?? globalStyle.temp;
+  const aspect = beatStyle.aspect ?? globalStyle.aspect;
+  const shot = beatStyle.shot_size ?? "Wide";
+  const lens = beatStyle.lens ?? "35mm";
+  const movement = beatStyle.movement ?? "Locked";
+  return `${shot} shot, ${lens}, ${movement.toLowerCase()} camera. ${beat.scene_heading}. ${beat.title}. ${beat.characters.length ? `Featuring ${beat.characters.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
+}
+
+/* ───────────────────────── Bottom Strip ───────────────────────── */
+
+function BottomStrip({
+  beats,
+  variants,
+  stitchedVariantIds
+}: {
+  beats: Beat[];
+  variants: StoryboardVariant[];
+  stitchedVariantIds: Set<string>;
+}) {
+  const beatByVariant = useMemo(() => Object.fromEntries(variants.map((v) => [v.id, v])), [variants]);
+  const beatsByN = useMemo(() => Object.fromEntries(beats.map((b) => [b.id, b])), [beats]);
+  // The sequence on Stitch — every stitched variant in beat-number order.
+  const stitched = useMemo(() => {
+    const list = variants.filter((v) => stitchedVariantIds.has(v.id));
+    return list
+      .map((v) => ({ variant: v, beat: beatsByN[v.beat_id] }))
+      .filter((row) => row.beat)
+      .sort((a, b) => (a.beat!.n - b.beat!.n) || (a.variant.n - b.variant.n));
+  }, [variants, stitchedVariantIds, beatsByN]);
+
+  // Use beatByVariant to silence the unused-var lint while keeping it handy for future work.
+  void beatByVariant;
+
+  return (
+    <div className="storyboard-bottom-strip">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span className="t-eyebrow">SEQUENCE · {stitched.length} ON STITCH</span>
+        <span className="t-mute" style={{ fontSize: 11 }}>
+          Frames pushed to Stitch, in scene order. This is what Stitch sees.
+        </span>
+      </div>
+      <div className="storyboard-strip-row">
+        {stitched.length === 0 && (
+          <div className="storyboard-strip-slot" data-empty="true">
+            <span className="t-eyebrow">EMPTY</span>
+          </div>
+        )}
+        {stitched.map(({ variant, beat }) => (
+          <div key={variant.id} className="storyboard-strip-slot">
+            {variant.asset_url && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={variant.asset_url} alt={beat!.title} />
+            )}
+            <span
+              className="storyboard-frame-label"
+              style={{ bottom: 4, left: 4, fontSize: 9 }}
+            >
+              S{String(beat!.n).padStart(2, "0")}·V{String(variant.n).padStart(2, "0")}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────── Variant Lightbox ───────────────────────── */
+
+function FrameLightbox({
+  beat,
+  variant,
+  aspect,
+  row,
+  onClose,
+  onPatchVariant,
+  onRegenerate
+}: {
+  beat: Beat;
+  variant: StoryboardVariant;
+  aspect: string;
+  row: StoryboardRow | undefined;
+  onClose: () => void;
+  onPatchVariant: (p: { prompt?: string }) => void;
+  onRegenerate: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [prompt, setPrompt] = useState(variant.prompt || row?.style.prompt_override || "");
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: 1100,
+          width: "calc(100% - var(--sp-7))",
+          maxHeight: "calc(100vh - var(--sp-7))",
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1fr",
+          padding: 0,
+          overflow: "hidden"
+        }}
+      >
+        <div style={{ background: "var(--ink)", display: "grid", placeItems: "center", padding: "var(--sp-5)" }}>
+          {variant.asset_url && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={variant.asset_url}
+              alt={beat.title}
+              style={{ maxWidth: "100%", maxHeight: "70vh", display: "block" }}
+            />
+          )}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            background: "var(--surface)",
+            borderLeft: "1px solid var(--cream-deep)",
+            overflow: "auto"
+          }}
+        >
+          <header
+            style={{
+              padding: "var(--sp-4) var(--sp-5)",
+              borderBottom: "1px solid var(--cream-deep)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "var(--sp-3)"
+            }}
+          >
+            <div>
+              <span className="t-eyebrow">
+                BEAT {String(beat.n).padStart(2, "0")} · V{String(variant.n).padStart(2, "0")} · {aspect}
+              </span>
+              <h2 className="t-h3" style={{ marginTop: "var(--sp-2)" }}>{beat.title}</h2>
+              <p className="t-mute" style={{ marginTop: "var(--sp-1)", fontSize: 12 }}>
+                {beat.scene_heading}
+              </p>
+            </div>
+            <button className="btn btn-sm btn-ghost" onClick={onClose} aria-label="Close">
+              <X size={14} />
+            </button>
+          </header>
+
+          <div style={{ padding: "var(--sp-5)", display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
+            <section>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span className="t-eyebrow">PROMPT USED</span>
+                <button
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setEditing((v) => !v)}
+                >
+                  {editing ? "Cancel" : "Edit"}
+                </button>
+              </div>
+              {editing ? (
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={6}
+                  style={{ marginTop: "var(--sp-2)", width: "100%" }}
+                />
+              ) : (
+                <div
+                  style={{
+                    marginTop: "var(--sp-2)",
+                    padding: "var(--sp-3)",
+                    background: "var(--bg)",
+                    borderRadius: "var(--radius)",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 12,
+                    lineHeight: 1.55,
+                    whiteSpace: "pre-wrap",
+                    color: "var(--ink-soft)"
+                  }}
+                >
+                  {variant.prompt || row?.style.prompt_override || <span style={{ color: "var(--mute)" }}>No prompt recorded. Generated from default direction.</span>}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <span className="t-eyebrow">CAMERA · INHERITED FROM BEAT</span>
+              <div
+                style={{
+                  marginTop: "var(--sp-2)",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "var(--sp-2)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 12
+                }}
+              >
+                <LightboxKV k="Shot" v={row?.style.shot_size ?? "—"} />
+                <LightboxKV k="Angle" v={row?.style.camera_angle ?? "—"} />
+                <LightboxKV k="Lens" v={row?.style.lens ?? "—"} />
+                <LightboxKV k="Movement" v={row?.style.movement ?? "—"} />
+              </div>
+            </section>
+
+            <section>
+              <span className="t-eyebrow">VARIANT META</span>
+              <div
+                style={{
+                  marginTop: "var(--sp-2)",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "var(--sp-2)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 12
+                }}
+              >
+                <LightboxKV k="State" v={variant.state} />
+                <LightboxKV k="Asset" v={variant.asset_url ? "Stored" : "—"} />
+                <LightboxKV k="Beat chars" v={beat.characters.join(" · ") || "—"} />
+                <LightboxKV k="Beat mood" v={beat.mood.join(" · ") || "—"} />
+              </div>
+            </section>
+          </div>
+
+          <footer
+            style={{
+              marginTop: "auto",
+              padding: "var(--sp-3) var(--sp-5)",
+              borderTop: "1px solid var(--cream-deep)",
+              background: "var(--bg)",
+              display: "flex",
+              gap: "var(--sp-2)",
+              justifyContent: "flex-end"
+            }}
+          >
+            {editing && (
+              <button
+                className="btn btn-sm"
+                onClick={() => {
+                  onPatchVariant({ prompt });
+                  setEditing(false);
+                }}
+              >
+                Save prompt
+              </button>
+            )}
+            <button className="btn btn-sm btn-secondary" onClick={onRegenerate}>
+              <RefreshCcw size={12} /> Regenerate row
+            </button>
+            <button className="btn btn-sm btn-primary" onClick={onClose}>
+              Done
+            </button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LightboxKV({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="card" style={{ padding: "var(--sp-2) var(--sp-3)" }}>
+      <span
+        className="t-eyebrow"
+        style={{ fontSize: 9, color: "var(--mute)", display: "block", marginBottom: 2 }}
+      >
+        {k}
+      </span>
+      <span style={{ color: "var(--ink)" }}>{v}</span>
+    </div>
+  );
+}

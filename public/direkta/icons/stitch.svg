@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+  
+  <rect x="2" y="9" width="6" height="6"></rect>
+  <rect x="13" y="3" width="6" height="6"></rect>
+  <rect x="13" y="15" width="6" height="6"></rect>
+  
+  <line x1="8" y1="11" x2="13" y2="6"></line>
+  <line x1="8" y1="13" x2="13" y2="18"></line>
+  
+  <path d="M13 6 L 11.5 6 M13 6 L 13 7.5"></path>
+  <path d="M13 18 L 11.5 18 M13 18 L 13 16.5"></path>
+</svg>

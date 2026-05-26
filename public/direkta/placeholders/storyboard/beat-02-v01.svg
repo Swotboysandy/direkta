@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="502" viewBox="0 0 1200 502">
+    
+    <defs>
+      <radialGradient id="bg-b2v1" cx="46%" cy="38%" r="76%">
+        <stop offset="0%" stop-color="#242036"/>
+        <stop offset="100%" stop-color="#06070d"/>
+      </radialGradient>
+      <linearGradient id="flare-b2v1" x1="0" x2="1">
+        <stop offset="0%" stop-color="#9aa8c7" stop-opacity="0"/>
+        <stop offset="48%" stop-color="#9aa8c7" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#9aa8c7" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="grain-b2v1">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/>
+        <feColorMatrix values="0 0 0 0 0.93 0 0 0 0 0.9 0 0 0 0 0.82 0 0 0 0.16 0"/>
+      </filter>
+    </defs>
+    <rect width="1200" height="502" fill="url(#bg-b2v1)"/>
+    <rect width="1200" height="502" filter="url(#grain-b2v1)" opacity="0.7"/>
+    <rect y="0" width="1200" height="54" fill="#000" opacity="0.58"/>
+    <rect y="448" width="1200" height="54" fill="#000" opacity="0.58"/>
+    <g opacity="0.72" transform="translate(140 36) scale(0.95)"><path d="M40 350 H680" stroke="#9aa8c7" stroke-width="5" opacity="0.35"/><path d="M100 350 V500 M250 350 V500 M410 350 V500 M570 350 V500" stroke="#9aa8c7" stroke-width="4" opacity="0.25"/><path d="M0 430 C160 390 260 490 430 440 S620 410 720 470 V540 H0 Z" fill="#07080c" opacity="0.75"/></g>
+    <path d="M0 340 L1200 154" stroke="url(#flare-b2v1)" stroke-width="27" opacity="0.28"/>
+    <path d="M270 430 C285 250 365 250 380 430 Z" fill="#050507" opacity="0.78"/>
+    <ellipse cx="325" cy="234" rx="27.5" ry="33" fill="#0b0b0d" opacity="0.88"/>
+    
+    <rect x="28" y="28" width="1144" height="446" fill="none" stroke="#ede7d9" stroke-opacity="0.16" stroke-width="2"/>
+    <path d="M28 96 H98 M28 28 V98 M1172 406 H1102 M1172 474 V404" stroke="#9aa8c7" stroke-width="4" opacity="0.8"/>
+    <text x="42" y="88" text-anchor="start" fill="#9aa8c7" font-family="JetBrains Mono, monospace" font-size="15" letter-spacing="3">B02 / V01 / WIDE</text>
+    <text x="42" y="434" text-anchor="start" fill="#ede7d9" font-family="JetBrains Mono, monospace" font-size="22" letter-spacing="3">RIVERSIDE CALL</text>
+    <text x="1158" y="88" text-anchor="end" fill="#ede7d9" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="3">REYES</text>
+  </svg>

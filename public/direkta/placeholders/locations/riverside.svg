@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+    
+    <defs>
+      <radialGradient id="bg-riverside" cx="46%" cy="38%" r="76%">
+        <stop offset="0%" stop-color="#242036"/>
+        <stop offset="100%" stop-color="#06070d"/>
+      </radialGradient>
+      <linearGradient id="flare-riverside" x1="0" x2="1">
+        <stop offset="0%" stop-color="#9aa8c7" stop-opacity="0"/>
+        <stop offset="48%" stop-color="#9aa8c7" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#9aa8c7" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="grain-riverside">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/>
+        <feColorMatrix values="0 0 0 0 0.93 0 0 0 0 0.9 0 0 0 0 0.82 0 0 0 0.16 0"/>
+      </filter>
+    </defs>
+    <rect width="960" height="600" fill="url(#bg-riverside)"/>
+    <rect width="960" height="600" filter="url(#grain-riverside)" opacity="0.65"/>
+    <rect y="0" width="960" height="58" fill="#000" opacity="0.54"/>
+    <rect y="542" width="960" height="58" fill="#000" opacity="0.54"/>
+    <g transform="translate(120 70) scale(1.0)"><path d="M40 350 H680" stroke="#9aa8c7" stroke-width="5" opacity="0.35"/><path d="M100 350 V500 M250 350 V500 M410 350 V500 M570 350 V500" stroke="#9aa8c7" stroke-width="4" opacity="0.25"/><path d="M0 430 C160 390 260 490 430 440 S620 410 720 470 V540 H0 Z" fill="#07080c" opacity="0.75"/></g>
+    <path d="M0 460 L960 260" stroke="url(#flare-riverside)" stroke-width="26" opacity="0.2"/>
+    <rect x="28" y="28" width="904" height="544" fill="none" stroke="#ede7d9" stroke-opacity="0.16" stroke-width="2"/>
+    <text x="36" y="536" text-anchor="start" fill="#ede7d9" font-family="JetBrains Mono, monospace" font-size="22" letter-spacing="3">RIVERSIDE</text>
+    <text x="36" y="74" text-anchor="start" fill="#9aa8c7" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="3">LOCATION PLACEHOLDER</text>
+  </svg>

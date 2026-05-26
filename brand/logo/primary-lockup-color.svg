@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 200" role="img" aria-label="DIREKTA primary lockup — colour hero">
+  <title>Direkta primary lockup — colour hero (tomato accent)</title>
+  <g transform="translate(0 0)">
+    <circle cx="100" cy="100" r="92" fill="#E84A35"></circle>
+    <circle cx="100" cy="100" r="64" fill="#F5EDDC"></circle>
+    <circle cx="100" cy="100" r="36" fill="#2A1A12"></circle>
+    <circle cx="100" cy="100" r="14" fill="#F2B83C"></circle>
+  </g>
+  <text x="252" y="156" font-family="&#39;Bagel Fat One&#39;, &#39;Lilita One&#39;, &#39;Alfa Slab One&#39;, Impact, serif" font-size="172" letter-spacing="2" fill="#2A1A12">DIRE<tspan fill="#E84A35">K</tspan>TA</text>
+</svg>

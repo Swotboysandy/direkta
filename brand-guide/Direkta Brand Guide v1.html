@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direkta — Brand Guide v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<style>
+/* ============================================
+   LAYOUT
+   ============================================ */
+.page { max-width: 1440px; margin: 0 auto; padding: 0 56px; }
+
+/* — TOP SLATE — */
+.slate {
+  border-bottom: 1px solid var(--ink-40);
+  padding: 18px 56px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-70);
+  position: sticky; top: 0; background: var(--ink-00); z-index: 50;
+}
+.slate .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tungsten); margin-right: 10px; vertical-align: middle; animation: blink 2.4s steps(2, end) infinite; }
+@keyframes blink { 50% { opacity: 0.2; } }
+.slate .right { text-align: right; }
+.slate .mid { color: var(--bone); letter-spacing: 0.3em; }
+
+/* — HERO — */
+.hero { padding: 96px 0 60px; position: relative; }
+.hero .marker {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--ink-40); padding-bottom: 20px; margin-bottom: 64px;
+}
+.hero .wordmark-xl {
+  font-family: var(--f-display);
+  font-size: clamp(96px, 18vw, 280px);
+  line-height: 0.82; letter-spacing: 0.045em; color: var(--bone);
+  text-transform: uppercase;
+}
+.hero .tagline {
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px;
+  margin-top: 64px; padding-top: 32px; border-top: 1px solid var(--ink-40);
+}
+.hero .tagline .big {
+  font-family: var(--f-display);
+  font-size: clamp(40px, 4.5vw, 64px);
+  line-height: 0.95; letter-spacing: 0.02em;
+  color: var(--tungsten); text-transform: uppercase;
+}
+.hero .tagline p { color: var(--ink-70); font-size: 15px; line-height: 1.65; max-width: 50ch; }
+.hero .tagline p strong { color: var(--bone); font-weight: 500; }
+.hero .tagline p + p { margin-top: 14px; }
+
+/* — CHAPTER — */
+.chapter { padding: 140px 0 60px; border-top: 1px solid var(--ink-40); }
+.chapter-head {
+  display: grid; grid-template-columns: 240px 1fr;
+  gap: 48px; margin-bottom: 72px; align-items: end;
+}
+.chapter-num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--tungsten); }
+.chapter-num span { color: var(--ink-60); margin-right: 4px; }
+.chapter-title {
+  font-family: var(--f-display);
+  font-size: clamp(56px, 8vw, 120px);
+  line-height: 0.88; letter-spacing: 0.025em;
+  color: var(--bone); text-transform: uppercase;
+}
+.chapter-sub { margin-top: 18px; color: var(--ink-70); font-size: 16px; max-width: 64ch; line-height: 1.6; }
+
+/* — INDEX — */
+.index {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border-top: 1px solid var(--ink-40); border-bottom: 1px solid var(--ink-40);
+}
+.index a {
+  padding: 22px 20px 22px 0; border-right: 1px solid var(--ink-40);
+  color: var(--bone); text-decoration: none; display: block; transition: background 80ms;
+}
+.index a:nth-child(4) { border-right: none; }
+.index a:nth-child(n+5) { border-top: 1px solid var(--ink-40); }
+.index a:last-child { border-right: none; }
+.index a:hover { background: var(--ink-10); }
+.index a:hover .num { color: var(--tungsten); }
+.index .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--ink-60); display: block; margin-bottom: 6px; transition: color 80ms; }
+.index .name { font-family: var(--f-display); font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* — CARD GENERICS — */
+.card { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 28px; }
+.card-light { background: var(--bone); color: var(--ink-00); }
+
+/* — GRIDS — */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+
+/* ============================================
+   01 — ESSENCE
+   ============================================ */
+.essence-positioning {
+  font-family: var(--f-display);
+  font-size: clamp(32px, 4.2vw, 60px);
+  line-height: 1.02; letter-spacing: 0.015em;
+  color: var(--bone); text-transform: uppercase;
+  max-width: 24ch;
+}
+.essence-positioning em { font-style: normal; color: var(--tungsten); }
+.traits {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--ink-40); border-bottom: 1px solid var(--ink-40);
+  margin: 64px 0;
+}
+.trait { padding: 28px 24px; border-right: 1px solid var(--ink-40); }
+.trait:last-child { border-right: none; }
+.trait .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--tungsten); }
+.trait .name {
+  font-family: var(--f-display);
+  font-size: 36px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--bone);
+  margin: 14px 0 12px;
+}
+.trait .body { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+
+.voice-rules { display: grid; grid-template-columns: 240px 1fr; gap: 48px; }
+.voice-rule {
+  display: grid; grid-template-columns: 60px 1fr 1fr; gap: 32px;
+  padding: 28px 0; border-top: 1px solid var(--ink-40); align-items: start;
+}
+.voice-rule:last-child { border-bottom: 1px solid var(--ink-40); }
+.voice-rule .vr-num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--ink-60); }
+.voice-rule .vr-title { font-family: var(--f-display); font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); }
+.voice-rule .vr-desc { color: var(--ink-70); font-size: 14px; line-height: 1.55; }
+.voice-rule .vr-desc em { font-style: normal; color: var(--tungsten); font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.06em; }
+
+/* ============================================
+   02 — LOGO
+   ============================================ */
+.logo-hero {
+  background: var(--ink-05);
+  border: 1px solid var(--ink-30);
+  padding: 80px 64px;
+  display: grid; grid-template-columns: 1fr 2.2fr; gap: 64px; align-items: center;
+}
+.logo-hero .mark { color: var(--bone); }
+.logo-hero .mark svg { width: 100%; max-width: 240px; height: auto; }
+.logo-hero .wordmark {
+  font-family: var(--f-display);
+  font-size: clamp(72px, 11vw, 180px);
+  line-height: 0.88; letter-spacing: 0.05em;
+  color: var(--bone); text-transform: uppercase;
+}
+.logo-hero .caption { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-60); margin-top: 12px; }
+
+.logo-variants { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0; border: 1px solid var(--ink-30); border-right: none; }
+.logo-cell {
+  padding: 56px 32px;
+  border-right: 1px solid var(--ink-30);
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  min-height: 240px; gap: 32px;
+}
+.logo-cell.dark { background: var(--ink-00); color: var(--bone); }
+.logo-cell.light { background: var(--bone); color: var(--ink-00); }
+.logo-cell .label { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.7; align-self: flex-start; }
+.logo-cell .lockup { display: flex; align-items: center; gap: 14px; }
+.logo-cell .lockup .word { font-family: var(--f-display); font-size: 40px; letter-spacing: 0.06em; text-transform: uppercase; }
+.logo-cell .lockup svg { width: 44px; height: 44px; }
+.logo-cell .mark-only svg { width: 64px; height: 64px; }
+.logo-cell .word-only { font-family: var(--f-display); font-size: 44px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.construction {
+  background: var(--ink-05);
+  border: 1px solid var(--ink-30);
+  padding: 48px;
+  position: relative;
+  display: grid; grid-template-columns: 1fr 320px; gap: 48px;
+}
+.construction .diagram {
+  position: relative;
+  min-height: 360px;
+  display: flex; align-items: center; justify-content: center;
+}
+.construction .diagram svg.aperture { width: 320px; height: 320px; color: var(--bone); position: relative; z-index: 2; }
+.construction .grid-overlay {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(242, 181, 60, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(242, 181, 60, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+.construction .specs { color: var(--ink-70); font-size: 13px; line-height: 1.65; }
+.construction .specs h4 { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--tungsten); margin-bottom: 14px; }
+.construction .specs ul { list-style: none; }
+.construction .specs li { padding: 8px 0; border-bottom: 1px solid var(--ink-30); display: flex; justify-content: space-between; }
+.construction .specs li:last-child { border-bottom: none; }
+.construction .specs li span { color: var(--bone); font-family: var(--f-mono); font-size: 12px; }
+
+.clearspace-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 24px; }
+.clearspace {
+  background: var(--ink-05); border: 1px solid var(--ink-30);
+  padding: 48px; display: flex; align-items: center; justify-content: center; position: relative;
+  min-height: 240px;
+}
+.clearspace .frame {
+  position: relative; padding: 56px; border: 1px dashed var(--tungsten); color: var(--tungsten);
+}
+.clearspace .frame::before, .clearspace .frame::after {
+  content: "X"; position: absolute; font-family: var(--f-mono); font-size: 11px; color: var(--tungsten);
+}
+.clearspace .frame::before { top: 18px; left: 18px; }
+.clearspace .frame::after { bottom: 18px; right: 18px; }
+.clearspace .word-only { font-family: var(--f-display); font-size: 56px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bone); }
+.minsize { background: var(--ink-05); border: 1px solid var(--ink-30); padding: 32px; }
+.minsize-row { display: flex; align-items: baseline; gap: 28px; padding: 14px 0; border-bottom: 1px solid var(--ink-30); }
+.minsize-row:last-child { border-bottom: none; }
+.minsize-row .label { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--ink-60); width: 80px; text-transform: uppercase; }
+.minsize-row .ex { font-family: var(--f-display); color: var(--bone); letter-spacing: 0.06em; text-transform: uppercase; flex: 1; }
+
+/* ============================================
+   03 — COLOUR
+   ============================================ */
+.swatch {
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 24px; min-height: 220px; border: 1px solid var(--ink-30); position: relative;
+}
+.swatch .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.swatch .role { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+.swatch .name { font-family: var(--f-display); font-size: 28px; letter-spacing: 0.04em; text-transform: uppercase; margin-top: 60px; }
+.swatch .specs { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em; margin-top: 12px; line-height: 1.6; }
+.swatch.dark { color: var(--bone); }
+.swatch.dark .role { color: var(--ink-70); }
+.swatch.dark .specs { color: var(--ink-70); }
+.swatch.dark .specs strong { color: var(--bone); font-weight: 500; }
+.swatch.light { color: var(--ink-00); }
+.swatch.light .role { color: var(--ink-25); }
+.swatch.light .specs { color: var(--ink-25); }
+.swatch.light .specs strong { color: var(--ink-00); font-weight: 500; }
+
+.palette-rule { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 28px; }
+.palette-rule h4 { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--tungsten); margin-bottom: 10px; }
+.palette-rule p { color: var(--ink-70); font-size: 14px; line-height: 1.6; }
+.palette-rule p strong { color: var(--bone); font-weight: 500; }
+
+.usage-bar { display: grid; grid-template-columns: repeat(20, 1fr); height: 56px; border: 1px solid var(--ink-30); }
+.usage-bar .seg-ink { grid-column: span 14; background: var(--ink-00); }
+.usage-bar .seg-bone { grid-column: span 4; background: var(--bone); }
+.usage-bar .seg-tung { grid-column: span 2; background: var(--tungsten); }
+.usage-legend { display: flex; gap: 32px; margin-top: 14px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-70); }
+.usage-legend span { display: flex; align-items: center; gap: 8px; }
+.usage-legend .chip { width: 10px; height: 10px; }
+
+/* ============================================
+   04 — TYPE
+   ============================================ */
+.type-hero {
+  background: var(--ink-05); border: 1px solid var(--ink-30);
+  padding: 56px 48px; margin-bottom: 32px;
+}
+.type-hero .specimen {
+  font-family: var(--f-display);
+  font-size: clamp(72px, 14vw, 200px);
+  line-height: 0.85; letter-spacing: 0.04em;
+  color: var(--bone); text-transform: uppercase;
+}
+.type-hero .meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--ink-30); }
+.type-hero .meta div { color: var(--ink-70); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+.type-hero .meta div strong { display: block; font-family: var(--f-ui); color: var(--bone); font-size: 14px; letter-spacing: 0.02em; text-transform: none; font-weight: 500; margin-top: 4px; }
+
+.type-scale-row {
+  display: grid; grid-template-columns: 180px 80px 1fr;
+  gap: 24px; align-items: baseline;
+  padding: 28px 0; border-top: 1px solid var(--ink-40);
+}
+.type-scale-row:last-child { border-bottom: 1px solid var(--ink-40); }
+.type-scale-row .lbl { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-60); }
+.type-scale-row .lbl strong { display: block; color: var(--tungsten); margin-bottom: 2px; }
+.type-scale-row .size { font-family: var(--f-mono); font-size: 11px; color: var(--ink-60); letter-spacing: 0.06em; }
+.type-scale-row .ex { color: var(--bone); }
+
+.t-h1   { font-family: var(--f-display); font-size: 56px; line-height: 0.95; letter-spacing: 0.02em; text-transform: uppercase; }
+.t-h2   { font-family: var(--f-display); font-size: 36px; line-height: 1.0; letter-spacing: 0.03em; text-transform: uppercase; }
+.t-h3   { font-family: var(--f-ui); font-size: 22px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; }
+.t-h4   { font-family: var(--f-ui); font-size: 17px; line-height: 1.3; letter-spacing: 0; font-weight: 600; }
+.t-body-l { font-family: var(--f-ui); font-size: 17px; line-height: 1.55; }
+.t-body { font-family: var(--f-ui); font-size: 15px; line-height: 1.55; }
+.t-cap  { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-70); }
+
+.family-card { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 28px; }
+.family-card .preview { color: var(--bone); margin-bottom: 24px; }
+.family-card h4 { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--tungsten); }
+.family-card .fname { font-family: var(--f-display); font-size: 36px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin: 8px 0; }
+.family-card p { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+
+/* ============================================
+   05 — ICONOGRAPHY
+   ============================================ */
+.workspace-row {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+  border: 1px solid var(--ink-30); border-right: none;
+}
+.workspace {
+  border-right: 1px solid var(--ink-30); padding: 36px 28px;
+  display: flex; flex-direction: column; gap: 24px; min-height: 280px;
+}
+.workspace .num { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; color: var(--tungsten); }
+.workspace .icon { color: var(--bone); }
+.workspace .icon svg { width: 56px; height: 56px; }
+.workspace .name { font-family: var(--f-display); font-size: 26px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); }
+.workspace .desc { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-60); margin-top: -16px; }
+.workspace .body { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+
+.icon-rules { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 28px; }
+.icon-rule { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 24px; }
+.icon-rule .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--tungsten); }
+.icon-rule h4 { font-family: var(--f-display); font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin: 10px 0 8px; }
+.icon-rule p { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+
+/* ============================================
+   06 — MOTION
+   ============================================ */
+.motion-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.motion-card {
+  background: var(--ink-05); border: 1px solid var(--ink-30);
+  padding: 0; display: flex; flex-direction: column;
+}
+.motion-stage {
+  height: 280px; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink-00); border-bottom: 1px solid var(--ink-30);
+  cursor: pointer;
+}
+.motion-meta { padding: 24px 28px; }
+.motion-meta .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--tungsten); }
+.motion-meta h4 { font-family: var(--f-display); font-size: 28px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin: 8px 0 8px; }
+.motion-meta .spec { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-60); margin-bottom: 12px; }
+.motion-meta p { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+.motion-meta p em { font-style: normal; color: var(--bone); }
+.motion-hint { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; color: var(--ink-60); text-transform: uppercase; padding: 12px 28px; border-top: 1px solid var(--ink-30); }
+
+/* Shutter: a frame that closes top+bottom */
+.shutter-frame { width: 200px; height: 140px; background: var(--tungsten); position: relative; overflow: hidden; }
+.shutter-frame::before, .shutter-frame::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 50%;
+  background: var(--ink-00); transition: transform 180ms cubic-bezier(.55,0,.1,1);
+}
+.shutter-frame::before { top: 0; transform: translateY(-100%); }
+.shutter-frame::after { bottom: 0; transform: translateY(100%); }
+.motion-card.shutter:hover .shutter-frame::before { transform: translateY(0); }
+.motion-card.shutter:hover .shutter-frame::after { transform: translateY(0); }
+
+/* Cut: A → B with no transition */
+.cut-stage { display: flex; align-items: center; justify-content: center; }
+.cut-frame { width: 200px; height: 140px; position: relative; }
+.cut-frame .a, .cut-frame .b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-size: 80px; letter-spacing: 0.05em; }
+.cut-frame .a { background: var(--bone); color: var(--ink-00); opacity: 1; }
+.cut-frame .b { background: var(--ink-10); color: var(--tungsten); opacity: 0; }
+.motion-card.cut:hover .cut-frame .a { opacity: 0; }
+.motion-card.cut:hover .cut-frame .b { opacity: 1; }
+/* no transition prop = instant cut */
+
+/* Rack focus: foreground sharp <-> background blurred */
+.rack-stage { perspective: 800px; }
+.rack-stack { position: relative; width: 240px; height: 160px; }
+.rack-stack .layer { position: absolute; width: 160px; height: 110px; transition: filter 480ms ease-out, opacity 480ms ease-out; }
+.rack-stack .back { top: 0; right: 0; background: var(--ink-25); border: 1px solid var(--ink-40); filter: blur(0px); }
+.rack-stack .fore { bottom: 0; left: 0; background: var(--tungsten); filter: blur(6px); opacity: 0.7; }
+.motion-card.rack:hover .rack-stack .back { filter: blur(6px); opacity: 0.7; }
+.motion-card.rack:hover .rack-stack .fore { filter: blur(0px); opacity: 1; }
+
+/* ============================================
+   07 — VOICE
+   ============================================ */
+.voice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.voice-example { background: var(--ink-05); border: 1px solid var(--ink-30); display: flex; flex-direction: column; }
+.voice-example .head { padding: 14px 20px; border-bottom: 1px solid var(--ink-30); display: flex; justify-content: space-between; align-items: center; font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-60); }
+.voice-example .head .ws { color: var(--tungsten); }
+.voice-example .body { padding: 36px 28px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+.voice-example .body h5 { font-family: var(--f-display); font-size: 32px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--bone); line-height: 1.0; }
+.voice-example .body p { color: var(--ink-70); font-size: 14px; line-height: 1.55; }
+.voice-example .body p strong { color: var(--bone); font-weight: 500; }
+.voice-example .actions { padding: 0 28px 28px; display: flex; gap: 12px; }
+.btn { font-family: var(--f-ui); font-size: 13px; font-weight: 500; padding: 10px 18px; border: 1px solid var(--ink-40); background: transparent; color: var(--bone); cursor: pointer; letter-spacing: 0.02em; }
+.btn-primary { background: var(--tungsten); color: var(--ink-00); border-color: var(--tungsten); font-weight: 600; }
+.btn-ghost { background: transparent; color: var(--bone); }
+
+.voice-rules-block { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.voice-do, .voice-dont {
+  border: 1px solid var(--ink-30); padding: 20px 22px;
+  background: var(--ink-10);
+}
+.voice-do .lbl { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; color: var(--tungsten); text-transform: uppercase; }
+.voice-dont .lbl { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; color: var(--cut); text-transform: uppercase; }
+.voice-do p, .voice-dont p { color: var(--bone); font-size: 14px; margin-top: 8px; line-height: 1.4; }
+
+/* ============================================
+   08 — DO / DON'T
+   ============================================ */
+.dodont-row {
+  display: grid; grid-template-columns: 80px 1fr 1fr; gap: 0;
+  border-top: 1px solid var(--ink-40);
+}
+.dodont-row:last-child { border-bottom: 1px solid var(--ink-40); }
+.dodont-row .idx { padding: 28px 0; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--ink-60); }
+.dodont-row .do-cell, .dodont-row .dont-cell {
+  padding: 28px 24px; border-left: 1px solid var(--ink-40);
+  display: grid; grid-template-columns: 160px 1fr; gap: 24px; align-items: center;
+}
+.dodont-row .do-cell .demo, .dodont-row .dont-cell .demo {
+  background: var(--ink-05); border: 1px solid var(--ink-30);
+  height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
+}
+.dodont-row .lbl { display: flex; flex-direction: column; gap: 4px; }
+.dodont-row .lbl .tag { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+.dodont-row .do-cell .tag { color: var(--tungsten); }
+.dodont-row .dont-cell .tag { color: var(--cut); }
+.dodont-row .lbl .desc { color: var(--ink-70); font-size: 13px; line-height: 1.45; }
+.dodont-row .lbl .desc strong { color: var(--bone); font-weight: 500; }
+
+/* demo styles */
+.dd-word { font-family: var(--f-display); font-size: 32px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bone); }
+.dd-word-light { font-family: var(--f-display); font-size: 32px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-00); background: var(--bone); padding: 16px 24px; }
+.dd-word-tight { letter-spacing: -0.02em; }
+.dd-word-lower { text-transform: lowercase; }
+.dd-bg-grad { background: linear-gradient(135deg, #6b1e8a, #1e6b8a); }
+.dd-bg-solid { background: var(--ink-00); }
+.dd-multi-color { background: var(--ink-00); display: flex; gap: 8px; }
+.dd-multi-color span { width: 28px; height: 28px; }
+.dd-mono { background: var(--ink-00); }
+
+/* ============================================
+   FOOTER / END CREDITS
+   ============================================ */
+.colophon {
+  margin: 120px 0 80px;
+  padding: 56px 0 0;
+  border-top: 1px solid var(--ink-40);
+}
+.colophon .end {
+  font-family: var(--f-display);
+  font-size: clamp(64px, 10vw, 140px);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bone);
+  line-height: 0.85;
+}
+.colophon .end em { font-style: normal; color: var(--tungsten); }
+.colophon .credits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--ink-40); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; color: var(--ink-60); text-transform: uppercase; }
+.colophon .credits strong { display: block; color: var(--bone); font-weight: 500; margin-bottom: 4px; letter-spacing: 0.18em; }
+.colophon .endmark { margin-top: 64px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--ink-60); text-align: center; text-transform: uppercase; }
+.colophon .endmark .bar { display: inline-block; width: 60px; height: 1px; background: var(--ink-40); vertical-align: middle; margin: 0 12px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     TOP SLATE
+     ============================================ -->
+<header class="slate">
+  <div><span class="dot"></span>DIREKTA · BRAND SYSTEM</div>
+  <div class="mid">V 1.0 — MASTER</div>
+  <div class="right">INT. STUDIO — 2026 / 05 / 17</div>
+</header>
+
+<div class="page">
+
+<!-- ============================================
+     HERO
+     ============================================ -->
+<section class="hero">
+  <div class="marker">
+    <span class="t-mono" style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-70);">Title Card · Reel 01 of 08</span>
+    <span class="t-mono" style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-70);">direkta.ai</span>
+  </div>
+
+  <h1 class="wordmark-xl">DIREKTA</h1>
+
+  <div class="tagline">
+    <div>
+      <div class="big">You direct.<br>AI delivers.</div>
+    </div>
+    <div>
+      <span class="t-eyebrow">Brand Guide — Master Document</span>
+      <p style="margin-top:20px;">
+        Direkta is an <strong>AI-powered film production platform</strong> for directors and indie creators. Five workspaces. Nine specialised agents. One philosophy: <strong>you are the Director, the AI is your crew.</strong>
+      </p>
+      <p>
+        This document is the system of record for how Direkta looks, sounds, and moves. Every visual choice should feel like it was made by a director who knows exactly what they want.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     INDEX
+     ============================================ -->
+<nav class="index">
+  <a href="#essence"><span class="num">01 / 08</span><span class="name">Essence</span></a>
+  <a href="#logo"><span class="num">02 / 08</span><span class="name">Logo</span></a>
+  <a href="#color"><span class="num">03 / 08</span><span class="name">Colour</span></a>
+  <a href="#type"><span class="num">04 / 08</span><span class="name">Type</span></a>
+  <a href="#icons"><span class="num">05 / 08</span><span class="name">Icons</span></a>
+  <a href="#motion"><span class="num">06 / 08</span><span class="name">Motion</span></a>
+  <a href="#voice"><span class="num">07 / 08</span><span class="name">Voice</span></a>
+  <a href="#dos"><span class="num">08 / 08</span><span class="name">Do &amp; Don't</span></a>
+</nav>
+
+<!-- ============================================
+     01 — ESSENCE
+     ============================================ -->
+<section class="chapter" id="essence">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>01 / 08</span> ESSENCE</div>
+    <div>
+      <h2 class="chapter-title">The Director's<br>Chair.</h2>
+      <p class="chapter-sub">Direkta carries authority in its name. The brand must match — confident, direct, no decoration for decoration's sake. We elevate the creator's capability. We never gamify the craft.</p>
+    </div>
+  </header>
+
+  <!-- positioning -->
+  <div class="g2" style="align-items:start;">
+    <div>
+      <span class="t-eyebrow">Positioning Line</span>
+      <p class="essence-positioning" style="margin-top:20px;">
+        The director's chair for <em>AI&nbsp;filmmaking.</em>
+      </p>
+      <p style="margin-top:24px; color:var(--ink-70); font-size:14px; max-width:48ch; line-height:1.6;">
+        One platform. Script to animatic. A full pre-production crew of nine specialised agents — and nothing ever ships without the Director's call.
+      </p>
+    </div>
+    <div class="card">
+      <span class="t-eyebrow">Tagline</span>
+      <p style="font-family:var(--f-display); font-size:48px; letter-spacing:0.03em; text-transform:uppercase; color:var(--bone); line-height:0.95; margin-top:16px;">You direct.<br>AI delivers.</p>
+      <div class="rule" style="margin: 28px 0;"></div>
+      <span class="t-eyebrow">Operating Principle</span>
+      <p style="font-family:var(--f-display); font-size:26px; letter-spacing:0.03em; text-transform:uppercase; color:var(--tungsten); margin-top:12px;">Propose, don't commit.</p>
+      <p style="color:var(--ink-70); font-size:13px; margin-top:8px;">Every agent shows options. The Director picks winners. Nothing saves without approval.</p>
+    </div>
+  </div>
+
+  <!-- traits -->
+  <span class="t-eyebrow" style="display:block; margin-top:80px;">Personality — Five Traits</span>
+  <div class="traits">
+    <div class="trait">
+      <span class="num">01</span>
+      <div class="name">Confident</div>
+      <div class="body">Speaks in declaratives. Never asks the user what they meant when it can ask one sharp question instead.</div>
+    </div>
+    <div class="trait">
+      <span class="num">02</span>
+      <div class="name">Precise</div>
+      <div class="body">Filmmaker vocabulary, never generic. A "Cinematographer," not an "image generator." A "beat," not a "step."</div>
+    </div>
+    <div class="trait">
+      <span class="num">03</span>
+      <div class="name">Cinematic</div>
+      <div class="body">Dark, wide, composed. The product should feel like walking onto a quiet, well-lit set.</div>
+    </div>
+    <div class="trait">
+      <span class="num">04</span>
+      <div class="name">Direct</div>
+      <div class="body">No fluff. No hedging. No upsell language. Verbs first. The Director's time is the most expensive resource on set.</div>
+    </div>
+    <div class="trait">
+      <span class="num">05</span>
+      <div class="name">Crafted</div>
+      <div class="body">Every detail considered. Direkta is for people who treat filmmaking as a craft — the product treats itself the same way.</div>
+    </div>
+  </div>
+
+  <!-- voice rules -->
+  <div class="voice-rules" style="margin-top:36px;">
+    <div>
+      <span class="t-eyebrow">Voice Rules</span>
+      <p style="color:var(--ink-70); font-size:14px; margin-top:12px; line-height:1.55;">Five non-negotiables. If a sentence doesn't pass all five, rewrite it.</p>
+    </div>
+    <div>
+      <div class="voice-rule">
+        <div class="vr-num">R—01</div>
+        <div class="vr-title">Speak Set</div>
+        <div class="vr-desc">Use filmmaking vocabulary as the default. <em>"Roll. Cut. Hold for picture. Slate."</em> Generic tech words are a last resort.</div>
+      </div>
+      <div class="voice-rule">
+        <div class="vr-num">R—02</div>
+        <div class="vr-title">Verbs First</div>
+        <div class="vr-desc">Lead with the action. <em>"Direct a Cinematographer."</em> Not <em>"Image generation tool."</em></div>
+      </div>
+      <div class="voice-rule">
+        <div class="vr-num">R—03</div>
+        <div class="vr-title">Propose, Don't Decide</div>
+        <div class="vr-desc">The agent surfaces options. The Director picks. <em>"Here are six readings. Which one stays?"</em></div>
+      </div>
+      <div class="voice-rule">
+        <div class="vr-num">R—04</div>
+        <div class="vr-title">No Hype</div>
+        <div class="vr-desc">No "magic," no "revolutionary," no "unleash." We're a workplace, not a sales floor.</div>
+      </div>
+      <div class="voice-rule">
+        <div class="vr-num">R—05</div>
+        <div class="vr-title">Respect the Craft</div>
+        <div class="vr-desc">Never reduce filmmaking decisions to clicks. <em>"Cast your lead"</em> beats <em>"Set up your character."</em></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     02 — LOGO
+     ============================================ -->
+<section class="chapter" id="logo">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>02 / 08</span> LOGO</div>
+    <div>
+      <h2 class="chapter-title">An Aperture.<br>A Title Card.</h2>
+      <p class="chapter-sub">Two ideas, one system. The mark reads as a lens aperture — the eye of the camera. The wordmark reads as a film title card — DIREKTA in condensed authority. Together, or alone.</p>
+    </div>
+  </header>
+
+  <!-- primary lockup -->
+  <div class="logo-hero">
+    <div class="mark">
+      <svg viewBox="0 0 200 200" fill="none">
+        <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="miter">
+          <path d="M 100 28 L 100 60 L 138 82"/>
+          <path d="M 162.4 64 L 138 82 L 138 126"/>
+          <path d="M 162.4 136 L 138 126 L 100 148"/>
+          <path d="M 100 172 L 100 148 L 62 126"/>
+          <path d="M 37.6 136 L 62 126 L 62 82"/>
+          <path d="M 37.6 64 L 62 82 L 100 60"/>
+        </g>
+        <circle cx="100" cy="104" r="6" fill="currentColor"/>
+      </svg>
+      <div class="caption">Aperture Mark · Iris (Six Blade)</div>
+    </div>
+    <div>
+      <div class="wordmark">DIREKTA</div>
+      <div class="caption">Wordmark · Anton · Tracking +50</div>
+    </div>
+  </div>
+
+  <!-- variants -->
+  <span class="t-eyebrow" style="display:block; margin-top:48px;">Variants — Dark &amp; Light</span>
+  <div class="logo-variants" style="margin-top:16px;">
+    <div class="logo-cell dark">
+      <span class="label">A — Primary / Dark</span>
+      <div class="lockup">
+        <svg viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="6"/>
+          <g stroke="currentColor" stroke-width="6" fill="none" stroke-linejoin="miter">
+            <path d="M 100 28 L 100 60 L 138 82"/>
+            <path d="M 162.4 64 L 138 82 L 138 126"/>
+            <path d="M 162.4 136 L 138 126 L 100 148"/>
+            <path d="M 100 172 L 100 148 L 62 126"/>
+            <path d="M 37.6 136 L 62 126 L 62 82"/>
+            <path d="M 37.6 64 L 62 82 L 100 60"/>
+          </g>
+          <circle cx="100" cy="104" r="10" fill="currentColor"/>
+        </svg>
+        <div class="word">DIREKTA</div>
+      </div>
+      <span class="label" style="align-self:flex-end;">Bone on Ink</span>
+    </div>
+    <div class="logo-cell light">
+      <span class="label">B — Primary / Light</span>
+      <div class="lockup">
+        <svg viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="6"/>
+          <g stroke="currentColor" stroke-width="6" fill="none" stroke-linejoin="miter">
+            <path d="M 100 28 L 100 60 L 138 82"/>
+            <path d="M 162.4 64 L 138 82 L 138 126"/>
+            <path d="M 162.4 136 L 138 126 L 100 148"/>
+            <path d="M 100 172 L 100 148 L 62 126"/>
+            <path d="M 37.6 136 L 62 126 L 62 82"/>
+            <path d="M 37.6 64 L 62 82 L 100 60"/>
+          </g>
+          <circle cx="100" cy="104" r="10" fill="currentColor"/>
+        </svg>
+        <div class="word">DIREKTA</div>
+      </div>
+      <span class="label" style="align-self:flex-end;">Ink on Bone</span>
+    </div>
+    <div class="logo-cell dark">
+      <span class="label">C — Logomark Only</span>
+      <div class="mark-only" style="color:var(--tungsten);">
+        <svg viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="6"/>
+          <g stroke="currentColor" stroke-width="6" fill="none" stroke-linejoin="miter">
+            <path d="M 100 28 L 100 60 L 138 82"/>
+            <path d="M 162.4 64 L 138 82 L 138 126"/>
+            <path d="M 162.4 136 L 138 126 L 100 148"/>
+            <path d="M 100 172 L 100 148 L 62 126"/>
+            <path d="M 37.6 136 L 62 126 L 62 82"/>
+            <path d="M 37.6 64 L 62 82 L 100 60"/>
+          </g>
+          <circle cx="100" cy="104" r="10" fill="currentColor"/>
+        </svg>
+      </div>
+      <span class="label" style="align-self:flex-end;">Favicon · App Tile · Watermark</span>
+    </div>
+    <div class="logo-cell dark">
+      <span class="label">D — Wordmark Only</span>
+      <div class="word-only">DIREKTA</div>
+      <span class="label" style="align-self:flex-end;">Title Card · End Slate · Header</span>
+    </div>
+  </div>
+
+  <!-- construction -->
+  <span class="t-eyebrow" style="display:block; margin-top:64px;">Construction</span>
+  <div class="construction" style="margin-top:16px;">
+    <div class="diagram">
+      <div class="grid-overlay"></div>
+      <svg class="aperture" viewBox="0 0 200 200" fill="none">
+        <!-- guides -->
+        <circle cx="100" cy="100" r="92" stroke="var(--tungsten)" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.6"/>
+        <circle cx="100" cy="100" r="72" stroke="var(--tungsten)" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.6"/>
+        <line x1="100" y1="0" x2="100" y2="200" stroke="var(--tungsten)" stroke-width="0.5" opacity="0.4"/>
+        <line x1="0" y1="100" x2="200" y2="100" stroke="var(--tungsten)" stroke-width="0.5" opacity="0.4"/>
+        <!-- mark -->
+        <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="miter">
+          <path d="M 100 28 L 100 60 L 138 82"/>
+          <path d="M 162.4 64 L 138 82 L 138 126"/>
+          <path d="M 162.4 136 L 138 126 L 100 148"/>
+          <path d="M 100 172 L 100 148 L 62 126"/>
+          <path d="M 37.6 136 L 62 126 L 62 82"/>
+          <path d="M 37.6 64 L 62 82 L 100 60"/>
+        </g>
+        <circle cx="100" cy="104" r="6" fill="currentColor"/>
+        <!-- corner ticks -->
+        <g stroke="var(--tungsten)" stroke-width="1">
+          <line x1="0" y1="100" x2="6" y2="100"/>
+          <line x1="194" y1="100" x2="200" y2="100"/>
+          <line x1="100" y1="0" x2="100" y2="6"/>
+          <line x1="100" y1="194" x2="100" y2="200"/>
+        </g>
+      </svg>
+    </div>
+    <div class="specs">
+      <h4>Geometry</h4>
+      <ul>
+        <li>Outer ring <span>R = 92 / 200</span></li>
+        <li>Iris radius <span>R = 72 / 200</span></li>
+        <li>Blades <span>6 — equal angle</span></li>
+        <li>Pupil offset <span>+4 below centre</span></li>
+        <li>Stroke <span>3 unit @ 200u</span></li>
+        <li>Stroke join <span>Miter — hard</span></li>
+        <li>Optical centre <span>Y = 104</span></li>
+      </ul>
+      <h4 style="margin-top:24px;">Why</h4>
+      <p>The six-blade iris is the eye of the camera. The pupil sits below geometric centre — the same optical correction Bauer used on Univers. Hard miter joins on every blade. Nothing rounds. Cameras don't round.</p>
+    </div>
+  </div>
+
+  <!-- clear space + min size -->
+  <div class="clearspace-row">
+    <div>
+      <span class="t-eyebrow">Clear Space</span>
+      <div class="clearspace" style="margin-top:16px;">
+        <div class="frame">
+          <div class="word-only">DIREKTA</div>
+        </div>
+      </div>
+      <p style="font-family:var(--f-mono); font-size:11px; color:var(--ink-60); margin-top:12px; letter-spacing:0.06em;">Minimum clear space = cap-height of the X in DIREKTA on all sides. Never less.</p>
+    </div>
+    <div>
+      <span class="t-eyebrow">Minimum Sizes</span>
+      <div class="minsize" style="margin-top:16px;">
+        <div class="minsize-row">
+          <span class="label">Print</span>
+          <span class="ex" style="font-size:14px;">DIREKTA</span>
+          <span class="t-mono" style="font-size:10px; color:var(--ink-60); letter-spacing:0.1em;">8 mm wide</span>
+        </div>
+        <div class="minsize-row">
+          <span class="label">Digital</span>
+          <span class="ex" style="font-size:18px;">DIREKTA</span>
+          <span class="t-mono" style="font-size:10px; color:var(--ink-60); letter-spacing:0.1em;">96 px wide</span>
+        </div>
+        <div class="minsize-row">
+          <span class="label">Favicon</span>
+          <span class="ex" style="display:flex; gap:6px; align-items:center;">
+            <svg viewBox="0 0 200 200" fill="none" width="20" height="20" style="color:var(--bone);">
+              <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="12"/>
+              <circle cx="100" cy="104" r="20" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="t-mono" style="font-size:10px; color:var(--ink-60); letter-spacing:0.1em;">16 px — simplified mark</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     03 — COLOUR
+     ============================================ -->
+<section class="chapter" id="color">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>03 / 08</span> COLOUR</div>
+    <div>
+      <h2 class="chapter-title">Dark First.<br>One Accent.</h2>
+      <p class="chapter-sub">The base is film-negative black. The light is warm cinema white, never sterile. The single accent is tungsten — the colour of a studio lamp, a film leader countdown, an exposed frame. There is no second accent. There are no gradients.</p>
+    </div>
+  </header>
+
+  <!-- featured: tungsten + ink -->
+  <div class="g2">
+    <div class="swatch dark" style="background: var(--tungsten); color: var(--ink-00); min-height:320px;">
+      <div class="top">
+        <span class="role" style="color:var(--ink-00); opacity:0.6;">Accent · Primary</span>
+        <span class="t-mono" style="color:var(--ink-00); opacity:0.6; font-size:10px; letter-spacing:0.18em;">01 / 09</span>
+      </div>
+      <div>
+        <div class="name" style="color:var(--ink-00); font-size:48px;">Tungsten</div>
+        <div class="specs" style="color:var(--ink-00);">
+          HEX <strong>#F2B53C</strong> &nbsp;·&nbsp; RGB <strong>242 · 181 · 60</strong><br>
+          USAGE <strong>One thing per screen.</strong> Calls-to-action, the active state, the timecode cursor, the slate light. Never two tungsten elements in the same frame.
+        </div>
+      </div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-00); min-height:320px;">
+      <div class="top">
+        <span class="role">Base · Primary</span>
+        <span class="t-mono" style="font-size:10px; letter-spacing:0.18em; color:var(--ink-70);">02 / 09</span>
+      </div>
+      <div>
+        <div class="name" style="font-size:48px;">Film Negative</div>
+        <div class="specs">
+          HEX <strong>#08080A</strong> &nbsp;·&nbsp; RGB <strong>8 · 8 · 10</strong><br>
+          USAGE <strong>The room.</strong> Default canvas, app background, dark mode primary. Almost-black, never pure black — film grain lives in the lift.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ink scale -->
+  <span class="t-eyebrow" style="display:block; margin-top:48px;">Ink Scale — Surfaces &amp; Structure</span>
+  <div class="g4" style="margin-top:16px;">
+    <div class="swatch dark" style="background: var(--ink-10);">
+      <div class="top"><span class="role">Surface</span><span class="t-mono" style="font-size:10px;color:var(--ink-70);">03</span></div>
+      <div><div class="name">Studio</div><div class="specs">HEX <strong>#111114</strong><br>Cards, panels, side rails.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-20);">
+      <div class="top"><span class="role">Surface</span><span class="t-mono" style="font-size:10px;color:var(--ink-70);">04</span></div>
+      <div><div class="name">Gel</div><div class="specs">HEX <strong>#1A1A1F</strong><br>Hover surface, raised card.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-30);">
+      <div class="top"><span class="role">Border</span><span class="t-mono" style="font-size:10px;color:var(--ink-70);">05</span></div>
+      <div><div class="name">Rail</div><div class="specs">HEX <strong>#2A2A33</strong><br>Border on dark surface.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-40);">
+      <div class="top"><span class="role">Border</span><span class="t-mono" style="font-size:10px;color:var(--ink-70);">06</span></div>
+      <div><div class="name">Wire</div><div class="specs">HEX <strong>#3A3A45</strong><br>Rules &amp; dividers.</div></div>
+    </div>
+  </div>
+
+  <!-- bone + text scales -->
+  <div class="g4" style="margin-top:24px;">
+    <div class="swatch light" style="background: var(--bone);">
+      <div class="top"><span class="role">Type · Primary</span><span class="t-mono" style="font-size:10px;letter-spacing:0.18em;color:var(--ink-25);">07 / 09</span></div>
+      <div><div class="name">Bone</div><div class="specs">HEX <strong>#EDE7D9</strong><br>Body text on dark. Light mode background. Warm — never sterile.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-60); color: var(--ink-00);">
+      <div class="top"><span class="role" style="color:var(--ink-00); opacity:0.5;">Type · Muted</span><span class="t-mono" style="font-size:10px;color:var(--ink-00); opacity:0.5;">—</span></div>
+      <div><div class="name" style="color:var(--ink-00);">Mute</div><div class="specs" style="color:var(--ink-00);">HEX <strong>#7E7E8A</strong><br>Captions, labels, deprioritised.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--cut); color:var(--bone);">
+      <div class="top"><span class="role" style="color:var(--bone); opacity:0.7;">Signal · Error</span><span class="t-mono" style="font-size:10px;color:var(--bone); opacity:0.7;">08 / 09</span></div>
+      <div><div class="name">Cut</div><div class="specs" style="color:var(--bone);">HEX <strong>#D94343</strong><br>Errors, destructive only. Never decorative.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--green); color:var(--ink-00);">
+      <div class="top"><span class="role" style="color:var(--ink-00); opacity:0.6;">Signal · Ready</span><span class="t-mono" style="font-size:10px;color:var(--ink-00); opacity:0.6;">09 / 09</span></div>
+      <div><div class="name" style="color:var(--ink-00);">Roll</div><div class="specs" style="color:var(--ink-00);">HEX <strong>#6FBF8A</strong><br>Render-ready, committed, exported. Sparingly.</div></div>
+    </div>
+  </div>
+
+  <!-- usage rules -->
+  <div class="g2" style="margin-top:48px;">
+    <div>
+      <span class="t-eyebrow">Proportion Rule — 70 / 20 / 10</span>
+      <div class="usage-bar" style="margin-top:16px;">
+        <div class="seg-ink"></div>
+        <div class="seg-bone"></div>
+        <div class="seg-tung"></div>
+      </div>
+      <div class="usage-legend">
+        <span><span class="chip" style="background:var(--ink-00); border:1px solid var(--ink-40);"></span>Ink — 70%</span>
+        <span><span class="chip" style="background:var(--bone);"></span>Bone — 20%</span>
+        <span><span class="chip" style="background:var(--tungsten);"></span>Tungsten — 10%</span>
+      </div>
+      <p style="color:var(--ink-70); font-size:13px; margin-top:18px; line-height:1.6;">If tungsten exceeds 10% of any frame, something is wrong. The accent must remain rare to remain commanding.</p>
+    </div>
+    <div class="palette-rule">
+      <h4>Three Rules</h4>
+      <p style="margin-bottom:10px;"><strong>01.</strong> No gradients. Not on backgrounds, not on type, not on buttons. The palette is flat or it is not Direkta.</p>
+      <p style="margin-bottom:10px;"><strong>02.</strong> No purple. No teal. No second accent. Tungsten stands alone.</p>
+      <p><strong>03.</strong> Bone over white. Pure white reads as printer paper, not film stock. Bone is the standard.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     04 — TYPE
+     ============================================ -->
+<section class="chapter" id="type">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>04 / 08</span> TYPE</div>
+    <div>
+      <h2 class="chapter-title">Title Card<br>Meets Set List.</h2>
+      <p class="chapter-sub">A display face with the authority of a title sequence, paired with a precise UI face and a technical monospace. Three families. Clear lanes. Never substitute.</p>
+    </div>
+  </header>
+
+  <!-- big specimen -->
+  <div class="type-hero">
+    <div class="specimen">INT. APARTMENT — NIGHT</div>
+    <div class="meta">
+      <div>Display Face<strong>Anton — Regular</strong></div>
+      <div>Tracking<strong>+ 40 / 1000</strong></div>
+      <div>Case<strong>UPPERCASE — Always</strong></div>
+      <div>Used For<strong>Title cards · H1 · Scene headings</strong></div>
+    </div>
+  </div>
+
+  <!-- three families -->
+  <div class="g3">
+    <div class="family-card">
+      <div class="preview" style="font-family:var(--f-display); font-size:64px; letter-spacing:0.04em; text-transform:uppercase; line-height:0.9;">Aa<br>Rr</div>
+      <h4>Display</h4>
+      <div class="fname">Anton</div>
+      <p>Condensed grotesque, title-sequence weight. Reserved for the wordmark, chapter titles, scene headings, and end slates. Always uppercase. Tracked open. Never used below 18px.</p>
+    </div>
+    <div class="family-card">
+      <div class="preview" style="font-family:var(--f-ui); font-size:64px; font-weight:500; line-height:0.95; letter-spacing:-0.01em;">Aa<br>Rr</div>
+      <h4>Interface</h4>
+      <div class="fname" style="font-family:var(--f-ui); font-weight:600; text-transform:none; letter-spacing:-0.01em;">Geist</div>
+      <p>The crew. Used for all running interface text, body copy, buttons, paragraph copy, dialog. Sharp, neutral, comfortable at 13–17px.</p>
+    </div>
+    <div class="family-card">
+      <div class="preview" style="font-family:var(--f-mono); font-size:48px; font-weight:500; letter-spacing:0.02em;">01<br>S/04</div>
+      <h4>Technical</h4>
+      <div class="fname" style="font-family:var(--f-mono); font-weight:500; text-transform:none; letter-spacing:0.02em; font-size:30px;">JetBrains Mono</div>
+      <p>The slate. Timecodes, scene numbers, agent names, hex values, status tags, breadcrumbs. Tracked open. Always uppercase for labels.</p>
+    </div>
+  </div>
+
+  <!-- full scale -->
+  <span class="t-eyebrow" style="display:block; margin-top:64px;">Type Scale — Direkta Copy</span>
+  <div style="margin-top:8px;">
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>Display XL</strong>Anton · 200<br>line 0.85 / track +45</div>
+      <div class="size">200 / 170</div>
+      <div class="ex" style="font-family:var(--f-display); font-size:120px; letter-spacing:0.04em; line-height:0.85; text-transform:uppercase;">DIREKTA</div>
+    </div>
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>H1 — Title</strong>Anton · 72<br>line 0.95</div>
+      <div class="size">72 / 68</div>
+      <div class="ex t-h1">You direct.<br>AI delivers.</div>
+    </div>
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>H2 — Scene</strong>Anton · 36<br>line 1.0</div>
+      <div class="size">36 / 36</div>
+      <div class="ex t-h2">INT. APARTMENT — NIGHT</div>
+    </div>
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>H3 — Panel</strong>Geist 600 · 22<br>line 1.2</div>
+      <div class="size">22 / 26</div>
+      <div class="ex t-h3">The Cinematographer is ready. Pick the variants you want to keep.</div>
+    </div>
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>H4 — Inline</strong>Geist 600 · 17<br>line 1.3</div>
+      <div class="size">17 / 22</div>
+      <div class="ex t-h4">Soul ID training — 3 references uploaded</div>
+    </div>
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>Body L</strong>Geist 400 · 17<br>line 1.55</div>
+      <div class="size">17 / 26</div>
+      <div class="ex t-body-l">The Screenplay Agent has read all 38 pages. Three lines need your eye before the Bible builds — one ambiguous character, one location with no exterior, and one beat that contradicts the opening.</div>
+    </div>
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>Body</strong>Geist 400 · 15<br>line 1.55</div>
+      <div class="size">15 / 23</div>
+      <div class="ex t-body">Six readings from the Cinematographer for Beat 04 — MAYA enters the kitchen. Pick the winner. Anything you don't pick is dropped before the next beat begins.</div>
+    </div>
+
+    <div class="type-scale-row">
+      <div class="lbl"><strong>Caption</strong>JetBrains Mono 500 · 11<br>track +220</div>
+      <div class="size">11 / 14</div>
+      <div class="ex t-cap">BEAT 04 · INT. KITCHEN — NIGHT · MAYA, RAFA · 00:02:18</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================
+     05 — ICONOGRAPHY
+     ============================================ -->
+<section class="chapter" id="icons">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>05 / 08</span> ICONS</div>
+    <div>
+      <h2 class="chapter-title">Drawn Like<br>A Set Plan.</h2>
+      <p class="chapter-sub">Icons are linear, monoline, square-cornered. Each workspace gets one defining shape — the script page, the framed silhouette, the storyboard grid, the node graph, the export frame. Geometric, not illustrated. Honest, not cute.</p>
+    </div>
+  </header>
+
+  <!-- workspace icons -->
+  <div class="workspace-row">
+    <div class="workspace">
+      <span class="num">WS — 01</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="4" y="3" width="16" height="18"/>
+          <rect x="6.5" y="6" width="11" height="2" fill="currentColor" stroke="none"/>
+          <line x1="6.5" y1="10.5" x2="17.5" y2="10.5"/>
+          <line x1="6.5" y1="13" x2="14" y2="13"/>
+          <line x1="9" y1="16" x2="15" y2="16"/>
+          <line x1="9" y1="18" x2="13" y2="18"/>
+        </svg>
+      </div>
+      <div class="name">Screenplay</div>
+      <div class="desc">Where the story lives.</div>
+      <div class="body">The script page with a scene heading bar and indented dialogue. Reads as a written document, never as a paper-clip metaphor.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 02</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 6 V3 H6"/><path d="M21 6 V3 H18"/>
+          <path d="M3 18 V21 H6"/><path d="M21 18 V21 H18"/>
+          <circle cx="12" cy="10" r="3"/>
+          <path d="M6.5 19 C 7 14.5, 17 14.5, 17.5 19"/>
+        </svg>
+      </div>
+      <div class="name">Casting</div>
+      <div class="desc">Soul ID · Visual identity.</div>
+      <div class="body">A silhouette inside film-frame brackets. The brackets are the frame; the figure is who lives inside it. Never a smiling person.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 03</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3"  y="5" width="6" height="5"/>
+          <rect x="10" y="5" width="6" height="5" fill="currentColor"/>
+          <rect x="17" y="5" width="4" height="5"/>
+          <rect x="3"  y="14" width="6" height="5"/>
+          <rect x="10" y="14" width="6" height="5"/>
+          <rect x="17" y="14" width="4" height="5"/>
+        </svg>
+      </div>
+      <div class="name">Storyboard</div>
+      <div class="desc">Beat row · Variants picked.</div>
+      <div class="body">A grid of frames with one filled — the picked winner. The right-most column is shorter — it suggests the next beat coming.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 04</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2"  y="9"  width="6" height="6"/>
+          <rect x="13" y="3"  width="6" height="6"/>
+          <rect x="13" y="15" width="6" height="6"/>
+          <line x1="8"  y1="11" x2="13" y2="6"/>
+          <line x1="8"  y1="13" x2="13" y2="18"/>
+        </svg>
+      </div>
+      <div class="name">Stitch</div>
+      <div class="desc">Node graph · Animatic.</div>
+      <div class="body">Three nodes, two directional connections. The metaphor is the editing suite — frames as nodes, clips as the lines between them.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 05</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="4" y="3" width="16" height="11"/>
+          <line x1="12" y1="10" x2="12" y2="20"/>
+          <path d="M8 17 L 12 21 L 16 17"/>
+          <line x1="4" y1="21.5" x2="20" y2="21.5"/>
+        </svg>
+      </div>
+      <div class="name">Export</div>
+      <div class="desc">Frame · Deliverable out.</div>
+      <div class="body">A film frame with content moving out and down to a baseplate. Suggests delivery — to disk, to pitch, to client. Never a cloud arrow.</div>
+    </div>
+  </div>
+
+  <!-- icon rules -->
+  <div class="icon-rules">
+    <div class="icon-rule">
+      <span class="num">RULE 01</span>
+      <h4>1.5 px stroke at 24 px</h4>
+      <p>Every icon is built on a 24-unit grid with a constant 1.5-unit stroke. Scale the icon, never the stroke ratio.</p>
+    </div>
+    <div class="icon-rule">
+      <span class="num">RULE 02</span>
+      <h4>Hard corners only</h4>
+      <p>Stroke-linecap and stroke-linejoin: <code style="font-family:var(--f-mono); color:var(--tungsten); font-size:12px;">miter</code>. No rounded ends. No soft joins. Cameras don't round.</p>
+    </div>
+    <div class="icon-rule">
+      <span class="num">RULE 03</span>
+      <h4>One fill per icon, max</h4>
+      <p>If an icon needs to communicate a state — selected, active, generated — fill exactly one shape inside it. Two fills is too loud.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     06 — MOTION
+     ============================================ -->
+<section class="chapter" id="motion">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>06 / 08</span> MOTION</div>
+    <div>
+      <h2 class="chapter-title">Shutter.<br>Cut. Rack&nbsp;Focus.</h2>
+      <p class="chapter-sub">Three motion primitives, all borrowed from a camera. Nothing floats. Nothing morphs. Nothing bounces. Hover any frame below to play.</p>
+    </div>
+  </header>
+
+  <div class="motion-row">
+    <!-- Shutter -->
+    <div class="motion-card shutter">
+      <div class="motion-stage">
+        <div class="shutter-frame"></div>
+      </div>
+      <div class="motion-meta">
+        <span class="num">M — 01</span>
+        <h4>Shutter</h4>
+        <div class="spec">180 ms · cubic-bezier(.55, 0, .1, 1)</div>
+        <p>Used when something appears or disappears decisively. <em>Modals open. Panels close. Renders finish.</em> Top and bottom converge on centre — like a mechanical shutter dropping.</p>
+      </div>
+      <div class="motion-hint">Hover frame to play →</div>
+    </div>
+
+    <!-- Cut -->
+    <div class="motion-card cut">
+      <div class="motion-stage cut-stage">
+        <div class="cut-frame">
+          <div class="a">A</div>
+          <div class="b">B</div>
+        </div>
+      </div>
+      <div class="motion-meta">
+        <span class="num">M — 02</span>
+        <h4>Cut</h4>
+        <div class="spec">0 ms · instant</div>
+        <p>Used for navigation, tab changes, beat-to-beat. <em>No fade. No slide. No crossfade.</em> The next state replaces the current one in a single frame. The most filmic transition there is.</p>
+      </div>
+      <div class="motion-hint">Hover frame to cut →</div>
+    </div>
+
+    <!-- Rack Focus -->
+    <div class="motion-card rack">
+      <div class="motion-stage rack-stage">
+        <div class="rack-stack">
+          <div class="layer back"></div>
+          <div class="layer fore"></div>
+        </div>
+      </div>
+      <div class="motion-meta">
+        <span class="num">M — 03</span>
+        <h4>Rack Focus</h4>
+        <div class="spec">480 ms · ease-out</div>
+        <p>Used when attention shifts <em>within</em> a frame — a tooltip activates, an agent is speaking, a selection is being committed. Background blurs, foreground sharpens. The reverse on release.</p>
+      </div>
+      <div class="motion-hint">Hover frame to pull →</div>
+    </div>
+  </div>
+
+  <!-- forbidden list -->
+  <div class="card" style="margin-top:36px;">
+    <span class="t-eyebrow">Forbidden Motion</span>
+    <div class="g4" style="margin-top:18px;">
+      <div>
+        <p style="color:var(--bone); font-family:var(--f-display); font-size:20px; letter-spacing:0.04em; text-transform:uppercase;">No Float</p>
+        <p style="color:var(--ink-70); font-size:13px; margin-top:4px;">Cards do not bob, hover-lift, or wiggle. They are placed on the desk.</p>
+      </div>
+      <div>
+        <p style="color:var(--bone); font-family:var(--f-display); font-size:20px; letter-spacing:0.04em; text-transform:uppercase;">No Morph</p>
+        <p style="color:var(--ink-70); font-size:13px; margin-top:4px;">Shapes never tween into other shapes. A square that becomes a circle is a magic trick. We are not magicians.</p>
+      </div>
+      <div>
+        <p style="color:var(--bone); font-family:var(--f-display); font-size:20px; letter-spacing:0.04em; text-transform:uppercase;">No Bounce</p>
+        <p style="color:var(--ink-70); font-size:13px; margin-top:4px;">Springy easing curves belong on consumer apps. Direkta is set-quiet.</p>
+      </div>
+      <div>
+        <p style="color:var(--bone); font-family:var(--f-display); font-size:20px; letter-spacing:0.04em; text-transform:uppercase;">No Confetti</p>
+        <p style="color:var(--ink-70); font-size:13px; margin-top:4px;">No celebration animations. The work is the reward. A finished render is a fact, not a party.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     07 — VOICE IN UI
+     ============================================ -->
+<section class="chapter" id="voice">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>07 / 08</span> VOICE</div>
+    <div>
+      <h2 class="chapter-title">In the Room.<br>On the Set.</h2>
+      <p class="chapter-sub">Three real states from the product. Onboarding. Error. Empty. All written in filmmaker vocabulary, all calm, all direct. The crew is welcoming but professional — never chatty, never apologetic, never cute.</p>
+    </div>
+  </header>
+
+  <div class="voice-grid">
+
+    <!-- Onboarding -->
+    <div class="voice-example">
+      <div class="head">
+        <span>ONBOARDING · STEP 01 / 03</span>
+        <span class="ws">SCREENPLAY</span>
+      </div>
+      <div class="body">
+        <span class="t-eyebrow">First Open</span>
+        <h5>Welcome to set.</h5>
+        <p>I'm your Script Reader. Paste your screenplay below and I'll read it end to end — then break it into beats and start the Bible. <strong>Nothing saves until you say roll.</strong></p>
+        <div style="background:var(--ink-00); border:1px dashed var(--ink-40); padding:16px; color:var(--ink-60); font-family:var(--f-mono); font-size:12px; letter-spacing:0.04em;">
+          FADE IN:<br>INT. APARTMENT — NIGHT<br>MAYA, 28, hovers at the window...
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary">Read it</button>
+        <button class="btn btn-ghost">Paste later</button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="voice-example">
+      <div class="head">
+        <span>ERROR · BEAT 04</span>
+        <span class="ws" style="color:var(--cut);">CINEMATOGRAPHER</span>
+      </div>
+      <div class="body">
+        <span class="t-eyebrow" style="color:var(--cut);">Render Halted</span>
+        <h5>Cut.<br>Soul ID didn't load.</h5>
+        <p>The Cinematographer couldn't reach <strong>MAYA's</strong> Soul ID for this frame — the model timed out at 12s. The other five variants are fine. <strong>Re-roll this one, or skip it for now.</strong></p>
+        <div style="font-family:var(--f-mono); font-size:11px; color:var(--ink-60); letter-spacing:0.06em; background:var(--ink-00); padding:10px 14px; border-left: 2px solid var(--cut);">
+          E—4180 · fal.ai · timeout 12.04s · variant 03 / 06
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary">Re-roll variant</button>
+        <button class="btn btn-ghost">Skip frame</button>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div class="voice-example">
+      <div class="head">
+        <span>EMPTY STATE</span>
+        <span class="ws">STORYBOARD</span>
+      </div>
+      <div class="body">
+        <span class="t-eyebrow">Nothing Shot Yet</span>
+        <h5>No frames in this&nbsp;reel.</h5>
+        <p>Pick a beat from the Screenplay breakdown and the Cinematographer will roll <strong>four to six variants</strong> for you. Pick the winner of each beat. The losers disappear.</p>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;">
+          <div style="aspect-ratio:16/9; background:var(--ink-00); border:1px dashed var(--ink-40);"></div>
+          <div style="aspect-ratio:16/9; background:var(--ink-00); border:1px dashed var(--ink-40);"></div>
+          <div style="aspect-ratio:16/9; background:var(--ink-00); border:1px dashed var(--ink-40);"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary">Roll on Beat 01</button>
+        <button class="btn btn-ghost">Open Screenplay</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- contrast: do vs dont in voice -->
+  <span class="t-eyebrow" style="display:block; margin-top:48px;">Voice — Side By Side</span>
+  <div class="voice-rules-block">
+    <div>
+      <div class="voice-do">
+        <span class="lbl">DO</span>
+        <p>"Cut. The script didn't parse cleanly. Show me line 47."</p>
+      </div>
+      <div class="voice-dont" style="margin-top:12px;">
+        <span class="lbl">DON'T</span>
+        <p>"Oops! Something went wrong 😢 Please try again."</p>
+      </div>
+    </div>
+    <div>
+      <div class="voice-do">
+        <span class="lbl">DO</span>
+        <p>"Six readings from the Cinematographer. Pick the winner."</p>
+      </div>
+      <div class="voice-dont" style="margin-top:12px;">
+        <span class="lbl">DON'T</span>
+        <p>"We've generated 6 amazing AI images for your scene!"</p>
+      </div>
+    </div>
+    <div>
+      <div class="voice-do">
+        <span class="lbl">DO</span>
+        <p>"Animatic ready. 4 min 12 sec. Export, or stay in Stitch."</p>
+      </div>
+      <div class="voice-dont" style="margin-top:12px;">
+        <span class="lbl">DON'T</span>
+        <p>"Your video has been successfully generated! 🎬✨"</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     08 — DO / DON'T
+     ============================================ -->
+<section class="chapter" id="dos">
+  <header class="chapter-head">
+    <div class="chapter-num"><span>08 / 08</span> DO &amp; DON'T</div>
+    <div>
+      <h2 class="chapter-title">Five Yes.<br>Five No.</h2>
+      <p class="chapter-sub">Visual rules with no negotiation. Anything outside this list is a judgment call — anything inside this list isn't.</p>
+    </div>
+  </header>
+
+  <div style="display:grid; grid-template-columns: 80px 1fr 1fr;">
+    <div></div>
+    <div style="padding: 12px 24px 12px 24px; border-bottom:1px solid var(--ink-40); border-left:1px solid var(--ink-40);"><span class="t-eyebrow">Do</span></div>
+    <div style="padding: 12px 24px 12px 24px; border-bottom:1px solid var(--ink-40); border-left:1px solid var(--ink-40);"><span class="t-eyebrow" style="color:var(--cut);">Don't</span></div>
+  </div>
+
+  <!-- Row 01 — Wordmark casing -->
+  <div class="dodont-row">
+    <div class="idx">01</div>
+    <div class="do-cell">
+      <div class="demo dd-bg-solid"><div class="dd-word">DIREKTA</div></div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Lock the wordmark uppercase.</strong> Anton + open tracking is the title card. That's the rule.</span></div>
+    </div>
+    <div class="dont-cell">
+      <div class="demo dd-bg-solid"><div class="dd-word dd-word-lower">Direkta</div></div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">Never set the wordmark in mixed-case or lowercase. It loses the title-card authority.</span></div>
+    </div>
+  </div>
+
+  <!-- Row 02 — Backgrounds -->
+  <div class="dodont-row">
+    <div class="idx">02</div>
+    <div class="do-cell">
+      <div class="demo" style="background:var(--ink-00);"><div class="dd-word">DIREKTA</div></div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Flat dark backgrounds.</strong> Film negative, studio, gel. Pure colour, no decoration.</span></div>
+    </div>
+    <div class="dont-cell">
+      <div class="demo dd-bg-grad"><div class="dd-word">DIREKTA</div></div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No purple-to-teal gradients. No neon underglow. No "AI startup" radial blobs.</span></div>
+    </div>
+  </div>
+
+  <!-- Row 03 — Accent count -->
+  <div class="dodont-row">
+    <div class="idx">03</div>
+    <div class="do-cell">
+      <div class="demo" style="background:var(--ink-00); flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:8px;">
+          <span style="width:36px; height:36px; background:var(--ink-00); border:1px solid var(--ink-40);"></span>
+          <span style="width:36px; height:36px; background:var(--bone);"></span>
+          <span style="width:36px; height:36px; background:var(--tungsten);"></span>
+        </div>
+      </div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>One accent.</strong> Tungsten alone, against the ink + bone system. Three colours total.</span></div>
+    </div>
+    <div class="dont-cell">
+      <div class="demo dd-multi-color">
+        <span style="background:#3a82f7;"></span>
+        <span style="background:#e94e8a;"></span>
+        <span style="background:#34d399;"></span>
+        <span style="background:#f2b53c;"></span>
+        <span style="background:#a36cff;"></span>
+      </div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No second accent. No "category colours" for each workspace. The workspaces share a palette.</span></div>
+    </div>
+  </div>
+
+  <!-- Row 04 — Type pairing -->
+  <div class="dodont-row">
+    <div class="idx">04</div>
+    <div class="do-cell">
+      <div class="demo dd-bg-solid" style="flex-direction:column; gap:6px; padding:8px;">
+        <div style="font-family:var(--f-display); font-size:26px; letter-spacing:0.05em; text-transform:uppercase; color:var(--bone);">SCENE 04</div>
+        <div style="font-family:var(--f-mono); font-size:10px; letter-spacing:0.18em; color:var(--ink-70); text-transform:uppercase;">INT · KITCHEN · NIGHT</div>
+      </div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Anton + Mono together.</strong> Display authority with technical caption. The slate pairing.</span></div>
+    </div>
+    <div class="dont-cell">
+      <div class="demo dd-bg-solid" style="flex-direction:column; gap:6px; padding:8px;">
+        <div style="font-family:Georgia, serif; font-size:26px; color:var(--bone); font-style:italic;">Scene 4</div>
+        <div style="font-family:'Comic Sans MS', cursive; font-size:12px; color:var(--ink-70);">Inside the kitchen</div>
+      </div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No third type family. No serifs. No script fonts. No "friendly" substitutes for Geist or Anton.</span></div>
+    </div>
+  </div>
+
+  <!-- Row 05 — Iconography -->
+  <div class="dodont-row">
+    <div class="idx">05</div>
+    <div class="do-cell">
+      <div class="demo dd-bg-solid">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--bone)" stroke-width="1.5">
+          <rect x="3" y="5" width="6" height="5"/><rect x="10" y="5" width="6" height="5" fill="var(--bone)"/><rect x="17" y="5" width="4" height="5"/>
+          <rect x="3" y="14" width="6" height="5"/><rect x="10" y="14" width="6" height="5"/><rect x="17" y="14" width="4" height="5"/>
+        </svg>
+      </div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Linear icons. Hard miter joins.</strong> 1.5px stroke at 24px. One fill state, max.</span></div>
+    </div>
+    <div class="dont-cell">
+      <div class="demo dd-bg-solid">
+        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, #f2b53c, #d94343); display:flex; align-items:center; justify-content:center; font-size:24px;">🎬</div>
+      </div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No emoji. No 3D glassy icons. No drop shadows. No rounded-square app-tile chrome.</span></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================
+     COLOPHON / END CREDITS
+     ============================================ -->
+<section class="colophon">
+  <div class="end">FADE OUT. <em>END&nbsp;OF&nbsp;ROLL.</em></div>
+
+  <div class="credits">
+    <div><strong>Document</strong>Direkta — Brand System v1.0</div>
+    <div><strong>Status</strong>Master · Internal</div>
+    <div><strong>Owner</strong>Direkta Design</div>
+    <div><strong>Last Revision</strong>2026 · 05 · 17</div>
+  </div>
+
+  <div class="endmark">
+    <span class="bar"></span>direkta.ai<span class="bar"></span>
+  </div>
+</section>
+
+</div><!-- /.page -->
+
+</body>
+</html>

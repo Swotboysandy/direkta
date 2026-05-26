@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960">
+    
+    <defs>
+      <radialGradient id="bg-reyes" cx="46%" cy="38%" r="76%">
+        <stop offset="0%" stop-color="#121b20"/>
+        <stop offset="100%" stop-color="#060608"/>
+      </radialGradient>
+      <linearGradient id="flare-reyes" x1="0" x2="1">
+        <stop offset="0%" stop-color="#7fa7bc" stop-opacity="0"/>
+        <stop offset="48%" stop-color="#7fa7bc" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#7fa7bc" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="grain-reyes">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/>
+        <feColorMatrix values="0 0 0 0 0.93 0 0 0 0 0.9 0 0 0 0 0.82 0 0 0 0.16 0"/>
+      </filter>
+    </defs>
+    <rect width="720" height="960" fill="url(#bg-reyes)"/>
+    <rect width="720" height="960" filter="url(#grain-reyes)" opacity="0.7"/>
+    <path d="M70 780 L650 640" stroke="#7fa7bc" stroke-width="5" opacity="0.18"/>
+    <ellipse cx="360" cy="350" rx="112" ry="136" fill="#1a1412"/>
+    <path d="M250 322 C276 190 452 190 476 324 C456 246 282 246 250 322" fill="#151515"/>
+    <ellipse cx="360" cy="354" rx="84" ry="106" fill="#6c4b37"/>
+    <path d="M270 870 C288 625 432 625 454 870 Z" fill="#121214"/>
+    <path d="M315 470 C340 490 382 490 408 470" stroke="#7fa7bc" stroke-width="5" fill="none" opacity="0.4"/>
+    <circle cx="330" cy="342" r="7" fill="#070707"/>
+    <circle cx="392" cy="342" r="7" fill="#070707"/>
+    <rect x="58" y="58" width="604" height="844" fill="none" stroke="#ede7d9" stroke-opacity="0.18" stroke-width="2"/>
+    <path d="M58 144 H120 M58 58 V120 M662 816 H600 M662 902 V840" stroke="#7fa7bc" stroke-width="4"/>
+    <text x="56" y="890" text-anchor="start" fill="#ede7d9" font-family="JetBrains Mono, monospace" font-size="30" letter-spacing="3">REYES</text>
+    <text x="56" y="828" text-anchor="start" fill="#7fa7bc" font-family="JetBrains Mono, monospace" font-size="16" letter-spacing="3">SOUL ID PLACEHOLDER</text>
+  </svg>

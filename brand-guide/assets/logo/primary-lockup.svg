@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 200" fill="none">
+  
+  <g transform="translate(0 0)">
+    <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="3"></circle>
+    <g stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="miter">
+      <path d="M 100 28 L 100 60 L 138 82"></path>
+      <path d="M 162.4 64 L 138 82 L 138 126"></path>
+      <path d="M 162.4 136 L 138 126 L 100 148"></path>
+      <path d="M 100 172 L 100 148 L 62 126"></path>
+      <path d="M 37.6 136 L 62 126 L 62 82"></path>
+      <path d="M 37.6 64 L 62 82 L 100 60"></path>
+    </g>
+    <circle cx="100" cy="104" r="6" fill="currentColor"></circle>
+  </g>
+  
+  <text x="240" y="160" font-family="Anton, Impact, sans-serif" font-size="200" letter-spacing="14" fill="currentColor">DIREKTA</text>
+</svg>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direkta — Popcorn Variations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bagel+Fat+One&family=DM+Sans:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=Lilita+One&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="themes/themes-shared.jsx"></script>
+<script type="text/babel" src="themes/popcorn-variants.jsx"></script>
+
+<script type="text/babel">
+
+// Curated palette options (no pink). Each: [bg, accent, accent2, accent3, ink]
+const PALETTES = [
+  ['#F5EDDC', '#E84A35', '#F2B83C', '#3DA89B', '#2A1A12'], // Classic
+  ['#EAF4F5', '#4CB7DB', '#FFC857', '#5FD1C9', '#1F2D38'], // Soda Pool
+  ['#1B130E', '#FF6A3D', '#FFC857', '#5FD0A8', '#0A0604'], // Midnight
+  ['#D9BE92', '#D63A2F', '#E8A33C', '#1F8A8F', '#1F1410'], // Kraft
+  ['#EEF1F5', '#FF7F3F', '#FFD93D', '#6BCB77', '#1A1A2E'], // Sticker
+  ['#F4EEDC', '#7A4DD6', '#FFD93D', '#3DA89B', '#1A1027'], // Grape Soda
+  ['#FFF4D9', '#16876F', '#F2B83C', '#E84A35', '#0F2A24'], // Lime Cordial
+  ['#1A2438', '#F2B83C', '#FF7F3F', '#5FD1C9', '#0A1220'], // Night Marquee
+];
+
+const FONT_OPTIONS = [
+  { label: 'Lilita',   value: '"Lilita One", "Alfa Slab One", serif' },
+  { label: 'Fredoka',  value: '"Fredoka", "Lilita One", sans-serif' },
+  { label: 'Bagel',    value: '"Bagel Fat One", "Lilita One", serif' },
+  { label: 'Alfa Slab',value: '"Alfa Slab One", "Lilita One", serif' },
+];
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "palette": [
+    "#F5EDDC",
+    "#E84A35",
+    "#F2B83C",
+    "#3DA89B",
+    "#2A1A12"
+  ],
+  "displayFont": "\"Bagel Fat One\", \"Lilita One\", serif",
+  "outline": 0,
+  "shadow": "soft",
+  "radius": 16,
+  "tilt": true
+}/*EDITMODE-END*/;
+
+// Pick a readable foreground (#fff or #ink) for a given hex bg.
+function pickFg(hex, ink) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0,2), 16);
+  const g = parseInt(c.slice(2,4), 16);
+  const b = parseInt(c.slice(4,6), 16);
+  const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return lum > 0.62 ? ink : '#FFFFFF';
+}
+
+// Mute = ink mixed toward bg, roughly. Use a gray-ish from the bg side.
+function muteFor(bg, ink) {
+  // simple: blend 55% bg + 45% ink
+  const b = bg.replace('#',''), i = ink.replace('#','');
+  const mix = (a,b,t) => Math.round(parseInt(a,16)*(1-t) + parseInt(b,16)*t);
+  const r = mix(b.slice(0,2), i.slice(0,2), 0.45);
+  const g = mix(b.slice(2,4), i.slice(2,4), 0.45);
+  const bl= mix(b.slice(4,6), i.slice(4,6), 0.45);
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${bl.toString(16).padStart(2,'0')}`;
+}
+
+// surface = bg lightened, or for dark bg, a step toward warmer tone
+function surfaceFor(bg, ink) {
+  // if bg is dark, surface = a touch lighter; else white-ish cream
+  const c = bg.replace('#','');
+  const lum = (0.299*parseInt(c.slice(0,2),16) + 0.587*parseInt(c.slice(2,4),16) + 0.114*parseInt(c.slice(4,6),16)) / 255;
+  if (lum < 0.35) {
+    // dark — push toward warmer mid
+    return '#' + [0,2,4].map(i => {
+      const v = Math.min(255, parseInt(c.slice(i,i+2),16) + 22);
+      return v.toString(16).padStart(2,'0');
+    }).join('');
+  }
+  // light — go near-white
+  return '#FFFBF1';
+}
+
+function buildLiveTokens(t) {
+  const [bg, accent, accent2, accent3, ink] = t.palette;
+  const surface = surfaceFor(bg, ink);
+  return {
+    bg, surface, fg: ink, ink,
+    accent, accent2, accent3,
+    onAccent: pickFg(accent, ink),
+    onAccent2: pickFg(accent2, ink),
+    onAccent3: pickFg(accent3, ink),
+    mute: muteFor(bg, ink),
+    border: ink,
+    trackBg: muteFor(bg, ink),
+    radius: t.radius + 'px',
+    btnRadius: t.radius >= 20 ? 999 : (t.radius < 8 ? 4 : 28),
+    outline: t.outline,
+    shadow: t.shadow,
+    tilt: t.tilt,
+    displayFont: t.displayFont,
+    uiFont: '"Nunito", system-ui, sans-serif',
+    monoFont: '"JetBrains Mono", monospace',
+    palette: [
+      { label: 'BG',      hex: bg,      fg: pickFg(bg, ink) },
+      { label: 'ACCENT',  hex: accent,  fg: pickFg(accent, ink) },
+      { label: 'YELLOW',  hex: accent2, fg: pickFg(accent2, ink) },
+      { label: 'GREEN',   hex: accent3, fg: pickFg(accent3, ink) },
+      { label: 'INK',     hex: ink,     fg: pickFg(ink, ink) },
+    ],
+  };
+}
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const liveTokens = React.useMemo(() => buildLiveTokens(t), [t]);
+
+  return (
+    <>
+      <DesignCanvas>
+        <DCSection
+          id="popcorn-live"
+          title="Popcorn — Live (tweak it)"
+          subtitle="Use the Tweaks panel (bottom-right toolbar) to remix palette, font, outline weight, shadow, radius, and card tilt. Compare against the 5 fixed variants below."
+        >
+          <DCArtboard id="live" label="3X · Live — Your Mix" width={920} height={1320}>
+            <PopcornVariant
+              tokens={liveTokens}
+              idx="3X"
+              name={<span>Live<span style={{ color: liveTokens.accent2 }}>·</span>Mix</span>}
+              tagline="This artboard is wired to the Tweaks panel. Change palette, font, outline, shadow, radius, or tilt — see it land on type, controls, and the applied Direkta slice immediately."
+            />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="popcorn-variations"
+          title="Popcorn — Fixed Variations"
+          subtitle="Five locked directions. The Live artboard above lets you mix freely; these stay put so you can compare back."
+        >
+          <DCArtboard id="3a-classic" label="3A · Classic — Ink Outlines" width={920} height={1320}>
+            <PopcornVariant tokens={POP_CLASSIC} idx="3A"
+              name={<span>Popcorn<span style={{ color: '#F2B83C' }}>!</span></span>}
+              tagline="The original. Cream + tomato + mustard + viridian, ink outlines, offset block shadows, Lilita One. Most legible, most 'cartoon'."/>
+          </DCArtboard>
+
+          <DCArtboard id="3b-soda" label="3B · Soda Pool — No Outline, Pillow Shadow" width={920} height={1320}>
+            <PopcornVariant tokens={POP_SODA} idx="3B"
+              name={<span>Soda<span style={{ color: '#5FD1C9' }}>·</span>Pool</span>}
+              tagline="Pool blue + mint + butter over sky cream. No outlines, soft pillowy shadows, pill geometry, Fredoka. Cooler, more modern app feel."/>
+          </DCArtboard>
+
+          <DCArtboard id="3c-midnight" label="3C · Midnight — Inverted Dark" width={920} height={1320}>
+            <PopcornVariant tokens={POP_MIDNIGHT} idx="3C"
+              name={<span>Midnight<span style={{ color: '#FFC857' }}>·</span>Show</span>}
+              tagline="Same chunky cartoon energy, flipped to night. Cocoa background with ember/bulb/mint accents. Cinema interior — closer to the current Direkta darkness, but warm."/>
+          </DCArtboard>
+
+          <DCArtboard id="3d-kraft" label="3D · Kraft Paper — Poster Print" width={920} height={1320}>
+            <PopcornVariant tokens={POP_KRAFT} idx="3D"
+              name={<span>Kraft<span style={{ color: '#D63A2F' }}>·</span>Press</span>}
+              tagline="Kraft-paper print run. Tan paper, butter cards, barn-red + pool-teal accents, Bagel Fat One. Squared corners, heavier outlines, paper grain — feels stamped, not stickered."/>
+          </DCArtboard>
+
+          <DCArtboard id="3e-sticker" label="3E · Sticker Book — Tilted + Lifted" width={920} height={1320}>
+            <PopcornVariant tokens={POP_STICKER} idx="3E"
+              name={<span>Sticker<span style={{ color: '#FF7F3F' }}>·</span>Book</span>}
+              tagline="Stickers on a page. White surface, thick ink outlines, peel-lift shadows, slight rotation per card. Bagel Fat One. The playful end of the dial — youthful, almost toy-like."/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel>
+        <TweakSection label="Palette"/>
+        <TweakColor
+          label="Swatch set"
+          value={t.palette}
+          options={PALETTES}
+          onChange={(v) => setTweak('palette', v)}
+        />
+
+        <TweakSection label="Type"/>
+        <TweakSelect
+          label="Display font"
+          value={t.displayFont}
+          options={FONT_OPTIONS}
+          onChange={(v) => setTweak('displayFont', v)}
+        />
+
+        <TweakSection label="Shape & shadow"/>
+        <TweakSlider label="Outline" value={t.outline} min={0} max={4} step={0.5} unit="px"
+          onChange={(v) => setTweak('outline', v)}/>
+        <TweakSlider label="Radius" value={t.radius} min={0} max={28} step={2} unit="px"
+          onChange={(v) => setTweak('radius', v)}/>
+        <TweakRadio label="Shadow" value={t.shadow}
+          options={['offset','soft','sticker','none']}
+          onChange={(v) => setTweak('shadow', v)}/>
+        <TweakToggle label="Tilt cards" value={t.tilt}
+          onChange={(v) => setTweak('tilt', v)}/>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

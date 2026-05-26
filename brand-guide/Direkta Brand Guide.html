@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direkta — Brand Guide v2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<style>
+/* ============================================
+   PAGE SHELL
+   ============================================ */
+.page { max-width: 1640px; margin: 0 auto; padding: 0 var(--page-pad); }
+
+/* — TOP SLATE — sticky film slate header — */
+.slate {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--ink-00);
+  border-bottom: 1px solid var(--ink-40);
+  padding: 14px var(--page-pad);
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  font-family: var(--f-mono);
+  font-size: 11px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-70);
+}
+.slate .left { display: flex; align-items: center; gap: 24px; }
+.slate .rec { display: inline-flex; align-items: center; gap: 8px; }
+.slate .rec .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--tungsten);
+  animation: rec 1.6s ease-in-out infinite;
+}
+@keyframes rec { 50% { opacity: 0.25; } }
+.slate .crumb { color: var(--bone); letter-spacing: 0.3em; }
+.slate .right { text-align: right; }
+.slate .right span { color: var(--ink-60); margin: 0 14px; }
+
+/* ============================================
+   HERO
+   ============================================ */
+.hero {
+  padding: 56px 0 80px;
+  position: relative;
+}
+.hero .row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--ink-40);
+  padding-bottom: 18px; margin-bottom: 56px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-60);
+}
+.hero .row .domain { color: var(--tungsten); }
+
+.hero h1.wordmark {
+  font-family: var(--f-display);
+  font-size: clamp(120px, 23vw, 360px);
+  line-height: 0.82;
+  letter-spacing: 0.04em;
+  color: var(--bone);
+  text-transform: uppercase;
+  margin: 0;
+}
+.hero .below {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 96px;
+  margin-top: 72px;
+  padding-top: 32px;
+  border-top: 1px solid var(--ink-40);
+  align-items: start;
+}
+.hero .tagline {
+  font-family: var(--f-display);
+  font-size: clamp(40px, 4.8vw, 72px);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  color: var(--tungsten);
+  text-transform: uppercase;
+}
+.hero .blurb { color: var(--ink-70); font-size: 16px; line-height: 1.65; max-width: 52ch; }
+.hero .blurb strong { color: var(--bone); font-weight: 500; }
+.hero .blurb p + p { margin-top: 14px; }
+
+/* — INDEX — */
+.index {
+  margin: 24px 0 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border-top: 1px solid var(--ink-40);
+  border-bottom: 1px solid var(--ink-40);
+}
+.index a {
+  padding: 26px 24px 26px 0;
+  border-right: 1px solid var(--ink-40);
+  color: var(--bone); text-decoration: none;
+  display: block; transition: background 80ms;
+}
+.index a:nth-child(4) { border-right: none; }
+.index a:nth-child(n+5) { border-top: 1px solid var(--ink-40); }
+.index a:hover { background: var(--ink-10); }
+.index a:hover .num { color: var(--tungsten); }
+.index .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--ink-60); display: block; margin-bottom: 8px; transition: color 80ms; }
+.index .name { font-family: var(--f-display); font-size: 26px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ============================================
+   CHAPTER — restructured
+   ============================================ */
+.chapter {
+  padding: var(--section-y) 0 80px;
+}
+.chapter-head { margin-bottom: 80px; }
+.chapter-head .cue {
+  display: flex; align-items: baseline;
+  border-bottom: 1px solid var(--ink-40);
+  padding-bottom: 18px; margin-bottom: 40px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+}
+.chapter-head .cue .num { color: var(--tungsten); }
+.chapter-head .cue .lbl { color: var(--bone); margin-left: 28px; letter-spacing: 0.3em; }
+.chapter-head .cue .meta { margin-left: auto; color: var(--ink-60); }
+.chapter-title {
+  font-family: var(--f-display);
+  font-size: clamp(64px, 11vw, 180px);
+  line-height: 0.88;
+  letter-spacing: 0.025em;
+  color: var(--bone);
+  text-transform: uppercase;
+  max-width: 16ch;
+}
+.chapter-title em { font-style: normal; color: var(--tungsten); }
+.chapter-sub {
+  margin-top: 32px;
+  color: var(--ink-70);
+  font-size: 17px;
+  max-width: 68ch;
+  line-height: 1.6;
+}
+.chapter-sub strong { color: var(--bone); font-weight: 500; }
+
+/* ============================================
+   COMMON BLOCKS
+   ============================================ */
+.eyebrow {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: 11px; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--tungsten);
+  margin-bottom: 18px;
+}
+.eyebrow .seq { color: var(--ink-60); margin-right: 12px; }
+.card { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 28px; }
+.rule-section { height: 1px; background: var(--ink-40); margin: 80px 0; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+
+/* ============================================
+   01 — ESSENCE
+   ============================================ */
+.essence-top {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 64px;
+  align-items: end;
+}
+.essence-pos {
+  font-family: var(--f-display);
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: 1.02;
+  letter-spacing: 0.02em;
+  color: var(--bone);
+  text-transform: uppercase;
+}
+.essence-pos em { font-style: normal; color: var(--tungsten); }
+.essence-pos-sub { color: var(--ink-70); margin-top: 24px; font-size: 15px; line-height: 1.6; max-width: 48ch; }
+
+.tag-card {
+  border: 1px solid var(--ink-30); padding: 32px;
+  background: var(--ink-05);
+}
+.tag-card .small {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--tungsten);
+}
+.tag-card .tag {
+  font-family: var(--f-display);
+  font-size: 52px; line-height: 0.95;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  color: var(--bone); margin-top: 12px;
+}
+.tag-card .div { height: 1px; background: var(--ink-30); margin: 28px 0; }
+.tag-card .principle {
+  font-family: var(--f-display);
+  font-size: 28px; letter-spacing: 0.03em;
+  text-transform: uppercase; color: var(--tungsten);
+  margin-top: 10px;
+}
+.tag-card p { color: var(--ink-70); font-size: 13px; margin-top: 8px; }
+
+.traits {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--ink-40);
+  border-bottom: 1px solid var(--ink-40);
+  margin-top: 64px;
+}
+.trait {
+  padding: 36px 28px;
+  border-right: 1px solid var(--ink-40);
+  display: flex; flex-direction: column;
+}
+.trait:last-child { border-right: none; }
+.trait .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; color: var(--tungsten); }
+.trait .name {
+  font-family: var(--f-display);
+  font-size: 36px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--bone);
+  margin: 16px 0 14px;
+}
+.trait .body { color: var(--ink-70); font-size: 14px; line-height: 1.55; }
+
+.voice-rules { margin-top: 80px; }
+.voice-rules h3 { font-family: var(--f-display); font-size: 32px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin-bottom: 24px; }
+.voice-rule {
+  display: grid; grid-template-columns: 64px 220px 1fr;
+  gap: 40px; align-items: start;
+  padding: 28px 0;
+  border-top: 1px solid var(--ink-40);
+}
+.voice-rule:last-of-type { border-bottom: 1px solid var(--ink-40); }
+.voice-rule .vr-num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--ink-60); padding-top: 4px; }
+.voice-rule .vr-title { font-family: var(--f-display); font-size: 24px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); }
+.voice-rule .vr-desc { color: var(--ink-70); font-size: 14px; line-height: 1.6; }
+.voice-rule .vr-desc em { font-style: normal; color: var(--tungsten); font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.06em; }
+
+/* ============================================
+   02 — LOGO
+   ============================================ */
+.logo-stage {
+  background: var(--ink-05);
+  border: 1px solid var(--ink-30);
+  padding: 96px 64px;
+  display: grid; grid-template-columns: 280px 1fr; gap: 96px;
+  align-items: center;
+  position: relative;
+}
+.logo-stage .corner-tick {
+  position: absolute; width: 18px; height: 18px;
+  border: 1px solid var(--tungsten);
+}
+.logo-stage .corner-tick.tl { top: 14px; left: 14px; border-right: none; border-bottom: none; }
+.logo-stage .corner-tick.tr { top: 14px; right: 14px; border-left: none; border-bottom: none; }
+.logo-stage .corner-tick.bl { bottom: 14px; left: 14px; border-right: none; border-top: none; }
+.logo-stage .corner-tick.br { bottom: 14px; right: 14px; border-left: none; border-top: none; }
+.logo-stage .mark { color: var(--bone); }
+.logo-stage .mark svg { width: 100%; height: auto; }
+.logo-stage .mark .cap {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-60); margin-top: 20px;
+}
+.logo-stage .wordmark {
+  font-family: var(--f-display);
+  font-size: clamp(80px, 13vw, 200px);
+  line-height: 0.88;
+  letter-spacing: 0.05em;
+  color: var(--bone);
+  text-transform: uppercase;
+}
+.logo-stage .wordmark + .cap {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-60); margin-top: 16px;
+}
+
+.logo-variants {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border: 1px solid var(--ink-30);
+  margin-top: 64px;
+}
+.logo-cell {
+  padding: 56px 32px;
+  border-right: 1px solid var(--ink-30);
+  display: flex; flex-direction: column;
+  justify-content: space-between; align-items: stretch;
+  min-height: 280px; gap: 32px;
+  position: relative;
+}
+.logo-cell:last-child { border-right: none; }
+.logo-cell.dark { background: var(--ink-00); color: var(--bone); }
+.logo-cell.light { background: var(--bone); color: var(--ink-00); }
+.logo-cell .label { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; opacity: 0.7; }
+.logo-cell .center {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+}
+.logo-cell .lockup { display: flex; align-items: center; gap: 14px; }
+.logo-cell .lockup .word { font-family: var(--f-display); font-size: 40px; letter-spacing: 0.06em; text-transform: uppercase; }
+.logo-cell .lockup svg { width: 48px; height: 48px; }
+.logo-cell .mark-only svg { width: 80px; height: 80px; }
+.logo-cell .word-only { font-family: var(--f-display); font-size: 48px; letter-spacing: 0.06em; text-transform: uppercase; }
+.logo-cell .footnote { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.55; }
+
+.construction {
+  background: var(--ink-05);
+  border: 1px solid var(--ink-30);
+  padding: 64px;
+  margin-top: 64px;
+  display: grid; grid-template-columns: 1fr 360px; gap: 80px;
+  align-items: center;
+}
+.construction .diagram {
+  position: relative; aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    linear-gradient(to right, rgba(242, 181, 60, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(242, 181, 60, 0.06) 1px, transparent 1px);
+  background-size: 5% 5%;
+}
+.construction .diagram svg.aperture { width: 84%; height: 84%; color: var(--bone); position: relative; z-index: 2; }
+.construction .specs h4 { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--tungsten); margin-bottom: 14px; }
+.construction .specs ul { list-style: none; }
+.construction .specs li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ink-30);
+  display: flex; justify-content: space-between; gap: 16px;
+  color: var(--ink-70); font-size: 13px;
+}
+.construction .specs li:last-child { border-bottom: none; }
+.construction .specs li span { color: var(--bone); font-family: var(--f-mono); font-size: 12px; }
+.construction .specs p { color: var(--ink-70); font-size: 13px; line-height: 1.6; margin-top: 18px; max-width: 36ch; }
+
+.clearmin { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 24px; }
+.clearbox {
+  background: var(--ink-05);
+  border: 1px solid var(--ink-30);
+  padding: 56px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 280px;
+  position: relative;
+}
+.clearbox .frame {
+  position: relative; padding: 64px;
+  border: 1px dashed var(--tungsten);
+}
+.clearbox .frame::before, .clearbox .frame::after,
+.clearbox .frame > .lx, .clearbox .frame > .rx {
+  position: absolute;
+  font-family: var(--f-mono); font-size: 11px; color: var(--tungsten);
+}
+.clearbox .frame::before { content: "X"; top: 18px; left: 18px; }
+.clearbox .frame::after  { content: "X"; bottom: 18px; right: 18px; }
+.clearbox .frame .lx { bottom: 18px; left: 18px; }
+.clearbox .frame .rx { top: 18px; right: 18px; }
+.clearbox .word-only { font-family: var(--f-display); font-size: 64px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bone); }
+
+.minsize { background: var(--ink-05); border: 1px solid var(--ink-30); padding: 36px; }
+.minsize .row { display: flex; align-items: baseline; gap: 28px; padding: 16px 0; border-bottom: 1px solid var(--ink-30); }
+.minsize .row:last-child { border-bottom: none; }
+.minsize .label { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--ink-60); width: 80px; text-transform: uppercase; }
+.minsize .ex { font-family: var(--f-display); color: var(--bone); letter-spacing: 0.06em; text-transform: uppercase; flex: 1; }
+.minsize .note { font-family: var(--f-mono); font-size: 10px; color: var(--ink-60); letter-spacing: 0.1em; }
+
+/* ============================================
+   03 — COLOUR
+   ============================================ */
+.color-feature {
+  display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px;
+}
+.swatch-xl {
+  padding: 40px;
+  min-height: 380px;
+  border: 1px solid transparent;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.swatch-xl .top { display: flex; justify-content: space-between; align-items: flex-start; font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; }
+.swatch-xl .name { font-family: var(--f-display); font-size: clamp(56px, 7vw, 96px); letter-spacing: 0.03em; text-transform: uppercase; line-height: 0.9; }
+.swatch-xl .data { font-family: var(--f-mono); font-size: 13px; letter-spacing: 0.06em; line-height: 1.7; }
+.swatch-xl .data strong { font-weight: 500; }
+.swatch-xl .data p { margin-top: 18px; font-family: var(--f-ui); font-size: 14px; line-height: 1.6; letter-spacing: 0; max-width: 38ch; }
+
+.sw-tungsten { background: var(--tungsten); color: var(--ink-00); }
+.sw-tungsten .top { opacity: 0.55; }
+.sw-tungsten .data p { color: rgba(8, 8, 10, 0.75); }
+.sw-ink { background: var(--ink-00); color: var(--bone); border-color: var(--ink-30); }
+.sw-ink .top { color: var(--ink-60); }
+.sw-ink .data p { color: var(--ink-70); }
+
+.swatch {
+  padding: 22px; min-height: 200px;
+  border: 1px solid var(--ink-30);
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.swatch .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.swatch .role { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+.swatch .seq { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; }
+.swatch .nm { font-family: var(--f-display); font-size: 26px; letter-spacing: 0.04em; text-transform: uppercase; margin-top: 48px; }
+.swatch .hex { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.06em; margin-top: 6px; }
+.swatch .use { font-family: var(--f-ui); font-size: 12px; line-height: 1.5; margin-top: 8px; }
+.swatch.dark { color: var(--bone); }
+.swatch.dark .role, .swatch.dark .seq { color: var(--ink-70); }
+.swatch.dark .use { color: var(--ink-70); }
+.swatch.light { color: var(--ink-00); }
+.swatch.light .role, .swatch.light .seq { color: rgba(8,8,10,0.5); }
+.swatch.light .use { color: rgba(8,8,10,0.7); }
+
+.proportion-bar { display: grid; grid-template-columns: 14fr 4fr 2fr; height: 64px; border: 1px solid var(--ink-30); }
+.proportion-bar .s-ink { background: var(--ink-00); border-right: 1px solid var(--ink-30); }
+.proportion-bar .s-bone { background: var(--bone); border-right: 1px solid var(--ink-30); }
+.proportion-bar .s-tung { background: var(--tungsten); }
+.proportion-legend { display: flex; gap: 32px; margin-top: 16px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-70); }
+.proportion-legend span { display: flex; align-items: center; gap: 10px; }
+.proportion-legend .chip { width: 12px; height: 12px; }
+
+.rules-card { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 32px; }
+.rules-card h4 { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--tungsten); margin-bottom: 18px; }
+.rules-card p { color: var(--ink-70); font-size: 14px; line-height: 1.6; }
+.rules-card p strong { color: var(--bone); font-weight: 500; }
+.rules-card p + p { margin-top: 12px; }
+
+/* ============================================
+   04 — TYPE
+   ============================================ */
+/* "screenplay page" hero specimen */
+.type-page {
+  background: var(--ink-05);
+  border: 1px solid var(--ink-30);
+  padding: 64px 80px;
+  display: grid; grid-template-columns: 1fr 280px; gap: 64px;
+  align-items: end;
+}
+.type-page .page-inner {
+  font-family: var(--f-mono); font-size: 14px; line-height: 1.7;
+  color: var(--ink-70); letter-spacing: 0.01em;
+}
+.type-page .scene-head { color: var(--bone); font-family: var(--f-mono); font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 24px; }
+.type-page .action { color: var(--ink-70); margin-bottom: 24px; }
+.type-page .char { color: var(--bone); margin: 0 0 0 12em; text-transform: uppercase; letter-spacing: 0.04em; }
+.type-page .dialogue { color: var(--ink-70); margin: 0 0 0 6em; max-width: 28em; }
+.type-page .paren { color: var(--ink-60); margin: 0 0 0 10em; }
+.type-page .meta-stack { display: flex; flex-direction: column; gap: 20px; }
+.type-page .meta-stack .ttl {
+  font-family: var(--f-display);
+  font-size: 64px; letter-spacing: 0.04em;
+  line-height: 0.9; text-transform: uppercase; color: var(--bone);
+}
+.type-page .meta-stack .lab { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-60); }
+.type-page .meta-stack .lab b { display: block; color: var(--bone); font-weight: 500; font-family: var(--f-ui); font-size: 14px; letter-spacing: 0; text-transform: none; margin-top: 4px; }
+
+.families { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 24px; }
+.family {
+  background: var(--ink-10); border: 1px solid var(--ink-30);
+  padding: 36px 32px; min-height: 320px;
+  display: flex; flex-direction: column;
+}
+.family .preview { color: var(--bone); margin-bottom: 24px; flex: 1; display: flex; align-items: center; }
+.family .lab { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--tungsten); }
+.family .fname { font-family: var(--f-display); font-size: 40px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin: 10px 0; }
+.family .fname.ui { font-family: var(--f-ui); font-weight: 600; text-transform: none; letter-spacing: -0.01em; }
+.family .fname.mono { font-family: var(--f-mono); font-weight: 500; text-transform: none; letter-spacing: 0.02em; font-size: 30px; }
+.family .desc { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+
+.type-scale {
+  margin-top: 32px;
+  border-top: 1px solid var(--ink-40);
+}
+.type-row {
+  display: grid; grid-template-columns: 180px 80px 1fr;
+  gap: 32px; align-items: baseline;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--ink-40);
+}
+.type-row .meta { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-60); }
+.type-row .meta strong { display: block; color: var(--tungsten); margin-bottom: 4px; letter-spacing: 0.24em; }
+.type-row .size { font-family: var(--f-mono); font-size: 11px; color: var(--ink-60); letter-spacing: 0.06em; }
+.type-row .ex { color: var(--bone); }
+
+.t-h1   { font-family: var(--f-display); font-size: 64px; line-height: 0.95; letter-spacing: 0.02em; text-transform: uppercase; }
+.t-h2   { font-family: var(--f-display); font-size: 40px; line-height: 1.0; letter-spacing: 0.04em; text-transform: uppercase; }
+.t-h3   { font-family: var(--f-ui); font-size: 24px; line-height: 1.25; letter-spacing: -0.01em; font-weight: 600; }
+.t-h4   { font-family: var(--f-ui); font-size: 18px; line-height: 1.3; letter-spacing: 0; font-weight: 600; }
+.t-bdyl { font-family: var(--f-ui); font-size: 17px; line-height: 1.55; }
+.t-bdy  { font-family: var(--f-ui); font-size: 15px; line-height: 1.55; }
+.t-cp   { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-70); }
+
+/* ============================================
+   05 — ICONS
+   ============================================ */
+.workspace-row {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+  border: 1px solid var(--ink-30);
+}
+.workspace {
+  padding: 40px 32px;
+  border-right: 1px solid var(--ink-30);
+  display: flex; flex-direction: column; gap: 24px;
+  min-height: 320px;
+}
+.workspace:last-child { border-right: none; }
+.workspace .num { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; color: var(--tungsten); }
+.workspace .icon { color: var(--bone); margin: 4px 0; }
+.workspace .icon svg { width: 64px; height: 64px; }
+.workspace .name { font-family: var(--f-display); font-size: 28px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin-top: auto; }
+.workspace .desc { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-60); }
+.workspace .body { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+
+.icon-rules { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 24px; }
+.icon-rule { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 28px; }
+.icon-rule .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; color: var(--tungsten); }
+.icon-rule h4 { font-family: var(--f-display); font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin: 12px 0 10px; }
+.icon-rule p { color: var(--ink-70); font-size: 13px; line-height: 1.55; }
+.icon-rule code { font-family: var(--f-mono); color: var(--tungsten); font-size: 12px; }
+
+/* size scale */
+.size-scale { background: var(--ink-05); border: 1px solid var(--ink-30); padding: 32px; margin-top: 24px; display: flex; align-items: flex-end; gap: 48px; }
+.size-scale .ic { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.size-scale .ic svg { color: var(--bone); }
+.size-scale .ic .lab { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--ink-60); text-transform: uppercase; }
+.size-scale .ic .use { font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.18em; color: var(--ink-50); text-transform: uppercase; }
+
+/* ============================================
+   06 — MOTION
+   ============================================ */
+.motion-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.motion-card {
+  background: var(--ink-05); border: 1px solid var(--ink-30);
+  display: flex; flex-direction: column;
+}
+.motion-stage {
+  height: 300px; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink-00);
+  border-bottom: 1px solid var(--ink-30);
+  cursor: pointer;
+}
+.motion-meta { padding: 28px 32px; }
+.motion-meta .num { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; color: var(--tungsten); }
+.motion-meta h4 { font-family: var(--f-display); font-size: 36px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin: 10px 0 10px; }
+.motion-meta .spec { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-60); margin-bottom: 14px; }
+.motion-meta p { color: var(--ink-70); font-size: 13px; line-height: 1.6; }
+.motion-meta p em { font-style: normal; color: var(--bone); }
+.motion-hint { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; color: var(--ink-60); text-transform: uppercase; padding: 14px 32px; border-top: 1px solid var(--ink-30); display: flex; justify-content: space-between; }
+.motion-hint .arrow { color: var(--tungsten); }
+
+/* Shutter */
+.shutter-frame { width: 220px; height: 150px; background: var(--tungsten); position: relative; overflow: hidden; }
+.shutter-frame::before, .shutter-frame::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 50%;
+  background: var(--ink-00); transition: transform 180ms cubic-bezier(.55,0,.1,1);
+}
+.shutter-frame::before { top: 0; transform: translateY(-100%); }
+.shutter-frame::after { bottom: 0; transform: translateY(100%); }
+.motion-card.shutter:hover .shutter-frame::before { transform: translateY(0); }
+.motion-card.shutter:hover .shutter-frame::after { transform: translateY(0); }
+
+/* Cut */
+.cut-stage { display: flex; align-items: center; justify-content: center; }
+.cut-frame { width: 220px; height: 150px; position: relative; }
+.cut-frame .a, .cut-frame .b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-size: 88px; letter-spacing: 0.05em; }
+.cut-frame .a { background: var(--bone); color: var(--ink-00); opacity: 1; }
+.cut-frame .b { background: var(--ink-10); color: var(--tungsten); opacity: 0; }
+.motion-card.cut:hover .cut-frame .a { opacity: 0; }
+.motion-card.cut:hover .cut-frame .b { opacity: 1; }
+
+/* Rack focus */
+.rack-stack { position: relative; width: 260px; height: 170px; }
+.rack-stack .layer { position: absolute; transition: filter 480ms ease-out, opacity 480ms ease-out; display: flex; align-items: center; justify-content: center; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; }
+.rack-stack .back { top: 0; right: 0; width: 170px; height: 115px; background: var(--ink-25); border: 1px solid var(--ink-40); color: var(--ink-60); filter: blur(0px); }
+.rack-stack .fore { bottom: 0; left: 0; width: 170px; height: 115px; background: var(--tungsten); color: var(--ink-00); filter: blur(7px); opacity: 0.6; }
+.motion-card.rack:hover .rack-stack .back { filter: blur(7px); opacity: 0.55; }
+.motion-card.rack:hover .rack-stack .fore { filter: blur(0px); opacity: 1; }
+
+.forbidden { background: var(--ink-10); border: 1px solid var(--ink-30); padding: 36px; margin-top: 24px; }
+.forbidden .h { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; color: var(--cut); text-transform: uppercase; }
+.forbidden .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 20px; }
+.forbidden .item { border-top: 1px solid var(--ink-30); padding-top: 16px; }
+.forbidden .item .ttl { font-family: var(--f-display); font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); }
+.forbidden .item p { color: var(--ink-70); font-size: 13px; line-height: 1.55; margin-top: 6px; }
+
+/* ============================================
+   07 — VOICE
+   ============================================ */
+.voice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.voice-example {
+  background: var(--ink-05); border: 1px solid var(--ink-30);
+  display: flex; flex-direction: column;
+}
+.voice-example .head {
+  padding: 14px 22px; border-bottom: 1px solid var(--ink-30);
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-60);
+}
+.voice-example .head .ws { color: var(--tungsten); }
+.voice-example .head .ws.err { color: var(--cut); }
+.voice-example .body { padding: 32px 28px; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+.voice-example .body .eb { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--tungsten); }
+.voice-example .body .eb.err { color: var(--cut); }
+.voice-example .body h5 { font-family: var(--f-display); font-size: 36px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--bone); line-height: 0.95; }
+.voice-example .body p { color: var(--ink-70); font-size: 14px; line-height: 1.6; }
+.voice-example .body p strong { color: var(--bone); font-weight: 500; }
+.voice-example .preview {
+  background: var(--ink-00); border: 1px dashed var(--ink-40);
+  padding: 16px; color: var(--ink-60);
+  font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em; line-height: 1.6;
+}
+.voice-example .preview.err { border-color: var(--cut); border-style: solid; border-width: 0 0 0 2px; padding: 12px 16px; font-size: 11px; }
+.voice-example .actions { padding: 0 28px 28px; display: flex; gap: 12px; }
+.btn { font-family: var(--f-ui); font-size: 13px; font-weight: 500; padding: 10px 18px; border: 1px solid var(--ink-40); background: transparent; color: var(--bone); cursor: pointer; letter-spacing: 0.02em; }
+.btn-primary { background: var(--tungsten); color: var(--ink-00); border-color: var(--tungsten); font-weight: 600; }
+.btn-ghost { background: transparent; color: var(--bone); }
+.voice-example .frame-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.voice-example .frame-row .ph { aspect-ratio: 16/9; background: var(--ink-00); border: 1px dashed var(--ink-40); }
+
+.vs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 32px; }
+.vs-pair { border: 1px solid var(--ink-30); padding: 0; background: var(--ink-10); }
+.vs-do, .vs-dont { padding: 18px 22px; }
+.vs-do { border-bottom: 1px solid var(--ink-30); }
+.vs-do .lbl { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; color: var(--tungsten); text-transform: uppercase; }
+.vs-dont .lbl { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; color: var(--cut); text-transform: uppercase; }
+.vs-pair p { color: var(--bone); font-size: 14px; margin-top: 8px; line-height: 1.45; }
+
+/* ============================================
+   08 — DO / DON'T
+   ============================================ */
+.dd-head { display: grid; grid-template-columns: 80px 1fr 1fr; }
+.dd-head div { padding: 16px 24px; }
+.dd-head .empty { border-bottom: 1px solid var(--ink-40); }
+.dd-head .do, .dd-head .dont {
+  border: 1px solid var(--ink-40); border-right: none; border-bottom: 1px solid var(--ink-40);
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+}
+.dd-head .do { color: var(--tungsten); border-left: 1px solid var(--ink-40); }
+.dd-head .dont { color: var(--cut); border-right: 1px solid var(--ink-40); }
+
+.dd-row { display: grid; grid-template-columns: 80px 1fr 1fr; border-bottom: 1px solid var(--ink-40); border-left: 1px solid var(--ink-40); border-right: 1px solid var(--ink-40); }
+.dd-row .idx { padding: 32px 0 32px 24px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; color: var(--ink-60); }
+.dd-row .cell { padding: 28px 24px; border-left: 1px solid var(--ink-40); display: grid; grid-template-columns: 180px 1fr; gap: 28px; align-items: center; }
+.dd-row .demo {
+  background: var(--ink-05); border: 1px solid var(--ink-30);
+  height: 110px; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.dd-row .lbl { display: flex; flex-direction: column; gap: 6px; }
+.dd-row .lbl .tag { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; }
+.dd-row .cell.do .tag { color: var(--tungsten); }
+.dd-row .cell.dont .tag { color: var(--cut); }
+.dd-row .lbl .desc { color: var(--ink-70); font-size: 13px; line-height: 1.5; }
+.dd-row .lbl .desc strong { color: var(--bone); font-weight: 500; }
+
+.dd-word { font-family: var(--f-display); font-size: 34px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bone); }
+.dd-word-lower { text-transform: lowercase; letter-spacing: 0; }
+.dd-bg-solid { background: var(--ink-00); }
+.dd-bg-grad { background: linear-gradient(135deg, #6b1e8a, #1e6b8a); }
+
+/* ============================================
+   COLOPHON
+   ============================================ */
+.colophon {
+  margin: 120px 0 80px;
+  padding: 64px 0 0;
+  border-top: 1px solid var(--ink-40);
+}
+.colophon .end {
+  font-family: var(--f-display);
+  font-size: clamp(72px, 12vw, 180px);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bone);
+  line-height: 0.85;
+}
+.colophon .end em { font-style: normal; color: var(--tungsten); }
+.colophon .credits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--ink-40); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-60); text-transform: uppercase; }
+.colophon .credits strong { display: block; color: var(--bone); font-weight: 500; margin-bottom: 6px; letter-spacing: 0.22em; }
+.colophon .endmark { margin-top: 64px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; color: var(--ink-60); text-align: center; text-transform: uppercase; }
+.colophon .endmark .bar { display: inline-block; width: 80px; height: 1px; background: var(--ink-40); vertical-align: middle; margin: 0 14px; }
+</style>
+</head>
+<body data-grain="on" data-density="regular">
+
+<!-- film grain overlay -->
+<div class="grain"></div>
+
+<!-- ============================================
+     TOP SLATE
+     ============================================ -->
+<header class="slate">
+  <div class="left">
+    <span class="rec"><span class="dot"></span>REC</span>
+    <span>DIREKTA · BRAND SYSTEM</span>
+  </div>
+  <div class="crumb">V 2.0 — MASTER</div>
+  <div class="right">INT. STUDIO<span>·</span>2026 / 05 / 17<span>·</span>direkta.ai</div>
+</header>
+
+<div class="page">
+
+<!-- ============================================
+     HERO
+     ============================================ -->
+<section class="hero">
+  <div class="row">
+    <span>Title Card · Reel 01 of 08</span>
+    <span class="domain">DIREKTA.AI</span>
+  </div>
+
+  <h1 class="wordmark">DIREKTA</h1>
+
+  <div class="below">
+    <div class="tagline">You direct.<br>AI delivers.</div>
+    <div class="blurb">
+      <span class="eyebrow"><span class="seq">v2.0</span>Brand Guide — Master Document</span>
+      <p>Direkta is an <strong>AI-powered film production platform</strong> for directors and indie creators. Five workspaces. Nine specialised agents. One philosophy: <strong>you are the Director, the AI is your crew.</strong></p>
+      <p>This document is the system of record for how Direkta looks, sounds, and moves. Every visual choice should feel like it was made by a director who knows exactly what they want.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     INDEX
+     ============================================ -->
+<nav class="index">
+  <a href="#essence"><span class="num">01 / 08</span><span class="name">Essence</span></a>
+  <a href="#logo"><span class="num">02 / 08</span><span class="name">Logo</span></a>
+  <a href="#color"><span class="num">03 / 08</span><span class="name">Colour</span></a>
+  <a href="#type"><span class="num">04 / 08</span><span class="name">Type</span></a>
+  <a href="#icons"><span class="num">05 / 08</span><span class="name">Icons</span></a>
+  <a href="#motion"><span class="num">06 / 08</span><span class="name">Motion</span></a>
+  <a href="#voice"><span class="num">07 / 08</span><span class="name">Voice</span></a>
+  <a href="#dos"><span class="num">08 / 08</span><span class="name">Do &amp; Don't</span></a>
+</nav>
+
+</div><!-- /.page -->
+
+<!-- ====== REEL LEADER 01 → 02 ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">01</span><span>End of Reel · Cue Start 02</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     01 — ESSENCE
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="essence">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">01 / 08</span>
+      <span class="lbl">ESSENCE</span>
+      <span class="meta">Reel One · Positioning &amp; Voice</span>
+    </div>
+    <h2 class="chapter-title">The Director's<br>Chair.</h2>
+    <p class="chapter-sub">Direkta carries authority in its name. The brand must match — confident, direct, no decoration for decoration's sake. <strong>We elevate the creator's capability. We never gamify the craft.</strong></p>
+  </header>
+
+  <!-- positioning + tagline card -->
+  <div class="essence-top">
+    <div>
+      <span class="eyebrow"><span class="seq">A.</span>Positioning Line</span>
+      <div class="essence-pos">The director's chair for <em>AI&nbsp;filmmaking.</em></div>
+      <p class="essence-pos-sub">One platform. Script to animatic. A full pre-production crew of nine specialised agents — and nothing ever ships without the Director's call.</p>
+    </div>
+    <div class="tag-card">
+      <span class="small">B. Tagline</span>
+      <div class="tag">You direct.<br>AI delivers.</div>
+      <div class="div"></div>
+      <span class="small">C. Operating Principle</span>
+      <div class="principle">Propose, don't commit.</div>
+      <p>Every agent shows options. The Director picks winners. Nothing saves without approval.</p>
+    </div>
+  </div>
+
+  <!-- personality traits -->
+  <span class="eyebrow" style="margin-top:80px;"><span class="seq">D.</span>Personality — Five Traits</span>
+  <div class="traits">
+    <div class="trait">
+      <span class="num">01</span>
+      <div class="name">Confident</div>
+      <div class="body">Speaks in declaratives. Never asks the user what they meant when it can ask one sharp question instead.</div>
+    </div>
+    <div class="trait">
+      <span class="num">02</span>
+      <div class="name">Precise</div>
+      <div class="body">Filmmaker vocabulary, never generic. A "Cinematographer," not an "image generator." A "beat," not a "step."</div>
+    </div>
+    <div class="trait">
+      <span class="num">03</span>
+      <div class="name">Cinematic</div>
+      <div class="body">Dark, wide, composed. The product should feel like walking onto a quiet, well-lit set.</div>
+    </div>
+    <div class="trait">
+      <span class="num">04</span>
+      <div class="name">Direct</div>
+      <div class="body">No fluff. No hedging. No upsell. Verbs first. The Director's time is the most expensive resource on set.</div>
+    </div>
+    <div class="trait">
+      <span class="num">05</span>
+      <div class="name">Crafted</div>
+      <div class="body">Every detail considered. Direkta is for people who treat filmmaking as a craft — the product treats itself the same way.</div>
+    </div>
+  </div>
+
+  <!-- voice rules -->
+  <div class="voice-rules">
+    <span class="eyebrow"><span class="seq">E.</span>Voice Rules — Five Non-Negotiables</span>
+    <h3>If a sentence doesn't pass all five, rewrite it.</h3>
+    <div>
+      <div class="voice-rule">
+        <span class="vr-num">R—01</span>
+        <span class="vr-title">Speak Set</span>
+        <span class="vr-desc">Filmmaking vocabulary by default. <em>"Roll. Cut. Hold for picture. Slate."</em> Generic tech words are a last resort.</span>
+      </div>
+      <div class="voice-rule">
+        <span class="vr-num">R—02</span>
+        <span class="vr-title">Verbs First</span>
+        <span class="vr-desc">Lead with the action. <em>"Direct a Cinematographer."</em> Not <em>"Image generation tool."</em></span>
+      </div>
+      <div class="voice-rule">
+        <span class="vr-num">R—03</span>
+        <span class="vr-title">Propose, Don't Decide</span>
+        <span class="vr-desc">The agent surfaces options. The Director picks. <em>"Here are six readings. Which one stays?"</em></span>
+      </div>
+      <div class="voice-rule">
+        <span class="vr-num">R—04</span>
+        <span class="vr-title">No Hype</span>
+        <span class="vr-desc">No "magic," no "revolutionary," no "unleash." We're a workplace, not a sales floor.</span>
+      </div>
+      <div class="voice-rule">
+        <span class="vr-num">R—05</span>
+        <span class="vr-title">Respect the Craft</span>
+        <span class="vr-desc">Never reduce filmmaking decisions to clicks. <em>"Cast your lead"</em> beats <em>"Set up your character."</em></span>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ====== REEL LEADER 02 → 03 ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">02</span><span>End of Reel · Cue Start 03</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     02 — LOGO
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="logo">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">02 / 08</span>
+      <span class="lbl">LOGO</span>
+      <span class="meta">Reel Two · Mark &amp; Wordmark System</span>
+    </div>
+    <h2 class="chapter-title">An aperture.<br>A title card.</h2>
+    <p class="chapter-sub">Two ideas, one system. The mark reads as a <strong>lens aperture</strong> — the eye of the camera. The wordmark reads as a <strong>film title card</strong> — DIREKTA in condensed authority. Together, or alone.</p>
+  </header>
+
+  <!-- primary lockup hero -->
+  <div class="logo-stage">
+    <span class="corner-tick tl"></span><span class="corner-tick tr"></span>
+    <span class="corner-tick bl"></span><span class="corner-tick br"></span>
+    <div class="mark">
+      <svg viewBox="0 0 200 200" fill="none">
+        <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="miter">
+          <path d="M 100 28 L 100 60 L 138 82"/>
+          <path d="M 162.4 64 L 138 82 L 138 126"/>
+          <path d="M 162.4 136 L 138 126 L 100 148"/>
+          <path d="M 100 172 L 100 148 L 62 126"/>
+          <path d="M 37.6 136 L 62 126 L 62 82"/>
+          <path d="M 37.6 64 L 62 82 L 100 60"/>
+        </g>
+        <circle cx="100" cy="104" r="6" fill="currentColor"/>
+      </svg>
+      <div class="cap">Aperture Mark · Iris · Six Blade</div>
+    </div>
+    <div>
+      <div class="wordmark">DIREKTA</div>
+      <div class="cap">Wordmark · Anton · Tracking +45 / 1000</div>
+    </div>
+  </div>
+
+  <!-- variants -->
+  <span class="eyebrow" style="margin-top:64px;"><span class="seq">A.</span>Variants — Dark &amp; Light</span>
+  <div class="logo-variants">
+    <div class="logo-cell dark">
+      <span class="label">A · Primary / Dark</span>
+      <div class="center">
+        <div class="lockup">
+          <svg viewBox="0 0 200 200" fill="none">
+            <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="6"/>
+            <g stroke="currentColor" stroke-width="6" fill="none" stroke-linejoin="miter">
+              <path d="M 100 28 L 100 60 L 138 82"/>
+              <path d="M 162.4 64 L 138 82 L 138 126"/>
+              <path d="M 162.4 136 L 138 126 L 100 148"/>
+              <path d="M 100 172 L 100 148 L 62 126"/>
+              <path d="M 37.6 136 L 62 126 L 62 82"/>
+              <path d="M 37.6 64 L 62 82 L 100 60"/>
+            </g>
+            <circle cx="100" cy="104" r="10" fill="currentColor"/>
+          </svg>
+          <div class="word">DIREKTA</div>
+        </div>
+      </div>
+      <span class="footnote">Bone on Ink Negative</span>
+    </div>
+    <div class="logo-cell light">
+      <span class="label">B · Primary / Light</span>
+      <div class="center">
+        <div class="lockup">
+          <svg viewBox="0 0 200 200" fill="none">
+            <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="6"/>
+            <g stroke="currentColor" stroke-width="6" fill="none" stroke-linejoin="miter">
+              <path d="M 100 28 L 100 60 L 138 82"/>
+              <path d="M 162.4 64 L 138 82 L 138 126"/>
+              <path d="M 162.4 136 L 138 126 L 100 148"/>
+              <path d="M 100 172 L 100 148 L 62 126"/>
+              <path d="M 37.6 136 L 62 126 L 62 82"/>
+              <path d="M 37.6 64 L 62 82 L 100 60"/>
+            </g>
+            <circle cx="100" cy="104" r="10" fill="currentColor"/>
+          </svg>
+          <div class="word">DIREKTA</div>
+        </div>
+      </div>
+      <span class="footnote">Ink on Bone</span>
+    </div>
+    <div class="logo-cell dark">
+      <span class="label">C · Logomark Only</span>
+      <div class="center">
+        <div class="mark-only" style="color:var(--tungsten);">
+          <svg viewBox="0 0 200 200" fill="none">
+            <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="6"/>
+            <g stroke="currentColor" stroke-width="6" fill="none" stroke-linejoin="miter">
+              <path d="M 100 28 L 100 60 L 138 82"/>
+              <path d="M 162.4 64 L 138 82 L 138 126"/>
+              <path d="M 162.4 136 L 138 126 L 100 148"/>
+              <path d="M 100 172 L 100 148 L 62 126"/>
+              <path d="M 37.6 136 L 62 126 L 62 82"/>
+              <path d="M 37.6 64 L 62 82 L 100 60"/>
+            </g>
+            <circle cx="100" cy="104" r="10" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+      <span class="footnote">Favicon · App Tile · Watermark</span>
+    </div>
+    <div class="logo-cell dark">
+      <span class="label">D · Wordmark Only</span>
+      <div class="center">
+        <div class="word-only">DIREKTA</div>
+      </div>
+      <span class="footnote">Title Card · End Slate · Header</span>
+    </div>
+  </div>
+
+  <!-- construction -->
+  <span class="eyebrow" style="margin-top:64px;"><span class="seq">B.</span>Construction</span>
+  <div class="construction">
+    <div class="diagram">
+      <svg class="aperture" viewBox="0 0 200 200" fill="none">
+        <!-- guides -->
+        <circle cx="100" cy="100" r="92" stroke="var(--tungsten)" stroke-width="0.4" stroke-dasharray="2 3" opacity="0.6"/>
+        <circle cx="100" cy="100" r="72" stroke="var(--tungsten)" stroke-width="0.4" stroke-dasharray="2 3" opacity="0.6"/>
+        <line x1="100" y1="0" x2="100" y2="200" stroke="var(--tungsten)" stroke-width="0.4" opacity="0.4"/>
+        <line x1="0" y1="100" x2="200" y2="100" stroke="var(--tungsten)" stroke-width="0.4" opacity="0.4"/>
+        <!-- mark -->
+        <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="miter">
+          <path d="M 100 28 L 100 60 L 138 82"/>
+          <path d="M 162.4 64 L 138 82 L 138 126"/>
+          <path d="M 162.4 136 L 138 126 L 100 148"/>
+          <path d="M 100 172 L 100 148 L 62 126"/>
+          <path d="M 37.6 136 L 62 126 L 62 82"/>
+          <path d="M 37.6 64 L 62 82 L 100 60"/>
+        </g>
+        <circle cx="100" cy="104" r="6" fill="currentColor"/>
+        <!-- corner ticks -->
+        <g stroke="var(--tungsten)" stroke-width="1">
+          <line x1="0" y1="100" x2="6" y2="100"/>
+          <line x1="194" y1="100" x2="200" y2="100"/>
+          <line x1="100" y1="0" x2="100" y2="6"/>
+          <line x1="100" y1="194" x2="100" y2="200"/>
+        </g>
+      </svg>
+    </div>
+    <div class="specs">
+      <h4>Geometry</h4>
+      <ul>
+        <li>Outer ring <span>R = 92 / 200</span></li>
+        <li>Iris radius <span>R = 72 / 200</span></li>
+        <li>Blades <span>6 — equal angle</span></li>
+        <li>Pupil offset <span>+4 below centre</span></li>
+        <li>Stroke <span>3 unit @ 200u</span></li>
+        <li>Join <span>Miter — hard</span></li>
+        <li>Optical centre <span>Y = 104</span></li>
+      </ul>
+      <p>The six-blade iris is the eye of the camera. The pupil sits below geometric centre — the same optical correction used in classical wordmarks. Hard miter joins on every blade. Nothing rounds. Cameras don't round.</p>
+    </div>
+  </div>
+
+  <!-- clear space + min size -->
+  <span class="eyebrow" style="margin-top:64px;"><span class="seq">C.</span>Clear Space &amp; Minimum Size</span>
+  <div class="clearmin">
+    <div class="clearbox">
+      <div class="frame"><span class="lx">X</span><span class="rx">X</span>
+        <div class="word-only">DIREKTA</div>
+      </div>
+    </div>
+    <div class="minsize">
+      <div class="row">
+        <span class="label">Print</span>
+        <span class="ex" style="font-size:14px;">DIREKTA</span>
+        <span class="note">8 mm wide min</span>
+      </div>
+      <div class="row">
+        <span class="label">Digital</span>
+        <span class="ex" style="font-size:18px;">DIREKTA</span>
+        <span class="note">96 px wide min</span>
+      </div>
+      <div class="row">
+        <span class="label">App Tile</span>
+        <span class="ex" style="font-size:28px;">DIREKTA</span>
+        <span class="note">144 px wide</span>
+      </div>
+      <div class="row">
+        <span class="label">Favicon</span>
+        <span class="ex" style="display:flex; gap:6px; align-items:center;">
+          <svg viewBox="0 0 200 200" fill="none" width="22" height="22" style="color:var(--bone);">
+            <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="12"/>
+            <circle cx="100" cy="104" r="20" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="note">16 px — simplified mark</span>
+      </div>
+    </div>
+  </div>
+  <p style="font-family:var(--f-mono); font-size:11px; color:var(--ink-60); margin-top:18px; letter-spacing:0.06em;">Clear space minimum = the cap-height of the X in DIREKTA on all sides. Never less.</p>
+</section>
+</div>
+
+<!-- ====== REEL LEADER 03 → 04 ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">03</span><span>End of Reel · Cue Start 04</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     03 — COLOUR
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="color">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">03 / 08</span>
+      <span class="lbl">COLOUR</span>
+      <span class="meta">Reel Three · Dark Palette · One Accent</span>
+    </div>
+    <h2 class="chapter-title">Dark first.<br><em>One accent.</em></h2>
+    <p class="chapter-sub">The base is film-negative black. The light is warm cinema white, never sterile. The single accent is <strong>tungsten</strong> — the colour of a studio lamp, a film leader countdown, an exposed frame. There is no second accent. There are no gradients.</p>
+  </header>
+
+  <!-- feature swatches -->
+  <div class="color-feature">
+    <div class="swatch-xl sw-tungsten">
+      <div class="top">
+        <span>Accent · Primary · 01 / 09</span>
+        <span data-accent-hex>#F2B53C</span>
+      </div>
+      <div>
+        <div class="name" data-accent-name>Tungsten</div>
+        <div class="data" style="margin-top:24px;">
+          USAGE — <strong>One thing per screen.</strong>
+          <p>Calls-to-action, the active state, the timecode cursor, the slate light. Never two accent elements in the same frame.</p>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-xl sw-ink">
+      <div class="top">
+        <span>Base · Primary · 02 / 09</span>
+        <span>#08080A</span>
+      </div>
+      <div>
+        <div class="name">Film Negative</div>
+        <div class="data" style="margin-top:24px;">
+          USAGE — <strong>The room.</strong>
+          <p>Default canvas, app background, dark mode primary. Almost-black, never pure — film grain lives in the lift.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ink scale -->
+  <span class="eyebrow" style="margin-top:48px;"><span class="seq">A.</span>Ink Scale — Surfaces &amp; Structure</span>
+  <div class="g4">
+    <div class="swatch dark" style="background: var(--ink-10);">
+      <div class="top"><span class="role">Surface</span><span class="seq" style="color:var(--ink-70);">03</span></div>
+      <div><div class="nm">Studio</div><div class="hex">#111114</div><div class="use">Cards, panels, side rails.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-20);">
+      <div class="top"><span class="role">Surface</span><span class="seq" style="color:var(--ink-70);">04</span></div>
+      <div><div class="nm">Gel</div><div class="hex">#1A1A1F</div><div class="use">Hover surface, raised card.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-30);">
+      <div class="top"><span class="role">Border</span><span class="seq" style="color:var(--ink-70);">05</span></div>
+      <div><div class="nm">Rail</div><div class="hex">#2A2A33</div><div class="use">Border on dark surface.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-40);">
+      <div class="top"><span class="role">Border</span><span class="seq" style="color:var(--ink-70);">06</span></div>
+      <div><div class="nm">Wire</div><div class="hex">#3A3A45</div><div class="use">Rules &amp; dividers.</div></div>
+    </div>
+  </div>
+
+  <!-- bone, mute, cut, roll -->
+  <div class="g4" style="margin-top:24px;">
+    <div class="swatch light" style="background: var(--bone);">
+      <div class="top"><span class="role">Type · Primary</span><span class="seq">07</span></div>
+      <div><div class="nm">Bone</div><div class="hex">#EDE7D9</div><div class="use">Body text on dark. Light-mode bg. Warm, never sterile.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--ink-60); color:var(--ink-00);">
+      <div class="top"><span class="role" style="color:rgba(8,8,10,0.55);">Type · Muted</span><span class="seq" style="color:rgba(8,8,10,0.55);">—</span></div>
+      <div><div class="nm" style="color:var(--ink-00);">Mute</div><div class="hex" style="color:var(--ink-00);">#7E7E8A</div><div class="use" style="color:rgba(8,8,10,0.65);">Captions, labels, deprioritised.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--cut);">
+      <div class="top"><span class="role" style="color:rgba(237,231,217,0.75);">Signal · Error</span><span class="seq" style="color:rgba(237,231,217,0.75);">08</span></div>
+      <div><div class="nm">Cut</div><div class="hex">#D94343</div><div class="use">Errors, destructive only. Never decorative.</div></div>
+    </div>
+    <div class="swatch dark" style="background: var(--green); color:var(--ink-00);">
+      <div class="top"><span class="role" style="color:rgba(8,8,10,0.55);">Signal · Ready</span><span class="seq" style="color:rgba(8,8,10,0.55);">09</span></div>
+      <div><div class="nm" style="color:var(--ink-00);">Roll</div><div class="hex" style="color:var(--ink-00);">#6FBF8A</div><div class="use" style="color:rgba(8,8,10,0.65);">Render-ready, committed, exported.</div></div>
+    </div>
+  </div>
+
+  <!-- proportion + rules -->
+  <div class="g2" style="margin-top:48px;">
+    <div>
+      <span class="eyebrow"><span class="seq">B.</span>Proportion — 70 / 20 / 10</span>
+      <div class="proportion-bar">
+        <div class="s-ink"></div>
+        <div class="s-bone"></div>
+        <div class="s-tung"></div>
+      </div>
+      <div class="proportion-legend">
+        <span><span class="chip" style="background:var(--ink-00); border:1px solid var(--ink-40);"></span>Ink — 70%</span>
+        <span><span class="chip" style="background:var(--bone);"></span>Bone — 20%</span>
+        <span><span class="chip" style="background:var(--tungsten);"></span>Accent — 10%</span>
+      </div>
+      <p style="color:var(--ink-70); font-size:14px; margin-top:20px; line-height:1.6; max-width:48ch;">If the accent exceeds 10% of any frame, something is wrong. It must remain rare to remain commanding.</p>
+    </div>
+    <div class="rules-card">
+      <h4>Three Rules</h4>
+      <p><strong>01.</strong> No gradients. Not on backgrounds, not on type, not on buttons. The palette is flat or it is not Direkta.</p>
+      <p><strong>02.</strong> No purple. No teal. No second accent. The tungsten stands alone.</p>
+      <p><strong>03.</strong> Bone over white. Pure white reads as printer paper, not film stock. Bone is the standard.</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ====== REEL LEADER 04 → 05 ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">04</span><span>End of Reel · Cue Start 05</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     04 — TYPE
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="type">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">04 / 08</span>
+      <span class="lbl">TYPE</span>
+      <span class="meta">Reel Four · Three Families · Strict Lanes</span>
+    </div>
+    <h2 class="chapter-title">Title card<br>meets set list.</h2>
+    <p class="chapter-sub">A display face with the authority of a title sequence, paired with a precise UI face and a technical monospace. <strong>Three families. Clear lanes. Never substitute.</strong></p>
+  </header>
+
+  <!-- screenplay page specimen -->
+  <div class="type-page">
+    <div class="page-inner">
+      <div class="scene-head">INT. APARTMENT — NIGHT</div>
+      <p class="action">MAYA, 28, hovers at the kitchen window. Rain sheets the glass. The kettle clicks off behind her but she doesn't turn.</p>
+      <p class="char">MAYA</p>
+      <p class="paren">(quiet)</p>
+      <p class="dialogue">You said the script was ready.</p>
+      <p class="char" style="margin-top:18px;">RAFA (O.S.)</p>
+      <p class="dialogue">It was. Until I read it again.</p>
+    </div>
+    <div class="meta-stack">
+      <div class="ttl">Three<br>Families.</div>
+      <span class="lab">Display<b>Anton — Title Card</b></span>
+      <span class="lab">Interface<b>Geist — UI &amp; Body</b></span>
+      <span class="lab">Technical<b>JetBrains Mono — Slate</b></span>
+    </div>
+  </div>
+
+  <!-- three families -->
+  <div class="families">
+    <div class="family">
+      <div class="preview" style="font-family:var(--f-display); font-size:120px; letter-spacing:0.04em; text-transform:uppercase; line-height:0.85;">Aa<br>Rr</div>
+      <div>
+        <span class="lab">Display · Reserved</span>
+        <div class="fname">Anton</div>
+        <div class="desc">Condensed grotesque, title-sequence weight. Reserved for the wordmark, chapter titles, scene headings, end slates. Always uppercase. Tracked open. Never below 18px.</div>
+      </div>
+    </div>
+    <div class="family">
+      <div class="preview" style="font-family:var(--f-ui); font-size:120px; font-weight:500; line-height:0.92; letter-spacing:-0.01em;">Aa<br>Rr</div>
+      <div>
+        <span class="lab">Interface · Default</span>
+        <div class="fname ui">Geist</div>
+        <div class="desc">The crew. All running UI text, body copy, buttons, dialog. Sharp, neutral, comfortable at 13–17px. Weights 400 / 500 / 600.</div>
+      </div>
+    </div>
+    <div class="family">
+      <div class="preview" style="font-family:var(--f-mono); font-size:88px; font-weight:500; letter-spacing:0.02em; line-height:0.95;">01<br>S/04</div>
+      <div>
+        <span class="lab">Technical · Tagging</span>
+        <div class="fname mono">JetBrains Mono</div>
+        <div class="desc">The slate. Timecodes, scene numbers, agent names, hex values, status tags, breadcrumbs. Tracked open. Always uppercase for labels.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- type scale -->
+  <span class="eyebrow" style="margin-top:48px;"><span class="seq">A.</span>Type Scale — Direkta Copy</span>
+  <div class="type-scale">
+    <div class="type-row">
+      <div class="meta"><strong>Display XL</strong>Anton · 200<br>line 0.85 / track +45</div>
+      <div class="size">200 / 170</div>
+      <div class="ex" style="font-family:var(--f-display); font-size:140px; letter-spacing:0.04em; line-height:0.85; text-transform:uppercase;">DIREKTA</div>
+    </div>
+    <div class="type-row">
+      <div class="meta"><strong>H1 · Title</strong>Anton · 72<br>line 0.95</div>
+      <div class="size">72 / 68</div>
+      <div class="ex t-h1">You direct. AI delivers.</div>
+    </div>
+    <div class="type-row">
+      <div class="meta"><strong>H2 · Scene</strong>Anton · 40<br>line 1.0</div>
+      <div class="size">40 / 40</div>
+      <div class="ex t-h2">INT. APARTMENT — NIGHT</div>
+    </div>
+    <div class="type-row">
+      <div class="meta"><strong>H3 · Panel</strong>Geist 600 · 24<br>line 1.25</div>
+      <div class="size">24 / 30</div>
+      <div class="ex t-h3">The Cinematographer is ready. Pick the variants you want to keep.</div>
+    </div>
+    <div class="type-row">
+      <div class="meta"><strong>H4 · Inline</strong>Geist 600 · 18<br>line 1.3</div>
+      <div class="size">18 / 24</div>
+      <div class="ex t-h4">Soul ID training — 3 references uploaded</div>
+    </div>
+    <div class="type-row">
+      <div class="meta"><strong>Body L</strong>Geist 400 · 17<br>line 1.55</div>
+      <div class="size">17 / 26</div>
+      <div class="ex t-bdyl">The Screenplay Agent has read all 38 pages. Three lines need your eye before the Bible builds — one ambiguous character, one location with no exterior, and one beat that contradicts the opening.</div>
+    </div>
+    <div class="type-row">
+      <div class="meta"><strong>Body</strong>Geist 400 · 15<br>line 1.55</div>
+      <div class="size">15 / 23</div>
+      <div class="ex t-bdy">Six readings from the Cinematographer for Beat 04 — MAYA enters the kitchen. Pick the winner. Anything you don't pick is dropped before the next beat begins.</div>
+    </div>
+    <div class="type-row">
+      <div class="meta"><strong>Caption</strong>JetBrains Mono 500 · 11<br>track +240</div>
+      <div class="size">11 / 14</div>
+      <div class="ex t-cp">BEAT 04 · INT. KITCHEN — NIGHT · MAYA, RAFA · 00:02:18</div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ====== REEL LEADER 05 → 06 ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">05</span><span>End of Reel · Cue Start 06</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     05 — ICONS
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="icons">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">05 / 08</span>
+      <span class="lbl">ICONS</span>
+      <span class="meta">Reel Five · Five Workspaces</span>
+    </div>
+    <h2 class="chapter-title">Drawn like<br>a set plan.</h2>
+    <p class="chapter-sub">Icons are linear, monoline, square-cornered. Each workspace gets one defining shape — the script page, the framed silhouette, the storyboard grid, the node graph, the export frame. <strong>Geometric, not illustrated. Honest, not cute.</strong></p>
+  </header>
+
+  <!-- workspace icons -->
+  <div class="workspace-row">
+    <div class="workspace">
+      <span class="num">WS — 01</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="4" y="3" width="16" height="18"/>
+          <rect x="6.5" y="6" width="11" height="2" fill="currentColor" stroke="none"/>
+          <line x1="6.5" y1="10.5" x2="17.5" y2="10.5"/>
+          <line x1="6.5" y1="13" x2="14" y2="13"/>
+          <line x1="9" y1="16" x2="15" y2="16"/>
+          <line x1="9" y1="18" x2="13" y2="18"/>
+        </svg>
+      </div>
+      <div class="name">Screenplay</div>
+      <div class="desc">Where the story lives.</div>
+      <div class="body">The script page with a scene heading bar and indented dialogue. A written document, never a paper-clip metaphor.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 02</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 6 V3 H6"/><path d="M21 6 V3 H18"/>
+          <path d="M3 18 V21 H6"/><path d="M21 18 V21 H18"/>
+          <circle cx="12" cy="10" r="3"/>
+          <path d="M6.5 19 C 7 14.5, 17 14.5, 17.5 19"/>
+        </svg>
+      </div>
+      <div class="name">Casting</div>
+      <div class="desc">Soul ID · Visual identity.</div>
+      <div class="body">A silhouette inside film-frame brackets. The brackets are the frame; the figure is who lives inside it. Never a smiling person.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 03</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3"  y="5" width="6" height="5"/>
+          <rect x="10" y="5" width="6" height="5" fill="currentColor"/>
+          <rect x="17" y="5" width="4" height="5"/>
+          <rect x="3"  y="14" width="6" height="5"/>
+          <rect x="10" y="14" width="6" height="5"/>
+          <rect x="17" y="14" width="4" height="5"/>
+        </svg>
+      </div>
+      <div class="name">Storyboard</div>
+      <div class="desc">Beat row · Variants picked.</div>
+      <div class="body">A grid of frames with one filled — the picked winner. The right-most column is shorter, suggesting the next beat coming.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 04</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2"  y="9"  width="6" height="6"/>
+          <rect x="13" y="3"  width="6" height="6"/>
+          <rect x="13" y="15" width="6" height="6"/>
+          <line x1="8"  y1="11" x2="13" y2="6"/>
+          <line x1="8"  y1="13" x2="13" y2="18"/>
+        </svg>
+      </div>
+      <div class="name">Stitch</div>
+      <div class="desc">Node graph · Animatic.</div>
+      <div class="body">Three nodes, two directional connections. The metaphor is the editing suite — frames as nodes, clips as the lines between.</div>
+    </div>
+    <div class="workspace">
+      <span class="num">WS — 05</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="4" y="3" width="16" height="11"/>
+          <line x1="12" y1="10" x2="12" y2="20"/>
+          <path d="M8 17 L 12 21 L 16 17"/>
+          <line x1="4" y1="21.5" x2="20" y2="21.5"/>
+        </svg>
+      </div>
+      <div class="name">Export</div>
+      <div class="desc">Frame · Deliverable out.</div>
+      <div class="body">A film frame with content moving down to a baseplate. Delivery — to disk, to pitch, to client. Never a cloud arrow.</div>
+    </div>
+  </div>
+
+  <!-- size scale -->
+  <div class="size-scale">
+    <div class="ic">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="5" width="6" height="5"/><rect x="10" y="5" width="6" height="5" fill="currentColor"/><rect x="17" y="5" width="4" height="5"/>
+        <rect x="3" y="14" width="6" height="5"/><rect x="10" y="14" width="6" height="5"/><rect x="17" y="14" width="4" height="5"/>
+      </svg>
+      <span class="lab">64 px</span><span class="use">Hero · Workspace splash</span>
+    </div>
+    <div class="ic">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="5" width="6" height="5"/><rect x="10" y="5" width="6" height="5" fill="currentColor"/><rect x="17" y="5" width="4" height="5"/>
+        <rect x="3" y="14" width="6" height="5"/><rect x="10" y="14" width="6" height="5"/><rect x="17" y="14" width="4" height="5"/>
+      </svg>
+      <span class="lab">32 px</span><span class="use">Side rail · Workspace tabs</span>
+    </div>
+    <div class="ic">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="5" width="6" height="5"/><rect x="10" y="5" width="6" height="5" fill="currentColor"/><rect x="17" y="5" width="4" height="5"/>
+        <rect x="3" y="14" width="6" height="5"/><rect x="10" y="14" width="6" height="5"/><rect x="17" y="14" width="4" height="5"/>
+      </svg>
+      <span class="lab">24 px</span><span class="use">Inline · Default</span>
+    </div>
+    <div class="ic">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="5" width="6" height="5"/><rect x="10" y="5" width="6" height="5" fill="currentColor"/><rect x="17" y="5" width="4" height="5"/>
+        <rect x="3" y="14" width="6" height="5"/><rect x="10" y="14" width="6" height="5"/><rect x="17" y="14" width="4" height="5"/>
+      </svg>
+      <span class="lab">16 px</span><span class="use">Caption · Inline label</span>
+    </div>
+  </div>
+
+  <!-- icon rules -->
+  <div class="icon-rules">
+    <div class="icon-rule">
+      <span class="num">RULE 01</span>
+      <h4>1.5 px stroke @ 24 px</h4>
+      <p>Every icon built on a 24-unit grid with a constant 1.5-unit stroke. Bumps to 2px at 16px for legibility. Scale the icon, never the stroke ratio.</p>
+    </div>
+    <div class="icon-rule">
+      <span class="num">RULE 02</span>
+      <h4>Hard corners only</h4>
+      <p>stroke-linecap and stroke-linejoin: <code>miter</code>. No rounded ends. No soft joins. Cameras don't round.</p>
+    </div>
+    <div class="icon-rule">
+      <span class="num">RULE 03</span>
+      <h4>One fill per icon, max</h4>
+      <p>If an icon must communicate state — selected, active, generated — fill exactly one shape inside it. Two fills is too loud.</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ====== REEL LEADER 06 → 07 ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">06</span><span>End of Reel · Cue Start 07</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     06 — MOTION
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="motion">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">06 / 08</span>
+      <span class="lbl">MOTION</span>
+      <span class="meta">Reel Six · Three Primitives</span>
+    </div>
+    <h2 class="chapter-title">Shutter.<br>Cut. <em>Rack focus.</em></h2>
+    <p class="chapter-sub">Three motion primitives, all borrowed from a camera. <strong>Nothing floats. Nothing morphs. Nothing bounces.</strong> Hover any frame below to play.</p>
+  </header>
+
+  <div class="motion-row">
+    <!-- Shutter -->
+    <div class="motion-card shutter">
+      <div class="motion-stage">
+        <div class="shutter-frame"></div>
+      </div>
+      <div class="motion-meta">
+        <span class="num">M — 01</span>
+        <h4>Shutter</h4>
+        <div class="spec">180 ms · cubic-bezier(.55, 0, .1, 1)</div>
+        <p>For decisive appearance / disappearance. <em>Modals open. Panels close. Renders finish.</em> Top and bottom converge on centre — like a mechanical shutter dropping.</p>
+      </div>
+      <div class="motion-hint"><span>Hover frame to play</span><span class="arrow">→</span></div>
+    </div>
+
+    <!-- Cut -->
+    <div class="motion-card cut">
+      <div class="motion-stage cut-stage">
+        <div class="cut-frame">
+          <div class="a">A</div>
+          <div class="b">B</div>
+        </div>
+      </div>
+      <div class="motion-meta">
+        <span class="num">M — 02</span>
+        <h4>Cut</h4>
+        <div class="spec">0 ms · instant</div>
+        <p>For navigation, tab changes, beat-to-beat. <em>No fade. No slide. No crossfade.</em> The next state replaces the current in a single frame. The most filmic transition there is.</p>
+      </div>
+      <div class="motion-hint"><span>Hover frame to cut</span><span class="arrow">→</span></div>
+    </div>
+
+    <!-- Rack -->
+    <div class="motion-card rack">
+      <div class="motion-stage">
+        <div class="rack-stack">
+          <div class="layer back">Context</div>
+          <div class="layer fore">Focus</div>
+        </div>
+      </div>
+      <div class="motion-meta">
+        <span class="num">M — 03</span>
+        <h4>Rack Focus</h4>
+        <div class="spec">480 ms · ease-out</div>
+        <p>When attention shifts <em>within</em> a frame — tooltip activates, agent is speaking, selection committing. Background blurs, foreground sharpens. The reverse on release.</p>
+      </div>
+      <div class="motion-hint"><span>Hover frame to pull</span><span class="arrow">→</span></div>
+    </div>
+  </div>
+
+  <!-- forbidden list -->
+  <div class="forbidden">
+    <span class="h">Forbidden Motion</span>
+    <div class="grid">
+      <div class="item">
+        <div class="ttl">No Float</div>
+        <p>Cards do not bob, hover-lift, or wiggle. They are placed on the desk.</p>
+      </div>
+      <div class="item">
+        <div class="ttl">No Morph</div>
+        <p>Shapes never tween into other shapes. A square that becomes a circle is a magic trick. We are not magicians.</p>
+      </div>
+      <div class="item">
+        <div class="ttl">No Bounce</div>
+        <p>Springy easing curves belong on consumer apps. Direkta is set-quiet.</p>
+      </div>
+      <div class="item">
+        <div class="ttl">No Confetti</div>
+        <p>No celebration animations. The work is the reward. A finished render is a fact, not a party.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ====== REEL LEADER 07 → 08 ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">07</span><span>End of Reel · Cue Start 08</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     07 — VOICE
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="voice">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">07 / 08</span>
+      <span class="lbl">VOICE</span>
+      <span class="meta">Reel Seven · Onboarding · Error · Empty</span>
+    </div>
+    <h2 class="chapter-title">In the room.<br>On the set.</h2>
+    <p class="chapter-sub">Three real product states. Onboarding. Error. Empty. <strong>All in filmmaker vocabulary, all calm, all direct.</strong> The crew is welcoming but professional — never chatty, never apologetic, never cute.</p>
+  </header>
+
+  <div class="voice-grid">
+    <!-- Onboarding -->
+    <div class="voice-example">
+      <div class="head">
+        <span>Onboarding · 01 / 03</span>
+        <span class="ws">SCREENPLAY</span>
+      </div>
+      <div class="body">
+        <span class="eb">First Open</span>
+        <h5>Welcome to set.</h5>
+        <p>I'm your Script Reader. Paste your screenplay below and I'll read it end to end — then break it into beats and start the Bible. <strong>Nothing saves until you say roll.</strong></p>
+        <div class="preview">
+          FADE IN:<br>INT. APARTMENT — NIGHT<br>MAYA, 28, hovers at the window…
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary">Read it</button>
+        <button class="btn btn-ghost">Paste later</button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="voice-example">
+      <div class="head">
+        <span>Error · Beat 04</span>
+        <span class="ws err">CINEMATOGRAPHER</span>
+      </div>
+      <div class="body">
+        <span class="eb err">Render Halted</span>
+        <h5>Cut.<br>Soul&nbsp;ID didn't load.</h5>
+        <p>The Cinematographer couldn't reach <strong>MAYA's</strong> Soul ID for this frame — the model timed out at 12s. The other five variants are fine. <strong>Re-roll this one, or skip it for now.</strong></p>
+        <div class="preview err">
+          E—4180 · fal.ai · timeout 12.04 s · variant 03 / 06
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary">Re-roll variant</button>
+        <button class="btn btn-ghost">Skip frame</button>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div class="voice-example">
+      <div class="head">
+        <span>Empty State</span>
+        <span class="ws">STORYBOARD</span>
+      </div>
+      <div class="body">
+        <span class="eb">Nothing Shot Yet</span>
+        <h5>No frames<br>in this reel.</h5>
+        <p>Pick a beat from the Screenplay breakdown and the Cinematographer will roll <strong>four to six variants</strong> for you. Pick the winner of each beat. The losers disappear.</p>
+        <div class="frame-row">
+          <div class="ph"></div><div class="ph"></div><div class="ph"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary">Roll on Beat 01</button>
+        <button class="btn btn-ghost">Open Screenplay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- side by side voice -->
+  <span class="eyebrow" style="margin-top:48px;"><span class="seq">A.</span>Voice — Side By Side</span>
+  <div class="vs-row">
+    <div class="vs-pair">
+      <div class="vs-do">
+        <span class="lbl">DO</span>
+        <p>"Cut. The script didn't parse cleanly. Show me line 47."</p>
+      </div>
+      <div class="vs-dont">
+        <span class="lbl">DON'T</span>
+        <p>"Oops! Something went wrong 😢 Please try again."</p>
+      </div>
+    </div>
+    <div class="vs-pair">
+      <div class="vs-do">
+        <span class="lbl">DO</span>
+        <p>"Six readings from the Cinematographer. Pick the winner."</p>
+      </div>
+      <div class="vs-dont">
+        <span class="lbl">DON'T</span>
+        <p>"We've generated 6 amazing AI images for your scene!"</p>
+      </div>
+    </div>
+    <div class="vs-pair">
+      <div class="vs-do">
+        <span class="lbl">DO</span>
+        <p>"Animatic ready. 4 min 12 sec. Export, or stay in Stitch."</p>
+      </div>
+      <div class="vs-dont">
+        <span class="lbl">DON'T</span>
+        <p>"Your video has been successfully generated! 🎬✨"</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ====== REEL LEADER 08 → end ====== -->
+<div class="leader" aria-hidden="true">
+  <div class="tick"></div>
+  <div class="reel-badge"><span class="dot"></span><span class="big">08</span><span>End of Reel · Final Reel</span></div>
+  <div class="tick"></div>
+</div>
+
+<!-- ============================================
+     08 — DO / DON'T
+     ============================================ -->
+<div class="page">
+<section class="chapter" id="dos">
+  <header class="chapter-head">
+    <div class="cue">
+      <span class="num">08 / 08</span>
+      <span class="lbl">DO &amp; DON'T</span>
+      <span class="meta">Reel Eight · Five Yes · Five No</span>
+    </div>
+    <h2 class="chapter-title">Five yes.<br><em>Five no.</em></h2>
+    <p class="chapter-sub">Visual rules with no negotiation. Anything outside this list is a judgment call — <strong>anything inside this list isn't.</strong></p>
+  </header>
+
+  <div class="dd-head">
+    <div class="empty"></div>
+    <div class="do">Do</div>
+    <div class="dont">Don't</div>
+  </div>
+
+  <div class="dd-row">
+    <div class="idx">01</div>
+    <div class="cell do">
+      <div class="demo dd-bg-solid"><div class="dd-word">DIREKTA</div></div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Lock the wordmark uppercase.</strong> Anton + open tracking is the title card. That's the rule.</span></div>
+    </div>
+    <div class="cell dont">
+      <div class="demo dd-bg-solid"><div class="dd-word dd-word-lower">Direkta</div></div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">Never set the wordmark in mixed-case or lowercase. It loses the title-card authority.</span></div>
+    </div>
+  </div>
+
+  <div class="dd-row">
+    <div class="idx">02</div>
+    <div class="cell do">
+      <div class="demo" style="background:var(--ink-00);"><div class="dd-word">DIREKTA</div></div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Flat dark backgrounds.</strong> Film negative, studio, gel. Pure colour, no decoration.</span></div>
+    </div>
+    <div class="cell dont">
+      <div class="demo dd-bg-grad"><div class="dd-word">DIREKTA</div></div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No purple-to-teal gradients. No neon underglow. No "AI startup" radial blobs.</span></div>
+    </div>
+  </div>
+
+  <div class="dd-row">
+    <div class="idx">03</div>
+    <div class="cell do">
+      <div class="demo" style="background:var(--ink-00); display:flex; gap:8px;">
+        <span style="width:36px; height:36px; background:var(--ink-00); border:1px solid var(--ink-40);"></span>
+        <span style="width:36px; height:36px; background:var(--bone);"></span>
+        <span style="width:36px; height:36px; background:var(--tungsten);"></span>
+      </div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>One accent.</strong> Tungsten alone, against the ink + bone system. Three colours total.</span></div>
+    </div>
+    <div class="cell dont">
+      <div class="demo" style="background:var(--ink-00); display:flex; gap:8px;">
+        <span style="width:36px; height:36px; background:#3a82f7;"></span>
+        <span style="width:36px; height:36px; background:#e94e8a;"></span>
+        <span style="width:36px; height:36px; background:#34d399;"></span>
+        <span style="width:36px; height:36px; background:#f2b53c;"></span>
+        <span style="width:36px; height:36px; background:#a36cff;"></span>
+      </div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No second accent. No "category colours" for each workspace. The workspaces share a palette.</span></div>
+    </div>
+  </div>
+
+  <div class="dd-row">
+    <div class="idx">04</div>
+    <div class="cell do">
+      <div class="demo" style="background:var(--ink-00); flex-direction:column; gap:6px;">
+        <div style="font-family:var(--f-display); font-size:28px; letter-spacing:0.05em; text-transform:uppercase; color:var(--bone);">SCENE 04</div>
+        <div style="font-family:var(--f-mono); font-size:10px; letter-spacing:0.22em; color:var(--ink-70); text-transform:uppercase;">INT · KITCHEN · NIGHT</div>
+      </div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Anton + Mono together.</strong> Display authority with technical caption. The slate pairing.</span></div>
+    </div>
+    <div class="cell dont">
+      <div class="demo" style="background:var(--ink-00); flex-direction:column; gap:6px;">
+        <div style="font-family:Georgia, serif; font-size:28px; color:var(--bone); font-style:italic;">Scene 4</div>
+        <div style="font-family:'Comic Sans MS', cursive; font-size:12px; color:var(--ink-70);">Inside the kitchen</div>
+      </div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No third type family. No serifs. No script fonts. No "friendly" substitutes for Geist or Anton.</span></div>
+    </div>
+  </div>
+
+  <div class="dd-row">
+    <div class="idx">05</div>
+    <div class="cell do">
+      <div class="demo" style="background:var(--ink-00);">
+        <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="var(--bone)" stroke-width="1.5">
+          <rect x="3" y="5" width="6" height="5"/><rect x="10" y="5" width="6" height="5" fill="var(--bone)"/><rect x="17" y="5" width="4" height="5"/>
+          <rect x="3" y="14" width="6" height="5"/><rect x="10" y="14" width="6" height="5"/><rect x="17" y="14" width="4" height="5"/>
+        </svg>
+      </div>
+      <div class="lbl"><span class="tag">DO</span><span class="desc"><strong>Linear icons. Hard miter joins.</strong> 1.5 px stroke at 24 px. One fill state, max.</span></div>
+    </div>
+    <div class="cell dont">
+      <div class="demo" style="background:var(--ink-00);">
+        <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, #f2b53c, #d94343); display:flex; align-items:center; justify-content:center; font-size:28px;">🎬</div>
+      </div>
+      <div class="lbl"><span class="tag">DON'T</span><span class="desc">No emoji. No 3D glassy icons. No drop shadows. No rounded-square app-tile chrome.</span></div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ============================================
+     COLOPHON
+     ============================================ -->
+<div class="page">
+<section class="colophon">
+  <div class="end">FADE OUT. <em>END&nbsp;OF&nbsp;ROLL.</em></div>
+
+  <div class="credits">
+    <div><strong>Document</strong>Direkta · Brand System v2.0</div>
+    <div><strong>Status</strong>Master · Internal</div>
+    <div><strong>Owner</strong>Direkta Design</div>
+    <div><strong>Last Revision</strong>2026 · 05 · 17</div>
+  </div>
+
+  <div class="endmark">
+    <span class="bar"></span>direkta.ai<span class="bar"></span>
+  </div>
+</section>
+</div>
+
+<!-- Tweaks panel mount -->
+<div id="tweaks-root"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="assets/brand-guide-tweaks.jsx"></script>
+
+</body>
+</html>

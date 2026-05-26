@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direkta — Brand Guide v1.0</title>
+<link rel="stylesheet" href="tokens/tokens.css">
+<link rel="stylesheet" href="type/type-scale.css">
+<link rel="stylesheet" href="components/components.css">
+<link rel="stylesheet" href="motion/motion.css">
+<style>
+  /* Brand guide chrome */
+  .bg-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+  }
+  .bg-toc {
+    position: sticky; top: 0;
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--cream-deep);
+    padding: var(--sp-5) var(--sp-4);
+    overflow-y: auto;
+  }
+  .bg-toc .brand-mini {
+    display: flex; align-items: center; gap: var(--sp-2);
+    margin-bottom: var(--sp-6);
+  }
+  .bg-toc .brand-mini img { width: 36px; height: 36px; }
+  .bg-toc .brand-mini .word { font-family: var(--font-display); font-size: 18px; }
+  .bg-toc nav { display: flex; flex-direction: column; gap: 2px; }
+  .bg-toc nav a {
+    display: block; padding: 8px 12px;
+    font-family: var(--font-mono); font-size: var(--t-eyebrow);
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--mute); text-decoration: none;
+    border-radius: var(--r-sm);
+    transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+  .bg-toc nav a:hover { background: var(--bg); color: var(--ink); }
+  .bg-toc nav a.active { background: var(--ink); color: var(--on-ink); }
+  .bg-toc .toc-chapter {
+    font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--mute);
+    padding: var(--sp-4) 12px var(--sp-2);
+  }
+
+  .bg-main {
+    padding: var(--sp-7) var(--sp-7);
+    max-width: 1280px;
+  }
+
+  .chapter {
+    padding: var(--sp-9) 0;
+    border-bottom: 1px dashed var(--cream-deep);
+  }
+  .chapter:first-child { padding-top: var(--sp-5); }
+  .chapter:last-child  { border-bottom: none; }
+
+  .chapter > header { margin-bottom: var(--sp-7); }
+  .chapter > header .num {
+    font-family: var(--font-mono);
+    font-size: var(--t-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    color: var(--mute);
+    text-transform: uppercase;
+  }
+  .chapter > header h2 {
+    font-size: var(--t-display-m);
+    line-height: var(--leading-tight);
+    margin-top: var(--sp-3);
+  }
+  .chapter > header p { max-width: 60ch; margin-top: var(--sp-4); font-size: var(--t-body-l); color: var(--ink-soft); }
+
+  /* ─── Cover ─── */
+  .cover {
+    background: var(--ink);
+    color: var(--cream);
+    padding: var(--sp-9) var(--sp-7);
+    margin: calc(-1 * var(--sp-7)) calc(-1 * var(--sp-7)) 0;
+    border-radius: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover .reels {
+    position: absolute; right: -120px; top: 50%; transform: translateY(-50%);
+    display: flex; gap: var(--sp-5);
+    opacity: 0.18;
+  }
+  .cover .reels svg { width: 320px; height: 320px; }
+  .cover .reels svg:nth-child(2) { width: 240px; height: 240px; }
+  .cover .eyebrow {
+    font-family: var(--font-mono); font-size: var(--t-eyebrow);
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--accent-2);
+  }
+  .cover h1 {
+    font-size: clamp(64px, 9vw, 144px); line-height: 0.92;
+    color: var(--cream); margin-top: var(--sp-3);
+  }
+  .cover .sub {
+    font-family: var(--font-ui); font-weight: 500;
+    font-size: var(--t-h2); color: var(--cream); opacity: 0.88;
+    margin-top: var(--sp-4); max-width: 28ch; line-height: var(--leading-snug);
+  }
+  .cover .meta {
+    display: flex; gap: var(--sp-5);
+    margin-top: var(--sp-7);
+    font-family: var(--font-mono); font-size: var(--t-eyebrow);
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--cream); opacity: 0.7;
+  }
+
+  /* ─── Logo gallery ─── */
+  .logo-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-4);
+  }
+  .logo-tile {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-1);
+    display: flex; flex-direction: column; gap: var(--sp-3);
+  }
+  .logo-tile.on-dark { background: var(--ink); }
+  .logo-tile.on-cream { background: var(--bg); }
+  .logo-tile.on-tomato { background: var(--accent); }
+  .logo-tile .preview {
+    display: grid; place-items: center;
+    height: 140px;
+    padding: var(--sp-4);
+  }
+  .logo-tile .preview img { max-width: 100%; max-height: 100%; }
+  .logo-tile .label {
+    font-family: var(--font-mono); font-size: var(--t-eyebrow);
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--mute);
+  }
+  .logo-tile.on-dark .label,
+  .logo-tile.on-tomato .label { color: var(--cream); opacity: 0.7; }
+  .logo-tile .path {
+    font-family: var(--font-mono); font-size: var(--t-body-s);
+    color: var(--ink-soft);
+    word-break: break-all;
+  }
+  .logo-tile.on-dark .path,
+  .logo-tile.on-tomato .path { color: var(--cream); }
+
+  .clear-space {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: var(--sp-7);
+    box-shadow: var(--shadow-1);
+    margin-top: var(--sp-5);
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: var(--sp-6);
+    align-items: center;
+  }
+  .clear-space .demo {
+    background: var(--cream-deep);
+    border-radius: var(--r-sm);
+    padding: 60px;
+    display: grid; place-items: center;
+    position: relative;
+  }
+  .clear-space .demo .frame {
+    position: absolute; inset: 28px;
+    border: 1.5px dashed var(--tomato);
+    border-radius: var(--r-sm);
+    pointer-events: none;
+  }
+  .clear-space .demo img { width: 100%; max-width: 280px; position: relative; z-index: 1; }
+
+  /* ─── Palette ─── */
+  .palette-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: var(--sp-3);
+  }
+  .swatch {
+    border-radius: var(--radius);
+    padding: var(--sp-4);
+    display: flex; flex-direction: column; justify-content: space-between;
+    aspect-ratio: 1;
+    box-shadow: var(--shadow-1);
+    transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+  }
+  .swatch:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+  .swatch.hero { aspect-ratio: 16 / 9; grid-row: span 2; }
+  .swatch .name {
+    font-family: var(--font-display); font-size: var(--t-h3);
+    line-height: var(--leading-tight);
+  }
+  .swatch .hex {
+    font-family: var(--font-mono); font-size: var(--t-cap);
+    letter-spacing: var(--tracking-mono);
+    opacity: 0.7;
+  }
+  .swatch .token {
+    font-family: var(--font-mono); font-size: var(--t-eyebrow);
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    opacity: 0.6;
+    margin-top: 4px;
+  }
+
+  /* Ramp */
+  .ramp { display: grid; gap: var(--sp-3); margin-top: var(--sp-5); }
+  .ramp-row { display: grid; grid-template-columns: 100px 1fr; align-items: center; gap: var(--sp-4); }
+  .ramp-row .label { font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: var(--tracking-eyebrow); color: var(--mute); text-transform: uppercase; }
+  .ramp-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; border-radius: var(--r-sm); overflow: hidden; }
+  .ramp-step { padding: var(--sp-3); display: flex; flex-direction: column; gap: 4px; min-height: 80px; }
+  .ramp-step .nm { font-family: var(--font-ui); font-weight: 700; font-size: var(--t-body-s); }
+  .ramp-step .hx { font-family: var(--font-mono); font-size: var(--t-cap); opacity: 0.7; }
+
+  /* ─── Type ─── */
+  .type-grid { display: grid; gap: var(--sp-4); }
+  .type-row {
+    display: grid; grid-template-columns: 160px 1fr;
+    gap: var(--sp-5);
+    padding: var(--sp-4) 0;
+    border-bottom: 1px dashed var(--cream-deep);
+  }
+  .type-row .meta {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .type-row .meta .role { font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--mute); }
+  .type-row .meta .token { font-family: var(--font-mono); font-size: var(--t-body-s); color: var(--ink-soft); }
+  .type-row .specimen { min-width: 0; overflow: hidden; }
+
+  /* ─── Components mini-strip ─── */
+  .component-section { background: var(--surface); border-radius: var(--radius); padding: var(--sp-6); box-shadow: var(--shadow-1); margin-bottom: var(--sp-5); }
+  .component-section h3 { margin-bottom: var(--sp-4); }
+  .component-section .stage { background: var(--bg); border-radius: var(--r-sm); padding: var(--sp-5); display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+  .component-section .stage.block { display: block; }
+
+  /* ─── Applied — full dashboard mock ─── */
+  .applied {
+    background: var(--bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .applied-body { padding: var(--sp-6); }
+
+  /* ─── Tokens reference table ─── */
+  .token-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-1); }
+  .token-table th, .token-table td { padding: 12px var(--sp-4); text-align: left; vertical-align: middle; border-bottom: 1px solid var(--cream-deep); }
+  .token-table th { background: var(--cream-deep); font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--mute); }
+  .token-table td.token { font-family: var(--font-mono); font-size: var(--t-body-s); color: var(--ink-soft); }
+  .token-table td.value { font-family: var(--font-mono); font-size: var(--t-body-s); color: var(--accent-hover); }
+
+  /* ─── Don't grid ─── */
+  .donts {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+    margin-top: var(--sp-5);
+  }
+  .do, .dont {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-1);
+    position: relative;
+  }
+  .do::before, .dont::before {
+    position: absolute; top: -10px; left: var(--sp-4);
+    padding: 4px 10px;
+    font-family: var(--font-mono); font-size: var(--t-eyebrow);
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    border-radius: var(--r-pill);
+    box-shadow: var(--shadow-1);
+  }
+  .do::before { content: "✓ DO"; background: var(--accent-3); color: var(--on-accent-3); }
+  .dont::before { content: "✗ DON'T"; background: var(--accent); color: var(--on-accent); }
+  .do h4, .dont h4 { margin-top: var(--sp-3); }
+  .do p, .dont p { margin-top: var(--sp-2); color: var(--ink-soft); }
+
+  /* Handoff index */
+  .handoff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+  .handoff-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-1);
+  }
+  .handoff-card h4 { margin-bottom: var(--sp-2); }
+  .handoff-card code,
+  .handoff-card pre {
+    font-family: var(--font-mono); font-size: var(--t-body-s);
+    background: var(--ink); color: var(--cream);
+    padding: 2px 8px; border-radius: var(--r-sm);
+  }
+  .handoff-card pre { padding: var(--sp-3); display: block; overflow-x: auto; line-height: 1.5; white-space: pre; margin-top: var(--sp-3); }
+
+  /* small screen fallback */
+  @media (max-width: 900px) {
+    .bg-shell { grid-template-columns: 1fr; }
+    .bg-toc { position: relative; height: auto; }
+    .palette-grid, .logo-grid, .handoff-grid, .donts { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-shell">
+
+  <aside class="bg-toc">
+    <div class="brand-mini">
+      <img src="logo/logomark.svg" alt=""/>
+      <span class="word">Direkta</span>
+    </div>
+    <div class="toc-chapter">v1.0 · Brand Guide</div>
+    <nav>
+      <a href="#cover">Cover</a>
+      <a href="#voice">01 · Voice</a>
+      <a href="#logo">02 · Logo</a>
+      <a href="#palette">03 · Palette</a>
+      <a href="#type">04 · Type</a>
+      <a href="#components">05 · Components</a>
+      <a href="#applied">06 · Applied</a>
+      <a href="#motion">07 · Motion</a>
+      <a href="#dosdonts">08 · Do / Don't</a>
+      <a href="#handoff">09 · Handoff</a>
+    </nav>
+  </aside>
+
+  <main class="bg-main">
+
+    <!-- COVER ────────────────────────────────────────────── -->
+    <section class="cover" id="cover">
+      <div class="reels">
+        <img src="logo/logomark-tomato.svg" alt=""/>
+        <img src="logo/logomark-cream.svg" alt=""/>
+      </div>
+      <div style="position: relative; z-index: 1;">
+        <div class="eyebrow">DIREKTA · BRAND GUIDE · v1.0</div>
+        <h1>Now<br/>Showing.</h1>
+        <p class="sub">An AI filmmaking tool with a concession-stand heart. Playful retro, modern bones.</p>
+        <div class="meta">
+          <span>ISSUED · MAY 2026</span>
+          <span>BUILD FOR · CLAUDE CODE</span>
+          <span>HANDOFF · /brand</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 01 VOICE ─────────────────────────────────────────── -->
+    <section class="chapter" id="voice">
+      <header>
+        <div class="num">CHAPTER 01</div>
+        <h2>Voice</h2>
+        <p>Direkta is a tool for filmmakers — but it is itself a film of a kind. The brand sits between two poles: <strong>vintage cinema poster</strong> on one side, <strong>modern product chrome</strong> on the other. Pick one, never both.</p>
+      </header>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5);">
+        <div class="card card-tilt-a">
+          <span class="t-eyebrow">WE ARE</span>
+          <h3 class="t-h2" style="margin-top: var(--sp-2);">Concession-stand warm</h3>
+          <p style="margin-top: var(--sp-3);">Cream over cocoa. Tomato and mustard and viridian. Chunky Bagel Fat One headlines. Pillow shadows, no harsh outlines. A tilted card. The vibe of a 1960s drive-in snack bar, run by a sound mixer.</p>
+        </div>
+        <div class="card card-tilt-b">
+          <span class="t-eyebrow">WE ARE NOT</span>
+          <h3 class="t-h2" style="margin-top: var(--sp-2);">Cold, technical, dark</h3>
+          <p style="margin-top: var(--sp-3);">No film-negative blacks. No Anton-condensed all-caps technical labels. No sharp 90° corners on cards. No neon glow effects. We left the dark-film identity behind in v0; this is its replacement.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 LOGO ──────────────────────────────────────────── -->
+    <section class="chapter" id="logo">
+      <header>
+        <div class="num">CHAPTER 02</div>
+        <h2>Logo</h2>
+        <p>A concentric lens — film reel, camera iris, and "now showing" target dot. Four rings: cocoa outer, cream gap, mustard inner, tomato lens. Paired with the <strong>Bagel Fat One</strong> wordmark.</p>
+      </header>
+
+      <div class="logo-grid">
+        <div class="logo-tile">
+          <div class="preview"><img src="logo/primary-lockup.svg" alt=""/></div>
+          <span class="label">PRIMARY LOCKUP · CREAM</span>
+          <span class="path">logo/primary-lockup.svg</span>
+        </div>
+        <div class="logo-tile on-dark">
+          <div class="preview"><img src="logo/primary-lockup-cream.svg" alt=""/></div>
+          <span class="label">PRIMARY LOCKUP · DARK SURFACES</span>
+          <span class="path">logo/primary-lockup-cream.svg</span>
+        </div>
+        <div class="logo-tile">
+          <div class="preview"><img src="logo/primary-lockup-color.svg" alt=""/></div>
+          <span class="label">HERO COLOUR · MARKETING ONLY</span>
+          <span class="path">logo/primary-lockup-color.svg</span>
+        </div>
+
+        <div class="logo-tile">
+          <div class="preview" style="height: 100px;"><img src="logo/logomark.svg" alt="" style="width: 100px; height: 100px;"/></div>
+          <span class="label">LOGOMARK · DEFAULT</span>
+          <span class="path">logo/logomark.svg</span>
+        </div>
+        <div class="logo-tile on-dark">
+          <div class="preview" style="height: 100px;"><img src="logo/logomark-cream.svg" alt="" style="width: 100px; height: 100px;"/></div>
+          <span class="label">LOGOMARK · DARK</span>
+          <span class="path">logo/logomark-cream.svg</span>
+        </div>
+        <div class="logo-tile">
+          <div class="preview" style="height: 100px;"><img src="logo/logomark-tomato.svg" alt="" style="width: 100px; height: 100px;"/></div>
+          <span class="label">LOGOMARK · TOMATO HERO</span>
+          <span class="path">logo/logomark-tomato.svg</span>
+        </div>
+      </div>
+
+      <div class="clear-space">
+        <div>
+          <span class="t-eyebrow">CLEAR SPACE</span>
+          <h3 class="t-h2" style="margin-top: var(--sp-2);">A radius of breathing room</h3>
+          <p style="margin-top: var(--sp-3);">Reserve a margin equal to <strong>the radius of the lens mark's outer ring</strong> around every side. Nothing — text, edge, other graphic — may enter that zone.</p>
+          <p style="margin-top: var(--sp-3);">Full minimum-size table in <code style="background: var(--cream-deep); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;">logo/README.md</code>.</p>
+        </div>
+        <div class="demo">
+          <div class="frame"></div>
+          <img src="logo/primary-lockup.svg" alt=""/>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 PALETTE ───────────────────────────────────────── -->
+    <section class="chapter" id="palette">
+      <header>
+        <div class="num">CHAPTER 03</div>
+        <h2>Palette</h2>
+        <p>Five core tones. Cream is the page. Cocoa is the ink. Tomato, mustard, and viridian are the only colours that mean anything — they map to <strong>danger</strong>, <strong>in-progress</strong>, and <strong>success</strong> respectively. Use them on purpose.</p>
+      </header>
+
+      <div class="palette-grid">
+        <div class="swatch hero" style="background: #F5EDDC; color: #2A1A12;">
+          <div>
+            <div class="name">Cream</div>
+            <div class="token">--bg · --cream</div>
+          </div>
+          <div class="hex">#F5EDDC</div>
+        </div>
+        <div class="swatch" style="background: #2A1A12; color: #F5EDDC;">
+          <div><div class="name">Cocoa</div><div class="token">--ink</div></div>
+          <div class="hex">#2A1A12</div>
+        </div>
+        <div class="swatch" style="background: #E84A35; color: #FFFBF1;">
+          <div><div class="name">Tomato</div><div class="token">--accent</div></div>
+          <div class="hex">#E84A35</div>
+        </div>
+        <div class="swatch" style="background: #F2B83C; color: #2A1A12;">
+          <div><div class="name">Mustard</div><div class="token">--accent-2</div></div>
+          <div class="hex">#F2B83C</div>
+        </div>
+        <div class="swatch" style="background: #3DA89B; color: #FFFBF1;">
+          <div><div class="name">Viridian</div><div class="token">--accent-3</div></div>
+          <div class="hex">#3DA89B</div>
+        </div>
+        <div class="swatch" style="background: #FFFBF1; color: #2A1A12; box-shadow: inset 0 0 0 1px var(--cream-deep);">
+          <div><div class="name">Warm white</div><div class="token">--surface</div></div>
+          <div class="hex">#FFFBF1</div>
+        </div>
+        <div class="swatch" style="background: #EAD8B5; color: #2A1A12;">
+          <div><div class="name">Deep cream</div><div class="token">--surface-2</div></div>
+          <div class="hex">#EAD8B5</div>
+        </div>
+        <div class="swatch" style="background: #7A6855; color: #FFFBF1;">
+          <div><div class="name">Mute</div><div class="token">--mute</div></div>
+          <div class="hex">#7A6855</div>
+        </div>
+        <div class="swatch" style="background: #B6321F; color: #FFFBF1;">
+          <div><div class="name">Tomato deep</div><div class="token">--accent-hover</div></div>
+          <div class="hex">#B6321F</div>
+        </div>
+      </div>
+
+      <div class="ramp">
+        <div class="ramp-row">
+          <span class="label">Tomato ramp</span>
+          <div class="ramp-steps">
+            <div class="ramp-step" style="background: #FFE0DA;"><span class="nm">Wash</span><span class="hx">#FFE0DA</span></div>
+            <div class="ramp-step" style="background: #E84A35; color: #FFFBF1;"><span class="nm">Base</span><span class="hx">#E84A35</span></div>
+            <div class="ramp-step" style="background: #B6321F; color: #FFFBF1;"><span class="nm">Deep</span><span class="hx">#B6321F</span></div>
+            <div class="ramp-step" style="background: #6D1810; color: #FFFBF1;"><span class="nm">Ink</span><span class="hx">#6D1810</span></div>
+          </div>
+        </div>
+        <div class="ramp-row">
+          <span class="label">Mustard ramp</span>
+          <div class="ramp-steps">
+            <div class="ramp-step" style="background: #FCEDC7;"><span class="nm">Wash</span><span class="hx">#FCEDC7</span></div>
+            <div class="ramp-step" style="background: #F2B83C;"><span class="nm">Base</span><span class="hx">#F2B83C</span></div>
+            <div class="ramp-step" style="background: #C7901C; color: #FFFBF1;"><span class="nm">Deep</span><span class="hx">#C7901C</span></div>
+            <div class="ramp-step" style="background: #7A5410; color: #FFFBF1;"><span class="nm">Ink</span><span class="hx">#7A5410</span></div>
+          </div>
+        </div>
+        <div class="ramp-row">
+          <span class="label">Viridian ramp</span>
+          <div class="ramp-steps">
+            <div class="ramp-step" style="background: #D2EDE9;"><span class="nm">Wash</span><span class="hx">#D2EDE9</span></div>
+            <div class="ramp-step" style="background: #3DA89B; color: #FFFBF1;"><span class="nm">Base</span><span class="hx">#3DA89B</span></div>
+            <div class="ramp-step" style="background: #26786E; color: #FFFBF1;"><span class="nm">Deep</span><span class="hx">#26786E</span></div>
+            <div class="ramp-step" style="background: #134640; color: #FFFBF1;"><span class="nm">Ink</span><span class="hx">#134640</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 TYPE ──────────────────────────────────────────── -->
+    <section class="chapter" id="type">
+      <header>
+        <div class="num">CHAPTER 04</div>
+        <h2>Type</h2>
+        <p>Three families. <strong>Bagel Fat One</strong> for headlines, <strong>Nunito</strong> for body, <strong>JetBrains Mono</strong> for eyebrows and timecodes. Mixing within a single word is forbidden.</p>
+      </header>
+
+      <div class="type-grid">
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">DISPLAY · L</span>
+            <span class="token">--t-display-l · Bagel Fat One</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-display); font-size: var(--t-display-l); line-height: var(--leading-tight); color: var(--ink);">Now Showing</div>
+        </div>
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">H1</span>
+            <span class="token">--t-h1 · Bagel Fat One</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-display); font-size: var(--t-h1); line-height: var(--leading-snug); color: var(--ink);">The Lisbon Pact</div>
+        </div>
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">H2</span>
+            <span class="token">--t-h2 · Bagel Fat One</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-display); font-size: var(--t-h2); color: var(--ink);">Production Pipeline</div>
+        </div>
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">H3</span>
+            <span class="token">--t-h3 · Bagel Fat One</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-display); font-size: var(--t-h3); color: var(--ink);">STORYBOARD</div>
+        </div>
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">BODY · L</span>
+            <span class="token">--t-body-l · Nunito 500</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-ui); font-weight: 500; font-size: var(--t-body-l); line-height: var(--leading-body); color: var(--ink);">An ex-spy returns to Portugal to settle a debt — and finds his daughter waiting at the table.</div>
+        </div>
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">BODY</span>
+            <span class="token">--t-body · Nunito 400</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-ui); font-size: var(--t-body); line-height: var(--leading-body); color: var(--ink);">The quick brown fox jumps over the lazy dog. Default reading size; sits at 15px so it survives every dashboard density.</div>
+        </div>
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">MONO</span>
+            <span class="token">--t-body-s · JetBrains Mono</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-mono); font-size: var(--t-body-s); letter-spacing: var(--tracking-mono); color: var(--ink);">REEL_03_BEAT_12_v07 · 00:42 · TAKE 02</div>
+        </div>
+        <div class="type-row">
+          <div class="meta">
+            <span class="role">EYEBROW</span>
+            <span class="token">--t-eyebrow · Mono 500, tracked</span>
+          </div>
+          <div class="specimen" style="font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--mute);">PRODUCTION PIPELINE · 5 STAGES</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 COMPONENTS ────────────────────────────────────── -->
+    <section class="chapter" id="components">
+      <header>
+        <div class="num">CHAPTER 05</div>
+        <h2>Components</h2>
+        <p>A small library. Live examples and copy-paste markup in <code style="background: var(--cream-deep); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;">components/examples.html</code>.</p>
+      </header>
+
+      <div class="component-section">
+        <h3 class="t-h3">Buttons</h3>
+        <div class="stage">
+          <button class="btn btn-primary">Continue working →</button>
+          <button class="btn btn-secondary">Edit project</button>
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-primary btn-sm">Small</button>
+          <button class="btn btn-primary btn-lg">Large</button>
+        </div>
+      </div>
+
+      <div class="component-section">
+        <h3 class="t-h3">Status — pips & pills</h3>
+        <div class="stage">
+          <span class="pip-state" data-status="working">WORKING</span>
+          <span class="pip-state" data-status="done">DONE</span>
+          <span class="pip-state" data-status="draft">DRAFT</span>
+          <span class="pip-state" data-status="error">NEEDS REVIEW</span>
+          <span style="margin-left: var(--sp-4); display: inline-flex; gap: 8px; align-items: center;">
+            <span class="pip fx-pulse-pip" data-status="working"></span>
+            <span class="pip" data-status="done"></span>
+            <span class="pip" data-status="draft"></span>
+            <span class="pip" data-status="error"></span>
+          </span>
+        </div>
+      </div>
+
+      <div class="component-section">
+        <h3 class="t-h3">Tags</h3>
+        <div class="stage">
+          <span class="tag">Short</span>
+          <span class="tag tag-2">8 min</span>
+          <span class="tag tag-3">Drama</span>
+          <span class="tag tag-accent">Hero</span>
+          <span class="tag">47 scenes</span>
+        </div>
+      </div>
+
+      <div class="component-section">
+        <h3 class="t-h3">Cards (with signature tilt)</h3>
+        <div class="stage" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4);">
+          <div class="card card-tilt-a"><h4 class="t-h3">Card A</h4><p class="t-body-s t-mute" style="margin-top: var(--sp-2);">Tilts left, 0.6°</p></div>
+          <div class="card card-tilt-b"><h4 class="t-h3">Card B</h4><p class="t-body-s t-mute" style="margin-top: var(--sp-2);">Tilts right, 0.5°</p></div>
+          <div class="card card-tilt-c"><h4 class="t-h3">Card C</h4><p class="t-body-s t-mute" style="margin-top: var(--sp-2);">Gentlest, 0.3°</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 APPLIED ───────────────────────────────────────── -->
+    <section class="chapter" id="applied">
+      <header>
+        <div class="num">CHAPTER 06</div>
+        <h2>Applied · Direkta dashboard</h2>
+        <p>Everything above, composed. This is what the product looks like when you wire it all together.</p>
+      </header>
+
+      <div class="applied">
+        <div class="topnav">
+          <div class="topnav-brand">
+            <img src="logo/primary-lockup.svg" alt="Direkta" style="height: 36px;"/>
+          </div>
+          <div class="topnav-project">
+            <span class="name">The Lisbon Pact</span>
+            <span class="meta">SHORT · 8 MIN</span>
+          </div>
+          <div class="topnav-right">
+            <span class="topnav-saved">● SAVED · just now</span>
+            <div class="topnav-avatar">MD</div>
+          </div>
+        </div>
+        <div class="applied-body">
+          <header class="page-head">
+            <div>
+              <span class="t-eyebrow">DASHBOARD · THE LISBON PACT</span>
+              <h1 class="t-display-m" style="margin-top: var(--sp-2);">The Lisbon Pact</h1>
+              <p class="lead" style="margin-top: var(--sp-3); max-width: 60ch;">An ex-spy returns to Portugal to settle a debt — and finds his daughter waiting at the table.</p>
+              <div class="tag-strip" style="margin-top: var(--sp-4);">
+                <span class="tag">Short</span>
+                <span class="tag tag-2">8 min</span>
+                <span class="tag tag-3">Drama</span>
+                <span class="tag">47 scenes</span>
+                <span class="tag">6 characters</span>
+              </div>
+            </div>
+            <div class="page-head-actions">
+              <button class="btn btn-secondary">Edit project</button>
+              <button class="btn btn-primary">Continue working →</button>
+            </div>
+          </header>
+
+          <div style="margin-top: var(--sp-5);">
+            <span class="t-eyebrow">PRODUCTION PIPELINE · 5 STAGES</span>
+            <div class="pipeline" style="margin-top: var(--sp-3);">
+              <article class="stage-card card-tilt-a" data-status="done">
+                <header><span class="t-eyebrow">01 / 05</span><span class="pip" data-status="done"></span></header>
+                <h3 class="t-h3">SCRIPT</h3>
+                <p class="t-body-s t-mute">46 beats · Bible built</p>
+                <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+                <span class="pip-state" data-status="done" style="align-self: flex-start;">DONE</span>
+              </article>
+              <article class="stage-card card-tilt-b" data-status="working">
+                <header><span class="t-eyebrow">02 / 05</span><span class="pip fx-pulse-pip" data-status="working"></span></header>
+                <h3 class="t-h3">CASTING</h3>
+                <p class="t-body-s t-mute">4 of 6 souls trained</p>
+                <div class="progress"><div class="progress-bar" style="width:66%"></div></div>
+                <span class="pip-state" data-status="working" style="align-self: flex-start;">WORKING</span>
+              </article>
+              <article class="stage-card card-tilt-c" data-status="working">
+                <header><span class="t-eyebrow">03 / 05</span><span class="pip fx-pulse-pip" data-status="working"></span></header>
+                <h3 class="t-h3">BOARDS</h3>
+                <p class="t-body-s t-mute">15 of 47 frames</p>
+                <div class="progress"><div class="progress-bar" style="width:31%"></div></div>
+                <span class="pip-state" data-status="working" style="align-self: flex-start;">WORKING</span>
+              </article>
+              <article class="stage-card card-tilt-a" data-status="locked">
+                <header><span class="t-eyebrow">04 / 05</span><span class="pip" data-status="draft"></span></header>
+                <h3 class="t-h3">STITCH</h3>
+                <p class="t-body-s t-mute">Locked — needs boards</p>
+                <div class="progress"><div class="progress-bar" style="width:0%"></div></div>
+                <span class="pip-state" data-status="draft" style="align-self: flex-start;">LOCKED</span>
+              </article>
+              <article class="stage-card card-tilt-b" data-status="locked">
+                <header><span class="t-eyebrow">05 / 05</span><span class="pip" data-status="draft"></span></header>
+                <h3 class="t-h3">EXPORT</h3>
+                <p class="t-body-s t-mute">Locked — needs stitch</p>
+                <div class="progress"><div class="progress-bar" style="width:0%"></div></div>
+                <span class="pip-state" data-status="draft" style="align-self: flex-start;">LOCKED</span>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 MOTION ────────────────────────────────────────── -->
+    <section class="chapter" id="motion">
+      <header>
+        <div class="num">CHAPTER 07</div>
+        <h2>Motion</h2>
+        <p>Direkta moves with <strong>soft spring</strong>. No linear easings; nothing snaps; nothing slides. Three durations, three easings — pick by the size of the change.</p>
+      </header>
+
+      <table class="token-table">
+        <thead>
+          <tr><th>Token</th><th>Value</th><th>Use for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="token">--dur-1</td><td class="value">120ms</td><td>Micro — hover lifts, focus rings, pip pulses</td></tr>
+          <tr><td class="token">--dur-2</td><td class="value">220ms</td><td>Standard — card hovers, tab switches, modal fade</td></tr>
+          <tr><td class="token">--dur-3</td><td class="value">360ms</td><td>Macro — modal pop, page enter, drawer open</td></tr>
+          <tr><td class="token">--dur-4</td><td class="value">520ms</td><td>Hero — splash, on-load reveal</td></tr>
+          <tr><td class="token">--ease-out</td><td class="value">cubic-bezier(0.22, 0.61, 0.36, 1)</td><td>Default — content arriving</td></tr>
+          <tr><td class="token">--ease-in</td><td class="value">cubic-bezier(0.55, 0.06, 0.68, 0.19)</td><td>Content leaving</td></tr>
+          <tr><td class="token">--ease-spring</td><td class="value">cubic-bezier(0.34, 1.56, 0.64, 1)</td><td>Modal pop, success states</td></tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top: var(--sp-5); max-width: 60ch; color: var(--ink-soft);">Cards lift on hover (translateY −2px + shadow step). Lists stagger in at 60ms per item. The working pip pulses at 1.4s. Full keyframes in <code style="background: var(--cream-deep); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;">motion/motion.css</code>.</p>
+    </section>
+
+    <!-- 08 DO / DON'T ────────────────────────────────────── -->
+    <section class="chapter" id="dosdonts">
+      <header>
+        <div class="num">CHAPTER 08</div>
+        <h2>Do / Don't</h2>
+        <p>The fast version of every rule above.</p>
+      </header>
+
+      <div class="donts">
+        <div class="do">
+          <h4 class="t-h3">Use cream as the page</h4>
+          <p>Cream (#F5EDDC) is the canvas. Cards sit on it in warm white (#FFFBF1). Cocoa (#2A1A12) is for text and the occasional inverted card.</p>
+        </div>
+        <div class="dont">
+          <h4 class="t-h3">Don't use pure white anywhere</h4>
+          <p>White on cream reads cold and clinical. Warm white (--surface, #FFFBF1) is the only "almost white" we use.</p>
+        </div>
+
+        <div class="do">
+          <h4 class="t-h3">Tilt collected cards</h4>
+          <p>Dashboard pipeline, library grids, quick-access rows — apply card-tilt-a/b/c in rotation. The ±0.3°–0.6° rhythm is the brand's signature.</p>
+        </div>
+        <div class="dont">
+          <h4 class="t-h3">Don't tilt inputs, modals, or toasts</h4>
+          <p>Functional surfaces stay straight. Tilt is for content cards in a row — never for interactive form elements or single-focus dialogs.</p>
+        </div>
+
+        <div class="do">
+          <h4 class="t-h3">Soft pillow shadows</h4>
+          <p>Three depths: --shadow-1, -2, -3. Always layered (close + far). Never offset block; never harsh.</p>
+        </div>
+        <div class="dont">
+          <h4 class="t-h3">Don't add outlines to cards</h4>
+          <p>Outline weight is 0 in this brand. Definition comes from shadow + colour contrast. The only hairlines allowed are inside inputs and dividers.</p>
+        </div>
+
+        <div class="do">
+          <h4 class="t-h3">Reserve colour for meaning</h4>
+          <p>Tomato = danger / CTA. Mustard = in-progress. Viridian = success / complete. Don't reach for accent colours decoratively.</p>
+        </div>
+        <div class="dont">
+          <h4 class="t-h3">Don't gradient anything</h4>
+          <p>Flat colours only. The brand is bold and confident — gradients muddy the silhouette and signal "AI slop" instantly.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 HANDOFF ───────────────────────────────────────── -->
+    <section class="chapter" id="handoff">
+      <header>
+        <div class="num">CHAPTER 09</div>
+        <h2>Handoff to Claude Code</h2>
+        <p>How to bring this brand into a new codebase. Everything you need is in <code style="background: var(--cream-deep); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;">/brand</code> — start with <code style="background: var(--cream-deep); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;">README.md</code>.</p>
+      </header>
+
+      <div class="handoff-grid">
+        <div class="handoff-card">
+          <span class="t-eyebrow">STEP 01</span>
+          <h4 class="t-h3" style="margin-top: var(--sp-2);">Drop the tokens in</h4>
+          <p style="margin-top: var(--sp-2); color: var(--ink-soft);">Single source of truth for every colour, type size, radius, shadow, and motion curve.</p>
+          <pre>&lt;link rel="stylesheet" href="brand/tokens/tokens.css"&gt;</pre>
+        </div>
+
+        <div class="handoff-card">
+          <span class="t-eyebrow">STEP 02</span>
+          <h4 class="t-h3" style="margin-top: var(--sp-2);">Load the fonts</h4>
+          <p style="margin-top: var(--sp-2); color: var(--ink-soft);">Bagel Fat One, Nunito, JetBrains Mono. Loaded via the <code>@import</code> in tokens.css, or use a &lt;link&gt; — see type/README.md.</p>
+        </div>
+
+        <div class="handoff-card">
+          <span class="t-eyebrow">STEP 03</span>
+          <h4 class="t-h3" style="margin-top: var(--sp-2);">Add type + components + motion</h4>
+          <pre>&lt;link rel="stylesheet" href="brand/type/type-scale.css"&gt;
+&lt;link rel="stylesheet" href="brand/components/components.css"&gt;
+&lt;link rel="stylesheet" href="brand/motion/motion.css"&gt;</pre>
+        </div>
+
+        <div class="handoff-card">
+          <span class="t-eyebrow">STEP 04</span>
+          <h4 class="t-h3" style="margin-top: var(--sp-2);">Use the lockup</h4>
+          <p style="margin-top: var(--sp-2); color: var(--ink-soft);">Default brand mark — drop into any nav bar.</p>
+          <pre>&lt;img src="brand/logo/primary-lockup.svg"
+     alt="Direkta"
+     style="height: 36px;"&gt;</pre>
+        </div>
+
+        <div class="handoff-card" style="grid-column: 1 / -1;">
+          <span class="t-eyebrow">STEP 05 · REFERENCE</span>
+          <h4 class="t-h3" style="margin-top: var(--sp-2);">Component examples</h4>
+          <p style="margin-top: var(--sp-2); color: var(--ink-soft);">Open <code>brand/components/examples.html</code> in a browser. Every component the system ships, rendered live with copy-paste markup. Class names match the CSS exactly.</p>
+        </div>
+      </div>
+
+      <div style="margin-top: var(--sp-7); padding: var(--sp-5); background: var(--ink); color: var(--cream); border-radius: var(--radius);">
+        <span style="font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: var(--tracking-eyebrow); color: var(--accent-2); text-transform: uppercase;">FOLDER MAP</span>
+        <pre style="margin-top: var(--sp-3); font-family: var(--font-mono); font-size: var(--t-body-s); color: var(--cream); line-height: 1.6; white-space: pre;">brand/
+├── README.md                   ← start here
+├── Brand Guide.html            ← this document
+├── tokens/
+│   ├── tokens.css              ← single source of truth
+│   └── tokens.json             ← machine-readable
+├── logo/
+│   ├── README.md               ← usage rules + minimums
+│   ├── primary-lockup.svg      ← default
+│   ├── primary-lockup-cream.svg
+│   ├── primary-lockup-color.svg
+│   ├── logomark.svg            ← mark alone
+│   ├── logomark-cream.svg
+│   ├── logomark-tomato.svg
+│   ├── logomark-mono.svg
+│   ├── wordmark.svg
+│   └── wordmark-cream.svg
+├── type/
+│   ├── README.md
+│   └── type-scale.css
+├── components/
+│   ├── README.md
+│   ├── components.css
+│   └── examples.html
+└── motion/
+    ├── README.md
+    └── motion.css</pre>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// TOC active-section highlight
+(() => {
+  const links = document.querySelectorAll('.bg-toc nav a');
+  const sections = [...links].map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px' });
+  sections.forEach(s => io.observe(s));
+})();
+</script>
+</body>
+</html>

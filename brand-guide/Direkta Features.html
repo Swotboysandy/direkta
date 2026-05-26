@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direkta — Features List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<style>
+body { padding: 0; overflow-x: hidden; }
+.page { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+
+/* — Top slate — */
+.slate {
+  border-bottom: 1px solid var(--ink-40);
+  padding: 14px 48px;
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 24px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-70);
+  position: sticky; top: 0; background: var(--ink-00); z-index: 50;
+}
+.slate .rec { display: inline-flex; align-items: center; gap: 8px; }
+.slate .rec .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tungsten); animation: blink 1.6s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: 0.3; } }
+.slate .mid { color: var(--bone); letter-spacing: 0.3em; text-align: center; }
+.slate .right { text-align: right; }
+
+/* — Hero — */
+.hero { padding: 72px 0 56px; border-bottom: 1px solid var(--ink-40); }
+.hero .crumb { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.24em; color: var(--tungsten); text-transform: uppercase; margin-bottom: 24px; }
+.hero h1 {
+  font-family: var(--f-display);
+  font-size: clamp(72px, 12vw, 160px);
+  line-height: 0.88; letter-spacing: 0.04em;
+  color: var(--bone); text-transform: uppercase;
+}
+.hero h1 em { font-style: normal; color: var(--tungsten); }
+.hero .below {
+  margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--ink-40);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 56px;
+}
+.hero .below .l { color: var(--ink-70); font-size: 15px; line-height: 1.65; max-width: 48ch; }
+.hero .below .l strong { color: var(--bone); font-weight: 500; }
+.hero .below .r {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
+  align-self: end;
+  border-top: 1px solid var(--ink-40);
+}
+.hero .stat { padding: 18px 16px 0; border-right: 1px solid var(--ink-40); }
+.hero .stat:last-child { border-right: none; }
+.hero .stat .v { font-family: var(--f-display); font-size: 40px; color: var(--bone); letter-spacing: 0.02em; line-height: 1; }
+.hero .stat .l { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.22em; color: var(--ink-60); text-transform: uppercase; margin-top: 6px; }
+
+/* — Section — */
+.section { padding: 80px 0 0; }
+.section-head {
+  display: grid; grid-template-columns: 90px 1fr auto;
+  gap: 32px; align-items: baseline;
+  padding-bottom: 18px; border-bottom: 1px solid var(--ink-40);
+  margin-bottom: 32px;
+}
+.section-head .num {
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.24em; color: var(--tungsten); text-transform: uppercase;
+}
+.section-head h2 {
+  font-family: var(--f-display); font-size: clamp(40px, 6vw, 64px);
+  letter-spacing: 0.03em; line-height: 0.95;
+  color: var(--bone); text-transform: uppercase;
+}
+.section-head .meta {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.22em; color: var(--ink-60); text-transform: uppercase;
+}
+.section-sub {
+  margin: -16px 0 36px;
+  padding-left: 122px;
+  color: var(--ink-70); font-size: 15px; line-height: 1.65;
+  max-width: 70ch;
+}
+.section-sub strong { color: var(--bone); font-weight: 500; }
+
+/* — Feature row — */
+.feature {
+  display: grid; grid-template-columns: 48px 1fr auto;
+  gap: 24px; align-items: baseline;
+  padding: 16px 0 16px;
+  border-bottom: 1px solid var(--ink-25);
+}
+.feature .idx {
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.18em; color: var(--ink-60); text-transform: uppercase;
+}
+.feature .body { display: flex; flex-direction: column; gap: 4px; }
+.feature .body .name { color: var(--bone); font-size: 15px; font-weight: 500; letter-spacing: -0.005em; }
+.feature .body .desc { color: var(--ink-70); font-size: 13px; line-height: 1.55; max-width: 72ch; }
+.feature .tag {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  padding: 4px 8px;
+  border: 1px solid var(--ink-30);
+  color: var(--ink-70);
+  white-space: nowrap;
+}
+.feature .tag.shipped { color: var(--green); border-color: rgba(111,191,138,0.4); }
+.feature .tag.live    { color: var(--tungsten); border-color: rgba(242,181,60,0.4); }
+
+/* — Subsection (for tabs/states inside a workspace) — */
+.sub {
+  margin: 32px 0 16px;
+  display: flex; align-items: baseline; gap: 12px;
+}
+.sub .pill {
+  display: inline-block;
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.22em; color: var(--tungsten); text-transform: uppercase;
+  padding: 4px 8px; border: 1px solid var(--tungsten); border-color: rgba(242,181,60,0.5);
+}
+.sub h3 {
+  font-family: var(--f-display); font-size: 22px;
+  letter-spacing: 0.04em; color: var(--bone); text-transform: uppercase;
+}
+
+/* — Footer — */
+.footer {
+  margin: 96px 0 64px; padding-top: 48px;
+  border-top: 1px solid var(--ink-40);
+  text-align: center;
+}
+.footer .end {
+  font-family: var(--f-display);
+  font-size: clamp(40px, 6vw, 64px);
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone);
+}
+.footer .end em { font-style: normal; color: var(--tungsten); }
+.footer .mark {
+  margin-top: 32px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.22em; color: var(--ink-60); text-transform: uppercase;
+}
+.footer .mark .bar { display: inline-block; width: 60px; height: 1px; background: var(--ink-40); vertical-align: middle; margin: 0 12px; }
+</style>
+</head>
+<body>
+
+<header class="slate">
+  <div><span class="rec"><span class="dot"></span>REC</span>&nbsp;&nbsp;DIREKTA · FEATURES</div>
+  <div class="mid">PROJECT INDEX — V 1.0</div>
+  <div class="right">2026 / 05 / 19</div>
+</header>
+
+<div class="page">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="crumb">PROJECT MANIFEST · DIRECTOR-FACING APP</div>
+  <h1>Every feature.<br><em>One list.</em></h1>
+  <div class="below">
+    <div class="l">
+      Direkta is built as <strong>seven workspaces sharing one database</strong>, each purpose-built for one phase of pre-production. The pipeline runs <strong>Scripting → Casting → Storyboard → Stitch → Export</strong>, with Dashboard above and Library beside. Below is every feature shipped in the prototype to date.
+    </div>
+    <div class="r">
+      <div class="stat"><div class="v">7</div><div class="l">Workspaces</div></div>
+      <div class="stat"><div class="v">9</div><div class="l">AI Agents</div></div>
+      <div class="stat"><div class="v">68</div><div class="l">Features</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 — SHELL -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">01 / 08</span>
+    <h2>Global Shell</h2>
+    <span class="meta">Persistent · Across all screens</span>
+  </header>
+  <p class="section-sub">The chrome that wraps every workspace — top film slate and left project rail. Always visible, never reloads.</p>
+
+  <div class="sub"><span class="pill">A</span><h3>Top Nav</h3></div>
+  <div class="feature"><span class="idx">01</span><div class="body"><div class="name">Direkta wordmark + aperture mark</div><div class="desc">Click returns to Dashboard. Pairs the six-blade iris with the Anton wordmark.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">02</span><div class="body"><div class="name">Project switcher</div><div class="desc">Shows current project name, format, and length estimate. Click to switch.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">03</span><div class="body"><div class="name">Crew status row — 9 agent dots</div><div class="desc">One dot per agent, each with four states: idle (grey), working (amber pulse), done (green), attention (red blink). Hover for name + state tooltip.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">04</span><div class="body"><div class="name">Autosave indicator</div><div class="desc">Green pip + "Saved · just now" — refreshes every 30 seconds.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">05</span><div class="body"><div class="name">Key Vault slide-over</div><div class="desc">BYOK panel. Shows masked Fal.ai and Higgsfield keys with connection state, cost estimator for current project, and per-call usage log.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">06</span><div class="body"><div class="name">User avatar / account dropdown</div><div class="desc">Initials badge in the top right.</div></div><span class="tag shipped">SHIPPED</span></div>
+
+  <div class="sub"><span class="pill">B</span><h3>Left Sidebar</h3></div>
+  <div class="feature"><span class="idx">07</span><div class="body"><div class="name">Project list with stage pips</div><div class="desc">Every project as a card with title, format, last-edited, and a 5-segment progress strip mirroring the pipeline.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">08</span><div class="body"><div class="name">+ New Project button</div><div class="desc">Opens the producer confirm modal — entry to the new project setup flow.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">09</span><div class="body"><div class="name">Workspace navigation</div><div class="desc">7 items: Dashboard · Scripting · Casting · Storyboard · Stitch · Library · Export. Each with icon, count note, status indicator ring (empty / half / filled).</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">10</span><div class="body"><div class="name">Sequential lock + tooltip</div><div class="desc">Locked workspaces show a lock icon and a hover tooltip explaining what must complete first. Click is suppressed while locked.</div></div><span class="tag shipped">SHIPPED</span></div>
+
+  <div class="sub"><span class="pill">C</span><h3>Global Patterns</h3></div>
+  <div class="feature"><span class="idx">11</span><div class="body"><div class="name">Toast stack — bottom right</div><div class="desc">Agent notifications. Info / success / error variants. Auto-dismiss after 8s, manual close.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">12</span><div class="body"><div class="name">Confirm modal — corner-tick chrome</div><div class="desc">Destructive actions require a two-step confirmation with tungsten corner ticks (the film-frame motif).</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">13</span><div class="body"><div class="name">Propose-Don't-Commit pattern</div><div class="desc">Every agent surfaces options. Nothing saves without user picking a winner. Built into Storyboard, Casting, Stitch, and Beat Writer clarifications.</div></div><span class="tag live">SYSTEM</span></div>
+</section>
+
+<!-- 02 — DASHBOARD -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">02 / 08</span>
+    <h2>Dashboard</h2>
+    <span class="meta">Project overview · Pipeline · Activity</span>
+  </header>
+  <p class="section-sub">Where the Director lands. Shows the production at a glance — current pipeline state, recent crew activity, and open items needing attention.</p>
+
+  <div class="feature"><span class="idx">14</span><div class="body"><div class="name">Project header card</div><div class="desc">Editable title, logline (in display type), format/length/tone/scene/character tags.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">15</span><div class="body"><div class="name">Production Pipeline — 5 connected stages</div><div class="desc">Horizontal tracker: Scripting → Casting → Storyboard → Stitch → Export. Each stage shows status, progress bar, completion note, and click-to-navigate.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">16</span><div class="body"><div class="name">Quick access cards — 6 workspaces</div><div class="desc">One card per workspace with icon, status, last activity, primary CTA. Locked cards dim with a lock icon.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">17</span><div class="body"><div class="name">Activity feed — crew log</div><div class="desc">Chronological agent log with bold-parsed beat references and timestamps.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">18</span><div class="body"><div class="name">Open items panel</div><div class="desc">Two flagged actions: Continuity Checker (red) and Beat Writer clarification (tungsten). Each with Resolve / Open / Dismiss actions.</div></div><span class="tag shipped">SHIPPED</span></div>
+</section>
+
+<!-- 03 — SCRIPTING -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">03 / 08</span>
+    <h2>Scripting</h2>
+    <span class="meta">Tab 1 of pipeline · Story → Bible</span>
+  </header>
+  <p class="section-sub">Where the story lives. Five tabs: <strong>Outline · Script · Codex · Discuss · Analyse.</strong> The user works with the Scriptwriter AI to finalise story, script, and Bible. <strong>The Codex is where every character gets trained before Casting can begin.</strong></p>
+
+  <div class="sub"><span class="pill">A</span><h3>Outline Tab</h3></div>
+  <div class="feature"><span class="idx">19</span><div class="body"><div class="name">5-stat summary strip</div><div class="desc">Acts · Chapters · Scenes · Beats · Total words.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">20</span><div class="body"><div class="name">Acts → Chapters → Beats tree</div><div class="desc">3 acts collapsible into 9 chapters into 14 beats. Each chapter shows scene count, beat tags, word count, and flashback / clarification flags.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">21</span><div class="body"><div class="name">Inline beat detail</div><div class="desc">Expand a chapter to see every beat with slug, title, cast tags, and emotional register.</div></div><span class="tag shipped">SHIPPED</span></div>
+
+  <div class="sub"><span class="pill">B</span><h3>Script Tab</h3></div>
+  <div class="feature"><span class="idx">22</span><div class="body"><div class="name">Manuscript view with act/chapter title pages</div><div class="desc">Centred typography for act dividers, page-style scene flow with screenplay format.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">23</span><div class="body"><div class="name">Collapsible Scene Beat boxes</div><div class="desc">Tungsten-bordered cards above each scene showing what the beat is about. Show / hide toggle.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">24</span><div class="body"><div class="name">Codex mentions inline</div><div class="desc">Character names {CODEX} are underlined in tungsten — hover shows tooltip linking to the Codex entry.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">25</span><div class="body"><div class="name">Right context panel</div><div class="desc">Shows characters mentioned in the selected scene with their Soul ID state, AI context summary, and "Send to Storyboard" CTA.</div></div><span class="tag shipped">SHIPPED</span></div>
+
+  <div class="sub"><span class="pill">C</span><h3>Codex Tab — The Bible</h3></div>
+  <div class="feature"><span class="idx">26</span><div class="body"><div class="name">Bible header card</div><div class="desc">12 characters · 8 locations · 3,200 words · 14 pages · Autosaved. Plus Add entry / Export Bible.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">27</span><div class="body"><div class="name">Character cards — inline Soul ID training</div><div class="desc">3-col grid. Each card shows avatar + state dot, role, scene count, abbreviated brief, and an inline Soul ID training row with 4 states (trained / training / failed / not started).</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">28</span><div class="body"><div class="name">Location cards</div><div class="desc">4-col grid of cinematic frame thumbnails with INT/EXT tag and state dot. Locations also train Soul IDs.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">29</span><div class="body"><div class="name">Tone &amp; World cards</div><div class="desc">The noir register snippet and Lisbon world card — reusable text components referenced by other agents.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">30</span><div class="body"><div class="name">Character &amp; Format Rules</div><div class="desc">Hard rules ("Reyes never raises her voice"; "INT./EXT. — LOCATION — DAY/NIGHT") with reference counters.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">31</span><div class="body"><div class="name">Continuity Checker flag</div><div class="desc">Pinned at bottom — surfaces wardrobe inconsistencies between Bible and beat frames with a Reconcile CTA.</div></div><span class="tag shipped">SHIPPED</span></div>
+
+  <div class="sub"><span class="pill">D</span><h3>Discuss Tab</h3></div>
+  <div class="feature"><span class="idx">32</span><div class="body"><div class="name">Thread list — left panel</div><div class="desc">7 saved conversations with agent label, date, message count, pinned indicator.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">33</span><div class="body"><div class="name">Chat panel — message thread</div><div class="desc">Active conversation with the Beat Writer about Beat 12. 6-message back-and-forth showing the agent's reasoning.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">34</span><div class="body"><div class="name">Agent presence indicator</div><div class="desc">"BEAT WRITER IS THINKING" with a tungsten pulse — shows live agent activity.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">35</span><div class="body"><div class="name">Composer input</div><div class="desc">Multi-line input with @ mention · + context · ↻ prompt actions, send button, keyboard hint row.</div></div><span class="tag shipped">SHIPPED</span></div>
+
+  <div class="sub"><span class="pill">E</span><h3>Analyse Tab</h3></div>
+  <div class="feature"><span class="idx">36</span><div class="body"><div class="name">5-stat manuscript summary</div><div class="desc">Total words · Scenes · Avg words/scene · Est. read · Est. screen time.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">37</span><div class="body"><div class="name">Word count bar chart</div><div class="desc">SVG-drawn chart, one bar per scene, with running average line in tungsten.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">38</span><div class="body"><div class="name">Character distribution line chart</div><div class="desc">How many characters appear in each scene, with average reference line.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">39</span><div class="body"><div class="name">Cast frequency bars</div><div class="desc">Characters sorted by scene-count, with proportional bar lengths.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">40</span><div class="body"><div class="name">Script Reader observations</div><div class="desc">Auto-generated notes (green · tungsten · cut signals) on pacing, density, and lead-presence risks.</div></div><span class="tag shipped">SHIPPED</span></div>
+</section>
+
+<!-- 04 — CASTING -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">04 / 08</span>
+    <h2>Casting</h2>
+    <span class="meta">Tab 2 of pipeline · Soul ID training</span>
+  </header>
+  <p class="section-sub">Where every character and location gets a visual fingerprint. Mirrors Codex entries one-to-one — edits in either place sync. <strong>This solves the number one AI video problem: character consistency across every frame.</strong></p>
+
+  <div class="feature"><span class="idx">41</span><div class="body"><div class="name">Soul ID cards — 4 states visible at once</div><div class="desc">Trained · Training (with progress) · Failed (with error) · Not started. Demonstrates every state in one screen.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">42</span><div class="body"><div class="name">Reference photo strip</div><div class="desc">Up to 6 thumbnails per card with the last one shimmering during training. Per-photo quality indicator.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">43</span><div class="body"><div class="name">Face variant grid — consistency proof</div><div class="desc">3 generated faces shown for trained cards, demonstrating cross-angle/lighting consistency.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">44</span><div class="body"><div class="name">Expanded casting brief</div><div class="desc">Age · Build · Features · Wardrobe · Register + personality quote. Reyes is expanded by default.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">45</span><div class="body"><div class="name">Location cards — cinematic frame previews</div><div class="desc">Mood-tinted frames (cold / amber / dawn / noir / sun) with INT/EXT tag and scene count.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">46</span><div class="body"><div class="name">Casting Director footer prompt</div><div class="desc">"Train remaining" / "Skip and generate without them" — surfaces what's blocking Storyboard.</div></div><span class="tag shipped">SHIPPED</span></div>
+</section>
+
+<!-- 05 — STORYBOARD -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">05 / 08</span>
+    <h2>Storyboard</h2>
+    <span class="meta">Tab 3 of pipeline · Cinematographer rolls</span>
+  </header>
+  <p class="section-sub">Where the script becomes images. Beat-rows × variant-columns grid. The Cinematographer rolls 4 variants per beat using Soul IDs. <strong>The Director picks the winner.</strong> Rejected variants disappear.</p>
+
+  <div class="feature"><span class="idx">47</span><div class="body"><div class="name">Style direction strip</div><div class="desc">5 cells: Visual · Aspect · Light · Temp · Camera. Applied to every generation.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">48</span><div class="body"><div class="name">Beat row grid — 4 mixed states</div><div class="desc">Complete (with selection) · Generating (shimmer) · Waiting (dashed) · Error (one-slot E—4180 card with Re-roll / Skip).</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">49</span><div class="body"><div class="name">Cinematic frame composition</div><div class="desc">Anamorphic letterboxes, mood-tinted backgrounds, subject silhouettes, corner ticks, slug stamps. Every frame is a real composition, not a placeholder.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">50</span><div class="body"><div class="name">Frame selection — tungsten outline</div><div class="desc">Click a variant to pick. Other 3 dim to 40%. Selected gets a corner checkmark badge.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">51</span><div class="body"><div class="name">Hover toolset — 4 actions per frame</div><div class="desc">Select · Zoom · Regenerate · Reject. Surface only on hover.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">52</span><div class="body"><div class="name">Continuity flag on beat row</div><div class="desc">Beat 05 shows a CONTINUITY FLAG note when the picked variant conflicts with an earlier beat's wardrobe.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">53</span><div class="body"><div class="name">Lightbox — fullscreen frame inspector</div><div class="desc">Click zoom icon to open a centred 80%-width frame with beat metadata.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">54</span><div class="body"><div class="name">Bottom sequence strip</div><div class="desc">Sticky horizontal scroller showing every selected frame in narrative order. Drag-to-reorder hint.</div></div><span class="tag shipped">SHIPPED</span></div>
+</section>
+
+<!-- 06 — STITCH -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">06 / 08</span>
+    <h2>Stitch</h2>
+    <span class="meta">Tab 4 of pipeline · Animatic node canvas</span>
+  </header>
+  <p class="section-sub">Where images become a film. Node-based canvas — frames are nodes, video transitions are the lines between. <strong>Result: an animatic.</strong></p>
+
+  <div class="feature"><span class="idx">55</span><div class="body"><div class="name">SVG node canvas with dot grid</div><div class="desc">Scrollable wide canvas (1720×460), radial dot grid background.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">56</span><div class="body"><div class="name">Stitch node cards — 6 frames</div><div class="desc">Each node: thumbnail (mood-tinted), beat number, beat title, duration, character tags, IN/OUT ports.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">57</span><div class="body"><div class="name">Directed edges with 3 states</div><div class="desc">Complete (solid tungsten + play button) · Generating (animated dashflow + amber Video Director card) · Pending (grey dashed + Generate Video CTA).</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">58</span><div class="body"><div class="name">Right node-detail panel</div><div class="desc">Selected node opens panel with frame preview, duration slider (0.5–30s), cast list, Replace / Generate / Remove actions.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">59</span><div class="body"><div class="name">Zoom controls + canvas badge</div><div class="desc">+ / − / FIT overlay bottom-right. "6 NODES · 5 EDGES" badge top-left.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">60</span><div class="body"><div class="name">Timeline scrubber — bottom</div><div class="desc">Play button + timecode + speed selector (0.5× / 1× / 1.5× / 2×). Filmstrip of clips with beat labels.</div></div><span class="tag shipped">SHIPPED</span></div>
+</section>
+
+<!-- 07 — LIBRARY -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">07 / 08</span>
+    <h2>Library</h2>
+    <span class="meta">Cross-cutting · Every output ever</span>
+  </header>
+  <p class="section-sub">Everything Direkta has rendered, written, or shipped — saved automatically. <strong>Reuse anything across any project.</strong> Five sub-tabs with All Projects / This Project filters.</p>
+
+  <div class="feature"><span class="idx">61</span><div class="body"><div class="name">Generations — single beat variants</div><div class="desc">4-col grid of every frame generated. Picked checkmarks, continuity flags, project tag, file size, hover actions.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">62</span><div class="body"><div class="name">Sequences — stitched animatics</div><div class="desc">Row view of every animatic with filmstrip preview, duration, clip count, file size. Play / Download / Open in Stitch.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">63</span><div class="body"><div class="name">Soul IDs — reusable across projects</div><div class="desc">3-col grid of trained character + location Soul IDs. Each shows consistency score, ref count, reuse counter. "Reuse in project" CTA.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">64</span><div class="body"><div class="name">Scripts &amp; Bibles — saved manuscripts</div><div class="desc">Grouped by kind (Screenplays / Bibles / Treatments / Beat Sheets) with format badges (FDX / PDF / DOCX).</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">65</span><div class="body"><div class="name">Exports — delivered files table</div><div class="desc">Table with type badge, title, size, download count, date, and Download / Share actions.</div></div><span class="tag shipped">SHIPPED</span></div>
+</section>
+
+<!-- 08 — EXPORT -->
+<section class="section">
+  <header class="section-head">
+    <span class="num">08 / 08</span>
+    <h2>Export</h2>
+    <span class="meta">Tab 5 of pipeline · Locked until Stitch ready</span>
+  </header>
+  <p class="section-sub">Where the project leaves the platform. <strong>Sequentially locked</strong> until the animatic is fully rendered. Four export cards, each with format options and a live progress bar.</p>
+
+  <div class="feature"><span class="idx">66</span><div class="body"><div class="name">Status banner — Export Agent</div><div class="desc">Project summary with animatic duration, frame count, bible word count.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">67</span><div class="body"><div class="name">4 export cards — live progress</div><div class="desc">Animatic Video · Storyboard PDF · Shot List · Production Bible. Each with format pills, resolution options, and a live progress bar that animates from start to download.</div></div><span class="tag shipped">SHIPPED</span></div>
+  <div class="feature"><span class="idx">68</span><div class="body"><div class="name">Completed download state</div><div class="desc">When progress hits 100%, the card border turns green and the CTA becomes Download · file size + Share link + Open in tab.</div></div><span class="tag shipped">SHIPPED</span></div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="end">FADE OUT. <em>END OF MANIFEST.</em></div>
+  <div class="mark"><span class="bar"></span>direkta.ai · 68 features<span class="bar"></span></div>
+</div>
+
+</div><!-- /.page -->
+
+</body>
+</html>
