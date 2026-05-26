@@ -5,7 +5,10 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const OSS_DIR = path.join(process.cwd(), "data", "oss");
+/** Mirrors lib/agents/image.ts so the serve path matches the write path. */
+const OSS_DIR =
+  process.env.OSS_DIR ||
+  (process.env.VERCEL ? "/tmp/zinema-data/oss" : path.join(process.cwd(), "data", "oss"));
 
 export async function GET(_req: Request, { params }: { params: Promise<{ file: string }> }) {
   const { file } = await params;

@@ -3,7 +3,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { seedLisbonPact } from "./seed-lisbon";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+/**
+ * On Vercel the function's working directory is read-only, so we write to
+ * /tmp (the only writable path). Data resets on every cold start — accepted
+ * for the demo deploy. Locally we keep ./data so dev state persists.
+ */
+const DATA_DIR =
+  process.env.DATA_DIR ||
+  (process.env.VERCEL ? "/tmp/zinema-data" : path.join(process.cwd(), "data"));
 const DB_PATH = path.join(DATA_DIR, "zinema.sqlite");
 
 let _db: DatabaseSync | null = null;

@@ -4,7 +4,10 @@ import { nanoid } from "nanoid";
 import { vendors } from "../db/repo";
 import type { AspectRatio, VendorConfig } from "../types";
 
-const OSS_DIR = path.join(process.cwd(), "data", "oss");
+/** On Vercel, /tmp is the only writable path. Files reset on cold start. */
+const OSS_DIR =
+  process.env.OSS_DIR ||
+  (process.env.VERCEL ? "/tmp/zinema-data/oss" : path.join(process.cwd(), "data", "oss"));
 
 const ASPECT_TO_DIMENSIONS: Record<AspectRatio, { width: number; height: number; openai: "1024x1024" | "1536x1024" | "1024x1536" }> = {
   "16:9": { width: 1344, height: 768, openai: "1536x1024" },
