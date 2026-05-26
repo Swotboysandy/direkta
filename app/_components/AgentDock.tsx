@@ -124,7 +124,7 @@ export function AgentDock({ projectId, onNodeProduced }: Props) {
       <div ref={scrollRef} className="agent-log">
         {turns.length === 0 && (
           <p className="agent-empty">
-            Ask Zinema to write a script beat, design a character, build a storyboard, or plan a render.
+            Ask Direkta to write a script beat, design a character, build a storyboard, or plan a render.
             Each task flows through Decision → Execution → Supervision and lands as a node on the canvas.
           </p>
         )}

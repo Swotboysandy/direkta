@@ -1,8 +1,8 @@
 {
-  "name": "zinema",
+  "name": "direkta",
   "version": "0.2.0",
   "private": true,
-  "description": "Node.js port of Toonflow: infinite-canvas AI workbench for short-form video production.",
+  "description": "Infinite-canvas AI workbench for cinematic short-form video production.",
   "scripts": {
     "dev": "next dev",
     "start": "next start",

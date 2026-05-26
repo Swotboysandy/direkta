@@ -1,10 +1,10 @@
-# Zinema
+# Direkta
 
-Open-source AI workbench that turns stories into animated short dramas. A Node.js / Next.js port of [Toonflow](https://github.com/HBAI-Ltd/Toonflow-app), staying in a single web stack instead of Electron.
+AI workbench that turns stories into cinematic short films, staying in a single Node.js / Next.js stack.
 
-## What is ported
+## What is included
 
-| Toonflow feature | Zinema implementation |
+| Feature | Direkta implementation |
 | --- | --- |
 | Infinite canvas production workspace | Pan, zoom, drag, manual node + edge creation, edge delete, frame-all, keyboard delete (`app/_components/Canvas.tsx`) |
 | Three-layer agent system | Decision → Execution → Supervision orchestrator streaming over SSE, auto-wires edges between produced nodes (`lib/agents/orchestrator.ts`) |
@@ -113,4 +113,4 @@ npm run db:reset
 
 ## License
 
-Apache-2.0, matching upstream Toonflow.
+Apache-2.0.

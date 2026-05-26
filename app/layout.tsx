@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Zinema",
-  description: "Open-source AI workbench that turns stories into animated short dramas. Node.js port of Toonflow."
+  title: "Direkta",
+  description: "AI workbench that turns stories into cinematic short films."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
