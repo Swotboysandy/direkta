@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Focus, Home, Minus, Plus } from "lucide-react";
 import type { CanvasEdge, CanvasNode } from "../../lib/types";
 
 interface Viewport {
@@ -298,10 +299,26 @@ export function Canvas({
       </div>
 
       <div className="canvas-hud">
-        <button onClick={frameAll} title="Frame all">⌖</button>
-        <button onClick={() => setViewport({ x: 0, y: 0, zoom: 1 })} title="Reset view">⌂</button>
-        <button onClick={() => setViewport((v) => ({ ...v, zoom: Math.min(2, v.zoom * 1.15) }))} title="Zoom in">+</button>
-        <button onClick={() => setViewport((v) => ({ ...v, zoom: Math.max(0.3, v.zoom * 0.85) }))} title="Zoom out">−</button>
+        <button onClick={frameAll} title="Frame all" aria-label="Frame all">
+          <Focus size={14} />
+        </button>
+        <button onClick={() => setViewport({ x: 0, y: 0, zoom: 1 })} title="Reset view" aria-label="Reset view">
+          <Home size={14} />
+        </button>
+        <button
+          onClick={() => setViewport((v) => ({ ...v, zoom: Math.min(2, v.zoom * 1.15) }))}
+          title="Zoom in"
+          aria-label="Zoom in"
+        >
+          <Plus size={14} />
+        </button>
+        <button
+          onClick={() => setViewport((v) => ({ ...v, zoom: Math.max(0.3, v.zoom * 0.85) }))}
+          title="Zoom out"
+          aria-label="Zoom out"
+        >
+          <Minus size={14} />
+        </button>
         <span>{Math.round(viewport.zoom * 100)}%</span>
       </div>
     </div>

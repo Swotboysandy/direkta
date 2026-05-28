@@ -125,7 +125,7 @@ export function AgentDock({ projectId, onNodeProduced }: Props) {
         {turns.length === 0 && (
           <p className="agent-empty">
             Ask Direkta to write a script beat, design a character, build a storyboard, or plan a render.
-            Each task flows through Decision → Execution → Supervision and lands as a node on the canvas.
+            Each task flows through Decision -&gt; Execution -&gt; Supervision and lands as a node on the canvas.
           </p>
         )}
         {turns.map((turn) => (
@@ -138,7 +138,7 @@ export function AgentDock({ projectId, onNodeProduced }: Props) {
                   <strong>{entry.layer}</strong>
                   <span>{entry.status === "running" ? "thinking" : "done"}</span>
                 </header>
-                <pre>{entry.text || "…"}</pre>
+                <pre>{entry.text || "..."}</pre>
               </div>
             ))}
             {turn.error && <div className="agent-error">{turn.error}</div>}

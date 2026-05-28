@@ -2,7 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Clapperboard, Folder, ImageIcon, KeyRound, ListChecks, Network, Plus, Settings, Workflow } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Clapperboard,
+  FileText,
+  Folder,
+  ImageIcon,
+  KeyRound,
+  LayoutDashboard,
+  ListChecks,
+  Network,
+  Plus,
+  Settings,
+  Sparkles,
+  Workflow,
+  type LucideIcon
+} from "lucide-react";
 import { Canvas } from "./_components/Canvas";
 import { AgentDock } from "./_components/AgentDock";
 import { Inspector } from "./_components/Inspector";
@@ -17,19 +33,42 @@ const ASPECTS: { value: AspectRatio; label: string }[] = [
   { value: "21:9", label: "21:9 ultrawide" }
 ];
 
-const SIDEBAR_ACTIONS: {
+type SidebarAction = {
   label: string;
   hint: string;
-  icon: typeof Folder;
+  icon: LucideIcon;
   kind?: NodeKind;
   href?: string;
-}[] = [
-  { label: "Projects", hint: "Switch or create", icon: Folder },
-  { label: "Script Lab", hint: "Add story beat", icon: ListChecks, kind: "script" },
-  { label: "Assets", hint: "Add scene node", icon: ImageIcon, kind: "scene" },
-  { label: "Node Board", hint: "Canvas view", icon: Network },
-  { label: "Timeline", hint: "Add render node", icon: Clapperboard, kind: "render" },
-  { label: "Model Keys", hint: "API routing", icon: KeyRound, href: "/settings" }
+};
+
+const SIDEBAR_GROUPS: { title: string; items: SidebarAction[] }[] = [
+  {
+    title: "Workspace",
+    items: [
+      { label: "Dashboard", hint: "Project overview", icon: LayoutDashboard },
+      { label: "Projects", hint: "Switch or create", icon: Folder },
+      { label: "Node Board", hint: "Canvas view", icon: Network }
+    ]
+  },
+  {
+    title: "Create",
+    items: [
+      { label: "Script", hint: "Add story beat", icon: ListChecks, kind: "script" },
+      { label: "Visual", hint: "Add scene node", icon: ImageIcon, kind: "scene" },
+      { label: "Timeline", hint: "Add render node", icon: Clapperboard, kind: "render" }
+    ]
+  },
+  {
+    title: "System",
+    items: [{ label: "Model Keys", hint: "API routing", icon: KeyRound, href: "/settings" }]
+  }
+];
+
+const STUDIO_STEPS: { kind: NodeKind; label: string }[] = [
+  { kind: "script", label: "Script" },
+  { kind: "scene", label: "Scene" },
+  { kind: "storyboard", label: "Board" },
+  { kind: "render", label: "Render" }
 ];
 
 const LAST_PROJECT_KEY = "direkta:last-project";
@@ -271,6 +310,10 @@ export default function Home() {
     <main className="workbench">
       <StudioSidebar
         project={project}
+        nodes={nodes}
+        vendorReady={vendorReady}
+        imageVendorReady={imageVendorReady}
+        videoVendorReady={videoVendorReady}
         onClearSelection={() => setSelectedId(null)}
         onAddNode={(kind) => {
           void addNode(kind);
@@ -289,6 +332,11 @@ export default function Home() {
             />
           </div>
           <div className="topbar-right">
+            {vendorReady === false && (
+              <Link href="/settings" className="topbar-warning">
+                Text key missing
+              </Link>
+            )}
             {project && (
               <label className="aspect-picker">
                 Aspect
@@ -310,22 +358,31 @@ export default function Home() {
           </div>
         </header>
 
-        {vendorReady === false && (
-          <div className="banner">
-            Add a text API key in <Link href="/settings">Settings</Link> before running the agent.
-          </div>
-        )}
-
         <div className="workbench-grid">
-          <Canvas
-            nodes={nodes}
-            edges={edges}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onMoveNode={handleMove}
-            onConnect={connect}
-            onDeleteEdge={deleteEdge}
-          />
+          <section className="canvas-column">
+            <DashboardStrip
+              project={project}
+              nodes={nodes}
+              edges={edges}
+              vendorReady={vendorReady}
+              imageVendorReady={imageVendorReady}
+              videoVendorReady={videoVendorReady}
+              onAddNode={(kind) => {
+                void addNode(kind);
+              }}
+            />
+            <div className="canvas-card">
+              <Canvas
+                nodes={nodes}
+                edges={edges}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                onMoveNode={handleMove}
+                onConnect={connect}
+                onDeleteEdge={deleteEdge}
+              />
+            </div>
+          </section>
 
           <Inspector
             project={project}
@@ -349,13 +406,24 @@ export default function Home() {
 
 function StudioSidebar({
   project,
+  nodes,
+  vendorReady,
+  imageVendorReady,
+  videoVendorReady,
   onClearSelection,
   onAddNode
 }: {
   project: Project | null;
+  nodes: CanvasNode[];
+  vendorReady: boolean | null;
+  imageVendorReady: boolean;
+  videoVendorReady: boolean;
   onClearSelection: () => void;
   onAddNode: (kind: NodeKind) => void;
 }) {
+  const completedSteps = STUDIO_STEPS.filter((step) => nodes.some((node) => node.kind === step.kind)).length;
+  const progress = Math.round((completedSteps / STUDIO_STEPS.length) * 100);
+
   return (
     <aside className="studio-sidebar">
       <div className="sidebar-brand">
@@ -371,45 +439,147 @@ function StudioSidebar({
       </button>
 
       <nav className="sidebar-nav" aria-label="Direkta workspace">
-        {SIDEBAR_ACTIONS.map((item) => {
-          const Icon = item.icon;
-          const content = (
-            <>
-              <Icon size={18} />
-              <span>
-                <strong>{item.label}</strong>
-                <small>{item.hint}</small>
-              </span>
-            </>
-          );
+        {SIDEBAR_GROUPS.map((group) => (
+          <div className="sidebar-group" key={group.title}>
+            <span className="sidebar-kicker">{group.title}</span>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const content = (
+                <>
+                  <Icon size={18} />
+                  <span>
+                    <strong>{item.label}</strong>
+                    <small>{item.hint}</small>
+                  </span>
+                </>
+              );
 
-          if (item.href) {
-            return (
-              <Link key={item.label} href={item.href} className="sidebar-link">
-                {content}
-              </Link>
-            );
-          }
+              if (item.href) {
+                return (
+                  <Link key={item.label} href={item.href} className="sidebar-link">
+                    {content}
+                  </Link>
+                );
+              }
 
-          return (
-            <button
-              key={item.label}
-              onClick={() => (item.kind ? onAddNode(item.kind) : onClearSelection())}
-              className={item.label === "Node Board" ? "active" : undefined}
-            >
-              {content}
-            </button>
-          );
-        })}
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => (item.kind ? onAddNode(item.kind) : onClearSelection())}
+                  className={item.label === "Node Board" ? "active" : undefined}
+                >
+                  {content}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <section className="sidebar-film">
         <span>Current film</span>
         <strong>{project?.title ?? "Loading project"}</strong>
         <small>{project?.aspect_ratio ?? "16:9"} workspace</small>
+        <div className="sidebar-progress" aria-label={`${progress}% project coverage`}>
+          <i style={{ width: `${progress}%` }} />
+        </div>
+        <div className="sidebar-status">
+          <StatusDot active={Boolean(vendorReady)} label="Text" />
+          <StatusDot active={Boolean(imageVendorReady || videoVendorReady)} label="Media" />
+        </div>
       </section>
     </aside>
   );
+}
+
+function DashboardStrip({
+  project,
+  nodes,
+  edges,
+  vendorReady,
+  imageVendorReady,
+  videoVendorReady,
+  onAddNode
+}: {
+  project: Project | null;
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
+  vendorReady: boolean | null;
+  imageVendorReady: boolean;
+  videoVendorReady: boolean;
+  onAddNode: (kind: NodeKind) => void;
+}) {
+  const scriptCount = countKind(nodes, "script");
+  const shotCount = countKind(nodes, "shot") + countKind(nodes, "storyboard");
+  const renderCount = countKind(nodes, "render");
+  const readyModels = [vendorReady, imageVendorReady, videoVendorReady].filter(Boolean).length;
+
+  return (
+    <section className="dashboard-strip" aria-label="Project dashboard">
+      <div className="dashboard-summary">
+        <span>Active production</span>
+        <strong>{project?.title ?? "Loading project"}</strong>
+        <small>{project?.premise || "Build a script, connect shots, then render from the board."}</small>
+      </div>
+
+      <div className="dashboard-metrics">
+        <MetricCard label="Script" value={scriptCount || "0"} detail="beats" icon={FileText} />
+        <MetricCard label="Shots" value={shotCount || "0"} detail="boards" icon={Clapperboard} />
+        <MetricCard label="Links" value={edges.length || "0"} detail="edges" icon={Network} />
+        <MetricCard label="Models" value={`${readyModels}/3`} detail="ready" icon={Sparkles} />
+      </div>
+
+      <div className="dashboard-actions" aria-label="Quick actions">
+        <button onClick={() => onAddNode("script")}>
+          <Plus size={14} />
+          Script
+        </button>
+        <button onClick={() => onAddNode("storyboard")}>
+          <Plus size={14} />
+          Board
+        </button>
+        <button onClick={() => onAddNode(renderCount ? "shot" : "render")}>
+          <Plus size={14} />
+          {renderCount ? "Shot" : "Render"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  detail,
+  icon: Icon
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <div className="metric-card">
+      <Icon size={16} />
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </div>
+  );
+}
+
+function StatusDot({ active, label }: { active: boolean; label: string }) {
+  const Icon = active ? CheckCircle2 : Circle;
+  return (
+    <span className={active ? "is-ready" : undefined}>
+      <Icon size={13} />
+      {label}
+    </span>
+  );
+}
+
+function countKind(nodes: CanvasNode[], kind: NodeKind) {
+  return nodes.filter((node) => node.kind === kind).length;
 }
 
 function defaultTitleFor(kind: NodeKind): string {
