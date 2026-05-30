@@ -314,8 +314,10 @@ function BibleStat({ n, lbl }: { n: string; lbl: string }) {
     <div>
       <div
         style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 32,
+          fontFamily: "var(--font-ui)",
+          fontWeight: 600,
+          fontSize: 28,
+          letterSpacing: "-0.02em",
           color: "var(--ink)",
           lineHeight: 1
         }}
@@ -386,7 +388,7 @@ function BeatCard({
           </span>
         )}
       </div>
-      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)" }}>
+      <div style={{ fontFamily: "var(--font-ui)", fontWeight: 600, fontSize: 16, letterSpacing: "-0.005em", color: "var(--ink)" }}>
         {beat.title || "Untitled beat"}
       </div>
       {beat.characters.length > 0 && (

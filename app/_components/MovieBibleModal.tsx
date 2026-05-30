@@ -160,7 +160,7 @@ export function MovieBibleModal({ project, bible, beats, characters, locations, 
                     >
                       {s.n} / 10
                     </span>
-                    <span style={{ fontWeight: 700, fontSize: "var(--t-body-s)" }}>{s.label}</span>
+                    <span style={{ fontWeight: 500, fontSize: "var(--t-body-s)" }}>{s.label}</span>
                     <span
                       style={{
                         fontSize: 11,
@@ -407,7 +407,7 @@ function ToneSection({ bible }: { bible: Bible }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "var(--sp-3)", marginTop: "var(--sp-3)" }}>
             {bible.comparable_films.map((f) => (
               <div key={f.title} className="card" style={{ padding: "var(--sp-4)" }}>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: "var(--t-h4)", color: "var(--ink)" }}>{f.title}</div>
+                <div style={{ fontFamily: "var(--font-ui)", fontWeight: 600, fontSize: "var(--t-h4)", letterSpacing: "-0.005em", color: "var(--ink)" }}>{f.title}</div>
                 <p className="t-mute" style={{ marginTop: "var(--sp-2)", fontSize: "var(--t-body-s)" }}>
                   {f.note}
                 </p>
@@ -473,7 +473,7 @@ function WorldSection({
                   </div>
                 )}
                 <div style={{ padding: "var(--sp-3)" }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: "var(--t-h4)", color: "var(--ink)" }}>
+                  <div style={{ fontFamily: "var(--font-ui)", fontWeight: 600, fontSize: "var(--t-h4)", letterSpacing: "-0.005em", color: "var(--ink)" }}>
                     {loc.name}
                   </div>
                   <span className="t-eyebrow" style={{ display: "block", marginTop: "var(--sp-1)" }}>
@@ -542,7 +542,7 @@ function CharactersSection({ characters }: { characters: Character[] }) {
               style={{ gridTemplateColumns: "1fr", padding: "8px 12px" }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: "var(--t-body-s)" }}>{c.name}</div>
+                <div style={{ fontWeight: 500, fontSize: "var(--t-body-s)" }}>{c.name}</div>
                 <span
                   className="t-eyebrow"
                   style={{
@@ -589,10 +589,12 @@ function CharacterSpread({ character: c }: { character: Character }) {
                 margin: 0,
                 padding: "var(--sp-3) var(--sp-4)",
                 borderLeft: "3px solid var(--accent)",
-                fontFamily: "var(--font-display)",
-                fontSize: "var(--t-h3)",
+                fontFamily: "var(--font-ui)",
+                fontWeight: 400,
+                fontStyle: "italic",
+                fontSize: "var(--t-body-l)",
                 color: "var(--ink)",
-                lineHeight: 1.2
+                lineHeight: 1.4
               }}
             >
               &ldquo;{c.key_quote}&rdquo;
@@ -697,7 +699,7 @@ function VisualSection({ bible, project }: { bible: Bible; project: Project }) {
                 <div style={{ aspectRatio: "1/1", background: sw.hex }} />
                 <div style={{ padding: "var(--sp-3)" }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--mute)" }}>{sw.hex}</div>
-                  <div style={{ marginTop: 4, fontSize: "var(--t-body-s)", fontWeight: 700 }}>{sw.name}</div>
+                  <div style={{ marginTop: 4, fontSize: "var(--t-body-s)", fontWeight: 500 }}>{sw.name}</div>
                 </div>
               </div>
             ))}
@@ -728,7 +730,7 @@ function VisualSection({ bible, project }: { bible: Bible; project: Project }) {
       <section style={{ marginTop: "var(--sp-5)" }}>
         <span className="t-eyebrow">FORMAT</span>
         <div className="card" style={{ marginTop: "var(--sp-3)" }}>
-          Aspect ratio: <strong>{project.aspect_ratio}</strong>
+          Aspect ratio: <span style={{ fontWeight: 600 }}>{project.aspect_ratio}</span>
         </div>
       </section>
     </div>
@@ -770,7 +772,7 @@ function SceneSection({ beats, locations }: { beats: Beat[]; locations: Location
           <tbody>
             {beats.map((b) => (
               <tr key={b.id} style={{ borderBottom: "1px solid var(--cream-deep)" }}>
-                <td style={{ padding: "var(--sp-3)", fontFamily: "var(--font-mono)", color: "var(--accent)", fontWeight: 700 }}>
+                <td style={{ padding: "var(--sp-3)", fontFamily: "var(--font-mono)", color: "var(--accent)", fontWeight: 500 }}>
                   {String(b.n).padStart(2, "0")}
                 </td>
                 <td style={{ padding: "var(--sp-3)", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ink)" }}>
@@ -861,7 +863,7 @@ function AttachmentsSection({ project }: { project: Project }) {
           >
             <ListChecks size={16} style={{ color: "var(--accent)" }} />
             <div>
-              <div style={{ fontWeight: 700 }}>{item.label}</div>
+              <div style={{ fontWeight: 600 }}>{item.label}</div>
               <span className="t-eyebrow" style={{ display: "block", marginTop: 2 }}>{item.note}</span>
             </div>
             {item.target === "storybook" ? (

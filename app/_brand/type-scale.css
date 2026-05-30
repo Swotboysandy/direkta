@@ -5,46 +5,53 @@
 
 /* Display ─────────────────────────────────────────────────── */
 .t-display-l {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
+  font-weight: 700;
   font-size: var(--t-display-l);
   line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-display);
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 .t-display-m {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
+  font-weight: 600;
   font-size: var(--t-display-m);
   line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-display);
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 
 /* Headings ────────────────────────────────────────────────── */
 .t-h1, h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
+  font-weight: 600;
   font-size: var(--t-h1);
   line-height: var(--leading-snug);
-  letter-spacing: var(--tracking-display);
+  letter-spacing: -0.01em;
   color: var(--ink);
   margin: 0;
 }
 .t-h2, h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
+  font-weight: 600;
   font-size: var(--t-h2);
   line-height: var(--leading-snug);
+  letter-spacing: -0.005em;
   color: var(--ink);
   margin: 0;
 }
 .t-h3, h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
+  font-weight: 600;
   font-size: var(--t-h3);
   line-height: var(--leading-snug);
+  letter-spacing: -0.005em;
   color: var(--ink);
   margin: 0;
 }
 .t-h4, h4 {
   font-family: var(--font-ui);
-  font-weight: 800;
+  font-weight: 600;
   font-size: var(--t-h4);
   line-height: var(--leading-snug);
   color: var(--ink);
@@ -77,7 +84,7 @@
 /* Captions, mono ─────────────────────────────────────────── */
 .t-cap {
   font-family: var(--font-ui);
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--t-cap);
   color: var(--mute);
 }

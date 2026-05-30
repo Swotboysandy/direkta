@@ -54,14 +54,14 @@
   --font-ui:      var(--font-ui-loaded), "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono:    var(--font-mono-loaded), "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  /* Type scale — display headlines stay big, body sits at 15px */
-  --t-display-l: clamp(56px, 8vw, 96px);
-  --t-display-m: clamp(44px, 5.5vw, 64px);
-  --t-h1:        clamp(36px, 4vw, 48px);
-  --t-h2:        28px;
-  --t-h3:        22px;
-  --t-h4:        18px;
-  --t-body-l:    17px;
+  /* Type scale — restrained for minimalist editorial feel */
+  --t-display-l: clamp(40px, 5.5vw, 64px);
+  --t-display-m: clamp(32px, 3.8vw, 44px);
+  --t-h1:        clamp(26px, 2.8vw, 32px);
+  --t-h2:        22px;
+  --t-h3:        18px;
+  --t-h4:        15px;
+  --t-body-l:    16px;
   --t-body:      15px;
   --t-body-s:    13px;
   --t-cap:       11px;

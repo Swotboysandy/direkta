@@ -73,7 +73,7 @@ export function Sidebar({
                 <Icn size={18} />
               </span>
               <div className="si-label">
-                <span style={{ fontWeight: 700 }}>{w.label}</span>
+                <span style={{ fontWeight: 500 }}>{w.label}</span>
                 {w.note && <span className="si-meta">{w.note}</span>}
               </div>
               {!w.unlocked ? (

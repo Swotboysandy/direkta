@@ -348,15 +348,15 @@ function StyleCell({
         onChange={(e) => onChange(e.target.value)}
         style={{
           background: "transparent",
-          fontFamily: "var(--font-display)",
-          fontSize: "var(--t-h4)",
+          fontFamily: "var(--font-ui)",
+          fontWeight: 600,
+          fontSize: "var(--t-body)",
           color: "var(--ink)",
           border: "none",
           padding: 0,
           boxShadow: "none",
           cursor: "pointer",
-          textTransform: "uppercase",
-          letterSpacing: "0.04em"
+          letterSpacing: "-0.005em"
         }}
       >
         {options.map((o) => (
