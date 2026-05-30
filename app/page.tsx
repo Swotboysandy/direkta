@@ -5,6 +5,7 @@ import { TopNav } from "./_components/TopNav";
 import { Sidebar } from "./_components/Sidebar";
 import { NewProjectModal } from "./_components/NewProjectModal";
 import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
+import { CommandPalette } from "./_components/CommandPalette";
 import { KeyVaultPanel } from "./_components/KeyVaultPanel";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
@@ -333,6 +334,19 @@ export default function Home() {
       <CoDirectorOverlay
         project={bundle?.project ?? null}
         onSwitchWorkspace={switchWorkspace}
+        onOpenKeyVault={() => setKeyVaultOpen(true)}
+      />
+
+      <CommandPalette
+        project={bundle?.project ?? null}
+        projects={projects}
+        activeProjectId={projectId}
+        onSwitchWorkspace={switchWorkspace}
+        onSwitchProject={(id) => {
+          setProjectId(id);
+          setActiveWorkspace("dashboard");
+        }}
+        onNewProject={() => setNewProjectOpen(true)}
         onOpenKeyVault={() => setKeyVaultOpen(true)}
       />
     </div>

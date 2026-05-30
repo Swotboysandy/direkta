@@ -871,7 +871,7 @@ button {
 }
 
 /* ============================================================
-   STITCH WORKSPACE
+   STITCH WORKSPACE (React Flow)
    ============================================================ */
 .stitch-shell {
   position: relative;
@@ -880,6 +880,237 @@ button {
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: inset 0 0 0 1px var(--cream-deep);
+}
+
+/* Brand-align React Flow defaults. */
+.react-flow {
+  background: transparent;
+}
+
+.react-flow__node {
+  /* Our custom .stitch-node provides all visuals; suppress default chrome. */
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 220px;
+}
+
+.react-flow__node.selected .stitch-node {
+  box-shadow: var(--shadow-3), inset 0 0 0 2px var(--accent);
+}
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+
+.react-flow__node:hover .react-flow__handle {
+  opacity: 1;
+}
+
+.react-flow__handle.connectionindicator {
+  opacity: 1;
+}
+
+.react-flow__edge-path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.react-flow__edge-textbg {
+  fill: var(--surface);
+}
+
+.react-flow__edge-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* React Flow Controls (zoom +/-, fit, lock) — brand pill cluster. */
+.react-flow__controls {
+  bottom: var(--sp-4) !important;
+  left: var(--sp-4) !important;
+  background: var(--surface) !important;
+  border: 0 !important;
+  border-radius: var(--r-pill) !important;
+  box-shadow: var(--shadow-1) !important;
+  padding: 4px;
+  display: flex;
+  gap: 2px;
+}
+
+.react-flow__controls-button {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 0 !important;
+  color: var(--ink);
+  border-radius: var(--r-pill);
+}
+
+.react-flow__controls-button svg {
+  fill: var(--ink);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--cream-deep) !important;
+}
+
+/* MiniMap — brand panel bottom right. */
+.react-flow__minimap {
+  bottom: var(--sp-4) !important;
+  right: var(--sp-4) !important;
+  background: var(--surface) !important;
+  border: 0 !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-1) !important;
+  overflow: hidden;
+}
+
+/* Attribution hidden via proOptions, but extra insurance. */
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* ============================================================
+   COMMAND PALETTE (⌘K, via cmdk)
+   ============================================================ */
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 26, 18, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 95;
+  display: grid;
+  place-items: start center;
+  padding-top: 10vh;
+  animation: cmd-fade-in var(--dur-2) var(--ease-out);
+}
+
+.cmd-root {
+  width: min(640px, calc(100vw - var(--sp-5)));
+  max-height: 70vh;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: cmd-pop-in var(--dur-2) var(--ease-spring);
+}
+
+.cmd-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--cream-deep);
+  background: var(--bg);
+}
+
+.cmd-input {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  outline: none;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  color: var(--ink);
+}
+
+.cmd-input::placeholder {
+  color: var(--mute);
+}
+
+.cmd-list {
+  overflow-y: auto;
+  padding: var(--sp-2) var(--sp-2) var(--sp-3);
+  max-height: 50vh;
+}
+
+.cmd-empty {
+  padding: var(--sp-5);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.cmd-group [cmdk-group-heading] {
+  padding: var(--sp-3) var(--sp-3) var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px var(--sp-3);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cmd-item[data-selected="true"] {
+  background: var(--accent-2);
+  color: var(--on-accent-2);
+}
+
+.cmd-item[data-selected="true"] span {
+  color: var(--on-accent-2) !important;
+}
+
+.cmd-item[data-selected="true"] svg {
+  color: var(--on-accent-2) !important;
+}
+
+.cmd-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  border-top: 1px solid var(--cream-deep);
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.cmd-kbd {
+  padding: 2px 6px;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--r-sm);
+  box-shadow: 0 1px 0 var(--cream-deep);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+@keyframes cmd-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes cmd-pop-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .stitch-canvas {
