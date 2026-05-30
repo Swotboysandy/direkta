@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import { ChevronDown, Key, Plus } from "lucide-react";
 import type { AgentStatus, Project, WorkspaceId } from "../../lib/types";
 
@@ -42,16 +43,6 @@ export function TopNav({
   onOpenKeyVault
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onClick = (event: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(event.target as Node)) setMenuOpen(false);
-    };
-    window.addEventListener("mousedown", onClick);
-    return () => window.removeEventListener("mousedown", onClick);
-  }, [menuOpen]);
 
   void sidebarCollapsed; // reserved for future collapse-aware brand chrome
 
@@ -67,33 +58,28 @@ export function TopNav({
         <img src="/brand/logo/primary-lockup.svg" alt="Direkta" />
       </div>
 
-      <div className="tn-proj-wrap" ref={wrapRef} style={{ position: "relative" }}>
-        <button
-          className="topnav-project"
-          onClick={() => setMenuOpen((v) => !v)}
-          style={{ border: "none", display: "flex", gap: 4, alignItems: "center" }}
-        >
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span className="name">{project?.title ?? "No project"}</span>
-            <span className="meta">
-              {project ? `${project.format.toUpperCase()} · ${project.length_estimate.toUpperCase()}` : "START A PROJECT"}
-            </span>
-          </div>
-          <ChevronDown size={14} />
-        </button>
-        {menuOpen && (
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              left: 0,
-              width: 300,
-              background: "var(--surface)",
-              borderRadius: "var(--radius)",
-              boxShadow: "var(--shadow-3)",
-              padding: "var(--sp-2)",
-              zIndex: 70
-            }}
+      <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
+        <Popover.Trigger asChild>
+          <button
+            className="topnav-project"
+            style={{ border: "none", display: "flex", gap: 4, alignItems: "center" }}
+            aria-label="Switch project"
+          >
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span className="name">{project?.title ?? "No project"}</span>
+              <span className="meta">
+                {project ? `${project.format.toUpperCase()} · ${project.length_estimate.toUpperCase()}` : "START A PROJECT"}
+              </span>
+            </div>
+            <ChevronDown size={14} />
+          </button>
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Content
+            className="project-picker-menu"
+            sideOffset={8}
+            align="start"
+            collisionPadding={16}
           >
             {projects.map((p) => (
               <button
@@ -102,31 +88,11 @@ export function TopNav({
                   onSwitchProject(p.id);
                   setMenuOpen(false);
                 }}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "10px 12px",
-                  borderRadius: "var(--r-sm)",
-                  background:
-                    p.id === activeProjectId ? "var(--accent-2)" : "transparent",
-                  color: p.id === activeProjectId ? "var(--on-accent-2)" : "var(--ink)"
-                }}
+                className="project-picker-item"
+                data-active={p.id === activeProjectId}
               >
-                <span style={{ fontWeight: 700, fontSize: "var(--t-body-s)" }}>{p.title}</span>
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10,
-                    letterSpacing: "var(--tracking-eyebrow)",
-                    textTransform: "uppercase",
-                    opacity: 0.75
-                  }}
-                >
-                  {p.format} · {p.aspect_ratio}
-                </span>
+                <span className="project-picker-title">{p.title}</span>
+                <span className="project-picker-meta">{p.format} · {p.aspect_ratio}</span>
               </button>
             ))}
             <button
@@ -134,28 +100,13 @@ export function TopNav({
                 onNewProject();
                 setMenuOpen(false);
               }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                width: "100%",
-                padding: "10px 12px",
-                marginTop: 4,
-                borderRadius: "var(--r-sm)",
-                background: "var(--accent)",
-                color: "var(--on-accent)",
-                fontFamily: "var(--font-mono)",
-                fontSize: 10,
-                letterSpacing: "var(--tracking-eyebrow)",
-                textTransform: "uppercase",
-                fontWeight: 700
-              }}
+              className="project-picker-new"
             >
               <Plus size={12} /> New project
             </button>
-          </div>
-        )}
-      </div>
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
 
       <div className="topnav-agents" aria-label="Agent status">
         {agents.map((agent) => (

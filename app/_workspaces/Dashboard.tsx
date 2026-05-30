@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 import {
   Boxes,
@@ -133,11 +134,15 @@ export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: 
                 : "NOT STARTED";
 
             return (
-              <article
+              <motion.article
                 key={wsId}
                 className={`stage-card ${TILTS[i]}`}
                 data-status={dataStatus}
                 onClick={() => w?.unlocked && onSwitchWorkspace(wsId)}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.06 * i, duration: 0.36, ease: [0.22, 0.61, 0.36, 1] }}
+                whileHover={w?.unlocked ? { y: -3, transition: { type: "spring", stiffness: 380, damping: 22 } } : undefined}
               >
                 <header>
                   <span className="t-eyebrow">0{i + 1} / 05</span>
@@ -152,7 +157,7 @@ export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: 
                   <div className="progress-bar" style={{ width: `${progressPct}%` }} />
                 </div>
                 <span className="pip-state" data-status={pipState}>{pipLabel}</span>
-              </article>
+              </motion.article>
             );
           })}
         </div>
@@ -184,7 +189,7 @@ export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: 
               const inProgress = w?.status === "in-progress" || w?.status === "complete";
               const Icn = ICONS[card.ws];
               return (
-                <a
+                <motion.a
                   key={card.ws}
                   href="#"
                   className={`quick-card ${TILTS[i % TILTS.length]}`}
@@ -197,6 +202,10 @@ export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: 
                     opacity: w?.unlocked ? 1 : 0.5,
                     cursor: w?.unlocked ? "pointer" : "not-allowed"
                   }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: w?.unlocked ? 1 : 0.5, y: 0 }}
+                  transition={{ delay: 0.36 + 0.05 * i, duration: 0.36, ease: [0.22, 0.61, 0.36, 1] }}
+                  whileHover={w?.unlocked ? { y: -3, transition: { type: "spring", stiffness: 380, damping: 22 } } : undefined}
                 >
                   <div className="qc-icon">
                     <Icn size={20} />
@@ -210,7 +219,7 @@ export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: 
                   >
                     {inProgress ? "WORKING" : "IDLE"}
                   </span>
-                </a>
+                </motion.a>
               );
             })}
           </div>

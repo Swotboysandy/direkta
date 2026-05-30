@@ -425,6 +425,199 @@ button {
 }
 
 /* ============================================================
+   KEY VAULT DRAWER (vaul)
+   ============================================================ */
+.kv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 26, 18, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+}
+
+.kv-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, calc(100vw - var(--sp-5)));
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  z-index: 92;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  outline: none;
+}
+
+.kv-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--cream-deep);
+  background: var(--bg);
+}
+
+.kv-drawer-title {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-top: var(--sp-1);
+}
+
+.kv-drawer-blurb {
+  padding: var(--sp-4) var(--sp-5) 0;
+  color: var(--mute);
+  font-size: var(--t-body-s);
+  line-height: 1.55;
+}
+
+.kv-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-5) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.kv-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.kv-group-head {
+  color: var(--mute);
+}
+
+.kv-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.kv-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.kv-toggle input {
+  width: auto !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.kv-vendor-status {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  margin-top: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.kv-vendor-status[data-state="connected"] { color: var(--accent-3); }
+.kv-vendor-status[data-state="disabled"]  { color: var(--mute); }
+.kv-vendor-status[data-state="empty"]     { color: var(--accent); }
+
+/* ============================================================
+   PROJECT PICKER POPOVER (Radix)
+   ============================================================ */
+.project-picker-menu {
+  width: 300px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-3);
+  padding: var(--sp-2);
+  z-index: 70;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: picker-pop var(--dur-2) var(--ease-spring);
+}
+
+.project-picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease-out);
+}
+
+.project-picker-item:hover {
+  background: var(--bg);
+}
+
+.project-picker-item[data-active="true"] {
+  background: var(--accent-2);
+  color: var(--on-accent-2);
+}
+
+.project-picker-title {
+  font-weight: 700;
+  font-size: var(--t-body-s);
+}
+
+.project-picker-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.project-picker-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 4px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 700;
+  border: 0;
+  cursor: pointer;
+  justify-content: flex-start;
+}
+
+.project-picker-new:hover {
+  background: var(--accent-hover);
+}
+
+@keyframes picker-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ============================================================
    CO-DIRECTOR LAUNCHER
    ============================================================ */
 .codirector-launcher {
