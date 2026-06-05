@@ -43,6 +43,79 @@
     60% { transform: translateX(-3px); }
     80% { transform: translateX(2px); }
   }
+
+  /* ── Agent crew — living status glyphs (TopNav) ───────────── */
+  .tn-agent[data-state="working"] .tn-agent-glyph {
+    animation: fx-agent-bob 1.4s var(--ease-out) infinite;
+  }
+  .tn-agent[data-state="attention"] .tn-agent-glyph {
+    animation: fx-agent-wiggle 0.9s var(--ease-out) infinite;
+  }
+  .tn-agent[data-state="working"]::after,
+  .tn-agent[data-state="attention"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .tn-agent[data-state="working"]::after {
+    animation: fx-pulse-pip 1.6s var(--ease-out) infinite;
+  }
+  .tn-agent[data-state="attention"]::after {
+    animation: fx-pulse-alert 1.4s var(--ease-out) infinite;
+  }
+  .tn-agent-check {
+    animation: fx-check-pop var(--dur-3) var(--ease-spring) both;
+  }
+
+  @keyframes fx-agent-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2px); }
+  }
+  @keyframes fx-agent-wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25%      { transform: rotate(-8deg); }
+    75%      { transform: rotate(8deg); }
+  }
+  @keyframes fx-pulse-alert {
+    0%, 100% { box-shadow: 0 0 0 0   rgba(232,74,53,0.30); }
+    50%      { box-shadow: 0 0 0 6px rgba(232,74,53,0.00); }
+  }
+  @keyframes fx-check-pop {
+    0%   { transform: scale(0)    rotate(-25deg); opacity: 0; }
+    60%  { transform: scale(1.15) rotate(0deg);   opacity: 1; }
+    100% { transform: scale(1)    rotate(0deg);   opacity: 1; }
+  }
+
+  /* ── Send button — busy spark ─────────────────────────────── */
+  .fx-spark { animation: fx-spark 1.1s var(--ease-out) infinite; }
+  @keyframes fx-spark {
+    0%, 100% { transform: scale(1)    rotate(0deg);  opacity: 0.75; }
+    50%      { transform: scale(1.18) rotate(10deg); opacity: 1; }
+  }
+
+  /* ── Sidebar — stage unlock pop + working pip pulse ───────── */
+  .sidebar-item[data-just-unlocked="true"] {
+    animation: fx-unlock-ring var(--dur-4) var(--ease-out);
+  }
+  .sidebar-item[data-just-unlocked="true"] .si-icon {
+    animation: fx-unlock-icon var(--dur-4) var(--ease-spring) both;
+  }
+  .si-status.pip[data-status="working"] {
+    animation: fx-pulse-pip 1.6s var(--ease-out) infinite;
+  }
+
+  @keyframes fx-unlock-ring {
+    0%   { box-shadow: 0 0 0 0   rgba(61,168,155,0.40); }
+    70%  { box-shadow: 0 0 0 7px rgba(61,168,155,0.00); }
+    100% { box-shadow: 0 0 0 0   rgba(61,168,155,0.00); }
+  }
+  @keyframes fx-unlock-icon {
+    0%   { transform: scale(0.7)  rotate(-12deg); opacity: 0.4; }
+    55%  { transform: scale(1.12) rotate(0deg);   opacity: 1; }
+    100% { transform: scale(1)    rotate(0deg);   opacity: 1; }
+  }
 }
 
 /* Stagger helper — set on a parent, child uses `--fx-delay: calc(var(--i) * 60ms)` */

@@ -1,6 +1,7 @@
 "use client";
 
 import clsx from "clsx";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Send, Layers } from "lucide-react";
 import type { AgentLayer } from "../../lib/types";
@@ -28,6 +29,7 @@ export function AgentDock({ projectId, onNodeProduced }: Props) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -131,15 +133,21 @@ export function AgentDock({ projectId, onNodeProduced }: Props) {
         {turns.map((turn) => (
           <article key={turn.id} className="agent-turn">
             <div className="agent-prompt">{turn.prompt}</div>
-            {turn.layers.map((entry) => (
-              <div key={entry.layer} className={clsx("agent-layer", `layer-${entry.layer}`, entry.status)}>
+            {turn.layers.map((entry, i) => (
+              <motion.div
+                key={entry.layer}
+                className={clsx("agent-layer", `layer-${entry.layer}`, entry.status)}
+                initial={reduce ? false : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1], delay: reduce ? 0 : i * 0.04 }}
+              >
                 <header>
                   <i />
                   <strong>{entry.layer}</strong>
                   <span>{entry.status === "running" ? "thinking" : "done"}</span>
                 </header>
                 <pre>{entry.text || "…"}</pre>
-              </div>
+              </motion.div>
             ))}
             {turn.error && <div className="agent-error">{turn.error}</div>}
           </article>
@@ -165,7 +173,7 @@ export function AgentDock({ projectId, onNodeProduced }: Props) {
           }}
         />
         <button type="submit" disabled={busy || !draft.trim()} aria-label="Send">
-          {busy ? <Sparkles size={18} /> : <Send size={18} />}
+          {busy ? <Sparkles size={18} className="fx-spark" /> : <Send size={18} />}
         </button>
       </form>
     </aside>

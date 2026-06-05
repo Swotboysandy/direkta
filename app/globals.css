@@ -105,30 +105,50 @@ strong, b {
   border-left: 1px solid var(--cream-deep);
 }
 
-.tn-agent-dot {
+.tn-agent {
   position: relative;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--cream-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  color: var(--cocoa-mute);
   cursor: pointer;
+  transition: color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
 }
 
-.tn-agent-dot[data-state="working"] {
-  background: var(--accent-2);
-  box-shadow: 0 0 0 3px rgba(242, 184, 60, 0.20);
+.tn-agent-glyph {
+  display: block;
 }
 
-.tn-agent-dot[data-state="done"] {
-  background: var(--accent-3);
+.tn-agent[data-state="working"] {
+  color: var(--mustard-deep);
+  background: rgba(242, 184, 60, 0.16);
 }
 
-.tn-agent-dot[data-state="attention"] {
-  background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(232, 74, 53, 0.20);
+.tn-agent[data-state="done"] {
+  color: var(--viridian-deep);
+  background: rgba(61, 168, 155, 0.16);
 }
 
-.tn-agent-dot .tt {
+.tn-agent[data-state="attention"] {
+  color: var(--tomato);
+  background: rgba(232, 74, 53, 0.14);
+}
+
+.tn-agent-check {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  padding: 1px;
+  color: var(--on-accent-3);
+  background: var(--viridian);
+  border-radius: var(--r-pill);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.tn-agent .tt {
   position: absolute;
   top: calc(100% + 8px);
   left: 50%;
@@ -149,7 +169,7 @@ strong, b {
   z-index: 80;
 }
 
-.tn-agent-dot:hover .tt {
+.tn-agent:hover .tt {
   opacity: 1;
 }
 

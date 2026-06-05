@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   Boxes,
   ChevronLeft,
@@ -43,6 +44,31 @@ export function Sidebar({
   onToggleCollapsed,
   onSwitchWorkspace
 }: Props) {
+  const prevUnlocked = useRef<Record<string, boolean>>({});
+  const [justUnlocked, setJustUnlocked] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const newly: string[] = [];
+    for (const w of workspaces) {
+      if (prevUnlocked.current[w.id] === false && w.unlocked) newly.push(w.id);
+      prevUnlocked.current[w.id] = w.unlocked;
+    }
+    if (newly.length === 0) return;
+    setJustUnlocked((prev) => {
+      const next = { ...prev };
+      for (const id of newly) next[id] = true;
+      return next;
+    });
+    const timer = setTimeout(() => {
+      setJustUnlocked((prev) => {
+        const next = { ...prev };
+        for (const id of newly) delete next[id];
+        return next;
+      });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [workspaces]);
+
   return (
     <aside className="sidebar">
       <div className="sb-head">
@@ -66,6 +92,7 @@ export function Sidebar({
               className="sidebar-item"
               data-active={w.id === activeWorkspace}
               data-locked={!w.unlocked}
+              data-just-unlocked={justUnlocked[w.id] ? "true" : undefined}
               title={collapsed ? `${w.label}${w.note ? ` · ${w.note}` : ""}` : undefined}
               onClick={() => w.unlocked && onSwitchWorkspace(w.id)}
             >

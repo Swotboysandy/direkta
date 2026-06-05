@@ -2,7 +2,22 @@
 
 import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { ChevronDown, Key, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Key,
+  Plus,
+  ScrollText,
+  PenLine,
+  BookOpen,
+  Users,
+  Aperture,
+  Eye,
+  Scissors,
+  Clapperboard,
+  Upload,
+  Check,
+  type LucideIcon
+} from "lucide-react";
 import type { AgentStatus, Project, WorkspaceId } from "../../lib/types";
 
 const AGENT_LABEL: Record<string, string> = {
@@ -15,6 +30,18 @@ const AGENT_LABEL: Record<string, string> = {
   "editor": "Editor",
   "video-director": "Video Director",
   "export-agent": "Export Agent"
+};
+
+const AGENT_ICON: Record<string, LucideIcon> = {
+  "script-reader": ScrollText,
+  "beat-writer": PenLine,
+  "bible-builder": BookOpen,
+  "casting-dir": Users,
+  "cinematographer": Aperture,
+  "continuity": Eye,
+  "editor": Scissors,
+  "video-director": Clapperboard,
+  "export-agent": Upload
 };
 
 interface Props {
@@ -109,19 +136,26 @@ export function TopNav({
       </Popover.Root>
 
       <div className="topnav-agents" aria-label="Agent status">
-        {agents.map((agent) => (
-          <span
-            key={agent.id}
-            className="tn-agent-dot"
-            data-state={agent.state}
-            role="img"
-            aria-label={`${AGENT_LABEL[agent.id] ?? agent.id} · ${agent.state}`}
-          >
-            <span className="tt">
-              {AGENT_LABEL[agent.id] ?? agent.id} · {agent.state}
+        {agents.map((agent) => {
+          const Glyph = AGENT_ICON[agent.id] ?? ScrollText;
+          return (
+            <span
+              key={agent.id}
+              className="tn-agent"
+              data-state={agent.state}
+              role="img"
+              aria-label={`${AGENT_LABEL[agent.id] ?? agent.id} · ${agent.state}`}
+            >
+              <Glyph className="tn-agent-glyph" size={13} strokeWidth={2} aria-hidden="true" />
+              {agent.state === "done" && (
+                <Check className="tn-agent-check" size={9} strokeWidth={3} aria-hidden="true" />
+              )}
+              <span className="tt">
+                {AGENT_LABEL[agent.id] ?? agent.id} · {agent.state}
+              </span>
             </span>
-          </span>
-        ))}
+          );
+        })}
       </div>
 
       <div className="topnav-right">
