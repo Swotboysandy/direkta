@@ -91,7 +91,7 @@
   --sp-2:  8px;
   --sp-3:  12px;
   --sp-4:  16px;
-  --sp-5:  24px;
+  --sp-5:  28px;   /* "comfortable" step — card padding + section gaps (roomier) */
   --sp-6:  32px;
   --sp-7:  48px;
   --sp-8:  64px;
@@ -119,8 +119,8 @@
   --tilt-card-c: -0.3deg;
 
   /* ─── Layout ───────────────────────────────────────────── */
-  --gutter:   24px;
-  --page-pad: 32px;
+  --gutter:   28px;
+  --page-pad: 40px;
   --max-w:    1440px;
 }
 
