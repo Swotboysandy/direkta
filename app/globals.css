@@ -338,6 +338,115 @@ strong, b {
   padding-bottom: var(--sp-7);
 }
 
+/* ============================================================
+   SCREENPLAY — scene-card board (corkboard) + Split/Board toggle
+   ============================================================ */
+.view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border-radius: var(--r-pill);
+}
+.view-toggle button {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--r-pill);
+  color: var(--mute);
+  background: transparent;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
+}
+.view-toggle button:hover {
+  color: var(--ink);
+}
+.view-toggle button[data-active="true"] {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.scene-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-2) var(--sp-7);
+}
+
+.scene-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-height: 180px;
+  padding: var(--sp-5);
+  background: var(--surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+  transform: rotate(var(--card-rot, 0deg));
+  transform-origin: center center;
+  transition: transform var(--dur-2) var(--ease-spring), box-shadow var(--dur-2) var(--ease-out);
+}
+.scene-card::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 3px rgba(42, 26, 18, 0.28);
+  transform: translateX(-50%);
+}
+.scene-card:hover {
+  transform: rotate(0deg) translateY(-4px);
+  box-shadow: var(--shadow-3);
+  z-index: 2;
+}
+.scene-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.scene-card-no {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.scene-card-slug {
+  font-family: var(--font-mono);
+  font-size: var(--t-body-s);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.scene-card-title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--t-h3);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+}
+.scene-card-sum {
+  margin: 0;
+  font-size: var(--t-body-s);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .page-head .crumb,
 .crumb {
   font-family: var(--font-mono);

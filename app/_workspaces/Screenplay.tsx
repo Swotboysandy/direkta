@@ -5,6 +5,8 @@ import { ArrowRight, Check, FileText, Flag, Sparkles } from "lucide-react";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
 
+const TILTS = ["var(--tilt-card-a)", "var(--tilt-card-b)", "var(--tilt-card-c)"];
+
 interface Props {
   project: Project;
   beats: Beat[];
@@ -30,6 +32,7 @@ export function Screenplay({
   const [busy, setBusy] = useState(false);
   const [activeBeat, setActiveBeat] = useState<string | null>(null);
   const [bibleOpen, setBibleOpen] = useState(false);
+  const [view, setView] = useState<"split" | "board">("split");
   const lastSavedRef = useRef(project.script);
 
   useEffect(() => {
@@ -139,6 +142,26 @@ export function Screenplay({
           </p>
         </div>
         <div className="page-head-actions">
+          {beats.length > 0 && (
+            <div className="view-toggle" role="tablist" aria-label="Breakdown view">
+              <button
+                role="tab"
+                aria-selected={view === "split"}
+                data-active={view === "split"}
+                onClick={() => setView("split")}
+              >
+                Split
+              </button>
+              <button
+                role="tab"
+                aria-selected={view === "board"}
+                data-active={view === "board"}
+                onClick={() => setView("board")}
+              >
+                Board
+              </button>
+            </div>
+          )}
           <span className="pip-state" data-status={beats.length > 0 ? "done" : "working"}>
             {beats.length > 0 ? `${beats.length} BEATS` : "PROCESSING"}
           </span>
@@ -151,6 +174,26 @@ export function Screenplay({
         </div>
       </header>
 
+      {view === "board" ? (
+        <div className="page-body">
+          {beats.length === 0 ? (
+            <div className="card">
+              <span className="t-eyebrow">
+                <Sparkles size={12} /> CREW STANDBY
+              </span>
+              <p className="t-mute" style={{ marginTop: "var(--sp-2)", fontSize: 13 }}>
+                Beats will appear here as scene cards once the Script Reader extracts them.
+              </p>
+            </div>
+          ) : (
+            <div className="scene-board">
+              {beats.map((beat, i) => (
+                <SceneCard key={beat.id} beat={beat} rot={TILTS[i % 3]} />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
       <div
         style={{
           display: "grid",
@@ -294,6 +337,7 @@ export function Screenplay({
           </pre>
         </div>
       </div>
+      )}
 
       {bibleOpen && bible && (
         <MovieBibleModal
@@ -402,6 +446,31 @@ function BeatCard({
         <p className="t-body-s t-mute" style={{ marginTop: "var(--sp-1)" }}>{beat.summary}</p>
       )}
     </button>
+  );
+}
+
+function SceneCard({ beat, rot }: { beat: Beat; rot: string }) {
+  return (
+    <article className="scene-card" style={{ "--card-rot": rot } as React.CSSProperties}>
+      <div className="scene-card-head">
+        <span className="scene-card-no">SCENE {String(beat.n).padStart(2, "0")}</span>
+        {beat.flag && (
+          <span className="pip-state" data-status="error" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <Flag size={10} /> {beat.flag.toUpperCase()}
+          </span>
+        )}
+      </div>
+      <div className="scene-card-slug">{beat.scene_heading || "—"}</div>
+      <h3 className="scene-card-title">{beat.title || "Untitled beat"}</h3>
+      {beat.summary && <p className="scene-card-sum">{beat.summary}</p>}
+      {beat.characters.length > 0 && (
+        <div className="tag-strip" style={{ marginTop: "auto" }}>
+          {beat.characters.map((c) => (
+            <span key={c} className="tag">{c}</span>
+          ))}
+        </div>
+      )}
+    </article>
   );
 }
 
