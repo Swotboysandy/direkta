@@ -10,6 +10,7 @@ import {
   Film,
   Flag,
   Layers,
+  LayoutGrid,
   RefreshCcw,
   Settings2,
   Sparkles,
@@ -72,6 +73,18 @@ const LENS_OPTIONS = ["24mm", "35mm", "50mm", "85mm", "135mm"];
 const MOVEMENT_OPTIONS = ["Locked", "Pan", "Tilt", "Dolly", "Handheld", "Push in", "Pull out", "Whip"];
 const ANGLE_OPTIONS = ["Eye level", "Low", "High", "Dutch", "Bird's eye", "Worm's eye"];
 
+const FRAMINGS: Array<{ shot: string; angle: string; label: string }> = [
+  { shot: "Wide", angle: "High", label: "Wide · High" },
+  { shot: "Wide", angle: "Eye level", label: "Wide · Eye" },
+  { shot: "Wide", angle: "Low", label: "Wide · Low" },
+  { shot: "Medium", angle: "High", label: "Med · High" },
+  { shot: "Medium", angle: "Eye level", label: "Med · Eye" },
+  { shot: "Medium", angle: "Low", label: "Med · Low" },
+  { shot: "Close", angle: "Eye level", label: "Close · Eye" },
+  { shot: "Close", angle: "Low", label: "Close · Low" },
+  { shot: "Close", angle: "Dutch", label: "Close · Dutch" }
+];
+
 export function Storyboard({ project, onSwitchWorkspace }: Props) {
   const [beats, setBeats] = useState<Beat[]>([]);
   const [rows, setRows] = useState<StoryboardRow[]>([]);
@@ -79,6 +92,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   const [stitchedVariantIds, setStitchedVariantIds] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<{ beat: Beat; variant: StoryboardVariant } | null>(null);
   const [expandedBeat, setExpandedBeat] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "grid">("list");
   const [toast, setToast] = useState<{ kind: "success" | "info" | "error"; text: string } | null>(null);
   const [globalStyle, setGlobalStyle] = useState<GlobalStyle>({
     visual: "Noir",
@@ -220,6 +234,26 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
           </p>
         </div>
         <div className="actions">
+          {beats.length > 0 && (
+            <div className="view-toggle" role="tablist" aria-label="Storyboard view">
+              <button
+                role="tab"
+                aria-selected={view === "list"}
+                data-active={view === "list"}
+                onClick={() => setView("list")}
+              >
+                List
+              </button>
+              <button
+                role="tab"
+                aria-selected={view === "grid"}
+                data-active={view === "grid"}
+                onClick={() => setView("grid")}
+              >
+                Grid
+              </button>
+            </div>
+          )}
           <span className="pip-state" data-status={completeCount === beats.length && beats.length > 0 ? "done" : "working"}>
             {selectedCount} / {beats.length || "—"} SELECTED
           </span>
@@ -242,34 +276,51 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
         <div className="storyboard-section-head">
           <span className="t-eyebrow">BEATS · 1 — {beats.length}</span>
           <span className="t-mute" style={{ fontSize: "var(--t-body-s)" }}>
-            Click a beat row to expand prompt + camera direction
+            {view === "grid"
+              ? "Click any frame to open it"
+              : "Click a beat row to expand prompt + camera direction"}
           </span>
         </div>
 
-        <div className="storyboard-beats">
-          {beats.map((beat) => {
-            const row = rowByBeat[beat.id];
-            const v = variantsByBeat[beat.id] ?? [];
-            const expanded = expandedBeat === beat.id;
-            return (
-              <BeatRow
+        {view === "grid" ? (
+          <div className="sb-grid">
+            {beats.map((beat) => (
+              <StoryboardCard
                 key={beat.id}
                 beat={beat}
-                row={row}
-                variants={v}
+                row={rowByBeat[beat.id]}
+                variants={variantsByBeat[beat.id] ?? []}
                 stitchedVariantIds={stitchedVariantIds}
-                expanded={expanded}
-                globalStyle={globalStyle}
-                onToggleExpand={() => setExpandedBeat(expanded ? null : beat.id)}
-                onAddToStitch={(variant) => addVariantToStitch(variant)}
-                onRemoveFromStitch={(variant) => removeVariantFromStitch(variant)}
-                onLightbox={(variant) => setLightbox({ beat, variant })}
-                onPatchRow={(patch) => patchRow(beat.id, patch)}
-                onGenerate={(prompt) => generate(beat.id, prompt)}
+                onOpen={(variant) => setLightbox({ beat, variant })}
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="storyboard-beats">
+            {beats.map((beat) => {
+              const row = rowByBeat[beat.id];
+              const v = variantsByBeat[beat.id] ?? [];
+              const expanded = expandedBeat === beat.id;
+              return (
+                <BeatRow
+                  key={beat.id}
+                  beat={beat}
+                  row={row}
+                  variants={v}
+                  stitchedVariantIds={stitchedVariantIds}
+                  expanded={expanded}
+                  globalStyle={globalStyle}
+                  onToggleExpand={() => setExpandedBeat(expanded ? null : beat.id)}
+                  onAddToStitch={(variant) => addVariantToStitch(variant)}
+                  onRemoveFromStitch={(variant) => removeVariantFromStitch(variant)}
+                  onLightbox={(variant) => setLightbox({ beat, variant })}
+                  onPatchRow={(patch) => patchRow(beat.id, patch)}
+                  onGenerate={(prompt) => generate(beat.id, prompt)}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <BottomStrip
@@ -546,6 +597,7 @@ function BeatEditor({
   const [prompt, setPrompt] = useState(
     beatStyle.prompt_override || defaultPromptFor(beat, beatStyle, globalStyle)
   );
+  const [framingOpen, setFramingOpen] = useState(false);
 
   const isGenerating = state === "generating";
 
@@ -580,6 +632,13 @@ function BeatEditor({
         <div className="beat-editor-section-head">
           <Eye size={14} />
           <span className="t-eyebrow">CAMERA DIRECTION</span>
+          <button
+            className="btn btn-sm btn-ghost"
+            style={{ marginLeft: "auto" }}
+            onClick={() => setFramingOpen(true)}
+          >
+            <LayoutGrid size={11} /> 3×3 framing
+          </button>
         </div>
         <div className="beat-editor-grid">
           <EditorSelect
@@ -665,6 +724,17 @@ function BeatEditor({
           <Wand2 size={12} /> {isGenerating ? "Rolling…" : "Generate 4 variants"}
         </button>
       </div>
+
+      {framingOpen && (
+        <FramingPicker
+          current={{ shot: beatStyle.shot_size, angle: beatStyle.camera_angle }}
+          onPick={(shot, angle) => {
+            onPatchRow({ style: { shot_size: shot, camera_angle: angle } });
+            setFramingOpen(false);
+          }}
+          onClose={() => setFramingOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -972,5 +1042,144 @@ function LightboxKV({ k, v }: { k: string; v: string }) {
       </span>
       <span style={{ color: "var(--ink)" }}>{v}</span>
     </div>
+  );
+}
+
+/* ───────────────────────── Storyboard Card (grid / contact sheet) ───────────────────────── */
+
+function StoryboardCard({
+  beat,
+  row,
+  variants,
+  stitchedVariantIds,
+  onOpen
+}: {
+  beat: Beat;
+  row: StoryboardRow | undefined;
+  variants: StoryboardVariant[];
+  stitchedVariantIds: Set<string>;
+  onOpen: (variant: StoryboardVariant) => void;
+}) {
+  const state = row?.state ?? "waiting";
+  const stitched = variants.filter((v) => stitchedVariantIds.has(v.id));
+  const chosen =
+    stitched[0] ||
+    variants.find((v) => v.id === row?.selected_variant_id) ||
+    variants.find((v) => v.asset_url) ||
+    variants[0];
+  const s = row?.style ?? {};
+  const tags = [s.shot_size, s.camera_angle, s.lens].filter(Boolean) as string[];
+
+  return (
+    <article className="sb-card">
+      <button
+        className="sb-card-frame"
+        data-empty={!chosen?.asset_url}
+        disabled={!chosen?.asset_url}
+        onClick={() => chosen && onOpen(chosen)}
+        title={chosen?.asset_url ? "Open frame" : undefined}
+      >
+        {chosen?.asset_url ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={chosen.asset_url} alt={beat.title} />
+        ) : (
+          <span className="t-eyebrow">
+            {state === "generating" ? "COMPOSING…" : state === "waiting" ? "NO FRAME YET" : "—"}
+          </span>
+        )}
+        <span className="sb-card-no">BEAT {String(beat.n).padStart(2, "0")}</span>
+        {stitched.length > 0 && (
+          <span className="sb-card-stitch" title="On the Stitch board">
+            <Film size={10} /> {stitched.length}
+          </span>
+        )}
+        {beat.flag && (
+          <span className="sb-card-flag" title={beat.flag}>
+            <Flag size={10} />
+          </span>
+        )}
+      </button>
+      <div className="sb-card-body">
+        <div className="sb-card-title">{beat.title}</div>
+        <div className="sb-card-scene">{beat.scene_heading}</div>
+        {tags.length > 0 && (
+          <div className="sb-card-tags">
+            {tags.map((t) => (
+              <span key={t} className="tag">{t}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/* ───────────────────────── 3×3 Framing Picker (九宫格) ───────────────────────── */
+
+function FramingPicker({
+  current,
+  onPick,
+  onClose
+}: {
+  current: { shot?: string; angle?: string };
+  onPick: (shot: string, angle: string) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal sb-framing" onClick={(e) => e.stopPropagation()}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <span className="t-eyebrow">CINEMATOGRAPHER</span>
+            <h2 className="t-h3" style={{ marginTop: "var(--sp-2)" }}>Pick a framing</h2>
+            <p className="t-mute" style={{ fontSize: 12, marginTop: 4, maxWidth: "44ch" }}>
+              Nine camera setups. Choose one to set this beat&apos;s shot size and angle.
+            </p>
+          </div>
+          <button className="btn btn-sm btn-ghost" onClick={onClose} aria-label="Close">
+            <X size={14} />
+          </button>
+        </header>
+        <div className="sb-framing-grid">
+          {FRAMINGS.map((f) => {
+            const active = current.shot === f.shot && current.angle === f.angle;
+            return (
+              <button
+                key={f.label}
+                className="sb-framing-cell"
+                data-active={active}
+                onClick={() => onPick(f.shot, f.angle)}
+              >
+                <FramingGlyph shot={f.shot} angle={f.angle} />
+                <span className="sb-framing-label">{f.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FramingGlyph({ shot, angle }: { shot: string; angle: string }) {
+  const r = shot === "Close" ? 24 : shot === "Medium" ? 15 : 8;
+  const cy = angle === "High" ? 40 : angle === "Low" ? 30 : 35;
+  const rot = angle === "Dutch" ? -8 : 0;
+  return (
+    <svg viewBox="0 0 96 60" className="sb-framing-glyph" aria-hidden="true">
+      <g transform={`rotate(${rot} 48 30)`}>
+        <rect x="6" y="6" width="84" height="48" rx="4" fill="var(--bg)" stroke="var(--ink)" strokeWidth="1.5" />
+        <circle cx="48" cy={cy - r * 0.5} r={r * 0.5} fill="var(--accent)" />
+        <rect x={48 - r} y={cy} width={r * 2} height={r * 1.1} rx={r * 0.4} fill="var(--accent)" />
+      </g>
+    </svg>
   );
 }
