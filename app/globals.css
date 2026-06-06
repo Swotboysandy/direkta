@@ -447,6 +447,205 @@ strong, b {
   overflow: hidden;
 }
 
+/* ============================================================
+   CASTING — character card (portrait identity + looks + meter)
+   ============================================================ */
+.cast-card {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.cast-portrait {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--cream-deep);
+  overflow: hidden;
+}
+.cast-plate {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cast-mono-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cast-monogram {
+  font-family: var(--font-display);
+  font-size: 64px;
+  line-height: 1;
+  color: var(--cream-warm);
+  user-select: none;
+}
+.cast-plate-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  color: var(--mute);
+}
+.cast-empty-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+.cast-portrait-top {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+}
+.cast-shimmer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: var(--sp-3);
+  background: linear-gradient(to top, rgba(42, 26, 18, 0.55), transparent 55%);
+  pointer-events: none;
+  overflow: hidden;
+}
+.cast-shimmer-label {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--cream-warm);
+}
+.cast-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  flex: 1;
+}
+.cast-name {
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1;
+}
+.cast-meta {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.cast-looks {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.cast-look {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--cream-deep);
+  transition: border-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.cast-look:hover {
+  transform: translateY(-2px);
+}
+.cast-look[data-active="true"] {
+  border-color: var(--accent);
+}
+.cast-look-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cast-look-img .cast-monogram {
+  font-size: 18px;
+}
+.cast-look-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mute);
+  border: 2px dashed var(--surface-2);
+  background: transparent;
+}
+.cast-look-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.cast-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.cast-meter-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.cast-meter-fill {
+  height: 100%;
+  background: var(--viridian);
+  border-radius: inherit;
+}
+.cast-meter-val {
+  font-family: var(--font-mono);
+  font-size: var(--t-body-s);
+  color: var(--viridian-deep);
+}
+.cast-error {
+  padding: var(--sp-3);
+  background: rgba(232, 74, 53, 0.06);
+  border-left: 2px solid var(--accent);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.cast-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: auto;
+}
+.cast-picker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.cast-picker-cell {
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.cast-picker-cell:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-2);
+}
+.cast-picker-cell .cast-monogram {
+  font-size: 48px;
+}
+
 .page-head .crumb,
 .crumb {
   font-family: var(--font-mono);

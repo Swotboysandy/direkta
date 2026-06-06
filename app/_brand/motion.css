@@ -116,6 +116,29 @@
     55%  { transform: scale(1.12) rotate(0deg);   opacity: 1; }
     100% { transform: scale(1)    rotate(0deg);   opacity: 1; }
   }
+
+  /* ── Casting — training shimmer sweep (also powers .shimmer) ─ */
+  .cast-shimmer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 35%, rgba(255, 251, 241, 0.45) 50%, transparent 65%);
+    transform: translateX(-100%);
+    animation: fx-shimmer 1.8s var(--ease-out) infinite;
+    pointer-events: none;
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 35%, rgba(255, 251, 241, 0.5) 50%, transparent 65%);
+    transform: translateX(-100%);
+    animation: fx-shimmer 1.6s var(--ease-out) infinite;
+    pointer-events: none;
+  }
+  @keyframes fx-shimmer {
+    to { transform: translateX(100%); }
+  }
 }
 
 /* Stagger helper — set on a parent, child uses `--fx-delay: calc(var(--i) * 60ms)` */

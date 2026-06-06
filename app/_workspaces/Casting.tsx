@@ -4,6 +4,21 @@ import { useState } from "react";
 import { ArrowRight, Plus, RefreshCcw, X } from "lucide-react";
 import type { Character, Location, Project, WorkspaceId } from "../../lib/types";
 
+const LOOK_GRADS = [
+  "linear-gradient(150deg, var(--tomato), var(--tomato-deep))",
+  "linear-gradient(150deg, var(--mustard), var(--mustard-deep))",
+  "linear-gradient(150deg, var(--viridian), var(--viridian-deep))",
+  "linear-gradient(150deg, var(--cocoa-soft), var(--cocoa))"
+];
+function hashName(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function gradFor(name: string, seed: number): string {
+  return LOOK_GRADS[(hashName(name) + seed) % LOOK_GRADS.length];
+}
+
 interface Props {
   project: Project;
   characters: Character[];
@@ -132,8 +147,26 @@ function CharacterCard({
   projectId: string;
   onChange: () => Promise<void> | void;
 }) {
+  void projectId;
   const state = character.soul_id_state;
-  const ref = character.refs[0];
+  const pct = Math.round(character.soul_id_progress * 100);
+  const realRefs = character.refs ?? [];
+  const hasReal = realRefs.length > 0;
+
+  const [picked, setPicked] = useState<number[]>([]);
+  const [sel, setSel] = useState(0);
+  const [picking, setPicking] = useState(false);
+
+  // Base looks: real reference photos if present, else stub plates derived
+  // from the Soul ID state. The picker prepends new looks (never overwrites).
+  const baseLooks: Array<{ key: string; url?: string; seed?: number }> = hasReal
+    ? realRefs.map((url, i) => ({ key: `r${i}`, url }))
+    : (state === "trained" ? [0, 1, 2] : state === "training" ? [0] : []).map((s) => ({
+        key: `s${s}`,
+        seed: s
+      }));
+  const looks = [...picked.map((s) => ({ key: `p${s}`, seed: s })), ...baseLooks];
+  const active = looks[Math.min(sel, Math.max(0, looks.length - 1))];
 
   const statusPip = (() => {
     if (state === "trained")
@@ -145,7 +178,7 @@ function CharacterCard({
     if (state === "training")
       return (
         <span className="pip-state" data-s="working">
-          TRAINING · {Math.round(character.soul_id_progress * 100)}%
+          TRAINING · {pct}%
         </span>
       );
     if (state === "failed")
@@ -157,150 +190,111 @@ function CharacterCard({
     return <span className="pip-state">NOT STARTED</span>;
   })();
 
-  return (
-    <div className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14 }}>
-        <div>
-          <div
-            style={{
-              fontFamily: "var(--f-display)",
-              fontSize: 26,
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-              color: "var(--bone)",
-              lineHeight: 1
-            }}
-          >
-            {character.name}
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--f-mono)",
-              fontSize: 10,
-              letterSpacing: "0.22em",
-              color: "var(--ink-60)",
-              textTransform: "uppercase",
-              marginTop: 6
-            }}
-          >
-            {character.role} · {character.scene_count} SCENES
-            {character.dialogue ? " · SPEAKING" : ""}
-          </div>
-        </div>
-        {statusPip}
+  function plate(look: { url?: string; seed?: number } | undefined, klass: string) {
+    if (look?.url) {
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img src={look.url} alt={character.name} className={`portrait-img ${klass}`} />;
+    }
+    return (
+      <div className={`${klass} cast-mono-plate`} style={{ background: gradFor(character.name, look?.seed ?? 0) }}>
+        <span className="cast-monogram">{character.name.trim()[0] ?? "?"}</span>
       </div>
+    );
+  }
 
-      {ref && state !== "empty" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 6,
-            height: 132
-          }}
-        >
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              style={{
-                position: "relative",
-                overflow: "hidden",
-                background: "var(--cream-deep)",
-                borderRadius: "var(--r-sm)"
-              }}
-              className={state === "training" && i === 2 ? "shimmer" : ""}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={ref}
-                alt={character.name}
-                className="portrait-img"
-                style={{
-                  transform: `scale(${1.06 + i * 0.04}) translateX(${(i - 1) * 4}px)`,
-                  filter: i === 0 ? "contrast(0.95)" : i === 1 ? "contrast(1.05) saturate(0.85)" : "contrast(1.02)"
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {state === "empty" && (
-        <div
-          style={{
-            minHeight: 120,
-            border: "1px dashed var(--ink-40)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            color: "var(--ink-60)",
-            padding: 16,
-            textAlign: "center"
-          }}
-        >
-          <Plus size={18} />
-          <div
-            style={{
-              fontFamily: "var(--f-mono)",
-              fontSize: 10,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase"
-            }}
-          >
-            ADD REFERENCE PHOTOS
+  return (
+    <div className="card cast-card">
+      <div className="cast-portrait">
+        {active ? (
+          plate(active, "cast-plate")
+        ) : (
+          <div className="cast-plate cast-plate-empty">
+            <Plus size={18} />
+            <span className="cast-empty-label">ADD REFERENCE PHOTOS</span>
           </div>
-        </div>
-      )}
-
-      {state === "failed" && character.error && (
-        <div
-          style={{
-            padding: 14,
-            background: "rgba(217, 67, 67, 0.06)",
-            borderLeft: "2px solid var(--cut)",
-            color: "var(--ink-70)",
-            fontSize: 13,
-            lineHeight: 1.5
-          }}
-        >
-          {character.error}
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
-        {state === "empty" && (
-          <button
-            className="btn btn-sm"
-            style={{ flex: 1, justifyContent: "center" }}
-            onClick={async () => {
-              await fetch(`/api/characters/${character.id}`, {
-                method: "PATCH",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ soul_id_state: "training", soul_id_progress: 0.42 })
-              });
-              await onChange();
-            }}
-          >
-            Begin casting
-          </button>
         )}
         {state === "training" && (
-          <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }} disabled>
-            In training…
-          </button>
+          <div className="cast-shimmer">
+            <span className="cast-shimmer-label">TRAINING SOUL ID · {pct}%</span>
+          </div>
         )}
-        {state === "trained" && (
-          <>
-            <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }}>
-              Test consistency
+        <div className="cast-portrait-top">{statusPip}</div>
+      </div>
+
+      <div className="cast-body">
+        <div className="cast-name">{character.name}</div>
+        <div className="cast-meta">
+          {character.role} · {character.scene_count} SCENES{character.dialogue ? " · SPEAKING" : ""}
+        </div>
+
+        {(looks.length > 0 || state !== "empty") && (
+          <div className="cast-looks" aria-label="Looks">
+            {looks.map((l, i) => (
+              <button
+                key={l.key}
+                className="cast-look"
+                data-active={i === sel}
+                onClick={() => setSel(i)}
+                aria-label={`Look ${i + 1}`}
+              >
+                {plate(l, "cast-look-img")}
+              </button>
+            ))}
+            {state !== "empty" && (
+              <button
+                className="cast-look cast-look-add"
+                onClick={() => setPicking(true)}
+                aria-label="Cast a new look"
+                title="Cast a new look"
+              >
+                <Plus size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {state === "trained" && character.consistency != null && (
+          <div className="cast-meter" title={`Consistency ${character.consistency.toFixed(1)} / 10`}>
+            <div className="cast-meter-track">
+              <div className="cast-meter-fill" style={{ width: `${(character.consistency / 10) * 100}%` }} />
+            </div>
+            <span className="cast-meter-val">{character.consistency.toFixed(1)}</span>
+          </div>
+        )}
+
+        {state === "failed" && character.error && <div className="cast-error">{character.error}</div>}
+
+        <div className="cast-actions">
+          {state === "empty" && (
+            <button
+              className="btn btn-sm"
+              style={{ flex: 1, justifyContent: "center" }}
+              onClick={async () => {
+                await fetch(`/api/characters/${character.id}`, {
+                  method: "PATCH",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ soul_id_state: "training", soul_id_progress: 0.42 })
+                });
+                await onChange();
+              }}
+            >
+              Begin casting
             </button>
-            <button className="btn btn-sm btn-ghost">Edit</button>
-          </>
-        )}
-        {state === "failed" && (
-          <>
+          )}
+          {state === "training" && (
+            <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }} disabled>
+              In training… {pct}%
+            </button>
+          )}
+          {state === "trained" && (
+            <>
+              <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }} onClick={() => setPicking(true)}>
+                New look
+              </button>
+              <button className="btn btn-sm btn-ghost">Edit</button>
+            </>
+          )}
+          {state === "failed" && (
             <button
               className="btn btn-sm"
               style={{ flex: 1, justifyContent: "center" }}
@@ -315,8 +309,63 @@ function CharacterCard({
             >
               <RefreshCcw size={12} /> Retry
             </button>
-          </>
-        )}
+          )}
+        </div>
+      </div>
+
+      {picking && (
+        <LookPicker
+          name={character.name}
+          onClose={() => setPicking(false)}
+          onPick={(seed) => {
+            setPicked((prev) => (prev.includes(seed) ? prev : [seed, ...prev]));
+            setSel(0);
+            setPicking(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function LookPicker({
+  name,
+  onClose,
+  onPick
+}: {
+  name: string;
+  onClose: () => void;
+  onPick: (seed: number) => void;
+}) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal cast-picker" onClick={(e) => e.stopPropagation()}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div className="crumb">CASTING · {name}</div>
+            <h2>Pick a look</h2>
+            <p className="t-mute" style={{ fontSize: 12, marginTop: 4, maxWidth: "44ch" }}>
+              Preview — these are placeholder plates. Real Soul ID generation lands once the Casting
+              Director agent is wired.
+            </p>
+          </div>
+          <button type="button" className="btn-ghost btn btn-sm" onClick={onClose}>
+            <X size={14} />
+          </button>
+        </header>
+        <div className="cast-picker-grid">
+          {[0, 1, 2, 3].map((s) => (
+            <button
+              key={s}
+              className="cast-picker-cell"
+              style={{ background: gradFor(name, s) }}
+              onClick={() => onPick(s)}
+              aria-label={`Look option ${s + 1}`}
+            >
+              <span className="cast-monogram">{name.trim()[0] ?? "?"}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
