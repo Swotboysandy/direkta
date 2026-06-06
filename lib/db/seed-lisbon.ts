@@ -442,20 +442,28 @@ export function seedLisbonPact(db: DatabaseSync) {
 
   // — Storyboard rows + 4 variants per beat —
   // Maps to data.jsx STORYBOARD: state per row, selected variant for completed ones
-  const storyboardRows: Array<{ beat: number; state: "waiting" | "generating" | "complete" | "error"; selected?: number; flag?: string }> = [
-    { beat: 1, state: "complete", selected: 1 },
-    { beat: 2, state: "complete", selected: 2 },
-    { beat: 3, state: "generating" },
-    { beat: 4, state: "complete", selected: 0 },
-    { beat: 5, state: "complete", selected: 3, flag: "continuity" },
-    { beat: 6, state: "waiting" },
-    { beat: 7, state: "error" },
-    { beat: 8, state: "waiting" }
+  const storyboardRows: Array<{
+    beat: number;
+    state: "waiting" | "generating" | "complete" | "error";
+    selected?: number;
+    flag?: string;
+    cam: { shot_size: string; camera_angle: string; lens: string; movement: string };
+  }> = [
+    { beat: 1, state: "complete", selected: 1, cam: { shot_size: "Wide", camera_angle: "Low", lens: "35mm", movement: "Locked" } },
+    { beat: 2, state: "complete", selected: 2, cam: { shot_size: "Wide", camera_angle: "Eye level", lens: "24mm", movement: "Pan" } },
+    { beat: 3, state: "generating", cam: { shot_size: "Medium", camera_angle: "Eye level", lens: "50mm", movement: "Locked" } },
+    { beat: 4, state: "complete", selected: 0, cam: { shot_size: "Close", camera_angle: "Eye level", lens: "85mm", movement: "Push in" } },
+    { beat: 5, state: "complete", selected: 3, flag: "continuity", cam: { shot_size: "Medium", camera_angle: "Low", lens: "35mm", movement: "Handheld" } },
+    { beat: 6, state: "waiting", cam: { shot_size: "Medium", camera_angle: "Eye level", lens: "50mm", movement: "Dolly" } },
+    { beat: 7, state: "error", cam: { shot_size: "Close", camera_angle: "High", lens: "85mm", movement: "Locked" } },
+    { beat: 8, state: "waiting", cam: { shot_size: "Wide", camera_angle: "Eye level", lens: "35mm", movement: "Locked" } }
   ];
 
   const insertRow = db.prepare(
-    "INSERT INTO storyboard_rows (beat_id, state, selected_variant_id) VALUES (?, ?, ?)"
+    "INSERT INTO storyboard_rows (beat_id, state, selected_variant_id, style) VALUES (?, ?, ?, ?)"
   );
+  // Selected variant per beat — reused below to wire stitch nodes to real frames.
+  const selectedVariantByBeat: Record<number, string | null> = {};
   const insertVariant = db.prepare(
     "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, ?, ?)"
   );
@@ -490,7 +498,8 @@ export function seedLisbonPact(db: DatabaseSync) {
     }
 
     const selectedId = row.selected !== undefined ? variantIds[row.selected] ?? null : null;
-    insertRow.run(beatId, row.state, selectedId);
+    selectedVariantByBeat[row.beat] = selectedId;
+    insertRow.run(beatId, row.state, selectedId, JSON.stringify(row.cam));
   }
 
   // — Activity feed —
@@ -535,7 +544,7 @@ export function seedLisbonPact(db: DatabaseSync) {
 
   // — Stitch nodes — one per beat that has a selected variant —
   const insertStitchNode = db.prepare(
-    "INSERT INTO stitch_nodes (id, project_id, beat_id, x, y, duration) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO stitch_nodes (id, project_id, beat_id, x, y, duration, variant_id) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
   const stitchPositions: Array<{ beat: number; x: number; y: number; duration: number }> = [
     { beat: 1, x: 80, y: 180, duration: 3.0 },
@@ -551,7 +560,7 @@ export function seedLisbonPact(db: DatabaseSync) {
     if (!beatId) continue;
     const id = nanoid(10);
     stitchNodeIds[pos.beat] = id;
-    insertStitchNode.run(id, PROJECT_ID, beatId, pos.x, pos.y, pos.duration);
+    insertStitchNode.run(id, PROJECT_ID, beatId, pos.x, pos.y, pos.duration, selectedVariantByBeat[pos.beat] ?? null);
   }
 
   // — Transitions — edges between consecutive stitch nodes —
