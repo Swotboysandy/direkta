@@ -1,30 +1,46 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getDb } from "../../../../../../lib/db/client";
+import { vendors } from "../../../../../../lib/db/repo";
+import { generateImage } from "../../../../../../lib/agents/image";
+import type { AspectRatio } from "../../../../../../lib/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /**
- * Simulated Cinematographer pass. Real wiring (Fal/OpenAI image) lives in
- * lib/agents/image.ts but is gated on a vendor with an API key. Until those
- * are configured, we drop the row into `generating` and (optionally) create
- * empty variants the UI can paint as loading shimmers.
+ * Cinematographer pass. If an image vendor (Fal / OpenAI image) is enabled
+ * with an API key, this rolls real frames via lib/agents/image.ts. With no
+ * key configured it degrades to a simulation: placeholder variants the UI
+ * paints as loading shimmers, so the demo still works key-free.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ beatId: string }> }) {
   const { beatId } = await params;
   const body = await req.json().catch(() => ({} as { variants?: number; prompt?: string }));
   const variantCount = Math.max(1, Math.min(8, Number(body.variants ?? 4)));
-  const prompt = typeof body.prompt === "string" ? body.prompt : "";
+  const promptIn = typeof body.prompt === "string" ? body.prompt.trim() : "";
 
   const db = getDb();
 
-  // Flip row state to generating and persist the prompt onto the row style.
+  const beat = db
+    .prepare(
+      `SELECT b.id, b.title, b.scene_heading, p.aspect_ratio, p.premise
+       FROM beats b JOIN projects p ON p.id = b.project_id WHERE b.id = ?`
+    )
+    .get(beatId) as
+    | { id: string; title: string; scene_heading: string; aspect_ratio: AspectRatio; premise: string }
+    | undefined;
+  if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
+
+  const prompt =
+    promptIn || `Cinematic film frame. ${beat.scene_heading}. ${beat.title}. ${beat.premise}`;
+
+  // Persist the prompt onto the row and flip it to generating.
   const existing = db.prepare("SELECT style FROM storyboard_rows WHERE beat_id = ?").get(beatId) as
     | { style: string }
     | undefined;
   const style = existing?.style ? JSON.parse(existing.style) : {};
-  if (prompt) style.prompt_override = prompt;
-
+  style.prompt_override = prompt;
   if (existing) {
     db.prepare(
       "UPDATE storyboard_rows SET state = 'generating', style = ?, updated_at = datetime('now') WHERE beat_id = ?"
@@ -35,23 +51,76 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     ).run(beatId, JSON.stringify(style));
   }
 
-  // Clear prior variants for this beat — fresh roll.
+  // Fresh roll — clear prior variants and their assets.
   db.prepare(
     "DELETE FROM assets WHERE target_kind = 'storyboard_variant' AND target_id IN (SELECT id FROM storyboard_variants WHERE beat_id = ?)"
   ).run(beatId);
   db.prepare("DELETE FROM storyboard_variants WHERE beat_id = ?").run(beatId);
 
-  // Seed N placeholder variants in `waiting` state so the UI has something to draw.
-  const insert = db.prepare(
-    "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, 'waiting', NULL)"
-  );
-  for (let n = 1; n <= variantCount; n++) {
-    insert.run(nanoid(10), beatId, n, prompt);
+  const vendor = vendors.firstEnabledImage();
+
+  // ── No image vendor / key → simulation ──────────────────────────────────
+  if (!vendor) {
+    const insert = db.prepare(
+      "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, 'waiting', NULL)"
+    );
+    for (let n = 1; n <= variantCount; n++) insert.run(nanoid(10), beatId, n, prompt);
+    return NextResponse.json({
+      ok: true,
+      simulated: true,
+      note: "No image vendor configured — queued in simulation. Add a Fal or OpenAI image key in the Key Vault to roll real frames."
+    });
   }
 
+  // ── Real roll — create variant rows, then generate in parallel ──────────
+  const insertVariant = db.prepare(
+    "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, 'generating', NULL)"
+  );
+  const ids: string[] = [];
+  for (let n = 1; n <= variantCount; n++) {
+    const vid = nanoid(10);
+    insertVariant.run(vid, beatId, n, prompt);
+    ids.push(vid);
+  }
+
+  const insertAsset = db.prepare(
+    "INSERT INTO assets (id, target_kind, target_id, kind, url, prompt, vendor_id) VALUES (?, 'storyboard_variant', ?, 'image', ?, ?, ?)"
+  );
+  const markComplete = db.prepare("UPDATE storyboard_variants SET state = 'complete', asset_id = ? WHERE id = ?");
+  const markError = db.prepare("UPDATE storyboard_variants SET state = 'error' WHERE id = ?");
+
+  const results = await Promise.allSettled(
+    ids.map(() => generateImage({ prompt, aspectRatio: beat.aspect_ratio, vendor }))
+  );
+
+  let generated = 0;
+  let failed = 0;
+  results.forEach((res, i) => {
+    const vid = ids[i];
+    if (res.status === "fulfilled") {
+      const assetId = nanoid(10);
+      insertAsset.run(assetId, vid, res.value.url, prompt, vendor.id);
+      markComplete.run(assetId, vid);
+      generated++;
+    } else {
+      markError.run(vid);
+      failed++;
+    }
+  });
+
+  db.prepare("UPDATE storyboard_rows SET state = ?, updated_at = datetime('now') WHERE beat_id = ?").run(
+    generated > 0 ? "complete" : "error",
+    beatId
+  );
+
   return NextResponse.json({
-    ok: true,
+    ok: generated > 0,
+    generated,
+    failed,
+    vendor: vendor.label,
     note:
-      "Generation queued (simulated). Wire an image vendor with an API key in /settings to roll real frames."
+      failed > 0
+        ? `${generated} frame(s) rolled, ${failed} failed. Check the key/credits for ${vendor.label}.`
+        : `${generated} frame(s) rolled by ${vendor.label}.`
   });
 }
