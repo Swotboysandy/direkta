@@ -34,6 +34,8 @@ interface StitchNode {
     location_id: string | null;
   } | null;
   frame_url: string | null;
+  clip_url: string | null;
+  clip_state: string;
 }
 
 interface Transition {
@@ -105,6 +107,19 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     await patchNode(node.id, { duration });
   }
 
+  async function animate(node: StitchNode): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null> {
+    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, clip_state: "generating" } : n)));
+    let data: { ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null = null;
+    try {
+      const res = await fetch(`/api/stitch/nodes/${node.id}/animate`, { method: "POST" });
+      data = await res.json().catch(() => null);
+    } catch {
+      /* network error surfaced via reload state */
+    }
+    await reload();
+    return data;
+  }
+
   // Sync our data into React Flow's nodes whenever the underlying list changes.
   useEffect(() => {
     setRfNodes(
@@ -114,6 +129,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
         position: { x: n.x, y: n.y },
         data: {
           frame_url: n.frame_url,
+          clip_state: n.clip_state,
           duration: n.duration,
           beat_n: n.beat?.n ?? null,
           beat_title: n.beat?.title ?? null,
@@ -264,6 +280,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             onClose={() => setSelectedId(null)}
             onSetSceneNumber={(scene) => setSceneNumber(selected, scene)}
             onSetDuration={(duration) => setDuration(selected, duration)}
+            onAnimate={() => animate(selected)}
             onDelete={() => {
               if (confirm("Remove this frame from Stitch? The transition clips connected to it will also be removed.")) {
                 deleteNode(selected.id);
@@ -283,20 +300,25 @@ function StitchInspector({
   onClose,
   onSetSceneNumber,
   onSetDuration,
+  onAnimate,
   onDelete
 }: {
   node: StitchNode;
   onClose: () => void;
   onSetSceneNumber: (n: number) => void;
   onSetDuration: (d: number) => void;
+  onAnimate: () => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
   onDelete: () => void;
 }) {
   const [scene, setScene] = useState<number>(node.beat?.n ?? 1);
   const [duration, setDurationLocal] = useState<number>(node.duration);
+  const [animating, setAnimating] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
     setScene(node.beat?.n ?? 1);
     setDurationLocal(node.duration);
+    setNote(null);
   }, [node.id, node.beat?.n, node.duration]);
 
   return (
@@ -316,12 +338,30 @@ function StitchInspector({
         </button>
       </header>
 
-      {node.frame_url && (
-        <div style={{ overflow: "hidden", borderRadius: "var(--radius)", background: "var(--cream-deep)" }}>
+      {node.clip_url ? (
+        <div style={{ overflow: "hidden", borderRadius: "var(--radius)", background: "var(--ink)" }}>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video
+            src={node.clip_url}
+            poster={node.frame_url ?? undefined}
+            controls
+            loop
+            muted
+            playsInline
+            style={{ display: "block", width: "100%" }}
+          />
+        </div>
+      ) : node.frame_url ? (
+        <div style={{ position: "relative", overflow: "hidden", borderRadius: "var(--radius)", background: "var(--cream-deep)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={node.frame_url} alt={node.beat?.title ?? ""} style={{ display: "block", width: "100%" }} />
+          {(animating || node.clip_state === "generating") && (
+            <div className="stitch-clip-rendering">
+              <span className="t-eyebrow">RENDERING CLIP…</span>
+            </div>
+          )}
         </div>
-      )}
+      ) : null}
 
       <div>
         <span className="t-eyebrow">SCENE NUMBER</span>
@@ -389,10 +429,31 @@ function StitchInspector({
         <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }}>
           <RefreshCcw size={12} /> Replace frame
         </button>
-        <button className="btn btn-sm btn-primary" style={{ flex: 1, justifyContent: "center" }}>
-          <Film size={12} /> Generate clip
+        <button
+          className="btn btn-sm btn-primary"
+          style={{ flex: 1, justifyContent: "center" }}
+          disabled={animating || !node.frame_url}
+          onClick={async () => {
+            setNote(null);
+            setAnimating(true);
+            try {
+              const res = await onAnimate();
+              if (res?.simulated) setNote(res.note ?? "Simulated — add a video key to render real motion.");
+              else if (res?.error) setNote(res.error);
+              else if (res?.ok) setNote(`Clip rendered by ${res.vendor ?? "the video vendor"}.`);
+            } finally {
+              setAnimating(false);
+            }
+          }}
+        >
+          <Film size={12} /> {animating ? "Rendering…" : node.clip_url ? "Re-roll clip" : "Generate clip"}
         </button>
       </div>
+      {note && (
+        <p className="t-mute" style={{ fontSize: 11, marginTop: "var(--sp-2)", lineHeight: 1.4 }}>
+          {note}
+        </p>
+      )}
       <button
         className="btn btn-sm btn-danger"
         onClick={onDelete}

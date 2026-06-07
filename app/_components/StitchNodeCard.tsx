@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 
 export interface StitchNodeData {
   frame_url: string | null;
+  clip_state?: string;
   duration: number;
   beat_n: number | null;
   beat_title: string | null;
@@ -42,6 +43,12 @@ export function StitchNodeCard({ data, selected }: NodeProps) {
           <div className="t-eyebrow" style={{ padding: 16, color: "var(--mute)" }}>
             {d.beat_n ? "FRAME PENDING" : "NO BEAT"}
           </div>
+        )}
+        {d.clip_state === "complete" && (
+          <span className="stitch-node-clip" title="Has a motion clip">▶ CLIP</span>
+        )}
+        {d.clip_state === "generating" && (
+          <span className="stitch-node-clip" data-rendering="true">RENDERING…</span>
         )}
       </div>
       <div className="meta">

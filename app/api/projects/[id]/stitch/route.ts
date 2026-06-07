@@ -18,6 +18,8 @@ interface NodeRow {
   beat_loc: string | null;
   selected_variant_id: string | null;
   variant_url: string | null;
+  clip_state: string | null;
+  clip_url: string | null;
 }
 
 interface TransitionRow {
@@ -45,13 +47,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
               b.characters as beat_chars, b.location_id as beat_loc,
               sr.selected_variant_id,
               v.n as variant_n,
-              COALESCE(a_direct.url, a_selected.url) as variant_url
+              COALESCE(a_direct.url, a_selected.url) as variant_url,
+              sn.clip_state, a_clip.url as clip_url
        FROM stitch_nodes sn
        LEFT JOIN beats b ON b.id = sn.beat_id
        LEFT JOIN storyboard_rows sr ON sr.beat_id = sn.beat_id
        LEFT JOIN storyboard_variants v ON v.id = sn.variant_id
        LEFT JOIN assets a_direct ON a_direct.target_id = sn.variant_id AND a_direct.target_kind = 'storyboard_variant'
        LEFT JOIN assets a_selected ON a_selected.target_id = sr.selected_variant_id AND a_selected.target_kind = 'storyboard_variant'
+       LEFT JOIN assets a_clip ON a_clip.id = sn.clip_asset_id
        WHERE sn.project_id = ?
        ORDER BY sn.x ASC, sn.y ASC`
     )
@@ -85,7 +89,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             location_id: n.beat_loc
           }
         : null,
-      frame_url: n.variant_url
+      frame_url: n.variant_url,
+      clip_url: n.clip_url,
+      clip_state: n.clip_state ?? "none"
     })),
     transitions
   });

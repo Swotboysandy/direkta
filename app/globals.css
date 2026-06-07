@@ -774,6 +774,43 @@ strong, b {
   color: var(--ink-soft);
 }
 
+/* ============================================================
+   STITCH — per-shot motion clip badge + render overlay
+   ============================================================ */
+.stitch-node .frame {
+  position: relative;
+}
+.stitch-node-clip {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--on-accent-3);
+  background: var(--viridian);
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  z-index: 2;
+  pointer-events: none;
+}
+.stitch-node-clip[data-rendering="true"] {
+  color: var(--on-accent-2);
+  background: var(--mustard);
+}
+.stitch-clip-rendering {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(42, 26, 18, 0.45);
+}
+.stitch-clip-rendering .t-eyebrow {
+  color: var(--cream-warm);
+}
+
 .page-head .crumb,
 .crumb {
   font-family: var(--font-mono);

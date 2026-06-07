@@ -312,6 +312,9 @@ function migrate(db: DatabaseSync) {
 
   // stitch_nodes: variant_id so a single beat can contribute multiple cuts to stitch
   ensureColumn(db, "stitch_nodes", "variant_id", "TEXT");
+  // stitch_nodes: per-shot motion clip (image-to-video) — asset + render state
+  ensureColumn(db, "stitch_nodes", "clip_asset_id", "TEXT");
+  ensureColumn(db, "stitch_nodes", "clip_state", "TEXT NOT NULL DEFAULT 'none'");
 
   // characters: psychology, arc, voice, wardrobe, key quote, relationships
   ensureColumn(db, "characters", "background", "TEXT NOT NULL DEFAULT ''");
