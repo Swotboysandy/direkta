@@ -621,31 +621,6 @@ strong, b {
   gap: var(--sp-2);
   margin-top: auto;
 }
-.cast-picker-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
-}
-.cast-picker-cell {
-  aspect-ratio: 1;
-  border: 2px solid transparent;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
-}
-.cast-picker-cell:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: var(--shadow-2);
-}
-.cast-picker-cell .cast-monogram {
-  font-size: 48px;
-}
-
 /* ============================================================
    STORYBOARD — grid contact sheet + 3×3 framing picker
    ============================================================ */

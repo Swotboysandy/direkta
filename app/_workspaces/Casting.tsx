@@ -153,20 +153,29 @@ function CharacterCard({
   const realRefs = character.refs ?? [];
   const hasReal = realRefs.length > 0;
 
-  const [picked, setPicked] = useState<number[]>([]);
   const [sel, setSel] = useState(0);
-  const [picking, setPicking] = useState(false);
+  const [casting, setCasting] = useState(false);
 
-  // Base looks: real reference photos if present, else stub plates derived
-  // from the Soul ID state. The picker prepends new looks (never overwrites).
-  const baseLooks: Array<{ key: string; url?: string; seed?: number }> = hasReal
+  // Looks: real reference photos if present, else stub plates derived from the
+  // Soul ID state. Casting a look generates a real portrait on the server.
+  const looks: Array<{ key: string; url?: string; seed?: number }> = hasReal
     ? realRefs.map((url, i) => ({ key: `r${i}`, url }))
     : (state === "trained" ? [0, 1, 2] : state === "training" ? [0] : []).map((s) => ({
         key: `s${s}`,
         seed: s
       }));
-  const looks = [...picked.map((s) => ({ key: `p${s}`, seed: s })), ...baseLooks];
   const active = looks[Math.min(sel, Math.max(0, looks.length - 1))];
+
+  async function castLook() {
+    if (casting) return;
+    setCasting(true);
+    try {
+      await fetch(`/api/characters/${character.id}/portrait`, { method: "POST" });
+      await onChange();
+    } finally {
+      setCasting(false);
+    }
+  }
 
   const statusPip = (() => {
     if (state === "trained")
@@ -243,7 +252,8 @@ function CharacterCard({
             {state !== "empty" && (
               <button
                 className="cast-look cast-look-add"
-                onClick={() => setPicking(true)}
+                onClick={castLook}
+                disabled={casting}
                 aria-label="Cast a new look"
                 title="Cast a new look"
               >
@@ -269,16 +279,10 @@ function CharacterCard({
             <button
               className="btn btn-sm"
               style={{ flex: 1, justifyContent: "center" }}
-              onClick={async () => {
-                await fetch(`/api/characters/${character.id}`, {
-                  method: "PATCH",
-                  headers: { "content-type": "application/json" },
-                  body: JSON.stringify({ soul_id_state: "training", soul_id_progress: 0.42 })
-                });
-                await onChange();
-              }}
+              onClick={castLook}
+              disabled={casting}
             >
-              Begin casting
+              {casting ? "Casting…" : "Begin casting"}
             </button>
           )}
           {state === "training" && (
@@ -288,8 +292,13 @@ function CharacterCard({
           )}
           {state === "trained" && (
             <>
-              <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }} onClick={() => setPicking(true)}>
-                New look
+              <button
+                className="btn btn-sm"
+                style={{ flex: 1, justifyContent: "center" }}
+                onClick={castLook}
+                disabled={casting}
+              >
+                {casting ? "Casting…" : "New look"}
               </button>
               <button className="btn btn-sm btn-ghost">Edit</button>
             </>
@@ -313,60 +322,6 @@ function CharacterCard({
         </div>
       </div>
 
-      {picking && (
-        <LookPicker
-          name={character.name}
-          onClose={() => setPicking(false)}
-          onPick={(seed) => {
-            setPicked((prev) => (prev.includes(seed) ? prev : [seed, ...prev]));
-            setSel(0);
-            setPicking(false);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function LookPicker({
-  name,
-  onClose,
-  onPick
-}: {
-  name: string;
-  onClose: () => void;
-  onPick: (seed: number) => void;
-}) {
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal cast-picker" onClick={(e) => e.stopPropagation()}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div className="crumb">CASTING · {name}</div>
-            <h2>Pick a look</h2>
-            <p className="t-mute" style={{ fontSize: 12, marginTop: 4, maxWidth: "44ch" }}>
-              Preview — these are placeholder plates. Real Soul ID generation lands once the Casting
-              Director agent is wired.
-            </p>
-          </div>
-          <button type="button" className="btn-ghost btn btn-sm" onClick={onClose}>
-            <X size={14} />
-          </button>
-        </header>
-        <div className="cast-picker-grid">
-          {[0, 1, 2, 3].map((s) => (
-            <button
-              key={s}
-              className="cast-picker-cell"
-              style={{ background: gradFor(name, s) }}
-              onClick={() => onPick(s)}
-              aria-label={`Look option ${s + 1}`}
-            >
-              <span className="cast-monogram">{name.trim()[0] ?? "?"}</span>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
