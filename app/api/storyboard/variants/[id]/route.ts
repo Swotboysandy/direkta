@@ -5,7 +5,9 @@ export const dynamic = "force-dynamic";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await req.json().catch(() => ({} as { prompt?: string; state?: string }));
+  const body = await req
+    .json()
+    .catch(() => ({}) as { prompt?: string; state?: string; approval?: string; note?: string });
   const db = getDb();
 
   const fields: string[] = [];
@@ -18,6 +20,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (typeof body.state === "string") {
     fields.push("state = ?");
     values.push(body.state);
+  }
+  if (typeof body.approval === "string") {
+    fields.push("approval = ?");
+    values.push(body.approval);
+  }
+  if (typeof body.note === "string") {
+    fields.push("note = ?");
+    values.push(body.note);
   }
 
   if (!fields.length) return NextResponse.json({ ok: true });

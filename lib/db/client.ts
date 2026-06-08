@@ -315,6 +315,9 @@ function migrate(db: DatabaseSync) {
   // stitch_nodes: per-shot motion clip (image-to-video) — asset + render state
   ensureColumn(db, "stitch_nodes", "clip_asset_id", "TEXT");
   ensureColumn(db, "stitch_nodes", "clip_state", "TEXT NOT NULL DEFAULT 'none'");
+  // storyboard_variants: director review — approval state + director's note
+  ensureColumn(db, "storyboard_variants", "approval", "TEXT NOT NULL DEFAULT 'pending'");
+  ensureColumn(db, "storyboard_variants", "note", "TEXT NOT NULL DEFAULT ''");
 
   // characters: psychology, arc, voice, wardrobe, key quote, relationships
   ensureColumn(db, "characters", "background", "TEXT NOT NULL DEFAULT ''");

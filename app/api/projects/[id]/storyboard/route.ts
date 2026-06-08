@@ -18,9 +18,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const variants = db
     .prepare(
-      "SELECT v.id, v.beat_id, v.n, v.prompt, v.state, v.asset_id, a.url as asset_url FROM storyboard_variants v INNER JOIN beats b ON b.id = v.beat_id LEFT JOIN assets a ON a.id = v.asset_id WHERE b.project_id = ? ORDER BY v.beat_id, v.n"
+      "SELECT v.id, v.beat_id, v.n, v.prompt, v.state, v.asset_id, v.approval, v.note, a.url as asset_url FROM storyboard_variants v INNER JOIN beats b ON b.id = v.beat_id LEFT JOIN assets a ON a.id = v.asset_id WHERE b.project_id = ? ORDER BY v.beat_id, v.n"
     )
-    .all(id) as Array<{ id: string; beat_id: string; n: number; prompt: string; state: string; asset_id: string | null; asset_url: string | null }>;
+    .all(id) as Array<{ id: string; beat_id: string; n: number; prompt: string; state: string; asset_id: string | null; approval: string; note: string; asset_url: string | null }>;
 
   return NextResponse.json({
     beats: projectBeats,

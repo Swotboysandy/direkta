@@ -12,7 +12,7 @@ import {
   Layers,
   LayoutGrid,
   RefreshCcw,
-  Settings2,
+  Stamp,
   Sparkles,
   Wand2,
   X,
@@ -35,6 +35,8 @@ interface StoryboardVariant {
   state: string;
   asset_id: string | null;
   asset_url: string | null;
+  approval: string;
+  note: string;
 }
 
 interface BeatStyle {
@@ -91,6 +93,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   const [variants, setVariants] = useState<StoryboardVariant[]>([]);
   const [stitchedVariantIds, setStitchedVariantIds] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<{ beat: Beat; variant: StoryboardVariant } | null>(null);
+  const [reviewMode, setReviewMode] = useState(false);
   const [expandedBeat, setExpandedBeat] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "grid">("list");
   const [toast, setToast] = useState<{ kind: "success" | "info" | "error"; text: string } | null>(null);
@@ -147,6 +150,34 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
 
   const selectedCount = rows.filter((r) => r.selected_variant_id).length;
   const completeCount = rows.filter((r) => r.state === "complete").length;
+  const approvedBeatCount = beats.filter((b) =>
+    (variantsByBeat[b.id] ?? []).some((v) => v.approval === "approved")
+  ).length;
+
+  // The next take awaiting the director's call (a beat with frames but no approved take).
+  function nextPendingTake(afterBeatN: number | null): { beat: Beat; variant: StoryboardVariant } | null {
+    for (const beat of [...beats].sort((a, b) => a.n - b.n)) {
+      if (afterBeatN != null && beat.n <= afterBeatN) continue;
+      const vs = (variantsByBeat[beat.id] ?? []).filter((v) => v.asset_url);
+      if (vs.length === 0 || vs.some((v) => v.approval === "approved")) continue;
+      const take =
+        vs.find((v) => stitchedVariantIds.has(v.id)) ||
+        vs.find((v) => v.id === rowByBeat[beat.id]?.selected_variant_id) ||
+        vs[0];
+      return { beat, variant: take };
+    }
+    return null;
+  }
+
+  function startReview() {
+    const t = nextPendingTake(null);
+    if (t) {
+      setReviewMode(true);
+      setLightbox(t);
+    } else {
+      flashToast("info", "All takes reviewed — every beat is signed off.");
+    }
+  }
 
   async function addVariantToStitch(variant: StoryboardVariant) {
     // Optimistic update — mark the variant as stitched before the network round-trip.
@@ -203,7 +234,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     }).catch(() => {});
   }
 
-  async function patchVariant(variantId: string, patch: { prompt?: string }) {
+  async function patchVariant(variantId: string, patch: { prompt?: string; approval?: string; note?: string }) {
     setVariants((prev) => prev.map((v) => (v.id === variantId ? { ...v, ...patch } : v)));
     await fetch(`/api/storyboard/variants/${variantId}`, {
       method: "PATCH",
@@ -254,11 +285,11 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
               </button>
             </div>
           )}
-          <span className="pip-state" data-status={completeCount === beats.length && beats.length > 0 ? "done" : "working"}>
-            {selectedCount} / {beats.length || "—"} SELECTED
+          <span className="pip-state" data-status={approvedBeatCount === beats.length && beats.length > 0 ? "done" : "working"}>
+            {approvedBeatCount} / {beats.length || "—"} APPROVED
           </span>
-          <button className="btn">
-            <Settings2 size={14} /> Style direction
+          <button className="btn" disabled={beats.length === 0} onClick={startReview}>
+            <Stamp size={14} /> Review dailies
           </button>
           <button
             className="btn btn-primary"
@@ -343,12 +374,26 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
       {lightbox && (
         <FrameLightbox
           beat={lightbox.beat}
-          variant={lightbox.variant}
+          variant={variants.find((v) => v.id === lightbox.variant.id) ?? lightbox.variant}
           aspect={project.aspect_ratio}
           row={rowByBeat[lightbox.beat.id]}
-          onClose={() => setLightbox(null)}
+          reviewMode={reviewMode}
+          onClose={() => {
+            setLightbox(null);
+            setReviewMode(false);
+          }}
           onPatchVariant={(p) => patchVariant(lightbox.variant.id, p)}
           onRegenerate={() => generate(lightbox.beat.id, lightbox.variant.prompt)}
+          onNext={() => {
+            const t = nextPendingTake(lightbox.beat.n);
+            if (t) {
+              setLightbox(t);
+            } else {
+              setLightbox(null);
+              setReviewMode(false);
+              flashToast("success", "Dailies signed off — every take has your call.");
+            }
+          }}
         />
       )}
     </div>
@@ -529,6 +574,16 @@ function BeatRow({
               {variant.asset_url && (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={variant.asset_url} alt={`${beat.title} variant ${variant.n}`} />
+              )}
+              {variant.approval === "approved" && (
+                <span className="frame-approval" data-a="approved" title="Approved by director">
+                  <Check size={11} />
+                </span>
+              )}
+              {variant.approval === "needs_work" && (
+                <span className="frame-approval" data-a="needs" title="Sent back — needs another take">
+                  <Flag size={11} />
+                </span>
               )}
               <div className="storyboard-frame-actions">
                 <button
@@ -838,20 +893,29 @@ function FrameLightbox({
   variant,
   aspect,
   row,
+  reviewMode,
   onClose,
   onPatchVariant,
-  onRegenerate
+  onRegenerate,
+  onNext
 }: {
   beat: Beat;
   variant: StoryboardVariant;
   aspect: string;
   row: StoryboardRow | undefined;
+  reviewMode: boolean;
   onClose: () => void;
-  onPatchVariant: (p: { prompt?: string }) => void;
+  onPatchVariant: (p: { prompt?: string; approval?: string; note?: string }) => void;
   onRegenerate: () => void;
+  onNext: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [prompt, setPrompt] = useState(variant.prompt || row?.style.prompt_override || "");
+  const [reviewNote, setReviewNote] = useState(variant.note || "");
+
+  useEffect(() => {
+    setReviewNote(variant.note || "");
+  }, [variant.id, variant.note]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -921,6 +985,53 @@ function FrameLightbox({
           </header>
 
           <div style={{ padding: "var(--sp-5)", display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
+            <section className="lb-review" data-approval={variant.approval}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="t-eyebrow">DIRECTOR&apos;S REVIEW</span>
+                <span className="lb-review-status" data-a={variant.approval}>
+                  {variant.approval === "approved" ? (
+                    <>
+                      <Check size={12} /> Approved
+                    </>
+                  ) : variant.approval === "needs_work" ? (
+                    <>
+                      <Flag size={12} /> Needs another take
+                    </>
+                  ) : (
+                    "Awaiting your call"
+                  )}
+                </span>
+              </div>
+              <textarea
+                className="lb-review-note"
+                placeholder="Director's note — what works, what to change…"
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+                rows={3}
+              />
+              <div className="lb-review-actions">
+                <button
+                  className="btn btn-sm"
+                  data-review="approve"
+                  onClick={() => onPatchVariant({ approval: "approved", note: reviewNote })}
+                >
+                  <Check size={12} /> Approve take
+                </button>
+                <button
+                  className="btn btn-sm"
+                  data-review="reject"
+                  onClick={() => onPatchVariant({ approval: "needs_work", note: reviewNote })}
+                >
+                  <Flag size={12} /> Send back
+                </button>
+                {reviewMode && (
+                  <button className="btn btn-sm btn-primary" style={{ marginLeft: "auto" }} onClick={onNext}>
+                    Next pending <ArrowRight size={12} />
+                  </button>
+                )}
+              </div>
+            </section>
+
             <section>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span className="t-eyebrow">PROMPT USED</span>
@@ -1095,6 +1206,16 @@ function StoryboardCard({
         )}
         {beat.flag && (
           <span className="sb-card-flag" title={beat.flag}>
+            <Flag size={10} />
+          </span>
+        )}
+        {chosen?.approval === "approved" && (
+          <span className="sb-card-approval" data-a="approved" title="Approved by director">
+            <Check size={10} />
+          </span>
+        )}
+        {chosen?.approval === "needs_work" && (
+          <span className="sb-card-approval" data-a="needs" title="Needs another take">
             <Flag size={10} />
           </span>
         )}

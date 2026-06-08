@@ -886,6 +886,101 @@ strong, b {
   white-space: nowrap;
 }
 
+/* ============================================================
+   DIRECTOR'S REVIEW — approval badges + lightbox review block
+   ============================================================ */
+.frame-approval {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  color: var(--on-accent-3);
+  background: var(--viridian);
+  box-shadow: 0 2px 4px rgba(42, 26, 18, 0.25);
+}
+.frame-approval[data-a="needs"] {
+  color: var(--on-accent);
+  background: var(--accent);
+}
+.sb-card-approval {
+  position: absolute;
+  bottom: var(--sp-2);
+  left: var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  color: var(--on-accent-3);
+  background: var(--viridian);
+  padding: 3px;
+  border-radius: var(--r-sm);
+}
+.sb-card-approval[data-a="needs"] {
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+.lb-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--bg);
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--surface-2);
+}
+.lb-review[data-approval="approved"] {
+  border-left-color: var(--viridian);
+}
+.lb-review[data-approval="needs_work"] {
+  border-left-color: var(--accent);
+}
+.lb-review-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.lb-review-status[data-a="approved"] {
+  color: var(--viridian-deep);
+}
+.lb-review-status[data-a="needs_work"] {
+  color: var(--accent);
+}
+.lb-review-note {
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  line-height: var(--leading-body);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--cream-deep);
+  border-radius: var(--r-sm);
+  padding: var(--sp-3);
+  resize: vertical;
+}
+.lb-review-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.lb-review-actions .btn[data-review="approve"] {
+  background: var(--viridian);
+  color: var(--on-accent-3);
+}
+.lb-review-actions .btn[data-review="reject"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
 .page-head .crumb,
 .crumb {
   font-family: var(--font-mono);
