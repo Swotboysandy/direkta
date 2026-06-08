@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateImage } from "../../../../../../lib/agents/image";
+import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 
   const prompt =
     promptIn || `Cinematic film frame. ${beat.scene_heading}. ${beat.title}. ${beat.premise}`;
+  // Fold in the editable Cinematography skill so frames follow the house style.
+  const skill = skillForPart("cinematography");
+  const genPrompt = skill?.body ? `${prompt}\n\n${skill.body}` : prompt;
 
   // Persist the prompt onto the row and flip it to generating.
   const existing = db.prepare("SELECT style FROM storyboard_rows WHERE beat_id = ?").get(beatId) as
@@ -79,7 +83,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const ids: string[] = [];
   for (let n = 1; n <= variantCount; n++) {
     const vid = nanoid(10);
-    insertVariant.run(vid, beatId, n, prompt);
+    insertVariant.run(vid, beatId, n, genPrompt);
     ids.push(vid);
   }
 
@@ -90,7 +94,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const markError = db.prepare("UPDATE storyboard_variants SET state = 'error' WHERE id = ?");
 
   const results = await Promise.allSettled(
-    ids.map(() => generateImage({ prompt, aspectRatio: beat.aspect_ratio, vendor }))
+    ids.map(() => generateImage({ prompt: genPrompt, aspectRatio: beat.aspect_ratio, vendor }))
   );
 
   let generated = 0;
@@ -99,7 +103,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     const vid = ids[i];
     if (res.status === "fulfilled") {
       const assetId = nanoid(10);
-      insertAsset.run(assetId, vid, res.value.url, prompt, vendor.id);
+      insertAsset.run(assetId, vid, res.value.url, genPrompt, vendor.id);
       markComplete.run(assetId, vid);
       generated++;
     } else {

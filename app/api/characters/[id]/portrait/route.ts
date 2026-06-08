@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { characters, projects, vendors } from "../../../../../lib/db/repo";
 import { generateImage } from "../../../../../lib/agents/image";
+import { skillForPart } from "../../../../../lib/skills/loader";
 import type { Character } from "../../../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
 
   // ── Real roll — generate a portrait and store it as a look ───────────────
-  const prompt = buildPortraitPrompt(character, project.premise);
+  const base = buildPortraitPrompt(character, project.premise);
+  const skill = skillForPart("casting");
+  const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
   try {
     const image = await generateImage({ prompt, aspectRatio: "4:5", vendor });
     const refs = [image.url, ...(character.refs ?? [])];

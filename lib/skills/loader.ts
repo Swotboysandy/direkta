@@ -20,10 +20,15 @@ export function loadSkills(force = false): SkillFile[] {
     const parsed = matter(raw);
     const data = parsed.data as Record<string, unknown>;
     const id = String(data.id ?? path.basename(file, ".md"));
+    // A file is a "part" skill if it declares kind: part (or a part: id), else a layer skill.
+    const kind: "layer" | "part" =
+      data.kind === "part" || (!data.layer && data.part) ? "part" : "layer";
     return {
       id,
       title: String(data.title ?? id),
+      kind,
       layer: (data.layer as AgentLayer) ?? "execution",
+      part: kind === "part" ? String(data.part ?? id) : undefined,
       description: String(data.description ?? ""),
       body: parsed.content.trim(),
       source: path.relative(process.cwd(), file).replace(/\\/g, "/")
@@ -32,6 +37,12 @@ export function loadSkills(force = false): SkillFile[] {
   return cache;
 }
 
+/** The skill driving one of the 3 agent layers (decision/execution/supervision). */
 export function skillFor(layer: AgentLayer): SkillFile | undefined {
-  return loadSkills().find((skill) => skill.layer === layer);
+  return loadSkills().find((skill) => skill.kind === "layer" && skill.layer === layer);
+}
+
+/** The per-part generation skill for an app part (e.g. "cinematography", "casting", "video"). */
+export function skillForPart(part: string): SkillFile | undefined {
+  return loadSkills().find((skill) => skill.kind === "part" && (skill.part === part || skill.id === part));
 }

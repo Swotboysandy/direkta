@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../../lib/agents/video";
+import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -72,11 +73,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const style = node.row_style ? JSON.parse(node.row_style) : {};
   const motion = [style.movement, style.shot_size].filter(Boolean).join(", ");
-  const prompt = `${node.beat_title ?? "Film shot"}. ${node.beat_scene ?? ""}. ${
+  const base = `${node.beat_title ?? "Film shot"}. ${node.beat_scene ?? ""}. ${
     motion ? `${motion} — ` : ""
-  }subtle natural cinematic motion, gentle camera move, preserve composition and characters. ${
-    node.premise ?? ""
-  }`.trim();
+  }${node.premise ?? ""}`.trim();
+  // Fold in the editable Video Director skill so motion follows the house style.
+  const skill = skillForPart("video");
+  const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
 
   db.prepare("UPDATE stitch_nodes SET clip_state = 'generating' WHERE id = ?").run(id);
 

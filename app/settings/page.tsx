@@ -236,7 +236,9 @@ export default function SettingsPage() {
           {skills.map((skill) => (
             <div key={skill.id} className="skill-card">
               <header>
-                <span className={`skill-tag layer-${skill.layer}`}>{skill.layer}</span>
+                <span className={`skill-tag ${skill.kind === "part" ? "" : `layer-${skill.layer}`}`}>
+                  {skill.kind === "part" ? (skill.part ?? "part") : skill.layer}
+                </span>
                 <strong>{skill.title}</strong>
               </header>
               <p>{skill.description}</p>

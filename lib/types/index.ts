@@ -163,7 +163,11 @@ export interface VendorConfig {
 export interface SkillFile {
   id: string;
   title: string;
+  /** "layer" = one of the 3 agent layers; "part" = a per-workspace generation skill. */
+  kind: "layer" | "part";
   layer: AgentLayer;
+  /** For part skills: which app part it drives (e.g. "cinematography", "casting", "video"). */
+  part?: string;
   description: string;
   body: string;
   source: string;
