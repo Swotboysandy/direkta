@@ -7,6 +7,7 @@ import { NewProjectModal } from "./_components/NewProjectModal";
 import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
 import { CommandPalette } from "./_components/CommandPalette";
 import { KeyVaultPanel } from "./_components/KeyVaultPanel";
+import { SkillsPanel } from "./_components/SkillsPanel";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
 import { Casting } from "./_workspaces/Casting";
@@ -62,6 +63,7 @@ export default function Home() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [keyVaultOpen, setKeyVaultOpen] = useState(false);
+  const [skillsOpen, setSkillsOpen] = useState(false);
 
   // Initial URL + storage resolution
   useEffect(() => {
@@ -238,6 +240,7 @@ export default function Home() {
         sidebarCollapsed={sidebarCollapsed}
         agents={agents}
         keyVaultOpen={keyVaultOpen}
+        skillsOpen={skillsOpen}
         onSwitchProject={(id) => {
           setProjectId(id);
           setActiveWorkspace("dashboard");
@@ -245,6 +248,7 @@ export default function Home() {
         onNewProject={() => setNewProjectOpen(true)}
         onSwitchWorkspace={switchWorkspace}
         onOpenKeyVault={() => setKeyVaultOpen(true)}
+        onOpenSkills={() => setSkillsOpen(true)}
       />
 
       <div className="app-body" data-collapsed={sidebarCollapsed}>
@@ -324,6 +328,7 @@ export default function Home() {
       </div>
 
       <KeyVaultPanel open={keyVaultOpen} onClose={() => setKeyVaultOpen(false)} />
+      <SkillsPanel open={skillsOpen} onClose={() => setSkillsOpen(false)} />
 
       <NewProjectModal
         open={newProjectOpen}

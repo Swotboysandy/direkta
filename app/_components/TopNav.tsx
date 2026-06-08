@@ -16,6 +16,7 @@ import {
   Clapperboard,
   Upload,
   Check,
+  Sparkles,
   type LucideIcon
 } from "lucide-react";
 import type { AgentStatus, Project, WorkspaceId } from "../../lib/types";
@@ -51,10 +52,12 @@ interface Props {
   sidebarCollapsed: boolean;
   agents: AgentStatus[];
   keyVaultOpen: boolean;
+  skillsOpen: boolean;
   onSwitchProject: (id: string) => void;
   onNewProject: () => void;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
   onOpenKeyVault: () => void;
+  onOpenSkills: () => void;
 }
 
 export function TopNav({
@@ -64,10 +67,12 @@ export function TopNav({
   sidebarCollapsed,
   agents,
   keyVaultOpen,
+  skillsOpen,
   onSwitchProject,
   onNewProject,
   onSwitchWorkspace,
-  onOpenKeyVault
+  onOpenKeyVault,
+  onOpenSkills
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -160,6 +165,15 @@ export function TopNav({
 
       <div className="topnav-right">
         <span className="topnav-saved">● SAVED · just now</span>
+        <button
+          className="tn-icon-btn"
+          data-active={skillsOpen}
+          onClick={onOpenSkills}
+          aria-label="Skills — how your crew generates"
+          title="Skills — how your crew generates"
+        >
+          <Sparkles size={16} />
+        </button>
         <button
           className="tn-icon-btn"
           data-active={keyVaultOpen}

@@ -811,6 +811,81 @@ strong, b {
   color: var(--cream-warm);
 }
 
+/* ============================================================
+   SKILLS PANEL — editable skill cards
+   ============================================================ */
+.skill-group-blurb {
+  font-size: var(--t-body-s);
+  color: var(--mute);
+  line-height: var(--leading-body);
+  margin: 0 0 var(--sp-2);
+}
+.skill-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--bg);
+  border-radius: var(--r-md);
+}
+.skill-edit header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.skill-edit header strong {
+  font-size: var(--t-h4);
+  color: var(--ink);
+}
+.skill-pill {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--on-accent-3);
+  background: var(--viridian);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.skill-pill[data-kind="layer"] {
+  color: var(--on-accent-2);
+  background: var(--mustard);
+}
+.skill-edit-desc {
+  font-size: var(--t-body-s);
+  color: var(--mute);
+  line-height: var(--leading-body);
+  margin: 0;
+}
+.skill-edit-body {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--t-body-s);
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--cream-deep);
+  border-radius: var(--r-sm);
+  padding: var(--sp-3);
+  resize: vertical;
+}
+.skill-edit-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.skill-edit-foot code {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .page-head .crumb,
 .crumb {
   font-family: var(--font-mono);

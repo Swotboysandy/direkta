@@ -46,3 +46,14 @@ export function skillFor(layer: AgentLayer): SkillFile | undefined {
 export function skillForPart(part: string): SkillFile | undefined {
   return loadSkills().find((skill) => skill.kind === "part" && (skill.part === part || skill.id === part));
 }
+
+/** Rewrite a skill's body to its markdown file (frontmatter preserved), then refresh the cache. */
+export function saveSkill(id: string, body: string): SkillFile | undefined {
+  const skill = loadSkills().find((s) => s.id === id);
+  if (!skill) return undefined;
+  const file = path.join(process.cwd(), skill.source);
+  const parsed = matter(fs.readFileSync(file, "utf8"));
+  fs.writeFileSync(file, matter.stringify(`${body.trim()}\n`, parsed.data), "utf8");
+  cache = null;
+  return loadSkills(true).find((s) => s.id === id);
+}
