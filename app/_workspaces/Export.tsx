@@ -10,6 +10,25 @@ interface Props {
 }
 
 export function Export({ project }: Props) {
+  const [rendering, setRendering] = useState(false);
+  const [cut, setCut] = useState<{ url: string; shots: number; duration: number } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function renderCut() {
+    setRendering(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/render`, { method: "POST" });
+      const data = await res.json();
+      if (data.url) setCut({ url: data.url, shots: data.shots, duration: data.duration });
+      else setErr(data.error || "Render failed.");
+    } catch (e: any) {
+      setErr(e?.message ?? String(e));
+    } finally {
+      setRendering(false);
+    }
+  }
+
   return (
     <div className="main-inner">
       <header className="page-head">
@@ -28,26 +47,46 @@ export function Export({ project }: Props) {
 
       <div className="page-body">
         <div className="export-grid">
-          <ExportCard
-            icon={Film}
-            title="Animatic"
-            body="The full assembly — every selected frame stitched together with generated transitions."
-            options={[
-              {
-                label: "Format",
-                values: ["MP4 · H.264", "MOV · ProRes", "WebM"]
-              },
-              {
-                label: "Resolution",
-                values: ["1080p", "1440p", "4K"]
-              },
-              {
-                label: "Overlay",
-                values: ["No overlay", "Beat titles", "Timecode", "Both"]
-              }
-            ]}
-            cta="Export animatic"
-          />
+          <div className="export-card">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <span style={{ color: "var(--tungsten)" }}>
+                <Film size={28} />
+              </span>
+              <span className="eb">{cut ? "RENDERED" : "READY"}</span>
+            </div>
+            <div className="title">Final cut</div>
+            <div className="body">
+              The full assembly — every shot on the Stitch board, in scene order, each held for its
+              duration, rendered to a single MP4 with ffmpeg.
+            </div>
+            {cut && (
+              <div style={{ borderRadius: "var(--r-md)", overflow: "hidden", background: "var(--ink)" }}>
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                <video src={cut.url} controls style={{ display: "block", width: "100%" }} />
+              </div>
+            )}
+            {err && <div className="cast-error">{err}</div>}
+            <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "auto", alignItems: "stretch" }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: "center" }}
+                disabled={rendering}
+                onClick={renderCut}
+              >
+                <Film size={14} /> {rendering ? "Rendering…" : cut ? "Re-render" : "Render final cut"}
+              </button>
+              {cut && (
+                <a className="btn btn-sm" href={cut.url} download style={{ justifyContent: "center", alignItems: "center" }}>
+                  <ArrowDown size={14} /> Download
+                </a>
+              )}
+            </div>
+            {cut && (
+              <span className="t-mute" style={{ fontSize: 11 }}>
+                {cut.shots} shots · {cut.duration}s
+              </span>
+            )}
+          </div>
 
           <ExportCard
             icon={FileText}
