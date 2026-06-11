@@ -56,6 +56,8 @@ async function generateWithHiggsfieldVideo(
   vendor: VendorConfig
 ): Promise<{ url: string; relPath: string }> {
   const base = (vendor.base_url || "https://api.higgsfield.ai").replace(/\/$/, "");
+  // Higgsfield Cloud uses HTTP Basic auth — base64("<key id>:<secret>").
+  const auth = `Basic ${Buffer.from(vendor.api_key).toString("base64")}`;
   const body: Record<string, unknown> = {
     task: input.referenceImageUrl ? "image-to-video" : "text-to-video",
     model: vendor.model || "dop-preview",
@@ -67,7 +69,7 @@ async function generateWithHiggsfieldVideo(
 
   const submit = await fetch(`${base}/v1/generations`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${vendor.api_key}` },
+    headers: { "content-type": "application/json", authorization: auth },
     body: JSON.stringify(body)
   });
   if (!submit.ok) {
@@ -80,7 +82,7 @@ async function generateWithHiggsfieldVideo(
   for (let i = 0; i < 100; i++) {
     await new Promise((r) => setTimeout(r, 4000));
     const poll = await fetch(`${base}/v1/generations/${jobId}`, {
-      headers: { authorization: `Bearer ${vendor.api_key}` }
+      headers: { authorization: auth }
     });
     if (!poll.ok) continue;
     const data = (await poll.json()) as Record<string, any>;

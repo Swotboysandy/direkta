@@ -109,7 +109,13 @@ export function KeyVaultPanel({ open, onClose }: Props) {
                           />
                           <input
                             type="password"
-                            placeholder={hasKey ? "•••• stored" : "Paste API key"}
+                            placeholder={
+                              hasKey
+                                ? "•••• stored"
+                                : vendor.provider.startsWith("higgsfield")
+                                  ? "Paste  <Key ID>:<Secret>"
+                                  : "Paste API key"
+                            }
                             onBlur={(e) => {
                               if (e.target.value) {
                                 patch(vendor.id, { api_key: e.target.value });

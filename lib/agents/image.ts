@@ -60,10 +60,13 @@ async function generateWithHiggsfield(
 ): Promise<{ url: string; relPath: string }> {
   const dims = ASPECT_TO_DIMENSIONS[aspectRatio];
   const base = (vendor.base_url || "https://api.higgsfield.ai").replace(/\/$/, "");
+  // Higgsfield Cloud uses HTTP Basic auth — base64("<key id>:<secret>").
+  // The api_key field holds the two values joined as "ID:Secret".
+  const auth = `Basic ${Buffer.from(vendor.api_key).toString("base64")}`;
 
   const submit = await fetch(`${base}/v1/generations`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${vendor.api_key}` },
+    headers: { "content-type": "application/json", authorization: auth },
     body: JSON.stringify({
       task: "text-to-image",
       model: vendor.model || "soul",
@@ -82,7 +85,7 @@ async function generateWithHiggsfield(
   for (let i = 0; i < 60; i++) {
     await new Promise((r) => setTimeout(r, 3000));
     const poll = await fetch(`${base}/v1/generations/${jobId}`, {
-      headers: { authorization: `Bearer ${vendor.api_key}` }
+      headers: { authorization: auth }
     });
     if (!poll.ok) continue;
     const data = (await poll.json()) as Record<string, any>;
