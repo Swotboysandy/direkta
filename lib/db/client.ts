@@ -367,6 +367,8 @@ function seed(db: DatabaseSync) {
   ensureVendor(db, "fal-video-default", "Fal AI (Kling)", "fal-video", "fal-ai/kling-video/v1/standard/text-to-video", "video", 1);
   ensureVendor(db, "runway-default", "Runway Gen-3", "runway", "gen3a_turbo", "video", 0);
   ensureVendor(db, "minimax-default", "MiniMax Hailuo", "minimax", "video-01", "video", 0);
+  ensureVendor(db, "higgsfield-image-default", "Higgsfield Cloud", "higgsfield", "soul", "image", 0);
+  ensureVendor(db, "higgsfield-video-default", "Higgsfield Cloud (DoP)", "higgsfield-video", "dop-preview", "video", 0);
 
   seedLisbonPact(db);
 }

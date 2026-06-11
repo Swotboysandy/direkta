@@ -40,7 +40,69 @@ export async function generateImage(input: {
   if (vendor.provider === "openai-image") {
     return await generateWithOpenAI(input.prompt, input.aspectRatio, vendor);
   }
+  if (vendor.provider === "higgsfield") {
+    return await generateWithHiggsfield(input.prompt, input.aspectRatio, vendor);
+  }
   throw new Error(`Unsupported image provider: ${vendor.provider}`);
+}
+
+/**
+ * Higgsfield Cloud (api.higgsfield.ai). Follows the documented /v1/generations
+ * submit + poll contract with a Bearer key. The exact request/response schema
+ * may evolve, so this is defensive about field names — validate against a live
+ * Cloud key. To pass a character for consistency, include reference image URLs
+ * in the prompt context (Soul mode) once we wire the Casting Element through.
+ */
+async function generateWithHiggsfield(
+  prompt: string,
+  aspectRatio: AspectRatio,
+  vendor: VendorConfig
+): Promise<{ url: string; relPath: string }> {
+  const dims = ASPECT_TO_DIMENSIONS[aspectRatio];
+  const base = (vendor.base_url || "https://api.higgsfield.ai").replace(/\/$/, "");
+
+  const submit = await fetch(`${base}/v1/generations`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${vendor.api_key}` },
+    body: JSON.stringify({
+      task: "text-to-image",
+      model: vendor.model || "soul",
+      prompt,
+      width: dims.width,
+      height: dims.height
+    })
+  });
+  if (!submit.ok) {
+    throw new Error(`Higgsfield submit failed (${submit.status}): ${(await submit.text()).slice(0, 240)}`);
+  }
+  const created = (await submit.json()) as Record<string, any>;
+  const jobId = created.id ?? created.generation_id ?? created.data?.id;
+  if (!jobId) throw new Error("Higgsfield returned no generation id");
+
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 3000));
+    const poll = await fetch(`${base}/v1/generations/${jobId}`, {
+      headers: { authorization: `Bearer ${vendor.api_key}` }
+    });
+    if (!poll.ok) continue;
+    const data = (await poll.json()) as Record<string, any>;
+    const status = String(data.status ?? data.state ?? "").toLowerCase();
+    if (status === "completed" || status === "succeeded" || status === "success") {
+      const url =
+        data.result?.url ??
+        data.results?.[0]?.url ??
+        data.output?.[0]?.url ??
+        data.output?.[0] ??
+        data.image_url ??
+        data.url;
+      if (!url) throw new Error("Higgsfield completed but returned no image URL");
+      return await persistRemote(String(url));
+    }
+    if (status === "failed" || status === "error" || status === "canceled") {
+      throw new Error(`Higgsfield generation ${status}: ${data.error ?? ""}`);
+    }
+  }
+  throw new Error("Higgsfield generation timed out");
 }
 
 async function generateWithFal(
