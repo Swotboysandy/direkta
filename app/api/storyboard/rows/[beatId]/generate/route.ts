@@ -99,6 +99,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 
   let generated = 0;
   let failed = 0;
+  const errors: string[] = [];
   results.forEach((res, i) => {
     const vid = ids[i];
     if (res.status === "fulfilled") {
@@ -107,6 +108,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
       markComplete.run(assetId, vid);
       generated++;
     } else {
+      const msg = res.reason?.message ?? String(res.reason);
+      console.error(`[storyboard.generate] variant ${i} failed via ${vendor.label}: ${msg}`);
+      errors.push(msg);
       markError.run(vid);
       failed++;
     }
@@ -122,6 +126,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     generated,
     failed,
     vendor: vendor.label,
+    error: errors[0],
     note:
       failed > 0
         ? `${generated} frame(s) rolled, ${failed} failed. Check the key/credits for ${vendor.label}.`

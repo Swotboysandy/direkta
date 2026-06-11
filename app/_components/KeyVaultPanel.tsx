@@ -178,18 +178,27 @@ function HiggsfieldCreds({
 }) {
   const [keyId, setKeyId] = useState("");
   const [secret, setSecret] = useState("");
+  const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(keyId);
+  const idMismatch = keyId.length > 0 && !looksLikeUuid;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+      <label className="t-mute" style={{ fontSize: 11 }}>API Key ID (looks like <code>bf28f1f3-1e30-4d06-94d9-af6e10d43129</code>)</label>
       <input
-        placeholder="API Key ID"
+        placeholder="bf28f1f3-1e30-4d06-94d9-af6e10d43129"
         value={keyId}
         autoComplete="off"
         spellCheck={false}
         onChange={(e) => setKeyId(e.target.value.trim())}
       />
+      {idMismatch && (
+        <span style={{ fontSize: 11, color: "var(--accent)" }}>
+          That doesn't look like a Key ID (UUID). Make sure you pasted the ID, not the long hex Secret.
+        </span>
+      )}
+      <label className="t-mute" style={{ fontSize: 11 }}>API Key Secret (long hex, no dashes)</label>
       <input
         type="password"
-        placeholder={hasKey ? "•••• secret saved — paste to replace" : "API Key Secret"}
+        placeholder={hasKey ? "•••• secret saved — paste to replace" : "long hex secret"}
         value={secret}
         autoComplete="off"
         spellCheck={false}
