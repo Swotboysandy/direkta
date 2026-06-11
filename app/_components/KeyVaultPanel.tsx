@@ -99,31 +99,44 @@ export function KeyVaultPanel({ open, onClose }: Props) {
                             enabled
                           </label>
                         </header>
-                        <div className="row">
-                          <input value={vendor.provider} disabled />
-                          <input
-                            defaultValue={vendor.model}
-                            onBlur={(e) =>
-                              e.target.value !== vendor.model && patch(vendor.id, { model: e.target.value })
-                            }
-                          />
-                          <input
-                            type="password"
-                            placeholder={
-                              hasKey
-                                ? "•••• stored"
-                                : vendor.provider.startsWith("higgsfield")
-                                  ? "Paste  <Key ID>:<Secret>"
-                                  : "Paste API key"
-                            }
-                            onBlur={(e) => {
-                              if (e.target.value) {
-                                patch(vendor.id, { api_key: e.target.value });
-                                e.target.value = "";
+                        {vendor.provider.startsWith("higgsfield") ? (
+                          <>
+                            <div className="row" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                              <input value={vendor.provider} disabled />
+                              <input
+                                defaultValue={vendor.model}
+                                onBlur={(e) =>
+                                  e.target.value !== vendor.model && patch(vendor.id, { model: e.target.value })
+                                }
+                              />
+                            </div>
+                            <HiggsfieldCreds
+                              hasKey={hasKey}
+                              busy={busy === vendor.id}
+                              onSave={(combined) => patch(vendor.id, { api_key: combined })}
+                            />
+                          </>
+                        ) : (
+                          <div className="row">
+                            <input value={vendor.provider} disabled />
+                            <input
+                              defaultValue={vendor.model}
+                              onBlur={(e) =>
+                                e.target.value !== vendor.model && patch(vendor.id, { model: e.target.value })
                               }
-                            }}
-                          />
-                        </div>
+                            />
+                            <input
+                              type="password"
+                              placeholder={hasKey ? "•••• stored" : "Paste API key"}
+                              onBlur={(e) => {
+                                if (e.target.value) {
+                                  patch(vendor.id, { api_key: e.target.value });
+                                  e.target.value = "";
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
                         <div
                           className="kv-vendor-status"
                           data-state={hasKey ? (vendor.enabled ? "connected" : "disabled") : "empty"}
@@ -149,5 +162,50 @@ export function KeyVaultPanel({ open, onClose }: Props) {
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
+  );
+}
+
+/** Two-field credential entry for Higgsfield Cloud (Key ID + Secret), saved
+ *  combined as "ID:Secret" — the app Basic-encodes it for the API. */
+function HiggsfieldCreds({
+  hasKey,
+  busy,
+  onSave
+}: {
+  hasKey: boolean;
+  busy: boolean;
+  onSave: (combined: string) => void;
+}) {
+  const [keyId, setKeyId] = useState("");
+  const [secret, setSecret] = useState("");
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+      <input
+        placeholder="API Key ID"
+        value={keyId}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => setKeyId(e.target.value.trim())}
+      />
+      <input
+        type="password"
+        placeholder={hasKey ? "•••• secret saved — paste to replace" : "API Key Secret"}
+        value={secret}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => setSecret(e.target.value.trim())}
+      />
+      <button
+        className="btn btn-sm btn-primary"
+        style={{ justifyContent: "center" }}
+        disabled={busy || !keyId || !secret}
+        onClick={() => {
+          onSave(`${keyId}:${secret}`);
+          setSecret("");
+        }}
+      >
+        {busy ? "Saving…" : hasKey ? "Update credentials" : "Save Higgsfield credentials"}
+      </button>
+    </div>
   );
 }
