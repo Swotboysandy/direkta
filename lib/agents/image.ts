@@ -68,8 +68,8 @@ async function generateWithHiggsfield(
   const model = rawModel.includes("/")
     ? rawModel
     : rawModel === "soul"
-      ? "higgsfield-ai/soul/standard/text-to-image"
-      : `higgsfield-ai/${rawModel}/text-to-image`;
+      ? "higgsfield-ai/soul/standard"
+      : `higgsfield-ai/${rawModel}`;
   const submitUrl = `${base}/${model}`;
   const submit = await fetch(submitUrl, {
     method: "POST",
