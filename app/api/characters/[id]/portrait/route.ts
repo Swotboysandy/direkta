@@ -25,13 +25,14 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const vendor = vendors.firstEnabledImage();
 
-  // ── No image vendor / key → simulation ──────────────────────────────────
+  // ── No image vendor / key → do nothing destructive. The character's state
+  //    and existing looks stay exactly as they are.
   if (!vendor) {
-    characters.update(id, { soul_id_state: "training", soul_id_progress: 0.42, error: null });
     return NextResponse.json({
-      ok: true,
+      ok: false,
       simulated: true,
-      note: "No image vendor configured — Soul ID queued in simulation. Add a Fal or OpenAI image key in the Key Vault to cast a real portrait."
+      protected: true,
+      note: "No image vendor key — character left untouched. Add a Fal/OpenAI key in the Key Vault to cast a real portrait."
     });
   }
 

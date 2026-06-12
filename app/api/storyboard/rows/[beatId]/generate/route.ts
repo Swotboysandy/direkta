@@ -39,7 +39,39 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const skill = skillForPart("cinematography");
   const genPrompt = skill?.body ? `${prompt}\n\n${skill.body}` : prompt;
 
-  // Persist the prompt onto the row and flip it to generating.
+  const vendor = vendors.firstEnabledImage();
+
+  // ── No image vendor / key → simulation. NEVER destroy completed takes:
+  //    a fresh roll only happens when a real vendor will actually replace them.
+  if (!vendor) {
+    const done = db
+      .prepare("SELECT COUNT(*) as c FROM storyboard_variants WHERE beat_id = ? AND state = 'complete'")
+      .get(beatId) as { c: number };
+    if (done.c > 0) {
+      return NextResponse.json({
+        ok: false,
+        simulated: true,
+        protected: true,
+        note: "No image vendor key — kept your existing takes untouched. Add a Fal/OpenAI key in the Key Vault to re-roll real frames."
+      });
+    }
+    const insert = db.prepare(
+      "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, 'waiting', NULL)"
+    );
+    db.prepare("DELETE FROM storyboard_variants WHERE beat_id = ?").run(beatId);
+    for (let n = 1; n <= variantCount; n++) insert.run(nanoid(10), beatId, n, prompt);
+    db.prepare(
+      "INSERT INTO storyboard_rows (beat_id, state, selected_variant_id, style) VALUES (?, 'generating', NULL, '{}') " +
+        "ON CONFLICT(beat_id) DO UPDATE SET state = 'generating', updated_at = datetime('now')"
+    ).run(beatId);
+    return NextResponse.json({
+      ok: true,
+      simulated: true,
+      note: "No image vendor configured — queued in simulation. Add a Fal or OpenAI image key in the Key Vault to roll real frames."
+    });
+  }
+
+  // ── Real vendor — persist the prompt onto the row and flip it to generating.
   const existing = db.prepare("SELECT style FROM storyboard_rows WHERE beat_id = ?").get(beatId) as
     | { style: string }
     | undefined;
@@ -55,26 +87,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     ).run(beatId, JSON.stringify(style));
   }
 
-  // Fresh roll — clear prior variants and their assets.
+  // Fresh roll — clear prior variants and their assets (a real vendor will replace them).
   db.prepare(
     "DELETE FROM assets WHERE target_kind = 'storyboard_variant' AND target_id IN (SELECT id FROM storyboard_variants WHERE beat_id = ?)"
   ).run(beatId);
   db.prepare("DELETE FROM storyboard_variants WHERE beat_id = ?").run(beatId);
-
-  const vendor = vendors.firstEnabledImage();
-
-  // ── No image vendor / key → simulation ──────────────────────────────────
-  if (!vendor) {
-    const insert = db.prepare(
-      "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, 'waiting', NULL)"
-    );
-    for (let n = 1; n <= variantCount; n++) insert.run(nanoid(10), beatId, n, prompt);
-    return NextResponse.json({
-      ok: true,
-      simulated: true,
-      note: "No image vendor configured — queued in simulation. Add a Fal or OpenAI image key in the Key Vault to roll real frames."
-    });
-  }
 
   // ── Real roll — create variant rows, then generate in parallel ──────────
   const insertVariant = db.prepare(

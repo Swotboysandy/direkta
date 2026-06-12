@@ -192,7 +192,7 @@ function HiggsfieldCreds({
       />
       {idMismatch && (
         <span style={{ fontSize: 11, color: "var(--accent)" }}>
-          That doesn't look like a Key ID (UUID). Make sure you pasted the ID, not the long hex Secret.
+          That does not look like a Key ID (UUID). Make sure you pasted the ID, not the long hex Secret.
         </span>
       )}
       <label className="t-mute" style={{ fontSize: 11 }}>API Key Secret (long hex, no dashes)</label>
