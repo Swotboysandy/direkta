@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateImage } from "../../../../../../lib/agents/image";
+import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
 
@@ -40,10 +41,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const genPrompt = skill?.body ? `${prompt}\n\n${skill.body}` : prompt;
 
   const vendor = vendors.firstEnabledImage();
+  const useMcp = isHiggsfieldMcpConnected();
 
-  // ── No image vendor / key → simulation. NEVER destroy completed takes:
-  //    a fresh roll only happens when a real vendor will actually replace them.
-  if (!vendor) {
+  // ── No generator at all → simulation. NEVER destroy completed takes:
+  //    a fresh roll only happens when a real generator will actually replace them.
+  if (!useMcp && !vendor) {
     const done = db
       .prepare("SELECT COUNT(*) as c FROM storyboard_variants WHERE beat_id = ? AND state = 'complete'")
       .get(beatId) as { c: number };
@@ -71,7 +73,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     });
   }
 
-  // ── Real vendor — persist the prompt onto the row and flip it to generating.
+  const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
+
+  // ── Real generator — persist the prompt onto the row and flip it to generating.
   const existing = db.prepare("SELECT style FROM storyboard_rows WHERE beat_id = ?").get(beatId) as
     | { style: string }
     | undefined;
@@ -111,7 +115,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const markError = db.prepare("UPDATE storyboard_variants SET state = 'error' WHERE id = ?");
 
   const results = await Promise.allSettled(
-    ids.map(() => generateImage({ prompt: genPrompt, aspectRatio: beat.aspect_ratio, vendor }))
+    ids.map(() =>
+      useMcp
+        ? generateImageViaMcp({ prompt: genPrompt, aspectRatio: beat.aspect_ratio })
+        : generateImage({ prompt: genPrompt, aspectRatio: beat.aspect_ratio, vendor: vendor! })
+    )
   );
 
   let generated = 0;
@@ -121,12 +129,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     const vid = ids[i];
     if (res.status === "fulfilled") {
       const assetId = nanoid(10);
-      insertAsset.run(assetId, vid, res.value.url, genPrompt, vendor.id);
+      insertAsset.run(assetId, vid, res.value.url, genPrompt, vendor ? vendor.id : null);
       markComplete.run(assetId, vid);
       generated++;
     } else {
       const msg = res.reason?.message ?? String(res.reason);
-      console.error(`[storyboard.generate] variant ${i} failed via ${vendor.label}: ${msg}`);
+      console.error(`[storyboard.generate] variant ${i} failed via ${providerLabel}: ${msg}`);
       errors.push(msg);
       markError.run(vid);
       failed++;
@@ -142,11 +150,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     ok: generated > 0,
     generated,
     failed,
-    vendor: vendor.label,
+    vendor: providerLabel,
     error: errors[0],
     note:
       failed > 0
-        ? `${generated} frame(s) rolled, ${failed} failed. Check the key/credits for ${vendor.label}.`
-        : `${generated} frame(s) rolled by ${vendor.label}.`
+        ? `${generated} frame(s) rolled, ${failed} failed via ${providerLabel}.`
+        : `${generated} frame(s) rolled by ${providerLabel}.`
   });
 }

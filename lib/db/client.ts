@@ -269,6 +269,20 @@ function migrate(db: DatabaseSync) {
       use_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    -- Single-row store for the user's Higgsfield OAuth/MCP connection.
+    -- Lets Direkta generate on the user's own Higgsfield plan via mcp.higgsfield.ai.
+    CREATE TABLE IF NOT EXISTS higgsfield_connection (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      client_id TEXT,
+      client_secret TEXT,
+      code_verifier TEXT,
+      state TEXT,
+      access_token TEXT,
+      refresh_token TEXT,
+      expires_at INTEGER NOT NULL DEFAULT 0,
+      connected_at TEXT
+    );
   `);
 
   // Backwards-compatible column upgrades for pre-existing databases.

@@ -19,6 +19,7 @@ const KIND_LABEL: Record<string, string> = {
 export function KeyVaultPanel({ open, onClose }: Props) {
   const [vendors, setVendors] = useState<VendorConfig[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [hf, setHf] = useState<{ connected: boolean; connectedAt: string | null } | null>(null);
 
   const load = async () => {
     const res = await fetch("/api/vendors");
@@ -26,8 +27,27 @@ export function KeyVaultPanel({ open, onClose }: Props) {
     setVendors(data.vendors);
   };
 
+  const loadHf = async () => {
+    try {
+      const res = await fetch("/api/higgsfield/status");
+      setHf(await res.json());
+    } catch {
+      setHf({ connected: false, connectedAt: null });
+    }
+  };
+
+  async function disconnectHf() {
+    setBusy("hf");
+    await fetch("/api/higgsfield/disconnect", { method: "POST" });
+    setBusy(null);
+    loadHf();
+  }
+
   useEffect(() => {
-    if (open) load();
+    if (open) {
+      load();
+      loadHf();
+    }
   }, [open]);
 
   async function patch(id: string, body: Partial<VendorConfig>) {
@@ -78,6 +98,42 @@ export function KeyVaultPanel({ open, onClose }: Props) {
           </Drawer.Description>
 
           <div className="kv-drawer-body">
+            <section className="kv-group">
+              <div className="t-eyebrow kv-group-head">HIGGSFIELD · YOUR ACCOUNT</div>
+              <div className="kv-vendor" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {hf?.connected ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600 }}>
+                      <Check size={15} style={{ color: "var(--viridian, #2e7d5b)" }} />
+                      Connected — every Generate runs on your Higgsfield plan &amp; credits.
+                    </div>
+                    <span className="t-mute" style={{ fontSize: 11 }}>
+                      No API keys, no per-vendor billing. Generation uses your Higgsfield account directly.
+                    </span>
+                    <button
+                      className="btn btn-sm"
+                      style={{ alignSelf: "flex-start" }}
+                      disabled={busy === "hf"}
+                      onClick={disconnectHf}
+                    >
+                      {busy === "hf" ? "Disconnecting…" : "Disconnect"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 600 }}>Generate on your own Higgsfield plan</div>
+                    <span className="t-mute" style={{ fontSize: 11 }}>
+                      Connect your Higgsfield account once. Then every Generate button in Direkta
+                      rolls real frames on your plan — no keys to paste, nothing billed separately.
+                      You log in on Higgsfield; Direkta never sees your password.
+                    </span>
+                    <a className="btn btn-sm btn-primary" style={{ alignSelf: "flex-start" }} href="/api/higgsfield/connect">
+                      Connect Higgsfield (OAuth)
+                    </a>
+                  </>
+                )}
+              </div>
+            </section>
             {groups.map((group) => (
               <section key={group.kind} className="kv-group">
                 <div className="t-eyebrow kv-group-head">
