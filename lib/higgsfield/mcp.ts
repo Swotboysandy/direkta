@@ -65,16 +65,19 @@ class McpSession {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<any> {
     const result = await this.rpc("tools/call", { name, arguments: args });
-    // Tool output arrives as text content holding the API JSON.
+    // The real data is in structuredContent; the text block is human prose.
+    if (result?.structuredContent) return result.structuredContent;
     const block = (result?.content ?? []).find((c: any) => c?.type === "text");
     if (block?.text) {
       try {
         return JSON.parse(block.text);
       } catch {
-        return { _text: block.text };
+        // Last resort: a resource_link block often carries the asset URL.
+        const link = (result?.content ?? []).find((c: any) => c?.type === "resource_link" && c?.uri);
+        return link ? { results: [{ status: "completed", results: { rawUrl: link.uri } }] } : { _text: block.text };
       }
     }
-    return result?.structuredContent ?? result;
+    return result;
   }
 }
 
@@ -145,9 +148,9 @@ export async function generateImageViaMcp(input: {
   for (let i = 0; i < 80 && !url; i++) {
     await new Promise((r) => setTimeout(r, 3000));
     const disp = await s.callTool("job_display", { id: jobId });
-    job = disp?.results?.[0] ?? disp;
+    job = disp?.results?.[0] ?? disp?.result ?? disp;
     const status = String(job?.status ?? "").toLowerCase();
-    if (status === "completed" || status === "success") {
+    if (status === "completed" || status === "success" || status === "complete") {
       url = firstUrl(job);
       break;
     }

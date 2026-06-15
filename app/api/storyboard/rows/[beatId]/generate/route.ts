@@ -18,9 +18,13 @@ export const runtime = "nodejs";
  */
 export async function POST(req: Request, { params }: { params: Promise<{ beatId: string }> }) {
   const { beatId } = await params;
-  const body = await req.json().catch(() => ({} as { variants?: number; prompt?: string }));
+  const body = await req
+    .json()
+    .catch(() => ({} as { variants?: number; prompt?: string; model?: string; resolution?: string }));
   const variantCount = Math.max(1, Math.min(8, Number(body.variants ?? 4)));
   const promptIn = typeof body.prompt === "string" ? body.prompt.trim() : "";
+  const modelIn = typeof body.model === "string" ? body.model : undefined;
+  const resolutionIn = typeof body.resolution === "string" ? body.resolution : undefined;
 
   const db = getDb();
 
@@ -117,7 +121,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const results = await Promise.allSettled(
     ids.map(() =>
       useMcp
-        ? generateImageViaMcp({ prompt: genPrompt, aspectRatio: beat.aspect_ratio })
+        ? generateImageViaMcp({
+            prompt: genPrompt,
+            aspectRatio: beat.aspect_ratio,
+            model: modelIn,
+            resolution: resolutionIn
+          })
         : generateImage({ prompt: genPrompt, aspectRatio: beat.aspect_ratio, vendor: vendor! })
     )
   );
