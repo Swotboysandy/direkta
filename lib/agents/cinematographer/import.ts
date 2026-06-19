@@ -46,27 +46,29 @@ export function importShotlist(projectId: string, beatId: string, payload: Shotl
   ).run(beatId);
   db.prepare("DELETE FROM storyboard_variants WHERE beat_id = ?").run(beatId);
 
-  // One variant per shot — prompt = the 5-layer positive; per-shot extras live in note.
+  // One variant per shot — prompt = the 5-layer positive. NOTE: variant.note is the director's
+  // review note (used by the Storyboard lightbox), so per-shot extras go on the row style instead.
   const insertVariant = db.prepare(
-    "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id, note) VALUES (?, ?, ?, ?, 'waiting', NULL, ?)"
+    "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, 'waiting', NULL)"
   );
   const shots = payload.shots ?? [];
   shots.forEach((s, i) => {
-    const note = JSON.stringify({
-      angle: s.angle,
-      negative: s.negative,
-      aspect: s.aspect,
-      seed_identity: s.seed_identity
-    });
-    insertVariant.run(nanoid(10), beatId, i + 1, s.positive ?? "", note);
+    insertVariant.run(nanoid(10), beatId, i + 1, s.positive ?? "");
   });
 
-  // Record the look-lock + cast identity + dramatic point on the row.
+  // Record the look-lock + cast identity + dramatic point + per-shot coverage metadata on the row.
   const style = JSON.stringify({
     look_lock: payload.look_lock ?? "",
     cast_identity: payload.cast_identity ?? [],
     dramatic_point: payload.dramatic_point ?? "",
-    coverage_rationale: payload.coverage_rationale ?? ""
+    coverage_rationale: payload.coverage_rationale ?? "",
+    shots: shots.map((s, i) => ({
+      n: i + 1,
+      angle: s.angle,
+      negative: s.negative,
+      aspect: s.aspect,
+      seed_identity: s.seed_identity
+    }))
   });
   db.prepare(
     "INSERT INTO storyboard_rows (beat_id, state, selected_variant_id, style) VALUES (?, 'complete', NULL, ?) " +

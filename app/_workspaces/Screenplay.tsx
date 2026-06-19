@@ -138,7 +138,7 @@ export function Screenplay({
           <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Screenplay</h1>
           <p className="lead" style={{ marginTop: "var(--sp-3)", maxWidth: "64ch" }}>
             {beats.length === 0
-              ? "Script submitted. The crew will start extracting beats once the Script Reader skill is wired."
+              ? "Script submitted. Run the Screenplay Agent in Claude to import the beat breakdown and Movie Bible."
               : `${beats.length} beats extracted. ${bible?.built ? "Bible is built." : "Bible Builder is queued."}`}
           </p>
         </div>
@@ -185,7 +185,7 @@ export function Screenplay({
                 <Sparkles size={12} /> CREW STANDBY
               </span>
               <p className="t-mute" style={{ marginTop: "var(--sp-2)", fontSize: 13 }}>
-                Beats will appear here as scene cards once the Script Reader extracts them.
+                Beats will appear here as scene cards once the Screenplay Agent imports the breakdown.
               </p>
             </div>
           ) : (

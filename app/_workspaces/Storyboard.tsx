@@ -50,6 +50,12 @@ interface BeatStyle {
   lens?: string;
   movement?: string;
   shot_size?: string;
+  /* Cinematographer coverage (imported via import_shotlist) */
+  look_lock?: string;
+  cast_identity?: string[];
+  dramatic_point?: string;
+  coverage_rationale?: string;
+  shots?: Array<{ n: number; angle?: string; negative?: string; aspect?: string; seed_identity?: string }>;
 }
 
 interface GlobalStyle {
@@ -502,6 +508,21 @@ function BeatRow({
         <span className="t-eyebrow">BEAT {String(beat.n).padStart(2, "0")}</span>
         <div className="storyboard-beat-title">{beat.title}</div>
         <div className="storyboard-beat-scene">{beat.scene_heading}</div>
+        {beatStyle.dramatic_point && (
+          <p className="t-mute" style={{ fontSize: 12, lineHeight: 1.4, marginTop: "var(--sp-2)", fontStyle: "italic" }}>
+            {beatStyle.dramatic_point}
+          </p>
+        )}
+        {beatStyle.look_lock && (
+          <span
+            className="pip-state"
+            data-status="done"
+            title={beatStyle.look_lock}
+            style={{ alignSelf: "flex-start", marginTop: "var(--sp-2)" }}
+          >
+            <Sparkles size={10} /> LOOK-LOCKED
+          </span>
+        )}
         <div className="tag-strip" style={{ marginTop: "var(--sp-2)" }}>
           {beat.characters.map((c) => (
             <span key={c} className="tag">{c}</span>
