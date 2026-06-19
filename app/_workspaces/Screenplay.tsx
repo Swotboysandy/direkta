@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, FileText, Flag, Sparkles } from "lucide-react";
+import { ArrowRight, Check, FileText, Flag, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
 
@@ -30,7 +30,12 @@ export function Screenplay({
 }: Props) {
   const [draft, setDraft] = useState(project.script);
   const [busy, setBusy] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
   const [activeBeat, setActiveBeat] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [bibleOpen, setBibleOpen] = useState(false);
   const [view, setView] = useState<"split" | "board">("split");
   const lastSavedRef = useRef(project.script);
@@ -57,6 +62,73 @@ export function Screenplay({
     return () => clearTimeout(timer);
   }, [draft, project.id]);
 
+  async function generateScript() {
+    if (busy || generating) return;
+    setGenerating(true);
+    setGenError(null);
+    setDraft("");
+    try {
+      const res = await fetch(`/api/projects/${project.id}/script/generate`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Generation failed" }));
+        setGenError(err.error ?? "Generation failed");
+        return;
+      }
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let full = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        setDraft(full);
+      }
+      // Persist immediately — mark as AI-generated so "Regenerate" shows next time
+      lastSavedRef.current = full;
+      await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ script: full, script_ai_generated: true })
+      });
+      await onReload();
+    } catch (err) {
+      setGenError(String(err));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function importFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result;
+      if (typeof text === "string") setDraft(text);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  async function extractBeats() {
+    if (extracting) return;
+    setExtracting(true);
+    setExtractError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/beats/extract`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Extraction failed" }));
+        setExtractError(data.error ?? "Extraction failed");
+      } else {
+        await onReload();
+      }
+    } catch (err) {
+      setExtractError(String(err));
+    } finally {
+      setExtracting(false);
+    }
+  }
+
   async function submit() {
     if (!canSubmit || busy) return;
     setBusy(true);
@@ -68,6 +140,8 @@ export function Screenplay({
       });
       if (res.ok) {
         await onScriptSubmitted();
+        // Auto-trigger beat extraction; update view when done
+        extractBeats();
       }
     } finally {
       setBusy(false);
@@ -92,16 +166,46 @@ export function Screenplay({
             <span className="pip-state">
               {words} {words === 1 ? "WORD" : "WORDS"}
             </span>
-            <button className="btn btn-primary" disabled={!canSubmit || busy} onClick={submit}>
+            {/* Hidden file input — accepts .txt .fountain .fdx .md */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.fountain,.fdx,.md,.pdf"
+              style={{ display: "none" }}
+              onChange={importFile}
+            />
+            <button
+              className="btn"
+              disabled={busy || generating}
+              onClick={() => fileInputRef.current?.click()}
+              title="Import a script file (.txt, .fountain, .fdx)"
+            >
+              <Upload size={14} /> Import file
+            </button>
+            <button
+              className={project.script_ai_generated ? "btn btn-primary" : "btn"}
+              disabled={busy || generating}
+              onClick={generateScript}
+            >
+              {generating ? (
+                <><Sparkles size={14} /> Generating…</>
+              ) : project.script_ai_generated ? (
+                <><RefreshCw size={14} /> Regenerate</>
+              ) : (
+                <><Sparkles size={14} /> Generate with AI</>
+              )}
+            </button>
+            <button className="btn btn-primary" disabled={!canSubmit || busy || generating} onClick={submit}>
               {busy ? "Reading…" : "Submit to Script Reader"} <ArrowRight size={14} />
             </button>
           </div>
         </header>
 
         <div className="page-body">
-          <div className="card" style={{ padding: 0 }}>
+          <div className="card" style={{ padding: 0, opacity: generating ? 0.85 : 1 }}>
             <textarea
               value={draft}
+              readOnly={generating}
               onChange={(e) => setDraft(e.target.value)}
               placeholder={`INT. WAREHOUSE — NIGHT\n\nMARCUS, 44, picks his way between rusted crates. A flashlight beam — narrow, tired. The air smells like the river.\n\nHe stops. Something pale on the concrete. He doesn't bring the light up immediately.\n\nMARCUS\n  (quiet, to himself)\nDon't.\n\n…`}
               style={{
@@ -124,6 +228,11 @@ export function Screenplay({
             Tip: Final Draft and Fountain format are both fine. Scene headings (INT./EXT.) help the
             Script Reader detect beats cleanly.
           </p>
+          {genError && (
+            <p style={{ fontSize: 12, marginTop: "var(--sp-2)", color: "var(--accent)" }}>
+              {genError}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -137,7 +246,9 @@ export function Screenplay({
           <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Screenplay</h1>
           <p className="lead" style={{ marginTop: "var(--sp-3)", maxWidth: "64ch" }}>
             {beats.length === 0
-              ? "Script submitted. The crew will start extracting beats once the Script Reader skill is wired."
+              ? extracting
+                ? "Script Reader is reading your screenplay — beats will appear shortly."
+                : "Script submitted. Click Extract beats to break it into scenes."
               : `${beats.length} beats extracted. ${bible?.built ? "Bible is built." : "Bible Builder is queued."}`}
           </p>
         </div>
@@ -177,13 +288,19 @@ export function Screenplay({
       {view === "board" ? (
         <div className="page-body">
           {beats.length === 0 ? (
-            <div className="card">
+            <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
               <span className="t-eyebrow">
-                <Sparkles size={12} /> CREW STANDBY
+                <Sparkles size={12} /> SCRIPT READER
               </span>
-              <p className="t-mute" style={{ marginTop: "var(--sp-2)", fontSize: 13 }}>
-                Beats will appear here as scene cards once the Script Reader extracts them.
+              <p className="t-mute" style={{ fontSize: 13 }}>
+                {extracting ? "Reading script — extracting beats…" : "Beats will appear here as scene cards once extracted."}
               </p>
+              {!extracting && (
+                <button className="btn btn-sm btn-primary" style={{ alignSelf: "flex-start" }} onClick={extractBeats}>
+                  <Sparkles size={12} /> {extractError ? "Retry extraction" : "Extract beats"}
+                </button>
+              )}
+              {extracting && <span className="pip-state" data-status="working" style={{ alignSelf: "flex-start" }}>WORKING</span>}
             </div>
           ) : (
             <div className="scene-board">
@@ -260,14 +377,32 @@ export function Screenplay({
             </div>
 
             {beats.length === 0 && (
-              <div className="card">
+              <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
                 <span className="t-eyebrow">
-                  <Sparkles size={12} /> CREW STANDBY
+                  <Sparkles size={12} /> SCRIPT READER
                 </span>
-                <p className="t-mute" style={{ marginTop: "var(--sp-2)", fontSize: 13 }}>
-                  Script Reader and Beat Writer are scaffolded but not yet wired in V1 part 1. As
-                  soon as the agent pipeline lands, beats will start populating here in real time.
+                <p className="t-mute" style={{ fontSize: 13 }}>
+                  {extracting
+                    ? "Reading script — extracting beats and scene structure…"
+                    : "AI will break your script into beats, detect characters, locations, mood, and props."}
                 </p>
+                {extractError && (
+                  <p style={{ fontSize: 11, color: "var(--accent)" }}>{extractError}</p>
+                )}
+                {!extracting && (
+                  <button
+                    className="btn btn-sm btn-primary"
+                    style={{ alignSelf: "flex-start" }}
+                    onClick={extractBeats}
+                  >
+                    <Sparkles size={12} /> {extractError ? "Retry extraction" : "Extract beats"}
+                  </button>
+                )}
+                {extracting && (
+                  <span className="pip-state" data-status="working" style={{ alignSelf: "flex-start" }}>
+                    WORKING
+                  </span>
+                )}
               </div>
             )}
 

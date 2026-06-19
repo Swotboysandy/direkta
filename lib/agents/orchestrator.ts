@@ -2,6 +2,8 @@ import { generateText, streamText } from "ai";
 import { z } from "zod";
 import { skillFor } from "../skills/loader";
 import { activeModel } from "../vendors/resolver";
+import { isCodexConnected } from "../codex/token";
+import { generateTextViaCodex, streamCodexAsTextStream } from "../codex/generate";
 import { edges as edgesRepo, nodes as nodesRepo, projects, messages } from "../db/repo";
 import type { CanvasEdge, CanvasNode, NodeKind } from "../types";
 
@@ -117,7 +119,8 @@ export async function* runPipeline(input: {
   messages.append({ project_id: projectId, role: "user", content: userMessage });
 
   const ctx = projectContext(projectId);
-  const model = activeModel();
+  const useCodex = isCodexConnected();
+  const model = useCodex ? null : activeModel();
 
   const decisionSkill = skillFor("decision");
   const executionSkill = skillFor("execution");
@@ -127,12 +130,12 @@ export async function* runPipeline(input: {
 
   let rawPlan = "";
   try {
-    const decisionStream = streamText({
-      model,
-      system: decisionSkill?.body ?? "Plan tasks as a JSON object.",
-      prompt: `${ctx}\n\nUser request:\n${userMessage}\n\nReturn the JSON plan.`
-    });
-    for await (const chunk of decisionStream.textStream) {
+    const decisionPrompt = `${ctx}\n\nUser request:\n${userMessage}\n\nReturn the JSON plan.`;
+    const decisionSystem = decisionSkill?.body ?? "Plan tasks as a JSON object.";
+    const decisionStream = useCodex
+      ? streamCodexAsTextStream({ system: decisionSystem, prompt: decisionPrompt })
+      : streamText({ model: model!, system: decisionSystem, prompt: decisionPrompt }).textStream;
+    for await (const chunk of decisionStream) {
       rawPlan += chunk;
       yield { type: "delta", layer: "decision", text: chunk };
     }
@@ -171,12 +174,12 @@ export async function* runPipeline(input: {
 
     let body = "";
     try {
-      const executionStream = streamText({
-        model,
-        system: executionSkill?.body ?? "Produce a tight, useful canvas node body.",
-        prompt: `${ctx}\n\nDecision intent: ${plan.intent}\n\nTask:\n- kind: ${task.kind}\n- title: ${task.title}\n- brief: ${task.brief}\n\nProduce only the node body content.`
-      });
-      for await (const chunk of executionStream.textStream) {
+      const execSystem = executionSkill?.body ?? "Produce a tight, useful canvas node body.";
+      const execPrompt = `${ctx}\n\nDecision intent: ${plan.intent}\n\nTask:\n- kind: ${task.kind}\n- title: ${task.title}\n- brief: ${task.brief}\n\nProduce only the node body content.`;
+      const executionStream = useCodex
+        ? streamCodexAsTextStream({ system: execSystem, prompt: execPrompt })
+        : streamText({ model: model!, system: execSystem, prompt: execPrompt }).textStream;
+      for await (const chunk of executionStream) {
         body += chunk;
         yield { type: "delta", layer: "execution", text: chunk };
       }
@@ -216,18 +219,18 @@ export async function* runPipeline(input: {
 
     yield { type: "layer", layer: "supervision", status: "start" };
     try {
-      const review = await generateText({
-        model,
-        system: supervisionSkill?.body ?? "Review the execution output briefly.",
-        prompt: `Decision plan:\n${JSON.stringify(plan, null, 2)}\n\nExecution output (kind=${task.kind}, title=${task.title}):\n${body}\n\nProvide the review.`
-      });
-      yield { type: "supervision", text: review.text };
-      yield { type: "delta", layer: "supervision", text: review.text };
+      const supSystem = supervisionSkill?.body ?? "Review the execution output briefly.";
+      const supPrompt = `Decision plan:\n${JSON.stringify(plan, null, 2)}\n\nExecution output (kind=${task.kind}, title=${task.title}):\n${body}\n\nProvide the review.`;
+      const reviewText = useCodex
+        ? await generateTextViaCodex({ system: supSystem, prompt: supPrompt })
+        : (await generateText({ model: model!, system: supSystem, prompt: supPrompt })).text;
+      yield { type: "supervision", text: reviewText };
+      yield { type: "delta", layer: "supervision", text: reviewText };
       messages.append({
         project_id: projectId,
         role: "assistant",
         layer: "supervision",
-        content: review.text
+        content: reviewText
       });
     } catch (error: any) {
       yield { type: "error", message: `Supervision layer failed: ${error.message ?? error}` };

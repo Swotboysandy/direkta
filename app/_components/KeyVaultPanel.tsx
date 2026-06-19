@@ -20,6 +20,7 @@ export function KeyVaultPanel({ open, onClose }: Props) {
   const [vendors, setVendors] = useState<VendorConfig[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [hf, setHf] = useState<{ connected: boolean; connectedAt: string | null } | null>(null);
+  const [codex, setCodex] = useState<{ connected: boolean; connectedAt: string | null; error?: string } | null>(null);
 
   const load = async () => {
     const res = await fetch("/api/vendors");
@@ -36,6 +37,40 @@ export function KeyVaultPanel({ open, onClose }: Props) {
     }
   };
 
+  const loadCodex = async () => {
+    try {
+      const res = await fetch("/api/codex/status");
+      setCodex(await res.json());
+    } catch {
+      setCodex({ connected: false, connectedAt: null });
+    }
+  };
+
+  async function importCodex() {
+    setBusy("codex");
+    setCodex((c) => c ? { ...c, error: undefined } : null);
+    try {
+      const res = await fetch("/api/codex/import", { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) {
+        setCodex({ connected: false, connectedAt: null, error: data.error });
+      } else {
+        setCodex({ connected: true, connectedAt: data.connectedAt });
+      }
+    } catch (err) {
+      setCodex({ connected: false, connectedAt: null, error: String(err) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function disconnectCodex() {
+    setBusy("codex-dis");
+    await fetch("/api/codex/disconnect", { method: "POST" });
+    setBusy(null);
+    loadCodex();
+  }
+
   async function disconnectHf() {
     setBusy("hf");
     await fetch("/api/higgsfield/disconnect", { method: "POST" });
@@ -47,6 +82,7 @@ export function KeyVaultPanel({ open, onClose }: Props) {
     if (open) {
       load();
       loadHf();
+      loadCodex();
     }
   }, [open]);
 
@@ -98,6 +134,60 @@ export function KeyVaultPanel({ open, onClose }: Props) {
           </Drawer.Description>
 
           <div className="kv-drawer-body">
+            {/* ── CODEX / OPENAI SUBSCRIPTION ── */}
+            <section className="kv-group">
+              <div className="t-eyebrow kv-group-head">CODEX · OPENAI SUBSCRIPTION</div>
+              <div className="kv-vendor" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {codex?.connected ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600 }}>
+                      <Check size={15} style={{ color: "var(--viridian, #2e7d5b)" }} />
+                      Connected — text generation uses your ChatGPT subscription.
+                    </div>
+                    <span className="t-mute" style={{ fontSize: 11 }}>
+                      Token imported from <code>~/.codex/auth.json</code>. Auto-refreshes when it expires.
+                    </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="btn btn-sm"
+                        disabled={busy === "codex"}
+                        onClick={importCodex}
+                      >
+                        {busy === "codex" ? "Re-importing…" : "Re-import token"}
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        disabled={busy === "codex-dis"}
+                        onClick={disconnectCodex}
+                      >
+                        {busy === "codex-dis" ? "Disconnecting…" : "Disconnect"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 600 }}>Use your ChatGPT Plus / Pro subscription</div>
+                    <span className="t-mute" style={{ fontSize: 11 }}>
+                      1. SSH into the VPS and run <code>codex login</code> (tunnel port 1455 first).<br />
+                      2. Click <strong>Import from VPS</strong> — Direkta reads <code>~/.codex/auth.json</code> and stores the token.
+                    </span>
+                    {codex?.error && (
+                      <span style={{ fontSize: 11, color: "var(--accent)" }}>{codex.error}</span>
+                    )}
+                    <button
+                      className="btn btn-sm btn-primary"
+                      style={{ alignSelf: "flex-start" }}
+                      disabled={busy === "codex"}
+                      onClick={importCodex}
+                    >
+                      {busy === "codex" ? "Importing…" : "Import from VPS"}
+                    </button>
+                  </>
+                )}
+              </div>
+            </section>
+
+            {/* ── HIGGSFIELD ── */}
             <section className="kv-group">
               <div className="t-eyebrow kv-group-head">HIGGSFIELD · YOUR ACCOUNT</div>
               <div className="kv-vendor" style={{ display: "flex", flexDirection: "column", gap: 10 }}>

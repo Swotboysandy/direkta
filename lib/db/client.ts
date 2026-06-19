@@ -42,6 +42,7 @@ function migrate(db: DatabaseSync) {
       aspect_ratio TEXT NOT NULL DEFAULT '16:9',
       script TEXT NOT NULL DEFAULT '',
       script_submitted INTEGER NOT NULL DEFAULT 0,
+      script_ai_generated INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -270,6 +271,17 @@ function migrate(db: DatabaseSync) {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    -- Single-row store for Codex CLI token (imported from ~/.codex/auth.json).
+    -- Lets Direkta call chatgpt.com/backend-api/wham on the user's ChatGPT subscription.
+    CREATE TABLE IF NOT EXISTS codex_connection (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      access_token TEXT,
+      refresh_token TEXT,
+      account_id TEXT,
+      expires_at INTEGER NOT NULL DEFAULT 0,
+      connected_at TEXT
+    );
+
     -- Single-row store for the user's Higgsfield OAuth/MCP connection.
     -- Lets Direkta generate on the user's own Higgsfield plan via mcp.higgsfield.ai.
     CREATE TABLE IF NOT EXISTS higgsfield_connection (
@@ -332,6 +344,8 @@ function migrate(db: DatabaseSync) {
   // storyboard_variants: director review — approval state + director's note
   ensureColumn(db, "storyboard_variants", "approval", "TEXT NOT NULL DEFAULT 'pending'");
   ensureColumn(db, "storyboard_variants", "note", "TEXT NOT NULL DEFAULT ''");
+
+  ensureColumn(db, "projects", "script_ai_generated", "INTEGER NOT NULL DEFAULT 0");
 
   // characters: psychology, arc, voice, wardrobe, key quote, relationships
   ensureColumn(db, "characters", "background", "TEXT NOT NULL DEFAULT ''");

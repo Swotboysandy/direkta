@@ -68,6 +68,7 @@ export interface Project {
   aspect_ratio: AspectRatio;
   script: string;
   script_submitted: boolean;
+  script_ai_generated: boolean;
   /* Movie Bible — title page + synopsis + production meta */
   genre: string;
   tagline: string;

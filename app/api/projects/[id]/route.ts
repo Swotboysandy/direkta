@@ -45,6 +45,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     logline: typeof body.logline === "string" ? body.logline : undefined,
     script: typeof body.script === "string" ? body.script : undefined,
     script_submitted: typeof body.script_submitted === "boolean" ? body.script_submitted : undefined,
+    script_ai_generated: typeof body.script_ai_generated === "boolean" ? body.script_ai_generated : undefined,
     aspect_ratio,
     format,
     length_estimate

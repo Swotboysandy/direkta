@@ -289,40 +289,55 @@ export default function Home() {
                 </button>
               </div>
             </div>
-          ) : activeWorkspace === "dashboard" ? (
-            <Dashboard
-              project={bundle.project}
-              workspaces={workspaces}
-              activity={bundle.activity}
-              onSwitchWorkspace={switchWorkspace}
-            />
-          ) : activeWorkspace === "screenplay" ? (
-            <Screenplay
-              project={bundle.project}
-              beats={bundle.beats}
-              bible={bundle.bible}
-              characters={bundle.characters}
-              locations={bundle.locations}
-              onSwitchWorkspace={switchWorkspace}
-              onScriptSubmitted={reload}
-              onReload={reload}
-            />
-          ) : activeWorkspace === "casting" ? (
-            <Casting
-              project={bundle.project}
-              characters={bundle.characters}
-              locations={bundle.locations}
-              onSwitchWorkspace={switchWorkspace}
-              onReload={reload}
-            />
-          ) : activeWorkspace === "storyboard" ? (
-            <Storyboard project={bundle.project} onSwitchWorkspace={switchWorkspace} />
-          ) : activeWorkspace === "stitch" ? (
-            <Stitch project={bundle.project} onSwitchWorkspace={switchWorkspace} />
-          ) : activeWorkspace === "library" ? (
-            <Library project={bundle.project} onSwitchWorkspace={switchWorkspace} />
           ) : (
-            <ExportWorkspace project={bundle.project} onSwitchWorkspace={switchWorkspace} />
+            <>
+              {activeWorkspace === "dashboard" && (
+                <Dashboard
+                  project={bundle.project}
+                  workspaces={workspaces}
+                  activity={bundle.activity}
+                  onSwitchWorkspace={switchWorkspace}
+                />
+              )}
+
+              {/* Screenplay stays mounted so generation and extraction survive tab switches */}
+              <div style={{ display: activeWorkspace === "screenplay" ? "contents" : "none" }}>
+                <Screenplay
+                  project={bundle.project}
+                  beats={bundle.beats}
+                  bible={bundle.bible}
+                  characters={bundle.characters}
+                  locations={bundle.locations}
+                  onSwitchWorkspace={switchWorkspace}
+                  onScriptSubmitted={reload}
+                  onReload={reload}
+                />
+              </div>
+
+              {/* Casting stays mounted so portrait generation survives tab switches */}
+              <div style={{ display: activeWorkspace === "casting" ? "contents" : "none" }}>
+                <Casting
+                  project={bundle.project}
+                  characters={bundle.characters}
+                  locations={bundle.locations}
+                  onSwitchWorkspace={switchWorkspace}
+                  onReload={reload}
+                />
+              </div>
+
+              {activeWorkspace === "storyboard" && (
+                <Storyboard project={bundle.project} onSwitchWorkspace={switchWorkspace} />
+              )}
+              {activeWorkspace === "stitch" && (
+                <Stitch project={bundle.project} onSwitchWorkspace={switchWorkspace} />
+              )}
+              {activeWorkspace === "library" && (
+                <Library project={bundle.project} onSwitchWorkspace={switchWorkspace} />
+              )}
+              {activeWorkspace === "export" && (
+                <ExportWorkspace project={bundle.project} onSwitchWorkspace={switchWorkspace} />
+              )}
+            </>
           )}
         </main>
       </div>

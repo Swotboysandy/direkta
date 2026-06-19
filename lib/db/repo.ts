@@ -60,6 +60,7 @@ function rowToProject(row: Row): Project {
     aspect_ratio: (String(row.aspect_ratio ?? "16:9") as AspectRatio),
     script: String(row.script ?? ""),
     script_submitted: !!row.script_submitted,
+    script_ai_generated: !!row.script_ai_generated,
     genre: String(row.genre ?? ""),
     tagline: String(row.tagline ?? ""),
     director_name: String(row.director_name ?? ""),
@@ -168,6 +169,7 @@ export const projects = {
         | "aspect_ratio"
         | "script"
         | "script_submitted"
+        | "script_ai_generated"
       >
     >
   ) {
@@ -176,7 +178,7 @@ export const projects = {
     for (const [key, value] of Object.entries(patch)) {
       if (value === undefined) continue;
       fields.push(`${key} = ?`);
-      if (key === "script_submitted") {
+      if (key === "script_submitted" || key === "script_ai_generated") {
         values.push(value ? 1 : 0);
       } else if (typeof value === "string" || typeof value === "number" || value === null) {
         values.push(value);
