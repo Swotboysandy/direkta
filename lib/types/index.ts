@@ -228,6 +228,8 @@ export interface Character {
   voice: string;
   key_quote: string;
   wardrobe_direction: string;
+  /** Dense physical identity descriptor the Cinematographer's look-lock uses verbatim. */
+  identity_descriptor: string;
   relationships: CharacterRelationship[];
   created_at: string;
   updated_at: string;

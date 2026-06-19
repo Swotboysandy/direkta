@@ -9,12 +9,16 @@
     "build": "next build",
     "lint": "next lint",
     "typecheck": "tsc --noEmit --incremental false",
-    "db:reset": "node -e \"require('fs').rmSync('data/zinema.sqlite',{force:true});require('fs').rmSync('data/zinema.sqlite-journal',{force:true});console.log('db reset')\""
+    "db:reset": "node -e \"require('fs').rmSync('data/zinema.sqlite',{force:true});require('fs').rmSync('data/zinema.sqlite-journal',{force:true});console.log('db reset')\"",
+    "mcp": "tsx mcp/direkta-server.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
     "@ai-sdk/google": "^1.0.0",
     "@ai-sdk/openai": "^1.0.0",
+    "@anthropic-ai/claude-agent-sdk": "^0.3.183",
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
     "@xyflow/react": "^12.10.2",
@@ -30,7 +34,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vaul": "^1.1.2",
-    "zod": "^3.23.8"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
@@ -38,6 +42,7 @@
     "@types/react-dom": "^19.0.2",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.1.8",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.2"
   }
 }

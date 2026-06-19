@@ -168,6 +168,14 @@ export const projects = {
         | "aspect_ratio"
         | "script"
         | "script_submitted"
+        | "genre"
+        | "tagline"
+        | "director_name"
+        | "draft_version"
+        | "short_synopsis"
+        | "full_synopsis"
+        | "time_period"
+        | "budget_tier"
       >
     >
   ) {
@@ -500,6 +508,7 @@ function rowToCharacter(row: Row): Character {
     voice: String(row.voice ?? ""),
     key_quote: String(row.key_quote ?? ""),
     wardrobe_direction: String(row.wardrobe_direction ?? ""),
+    identity_descriptor: String(row.identity_descriptor ?? ""),
     relationships: row.relationships ? (JSON.parse(String(row.relationships)) as CharacterRelationship[]) : [],
     created_at: String(row.created_at),
     updated_at: String(row.updated_at)
@@ -700,6 +709,14 @@ export const bible = {
       if (key === "built") {
         fields.push("built = ?");
         values.push(value ? 1 : 0);
+      } else if (
+        key === "themes" ||
+        key === "comparable_films" ||
+        key === "visual_palette" ||
+        key === "visual_motifs"
+      ) {
+        fields.push(`${key} = ?`);
+        values.push(JSON.stringify(value));
       } else if (typeof value === "string" || typeof value === "number") {
         fields.push(`${key} = ?`);
         values.push(value);

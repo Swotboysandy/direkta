@@ -345,6 +345,8 @@ function migrate(db: DatabaseSync) {
   ensureColumn(db, "characters", "key_quote", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "characters", "wardrobe_direction", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "characters", "relationships", "TEXT NOT NULL DEFAULT '[]'");
+  // Dense physical identity descriptor — the Cinematographer's look-lock reads this verbatim.
+  ensureColumn(db, "characters", "identity_descriptor", "TEXT NOT NULL DEFAULT ''");
 
   // Indexes that depend on upgraded columns must run after ensureColumn.
   db.exec("CREATE INDEX IF NOT EXISTS idx_assets_target ON assets(target_kind, target_id)");
