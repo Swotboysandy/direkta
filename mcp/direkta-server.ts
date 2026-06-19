@@ -18,6 +18,7 @@ import { breakdownShape } from "../lib/agents/screenplay/schema";
 import { importBreakdown } from "../lib/agents/screenplay/import";
 import { importShotlist } from "../lib/agents/cinematographer/import";
 import { buildLookLock, castIdentityLines } from "../lib/agents/cinematographer/lookLock";
+import { getShotlist, importGeneration } from "../lib/agents/operator/generation";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../lib/types";
 
 const server = new McpServer({ name: "direkta", version: "1.0.0" });
@@ -169,6 +170,48 @@ server.registerTool(
   async ({ project_id, beat_id, look_lock, cast_identity, dramatic_point, coverage_rationale, shots }) => {
     try {
       return ok(importShotlist(project_id, beat_id, { look_lock, cast_identity, dramatic_point, coverage_rationale, shots }));
+    } catch (e) {
+      return fail(e);
+    }
+  }
+);
+
+// ── Read: the shots to generate (the Operator's worklist) ──────────────────
+server.registerTool(
+  "get_shotlist",
+  {
+    description:
+      "Read the coverage shots for a project (optionally one beat) — each shot's prompt, negative, " +
+      "aspect, seed/identity, state, and any rendered asset URL. This is the Operator's worklist: " +
+      "feed each prompt to a creative-generation MCP, then call import_generation with the result.",
+    inputSchema: { project_id: z.string(), beat_id: z.string().optional() }
+  },
+  async ({ project_id, beat_id }) => {
+    try {
+      return ok(getShotlist(project_id, beat_id));
+    } catch (e) {
+      return fail(e);
+    }
+  }
+);
+
+// ── Write: attach a generated frame to its shot ────────────────────────────
+server.registerTool(
+  "import_generation",
+  {
+    description:
+      "Attach a generated frame (a URL produced by a creative-generation MCP) to a storyboard " +
+      "variant and mark it complete. Call this after rendering a shot from get_shotlist.",
+    inputSchema: {
+      variant_id: z.string(),
+      url: z.string().describe("The generated asset URL (served by /oss or a remote host)."),
+      prompt: z.string().optional(),
+      model: z.string().optional()
+    }
+  },
+  async ({ variant_id, url, prompt, model }) => {
+    try {
+      return ok(importGeneration(variant_id, { url, prompt, model }));
     } catch (e) {
       return fail(e);
     }
