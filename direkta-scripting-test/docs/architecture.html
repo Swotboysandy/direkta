@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Direkta — System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F5EDDC; --cream-warm:#FFFBF1; --cream-deep:#EAD8B5;
+  --cocoa:#2A1A12; --cocoa-soft:#4A382C; --cocoa-mute:#7A6855;
+  --tomato:#E84A35; --tomato-deep:#B6321F;
+  --mustard:#F2B83C; --mustard-deep:#C7901C;
+  --viridian:#3DA89B; --viridian-deep:#26786E;
+  --bg:var(--cream); --surface:var(--cream-warm); --surface-2:var(--cream-deep);
+  --ink:var(--cocoa); --ink-soft:var(--cocoa-soft); --mute:var(--cocoa-mute);
+  --accent:var(--tomato); --accent-2:var(--mustard); --accent-3:var(--viridian);
+  --font-display:"Bagel Fat One","Lilita One",Impact,serif;
+  --font-ui:"Nunito",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --r-sm:8px; --r-md:16px; --r-lg:24px; --r-pill:999px;
+  --shadow-1:0 2px 6px rgba(42,26,18,.06),0 1px 2px rgba(42,26,18,.04);
+  --shadow-2:0 6px 14px rgba(42,26,18,.10),0 2px 4px rgba(42,26,18,.06);
+  --shadow-3:0 14px 32px rgba(42,26,18,.14),0 4px 8px rgba(42,26,18,.08);
+  --tracking-eyebrow:.22em; --tracking-mono:.06em;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:var(--cream-warm)}
+a{color:var(--tomato-deep);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── Top nav ─────────────────────────── */
+.topnav{position:sticky;top:0;z-index:50;background:rgba(245,237,220,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--cream-deep)}
+.topnav-in{max-width:1180px;margin:0 auto;padding:12px 28px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;letter-spacing:.01em;color:var(--cocoa)}
+.brand svg{display:block}
+.navlinks{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.navlinks a{font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--mute);padding:6px 10px;border-radius:var(--r-pill)}
+.navlinks a:hover{color:var(--cocoa);background:var(--cream-deep);text-decoration:none}
+
+/* ── Layout ──────────────────────────── */
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+section{padding:64px 0;border-bottom:1px solid var(--cream-deep)}
+section:last-of-type{border-bottom:0}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--tomato-deep);font-weight:600;margin:0 0 12px}
+h1,h2,h3{font-family:var(--font-display);font-weight:400;letter-spacing:.01em;line-height:1.05;margin:0}
+h2{font-size:clamp(30px,4vw,46px);margin-bottom:14px}
+h3{font-size:22px;line-height:1.15;margin:0 0 8px}
+.lede{font-size:18px;color:var(--ink-soft);max-width:74ch;margin:0 0 8px}
+p{max-width:74ch}
+.mute{color:var(--mute)}
+strong{font-weight:700}
+code{font-family:var(--font-mono);font-size:.86em;background:var(--cream-deep);padding:1px 6px;border-radius:6px;color:var(--cocoa-soft)}
+
+/* ── Hero ────────────────────────────── */
+.hero{padding:88px 0 64px;border-bottom:1px solid var(--cream-deep)}
+.hero h1{font-size:clamp(58px,11vw,128px);line-height:.92}
+.hero .tagline{font-family:var(--font-display);font-size:clamp(20px,3vw,30px);color:var(--tomato);margin-top:6px}
+.hero .sub{font-size:19px;color:var(--ink-soft);max-width:72ch;margin-top:22px}
+.metarow{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.chip{font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-mono);text-transform:uppercase;background:var(--surface);box-shadow:var(--shadow-1);padding:8px 14px;border-radius:var(--r-pill);color:var(--cocoa-soft)}
+.chip b{color:var(--cocoa)}
+
+/* ── Cards ───────────────────────────── */
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:880px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--shadow-2);padding:22px 22px}
+.card h3{margin-bottom:6px}
+.card .k{font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--mute)}
+.tilt-a{transform:rotate(-.6deg)} .tilt-b{transform:rotate(.5deg)} .tilt-c{transform:rotate(-.3deg)}
+
+/* ── Pipeline rail ───────────────────── */
+.rail{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-top:24px}
+.stage{flex:1 1 150px;background:var(--surface);box-shadow:var(--shadow-1);border-radius:var(--r-md);padding:16px 14px;position:relative;min-width:150px}
+.stage+.stage{margin-left:26px}
+.stage::before{content:"";position:absolute;left:-22px;top:50%;width:18px;height:2px;background:var(--cocoa-mute)}
+.stage:first-child::before{display:none}
+.stage .n{font-family:var(--font-mono);font-size:10px;letter-spacing:var(--tracking-mono);color:var(--mute)}
+.stage .t{font-family:var(--font-display);font-size:17px;margin:4px 0 4px}
+.stage .d{font-size:12.5px;color:var(--ink-soft);line-height:1.35}
+.gatebar{display:inline-block;margin-top:10px;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tomato-deep);background:rgba(232,74,53,.10);padding:3px 7px;border-radius:var(--r-pill)}
+
+/* ── Pips / legend ───────────────────── */
+.pip{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--cocoa-soft)}
+.dot{width:10px;height:10px;border-radius:var(--r-pill);display:inline-block}
+.d-idle{background:var(--cream-deep)} .d-work{background:var(--mustard)} .d-done{background:var(--viridian)} .d-attn{background:var(--tomato)}
+.legend{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;background:var(--surface);box-shadow:var(--shadow-1);border-radius:var(--r-md);padding:14px 18px}
+
+/* ── Diagram frame ───────────────────── */
+.diagram{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow-2);padding:26px 18px;margin-top:22px;overflow-x:auto}
+.diagram .cap{font-family:var(--font-mono);font-size:10.5px;letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--mute);text-align:center;margin-bottom:14px}
+.mermaid{display:flex;justify-content:center;min-width:520px}
+
+/* ── Layer stack (compose prompt) ────── */
+.stack{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.layer{display:flex;align-items:center;gap:14px;background:var(--surface);box-shadow:var(--shadow-1);border-radius:var(--r-md);padding:12px 16px;border-left:5px solid var(--cream-deep)}
+.layer .num{font-family:var(--font-display);font-size:20px;color:var(--mute);width:26px;text-align:center}
+.layer .body strong{display:block}
+.layer .body span{font-size:13px;color:var(--ink-soft)}
+.layer.l1{border-left-color:var(--cocoa)} .layer.l2{border-left-color:var(--tomato)} .layer.l3{border-left-color:var(--mustard)} .layer.l4{border-left-color:var(--viridian)} .layer.l5{border-left-color:var(--cocoa-mute)}
+
+/* ── Compare table ───────────────────── */
+.cmp{width:100%;border-collapse:collapse;margin-top:18px;background:var(--surface);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-2)}
+.cmp th,.cmp td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--cream-deep);vertical-align:top;font-size:13.5px}
+.cmp thead th{font-family:var(--font-mono);font-size:10.5px;letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--mute);background:var(--cream-deep)}
+.cmp tr:last-child td{border-bottom:0}
+.cmp td:first-child{font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--cocoa-soft);width:160px}
+.cmp .codex{color:var(--tomato-deep)} .cmp .bible{color:var(--viridian-deep)}
+
+/* ── Callout ─────────────────────────── */
+.callout{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--shadow-2);padding:18px 22px;margin-top:18px;border-left:6px solid var(--mustard)}
+.callout.danger{border-left-color:var(--tomato)} .callout.ok{border-left-color:var(--viridian)}
+.callout .k{font-family:var(--font-mono);font-size:10.5px;letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+
+/* ── Decision list ───────────────────── */
+.dec{display:grid;gap:14px;margin-top:18px}
+.deci{background:var(--surface);box-shadow:var(--shadow-1);border-radius:var(--r-md);padding:16px 20px;display:flex;gap:16px;align-items:flex-start}
+.deci .q{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--tomato-deep);min-width:118px;letter-spacing:.04em;text-transform:uppercase}
+.deci .a{flex:1}
+.deci .a b{color:var(--cocoa)}
+.pick{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:var(--tracking-mono);text-transform:uppercase;background:var(--viridian);color:var(--cream-warm);padding:2px 8px;border-radius:var(--r-pill);margin-left:8px}
+
+ul.tick{list-style:none;padding:0;margin:12px 0}
+ul.tick li{padding-left:24px;position:relative;margin:7px 0;max-width:74ch}
+ul.tick li::before{content:"";position:absolute;left:2px;top:7px;width:9px;height:9px;border-radius:var(--r-pill);background:var(--viridian)}
+ul.tick li.x::before{background:var(--tomato)}
+ul.tick li.w::before{background:var(--mustard)}
+
+.note{font-family:var(--font-mono);font-size:11px;color:var(--mute);letter-spacing:var(--tracking-mono)}
+footer{padding:40px 0 70px}
+.footwrap{max-width:1180px;margin:0 auto;padding:0 28px;color:var(--mute);font-size:13px}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .5s var(--ease,ease),transform .5s ease}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-in">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#2A1A12" stroke-width="2"/><circle cx="12" cy="12" r="3.4" fill="#E84A35"/><path d="M12 2 A10 10 0 0 1 21.5 8.8 L12 12 Z" fill="#2A1A12" opacity=".12"/></svg>
+      DIREKTA
+    </span>
+    <nav class="navlinks">
+      <a href="#overview">Overview</a>
+      <a href="#control">Control</a>
+      <a href="#scripting">Scripting</a>
+      <a href="#breakdown">Breakdown</a>
+      <a href="#soulid">Soul ID</a>
+      <a href="#cinematographer">Cinematographer</a>
+      <a href="#data">Data</a>
+      <a href="#decisions">Decisions</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">System Architecture · Design Exploration</p>
+    <h1>DIREKTA</h1>
+    <div class="tagline">You direct. AI delivers.</div>
+    <p class="sub">A browser-based film studio that turns a script into consistent, shootable frames — by pinning <strong>identity</strong> as trained models and <strong>look</strong> as fixed text, then treating every shot as a new camera on locked things. This document maps how the pipeline works, end to end.</p>
+    <div class="metarow">
+      <span class="chip"><b>Stack</b> · Next.js 15 · React 19 · AI SDK</span>
+      <span class="chip"><b>Control</b> · Sequential · User-gated</span>
+      <span class="chip"><b>Consistency</b> · Train-first Soul IDs</span>
+      <span class="chip"><b>Platform</b> · Neon + Blob</span>
+    </div>
+  </div>
+</header>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="wrap">
+    <p class="eyebrow">01 · The Pipeline</p>
+    <h2>Six stages, hard gates between them</h2>
+    <p class="lede">The director walks a project through a fixed sequence of workspaces. Each stage produces something the next one consumes, and a stage cannot open until the one before it is meaningfully done.</p>
+
+    <div class="rail">
+      <div class="stage"><div class="n">00</div><div class="t">Scripting</div><div class="d">Write or import the screenplay. Produces <code>script</code>.</div><span class="gatebar">submit ▸</span></div>
+      <div class="stage"><div class="n">01</div><div class="t">Breakdown</div><div class="d">POV passes build the Movie Bible, then mint beats.</div><span class="gatebar">bible approved ▸</span></div>
+      <div class="stage"><div class="n">02</div><div class="t">Casting</div><div class="d">Train a Soul ID per character & location.</div><span class="gatebar">all trained ▸</span></div>
+      <div class="stage"><div class="n">03</div><div class="t">Storyboard</div><div class="d">Cinematographer renders multishot coverage.</div><span class="gatebar">hero picked ▸</span></div>
+      <div class="stage"><div class="n">04</div><div class="t">Stitch</div><div class="d">Order frames, set transitions, assemble.</div><span class="gatebar">node added ▸</span></div>
+      <div class="stage"><div class="n">05</div><div class="t">Export</div><div class="d">Movie Bible + Storybook deliverables.</div></div>
+    </div>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 1 — End-to-end pipeline & the gates that hold it</div>
+      <pre class="mermaid">
+flowchart LR
+  IDEA([Idea / Draft]):::seed --> SCR[Scripting<br/>write · import]:::surf
+  SCR -- submit --> BRK[Breakdown<br/>Bible + beats]:::surf
+  BRK -- approve --> CAST[Casting<br/>train Soul IDs]:::surf
+  CAST -- all trained --> CINE[Cinematographer<br/>multishot coverage]:::surf
+  CINE -- pick heroes --> STI[Stitch]:::surf
+  STI --> EXP[Export<br/>Bible · Storybook]:::done
+  CAST -. blocks .-> CINE
+  classDef surf fill:#FFFBF1,stroke:#2A1A12,color:#2A1A12;
+  classDef seed fill:#EAD8B5,stroke:#7A6855,color:#2A1A12;
+  classDef done fill:#3DA89B,stroke:#26786E,color:#FFFBF1;
+      </pre>
+    </div>
+
+    <div class="callout ok">
+      <div class="k">The core idea</div>
+      <p style="margin:0">Direkta never asks the AI to <em>improvise</em> consistency. <strong>Identity</strong> (who / where) is frozen as trained Soul-ID models; <strong>look</strong> (the grade) is frozen as the Bible's visual-language text, injected byte-identical into every prompt. Once both are locked, a "shot" is just those locked things viewed from a new angle.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CONTROL -->
+<section id="control">
+  <div class="wrap">
+    <p class="eyebrow">02 · Control Model</p>
+    <h2>The agent never goes off the leash</h2>
+    <p class="lede">This is not an autopilot you launch and watch. It is a guided sequence where the director is the clutch between every step: the agent does one step, proposes, and stops — you review, edit, commit, then proceed.</p>
+
+    <div class="grid g3" style="margin-top:8px">
+      <div class="card"><div class="k">Sequential & gated</div><h3>Walk, don't run</h3><p class="mute" style="font-size:14px;margin:0">Workspaces unlock in order. Neither you nor the agent skips ahead — the locks already exist in <code>page.tsx</code>.</p></div>
+      <div class="card"><div class="k">Propose · don't commit</div><h3>You hold the pen</h3><p class="mute" style="font-size:14px;margin:0">Agents write into <em>proposals</em>, never final tables. Clarifications surface only for forks that cascade expensively.</p></div>
+      <div class="card"><div class="k">"Depends on the stage"</div><h3>Friction matches stakes</h3><p class="mute" style="font-size:14px;margin:0">Cheap text is drafted for you to edit; anything that <strong>spends money</strong> pauses per-item for your explicit go.</p></div>
+    </div>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 2 — The per-step loop, repeated at every stage</div>
+      <pre class="mermaid">
+flowchart LR
+  A[Agent does<br/>ONE step]:::wip --> B{{Proposal}}:::gate
+  B --> C[Director reviews<br/>edit · accept · reject]:::surf
+  C -->|commit| D[Committed]:::done
+  D --> E{More in<br/>this stage?}:::surf
+  E -->|yes| A
+  E -->|no, advance| F[Next stage unlocks]:::done
+  C -.->|fork that cascades| G[Clarification]:::gate
+  G -.-> C
+  classDef surf fill:#FFFBF1,stroke:#2A1A12,color:#2A1A12;
+  classDef wip fill:#F2B83C,stroke:#C7901C,color:#2A1A12;
+  classDef gate fill:#E84A35,stroke:#B6321F,color:#FFFBF1;
+  classDef done fill:#3DA89B,stroke:#26786E,color:#FFFBF1;
+      </pre>
+    </div>
+
+    <div class="legend">
+      <span class="pip"><span class="dot d-idle"></span>Idle</span>
+      <span class="pip"><span class="dot d-work"></span>Working</span>
+      <span class="pip"><span class="dot d-done"></span>Done</span>
+      <span class="pip"><span class="dot d-attn"></span>Needs you</span>
+      <span class="note">— the nine-agent status dots in the top nav, driven by live run state</span>
+    </div>
+  </div>
+</section>
+
+<!-- SCRIPTING -->
+<section id="scripting">
+  <div class="wrap">
+    <p class="eyebrow">03 · Scripting</p>
+    <h2>The writing front-end</h2>
+    <p class="lede">Not five tabs — one home (<strong>Draft</strong>) with contextual affordances, governed by a single rule: <em>be in the cheapest surface that resolves your current doubt.</em></p>
+
+    <div class="grid g3">
+      <div class="card"><div class="k">Shape?</div><h3>Outline</h3><p style="font-size:14px;margin:0" class="mute">A collapsible left gutter — acts → sequences → scene cards. Your <em>plan</em>, not the analyst's beats.</p></div>
+      <div class="card"><div class="k">Words?</div><h3>Draft</h3><p style="font-size:14px;margin:0" class="mute">The Fountain script. <strong>The only surface that writes <code>projects.script</code></strong> — and only two ways: you type, or you accept a proposal.</p></div>
+      <div class="card"><div class="k">Reference?</div><h3>Codex</h3><p style="font-size:14px;margin:0" class="mute">Your living notes (characters, world, rules). Auto-proposed one-line cards from the live parse — curate by exception.</p></div>
+      <div class="card"><div class="k">Is the idea good?</div><h3>Discuss</h3><p style="font-size:14px;margin:0" class="mute">A story-room chat that <em>interrogates</em> the premise rather than drafting it. Writes nothing.</p></div>
+      <div class="card"><div class="k">Does it work?</div><h3>Analyse</h3><p style="font-size:14px;margin:0" class="mute">On-demand coverage notes — quote-or-suppress, internal-consistency focused. Feedback, never breakdown.</p></div>
+      <div class="card tilt-b" style="background:var(--cream-deep)"><div class="k">Anti-slop</div><h3>Cold-start voice</h3><p style="font-size:14px;margin:0">The agent won't draft the first scene cold. You supply a tone card, a style sample, or scene one by hand. <strong>Voice anchors to your reference, never genre defaults.</strong></p></div>
+    </div>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 3 — Scripting user flow, from new project to submit</div>
+      <pre class="mermaid">
+flowchart TD
+  NP([New project]):::seed --> CH{Start chooser}:::gate
+  CH -->|I have an idea| DIS[Discuss<br/>pressure-test premise]:::surf
+  CH -->|Outline first| OUT[Outline<br/>shape the spine]:::surf
+  CH -->|I have a script| IMP[Import<br/>paste · fountain · fdx]:::surf
+  CH -->|Just draft me something| DRF
+  DIS --> OUT --> DRF[Draft<br/>per-scene co-writing]:::wip
+  IMP -->|auto-derive outline + codex| DRF
+  DRF --> COV[Run coverage / Analyse]:::surf
+  COV --> DRF
+  DRF --> RM{Readiness meter<br/>soft, overridable}:::surf
+  RM -->|submit · freeze snapshot| GATE{{script_submitted = 1}}:::gate
+  GATE --> BRK[Breakdown begins]:::done
+  classDef surf fill:#FFFBF1,stroke:#2A1A12,color:#2A1A12;
+  classDef wip fill:#F2B83C,stroke:#C7901C,color:#2A1A12;
+  classDef gate fill:#E84A35,stroke:#B6321F,color:#FFFBF1;
+  classDef seed fill:#EAD8B5,stroke:#7A6855,color:#2A1A12;
+  classDef done fill:#3DA89B,stroke:#26786E,color:#FFFBF1;
+      </pre>
+    </div>
+
+    <h3 style="margin-top:34px;font-size:26px">Codex vs Movie Bible</h3>
+    <p>The #1 confusion risk, resolved decisively: <b style="color:var(--tomato-deep)">Codex = your intent, written forward.</b> <b style="color:var(--viridian-deep)">Bible = the agent's reading, extracted backward.</b> Same field-shape, opposite direction, opposite sides of the submit gate. They never merge.</p>
+
+    <table class="cmp">
+      <thead><tr><th></th><th>Codex</th><th>Movie Bible</th></tr></thead>
+      <tbody>
+        <tr><td>Author</td><td>You, by hand (agent may propose)</td><td>Waved POV passes, automatically</td></tr>
+        <tr><td>When</td><td>While writing · <code>submitted = 0</code></td><td>After submit · <code>submitted = 1</code></td></tr>
+        <tr><td>Truth basis</td><td>Intent — "how I want it"</td><td>Evidence — "the script says, quote: …"</td></tr>
+        <tr><td>Direction</td><td>Input to writing</td><td>Output of analysis</td></tr>
+        <tr><td>At the seam</td><td>Fed as <strong>priors / prompt-context</strong> — alias resolution, genre disambiguation, attention bias. <em>Never pre-written into a Bible column.</em></td><td>Every claim must carry a verbatim script quote, or it is rejected.</td></tr>
+        <tr><td>After submit</td><td colspan="2"><strong>The Codex becomes the reconciliation yardstick</strong> — each Bible item tagged <code>confirmed</code> / <code>divergent</code> / <code>unsupported</code> (a hole) / <code>emergent</code>. The gap between your intent and what you actually wrote is the single most valuable signal in the tool.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout danger">
+      <div class="k">Defect this design fixes</div>
+      <p style="margin:0">Today, "Edit script" flips <code>script_submitted</code> to false and <strong>silently throws the entire breakdown away</strong>. The replacement freezes a draft snapshot on submit; the breakdown always reads from that snapshot (never live script); a re-edit raises a propose-don't-commit <strong>drift banner</strong> — and a script edit <em>never</em> auto-invalidates a trained Soul ID.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BREAKDOWN -->
+<section id="breakdown">
+  <div class="wrap">
+    <p class="eyebrow">04 · Breakdown · The Screenplay Agent</p>
+    <h2>Read through many lenses, in waves</h2>
+    <p class="lede">"Analyse through various POVs" becomes a wave of focused passes — each a Decision → Execution → Supervision trip through the engine, each writing one typed slice of the Movie Bible. Beats are minted <strong>last</strong>, so they carry the mood and structure the earlier passes discovered.</p>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 4 — The POV waves (each pass maps to a named agent)</div>
+      <pre class="mermaid">
+flowchart TD
+  S[Script · frozen snapshot]:::seed --> W0
+  subgraph W0[Wave 0 · Parse]
+    P0[Segment scenes · detect characters & locations]:::wip
+  end
+  W0 --> W1
+  subgraph W1[Wave 1 · Spine]
+    direction LR
+    A1[Story architecture]:::surf --- B1[Character extraction]:::surf --- C1[World & production]:::surf
+  end
+  W1 --> W2
+  subgraph W2[Wave 2 · Interpretation]
+    direction LR
+    A2[Character depth<br/>one pass / character]:::surf --- B2[Theme & meaning]:::surf --- C2[Genre & tone]:::surf
+  end
+  W2 --> W3
+  subgraph W3[Wave 3 · Look]
+    direction LR
+    A3[Visual language]:::surf --- B3[Casting breakdown]:::surf
+  end
+  W3 --> W4[Wave 4 · Beats minted LAST]:::wip
+  W4 --> W5
+  subgraph W5[Wave 5 · Audit]
+    direction LR
+    A5[Continuity]:::surf --- B5[Production notes]:::surf
+  end
+  W5 --> BIBLE[(Movie Bible<br/>single source of truth)]:::done
+  classDef surf fill:#FFFBF1,stroke:#2A1A12,color:#2A1A12;
+  classDef wip fill:#F2B83C,stroke:#C7901C,color:#2A1A12;
+  classDef seed fill:#EAD8B5,stroke:#7A6855,color:#2A1A12;
+  classDef done fill:#3DA89B,stroke:#26786E,color:#FFFBF1;
+      </pre>
+    </div>
+
+    <div class="grid g2" style="margin-top:8px">
+      <div class="callout">
+        <div class="k">The anti-slop gate</div>
+        <p style="margin:0">A schema enforces <em>shape</em>, not <em>insight</em>. So interpretive fields (<code>psychology_want</code>, <code>themes</code>, <code>voice</code>) carry an <strong>evidence contract</strong>: every claim cites a scene + a verbatim quote, and Supervision rejects any claim whose quote isn't literally in the script. No quote, no claim.</p>
+      </div>
+      <div class="callout">
+        <div class="k">Single source of truth</div>
+        <p style="margin:0">The Bible is the root of a <strong>fingerprint dependency graph</strong>. Change a scene (hashed by body, not heading) and only its downstream Bible sections, beats, and frames get stale-flagged for regeneration — never silently overwritten.</p>
+      </div>
+    </div>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 5 — How a long run executes: the durable ledger + tick worker</div>
+      <pre class="mermaid">
+sequenceDiagram
+  participant D as Director
+  participant API as submit route
+  participant L as runs / run_passes ledger
+  participant W as tick worker
+  participant M as Model (AI SDK)
+  D->>API: submit script
+  API->>L: create Run, return run_id (fast)
+  API-->>D: run_id (never times out)
+  loop one pass per tick
+    W->>L: claim next runnable pass
+    W->>M: Decision → Execution → Supervision
+    M-->>W: structured output
+    W->>L: write proposals, advance cursor
+    W-->>D: stream delta · agent dots update
+  end
+  D->>L: review & commit proposals
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- SOUL ID -->
+<section id="soulid">
+  <div class="wrap">
+    <p class="eyebrow">05 · Casting · The Soul-ID Subsystem</p>
+    <h2>Train first — then every frame is consistent by construction</h2>
+    <p class="lede">A character starts as <em>text only</em>. Before anything renders, Casting trains a Soul ID for every character <strong>and every location</strong>. Consistency stops being a per-frame gamble and becomes a property of the models. Casting is a hard gate in front of the Cinematographer.</p>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 6 — The casting session: from a text description to a trained model</div>
+      <pre class="mermaid">
+flowchart LR
+  T[Dense identity<br/>descriptor · text]:::seed --> R[Roll N candidate<br/>portraits]:::wip
+  R --> L{Director locks<br/>the anchor face}:::gate
+  L --> E[Expand to 15-20<br/>on-model images<br/>face-identity model]:::wip
+  E --> TR[Train Fal Flux LoRA<br/>~5 min · ~$3]:::wip
+  TR --> V{Verify<br/>consistency}:::gate
+  V -->|pass| LOCK[(soul_id_state<br/>= trained)]:::done
+  V -->|fail| R
+  LOCK --> G[[Cinematographer gate opens]]:::done
+  classDef seed fill:#EAD8B5,stroke:#7A6855,color:#2A1A12;
+  classDef wip fill:#F2B83C,stroke:#C7901C,color:#2A1A12;
+  classDef gate fill:#E84A35,stroke:#B6321F,color:#FFFBF1;
+  classDef done fill:#3DA89B,stroke:#26786E,color:#FFFBF1;
+      </pre>
+    </div>
+
+    <div class="grid g2">
+      <div class="card"><div class="k">The bootstrap</div><h3>Text → a trainable set</h3><p style="font-size:14px;margin:0" class="mute">You have no photos. So: roll faces → lock the one that <em>is</em> the character → expand that single anchor into a consistent set with a face-identity model → that set is what the LoRA trains on. This is the step that defeats drift.</p></div>
+      <div class="card"><div class="k">Hybrid engine</div><h3>Identity model + Fal LoRA</h3><p style="font-size:14px;margin:0" class="mute">A face-identity model <em>builds</em> the consistent training set; a Fal Flux LoRA is then trained for render-time control with a unique trigger word. Best fidelity + look control, stays in your existing Fal infra.</p></div>
+    </div>
+
+    <div class="callout danger" >
+      <div class="k">The crux — multi-LoRA composition</div>
+      <p style="margin:0">Two characters in a room = <strong>three trained LoRAs in one render</strong> (char A + char B + location), and stacking trained identities is where faces bleed. Strategies under design: tuned per-LoRA scales, a hero-LoRA + secondary-by-region, or render-the-room-then-inpaint. A decision rule caps how many LoRAs are safe in one pass, with a fallback when a beat exceeds it. <span class="note">— being hardened in the running design pass.</span></p>
+    </div>
+
+    <div class="callout">
+      <div class="k">Locations — the riskier half</div>
+      <p style="margin:0">LoRAs memorise <em>views</em>, not 3-D space — great for faces, harder for a room that must hold across a wide, a reverse, and a CU. You chose to train locations too; if it proves shaky, the fallback is a reference-plate per location while keeping full training for faces.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CINEMATOGRAPHER -->
+<section id="cinematographer">
+  <div class="wrap">
+    <p class="eyebrow">06 · The Cinematographer Agent</p>
+    <h2>Invoke the locks — don't describe them</h2>
+    <p class="lede">With identity trained and look fixed, rendering a beat is composition, not a gamble. The prompt is built from five ordered layers; identity is carried by the LoRAs, the grade by the Bible.</p>
+
+    <div class="stack">
+      <div class="layer l1"><div class="num">1</div><div class="body"><strong>Framing</strong><span>Shot size · lens · height · movement — the only layer that varies across a coverage set.</span></div></div>
+      <div class="layer l2"><div class="num">2</div><div class="body"><strong>Subjects + Soul IDs</strong><span>Trigger words + LoRA refs for each character present. Identity is guaranteed by the model, not the words.</span></div></div>
+      <div class="layer l3"><div class="num">3</div><div class="body"><strong>Setting</strong><span>Location Soul ID + int/ext + time of day + the beat's props.</span></div></div>
+      <div class="layer l4"><div class="num">4</div><div class="body"><strong>Bible visual language — the look-lock</strong><span>Palette hexes · lighting philosophy · cinematography notes · motifs. <em>Byte-identical for every frame in the film.</em></span></div></div>
+      <div class="layer l5"><div class="num">5</div><div class="body"><strong>Mood + format tail</strong><span>The beat's mood + aspect-ratio framing hint + quality tail.</span></div></div>
+    </div>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 7 — Multishot: one beat → a consistent coverage set</div>
+      <pre class="mermaid">
+flowchart LR
+  B[Beat]:::seed --> CP[Coverage plan<br/>driven by Bible cinematography]:::wip
+  CP --> CS{{coverage_shots}}:::gate
+  CS --> A1[Establishing]:::surf
+  CS --> A2[Hero angle]:::surf
+  CS -. opt-in .-> A3[OTS]:::surf
+  CS -. opt-in .-> A4[CU / insert]:::surf
+  A1 & A2 & A3 & A4 --> LOCKED[Same LoRAs · same look<br/>only the angle changes]:::done
+  LOCKED --> PICK{Director picks<br/>hero angle}:::gate
+  PICK --> STITCH[(→ Stitch board)]:::done
+  classDef surf fill:#FFFBF1,stroke:#2A1A12,color:#2A1A12;
+  classDef wip fill:#F2B83C,stroke:#C7901C,color:#2A1A12;
+  classDef gate fill:#E84A35,stroke:#B6321F,color:#FFFBF1;
+  classDef seed fill:#EAD8B5,stroke:#7A6855,color:#2A1A12;
+  classDef done fill:#3DA89B,stroke:#26786E,color:#FFFBF1;
+      </pre>
+    </div>
+
+    <div class="callout ok">
+      <div class="k">Why multishot falls out for free</div>
+      <p style="margin:0">Because the LoRA holds identity across <em>any</em> angle, a coverage set is just "same LoRAs + same look, vary only the framing." That reads as the same instant from different cameras. <strong>Heroes-only by default</strong> (one establishing + one hero angle per beat) keeps the bill sane; the full set is opt-in per beat, behind a pre-render cost estimate.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data">
+  <div class="wrap">
+    <p class="eyebrow">07 · Data & Platform</p>
+    <h2>The schema, threaded together</h2>
+    <p class="lede">Existing tables (solid) plus the new ones this architecture introduces (accent), on durable Neon + Blob storage so trained LoRAs, training sets, and run state survive cold starts.</p>
+
+    <div class="diagram reveal">
+      <div class="cap">Figure 8 — Entity map · existing vs new</div>
+      <pre class="mermaid">
+flowchart TB
+  subgraph SCRIPTING
+    PRJ[projects · script]:::surf --> SSC[script_scenes]:::new
+    PRJ --> CDX[codex_entries]:::new
+    PRJ --> SDR[script_drafts]:::new
+    SSC --> OUT[outline_items]:::new
+  end
+  subgraph BREAKDOWN
+    PRJ --> RUN[runs]:::new --> RP[run_passes]:::new
+    PRJ --> BIB[bible]:::surf
+    PRJ --> BEA[beats]:::surf
+    PRJ --> CHA[characters]:::surf
+    PRJ --> LOC[locations]:::surf
+    RP --> PROP[proposals]:::surf
+    RP --> CLR[clarifications]:::surf
+  end
+  subgraph CONSISTENCY
+    CHA --> SID[soul_id_sets]:::new
+    LOC --> SID
+  end
+  subgraph RENDER
+    BEA --> COV[coverage_shots]:::new --> VAR[storyboard_variants]:::surf --> AST[assets]:::surf
+    SID -. invoked .-> COV
+    BIB -. look-lock .-> COV
+    VAR --> STN[stitch_nodes]:::surf --> TRN[transitions]:::surf
+  end
+  classDef surf fill:#FFFBF1,stroke:#2A1A12,color:#2A1A12;
+  classDef new fill:#F2B83C,stroke:#C7901C,color:#2A1A12;
+      </pre>
+    </div>
+
+    <div class="grid g3">
+      <div class="card"><div class="k">New · scripting</div><h3>5 tables</h3><p style="font-size:13.5px;margin:0" class="mute"><code>scripting_state</code> (side table — <code>projects.update</code> has a closed whitelist), <code>codex_entries</code>, <code>script_scenes</code> (stable ids), <code>script_drafts</code>, <code>outline_items</code>.</p></div>
+      <div class="card"><div class="k">New · runtime</div><h3>Run ledger</h3><p style="font-size:13.5px;margin:0" class="mute"><code>runs</code> + <code>run_passes</code> drive the long jobs, the live agent dots (<code>GROUP BY agent</code>), and resumable progress.</p></div>
+      <div class="card"><div class="k">New · render</div><h3>Coverage + Soul IDs</h3><p style="font-size:13.5px;margin:0" class="mute"><code>soul_id_sets</code> (lora_ref · trigger_word · state), <code>coverage_shots</code> (angle layer between beat and variant).</p></div>
+    </div>
+
+    <div class="callout">
+      <div class="k">Known repo constraints (design notes, not changes)</div>
+      <ul class="tick" style="margin:8px 0 0">
+        <li class="x"><code>projects.update</code> has a closed <code>Pick&lt;&gt;</code> whitelist — new state lives in a side table.</li>
+        <li class="x"><code>bible.update</code> silently drops JSON/array values — needs a JSON branch before <code>stale_sections</code> round-trips.</li>
+        <li class="w"><code>skillFor(layer)</code> selects by layer only — needs a <code>variant</code> axis so a story skill doesn't shadow the canvas pipeline.</li>
+        <li class="w"><code>/tmp</code> SQLite resets on cold start — the reason Neon + Blob is a prerequisite, not a later nicety.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- DECISIONS -->
+<section id="decisions">
+  <div class="wrap">
+    <p class="eyebrow">08 · Decisions Locked This Session</p>
+    <h2>What the director chose</h2>
+    <p class="lede">The forks that shaped the architecture above, with the call you made.</p>
+
+    <div class="dec">
+      <div class="deci"><div class="q">Control</div><div class="a"><b>Sequential, user-gated, propose-don't-commit.</b> The agent never auto-advances; you are the clutch between every step.<span class="pick">locked</span></div></div>
+      <div class="deci"><div class="q">Step size</div><div class="a"><b>Depends on the stage.</b> Cheap text is drafted for you to curate; expensive / identity actions pause per-item.<span class="pick">locked</span></div></div>
+      <div class="deci"><div class="q">Consistency</div><div class="a"><b>Train-first Soul IDs for characters and locations.</b> Nothing renders until identities are trained.<span class="pick">locked</span></div></div>
+      <div class="deci"><div class="q">Engine</div><div class="a"><b>Hybrid — face-identity model builds the training set, Fal Flux LoRA trains for render control.</b><span class="pick">locked</span></div></div>
+      <div class="deci"><div class="q">Storage</div><div class="a"><b>Neon + Blob first.</b> Durable LoRA weights, training sets, and run state — migrated before the subsystem ships.<span class="pick">locked</span></div></div>
+      <div class="deci"><div class="q">Coverage</div><div class="a"><b>Heroes-only by default.</b> One establishing + one hero angle per beat; the full set is opt-in behind a cost estimate.<span class="pick">locked</span></div></div>
+      <div class="deci"><div class="q">Codex</div><div class="a"><b>Seed, then reconcile — never merge.</b> Fed to breakdown as priors; becomes the intent-vs-reading yardstick after submit.<span class="pick">locked</span></div></div>
+    </div>
+
+    <h3 style="margin-top:36px;font-size:24px">Still open (recommended defaults)</h3>
+    <ul class="tick">
+      <li class="w"><strong>First-run lane</strong> — offer both, make the express "just draft me a rough cut" lane prominent.</li>
+      <li class="w"><strong>Inline ghost text</strong> — off by default, per-director toggle (most steamroll-prone surface).</li>
+      <li class="w"><strong>Re-edit granularity at MVP</strong> — whole-script re-break-down behind a drift banner; surgical per-scene as the first post-MVP increment.</li>
+      <li class="w"><strong>Import scope</strong> — include <code>.fdx</code> (cheap XML→Fountain), exclude <code>.pdf</code> (needs OCR-grade cleanup).</li>
+      <li class="w"><strong>Multi-LoRA composition</strong> — the safe-LoRA-count rule and fallback, being hardened now.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="footwrap">
+    <span class="brand" style="font-size:16px"><svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#2A1A12" stroke-width="2"/><circle cx="12" cy="12" r="3.4" fill="#E84A35"/></svg> DIREKTA</span>
+    <p style="margin:10px 0 0">System architecture — design exploration. Pinned identity, fixed look, every shot a new camera on locked things. · This is a design document; no application code has been modified.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad:true,
+    theme:'base',
+    themeVariables:{
+      background:'#F5EDDC',
+      primaryColor:'#FFFBF1', primaryTextColor:'#2A1A12', primaryBorderColor:'#2A1A12',
+      lineColor:'#7A6855', secondaryColor:'#EAD8B5', tertiaryColor:'#F5EDDC',
+      fontFamily:'Nunito, system-ui, sans-serif', fontSize:'14px',
+      clusterBkg:'#F5EDDC', clusterBorder:'#C7901C', titleColor:'#2A1A12',
+      edgeLabelBackground:'#FFFBF1'
+    },
+    flowchart:{ curve:'basis', nodeSpacing:42, rankSpacing:52, padding:14 },
+    sequence:{ actorFontFamily:'Nunito', noteFontFamily:'JetBrains Mono', messageFontFamily:'JetBrains Mono' }
+  });
+  // gentle reveal
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
