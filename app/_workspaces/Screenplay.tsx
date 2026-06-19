@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, FileText, Flag, Sparkles } from "lucide-react";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
+import { ClarificationCards } from "../_components/ClarificationCards";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
 
 const TILTS = ["var(--tilt-card-a)", "var(--tilt-card-b)", "var(--tilt-card-c)"];
@@ -173,6 +174,8 @@ export function Screenplay({
           </button>
         </div>
       </header>
+
+      <ClarificationCards projectId={project.id} onResolved={onReload} />
 
       {view === "board" ? (
         <div className="page-body">
