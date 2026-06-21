@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { characters, projects, vendors } from "../../../../../lib/db/repo";
 import { generateImage } from "../../../../../lib/agents/image";
+import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../lib/skills/loader";
 import type { Character } from "../../../../../lib/types";
 
@@ -24,15 +25,16 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const vendor = vendors.firstEnabledImage();
+  const useMcp = isHiggsfieldMcpConnected();
 
-  // ── No image vendor / key → do nothing destructive. The character's state
+  // ── No generator at all → do nothing destructive. The character's state
   //    and existing looks stay exactly as they are.
-  if (!vendor) {
+  if (!useMcp && !vendor) {
     return NextResponse.json({
       ok: false,
       simulated: true,
       protected: true,
-      note: "No image vendor key — character left untouched. Add a Fal/OpenAI key in the Key Vault to cast a real portrait."
+      note: "No image generator — connect Higgsfield in the Key Vault, or add a Fal/OpenAI key, to cast a real portrait."
     });
   }
 
@@ -40,11 +42,14 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const base = buildPortraitPrompt(character, project.premise);
   const skill = skillForPart("casting");
   const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
+  const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
   try {
-    const image = await generateImage({ prompt, aspectRatio: "4:5", vendor });
+    const image = useMcp
+      ? await generateImageViaMcp({ prompt, aspectRatio: "4:5" })
+      : await generateImage({ prompt, aspectRatio: "4:5", vendor: vendor! });
     const refs = [image.url, ...(character.refs ?? [])];
     characters.update(id, { refs, soul_id_state: "trained", error: null });
-    return NextResponse.json({ ok: true, url: image.url, vendor: vendor.label });
+    return NextResponse.json({ ok: true, url: image.url, vendor: providerLabel });
   } catch (error: any) {
     characters.update(id, { soul_id_state: "failed", error: error?.message ?? String(error) });
     return NextResponse.json({ error: error?.message ?? String(error) }, { status: 500 });

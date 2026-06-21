@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Check,
@@ -17,7 +18,8 @@ import {
   Wand2,
   X,
   ZoomIn
-} from "lucide-react";
+} from "../_components/icons";
+import { fadeUp, staggerContainer, staggerItem } from "../_components/motion";
 import type { AspectRatio, Beat, Project, WorkspaceId } from "../../lib/types";
 
 interface StoryboardRow {
@@ -255,7 +257,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
 
   return (
     <div className="main-inner storyboard">
-      <header className="page-head">
+      <motion.header className="page-head" {...fadeUp}>
         <div>
           <span className="t-eyebrow crumb">04 / WORKSPACE · STORYBOARD</span>
           <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Storyboard</h1>
@@ -299,7 +301,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
             Continue to Stitch <ArrowRight size={14} />
           </button>
         </div>
-      </header>
+      </motion.header>
 
       <div className="page-body" style={{ paddingBottom: 200 }}>
         <GlobalStyleStrip style={globalStyle} onChange={setGlobalStyle} />
@@ -314,43 +316,45 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
         </div>
 
         {view === "grid" ? (
-          <div className="sb-grid">
+          <motion.div className="sb-grid" variants={staggerContainer} initial="hidden" animate="show">
             {beats.map((beat) => (
-              <StoryboardCard
-                key={beat.id}
-                beat={beat}
-                row={rowByBeat[beat.id]}
-                variants={variantsByBeat[beat.id] ?? []}
-                stitchedVariantIds={stitchedVariantIds}
-                onOpen={(variant) => setLightbox({ beat, variant })}
-              />
+              <motion.div key={beat.id} variants={staggerItem}>
+                <StoryboardCard
+                  beat={beat}
+                  row={rowByBeat[beat.id]}
+                  variants={variantsByBeat[beat.id] ?? []}
+                  stitchedVariantIds={stitchedVariantIds}
+                  onOpen={(variant) => setLightbox({ beat, variant })}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
-          <div className="storyboard-beats">
+          <motion.div className="storyboard-beats" variants={staggerContainer} initial="hidden" animate="show">
             {beats.map((beat) => {
               const row = rowByBeat[beat.id];
               const v = variantsByBeat[beat.id] ?? [];
               const expanded = expandedBeat === beat.id;
               return (
-                <BeatRow
-                  key={beat.id}
-                  beat={beat}
-                  row={row}
-                  variants={v}
-                  stitchedVariantIds={stitchedVariantIds}
-                  expanded={expanded}
-                  globalStyle={globalStyle}
-                  onToggleExpand={() => setExpandedBeat(expanded ? null : beat.id)}
-                  onAddToStitch={(variant) => addVariantToStitch(variant)}
-                  onRemoveFromStitch={(variant) => removeVariantFromStitch(variant)}
-                  onLightbox={(variant) => setLightbox({ beat, variant })}
-                  onPatchRow={(patch) => patchRow(beat.id, patch)}
-                  onGenerate={(prompt) => generate(beat.id, prompt)}
-                />
+                <motion.div key={beat.id} variants={staggerItem}>
+                  <BeatRow
+                    beat={beat}
+                    row={row}
+                    variants={v}
+                    stitchedVariantIds={stitchedVariantIds}
+                    expanded={expanded}
+                    globalStyle={globalStyle}
+                    onToggleExpand={() => setExpandedBeat(expanded ? null : beat.id)}
+                    onAddToStitch={(variant) => addVariantToStitch(variant)}
+                    onRemoveFromStitch={(variant) => removeVariantFromStitch(variant)}
+                    onLightbox={(variant) => setLightbox({ beat, variant })}
+                    onPatchRow={(patch) => patchRow(beat.id, patch)}
+                    onGenerate={(prompt) => generate(beat.id, prompt)}
+                  />
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -763,7 +767,7 @@ function BeatEditor({
         <span className="t-mute" style={{ fontSize: "var(--t-body-s)" }}>
           {isGenerating
             ? "Cinematographer is rolling 4 variants…"
-            : "Generation is gated on an image vendor with an API key. Without one, this runs in simulation mode."}
+            : "Frames roll on your connected Higgsfield account, or a configured image vendor. Without either, this previews in simulation."}
         </span>
         <button
           className="btn btn-sm"

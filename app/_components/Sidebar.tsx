@@ -13,11 +13,11 @@ import {
   Lock,
   PenLine,
   Share2,
-  type LucideIcon
-} from "lucide-react";
+  type IconType
+} from "./icons";
 import type { WorkspaceId, WorkspaceMeta } from "../../lib/types";
 
-const ICONS: Record<WorkspaceId, LucideIcon> = {
+const ICONS: Record<WorkspaceId, IconType> = {
   dashboard: LayoutDashboard,
   screenplay: PenLine,
   casting: Folder,
@@ -27,7 +27,7 @@ const ICONS: Record<WorkspaceId, LucideIcon> = {
   export: Clapperboard
 };
 
-const FILMSTRIP: LucideIcon = Film;
+const FILMSTRIP: IconType = Film;
 
 interface Props {
   workspaces: WorkspaceMeta[];

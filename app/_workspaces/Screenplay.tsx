@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, FileText, Flag, RefreshCw, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, Check, FileText, Flag, RefreshCw, Sparkles, Upload } from "../_components/icons";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
 
@@ -34,6 +34,7 @@ export function Screenplay({
   const [genError, setGenError] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const [activeBeat, setActiveBeat] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [bibleOpen, setBibleOpen] = useState(false);
@@ -98,16 +99,38 @@ export function Screenplay({
     }
   }
 
-  function importFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function importFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    setGenError(null);
+
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (isPdf) {
+      // PDFs are compressed binary — extract text server-side, not via readAsText.
+      setImporting(true);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch(`/api/projects/${project.id}/script/import`, { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({ error: "Could not read PDF" }));
+        if (res.ok && typeof data.text === "string") setDraft(data.text);
+        else setGenError(data.error ?? "Could not read PDF");
+      } catch (err) {
+        setGenError(String(err));
+      } finally {
+        setImporting(false);
+      }
+      return;
+    }
+
+    // Plain-text formats (.txt/.fountain/.fdx/.md) read fine in the browser.
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result;
       if (typeof text === "string") setDraft(text);
     };
     reader.readAsText(file);
-    e.target.value = "";
   }
 
   async function extractBeats() {
@@ -176,11 +199,11 @@ export function Screenplay({
             />
             <button
               className="btn"
-              disabled={busy || generating}
+              disabled={busy || generating || importing}
               onClick={() => fileInputRef.current?.click()}
-              title="Import a script file (.txt, .fountain, .fdx)"
+              title="Import a script file (.txt, .fountain, .fdx, .pdf)"
             >
-              <Upload size={14} /> Import file
+              <Upload size={14} /> {importing ? "Reading PDF…" : "Import file"}
             </button>
             <button
               className={project.script_ai_generated ? "btn btn-primary" : "btn"}

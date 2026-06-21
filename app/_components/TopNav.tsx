@@ -17,8 +17,8 @@ import {
   Upload,
   Check,
   Sparkles,
-  type LucideIcon
-} from "lucide-react";
+  type IconType
+} from "./icons";
 import type { AgentStatus, Project, WorkspaceId } from "../../lib/types";
 
 const AGENT_LABEL: Record<string, string> = {
@@ -33,7 +33,7 @@ const AGENT_LABEL: Record<string, string> = {
   "export-agent": "Export Agent"
 };
 
-const AGENT_ICON: Record<string, LucideIcon> = {
+const AGENT_ICON: Record<string, IconType> = {
   "script-reader": ScrollText,
   "beat-writer": PenLine,
   "bible-builder": BookOpen,

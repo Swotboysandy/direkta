@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Plus, RefreshCcw, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Plus, RefreshCcw, X } from "../_components/icons";
+import { fadeUp, staggerContainer, staggerItem } from "../_components/motion";
 import type { Character, Location, Project, WorkspaceId } from "../../lib/types";
 
 const LOOK_GRADS = [
@@ -35,7 +37,7 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
 
   return (
     <div className="main-inner casting">
-      <header className="page-head">
+      <motion.header className="page-head" {...fadeUp}>
         <div>
           <div className="crumb">03 / WORKSPACE · CASTING</div>
           <h1>Casting</h1>
@@ -59,7 +61,7 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
             Continue to Storyboard <ArrowRight size={14} />
           </button>
         </div>
-      </header>
+      </motion.header>
 
       <div className="page-body">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
@@ -89,11 +91,18 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
             </button>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+          >
             {characters.map((c) => (
-              <CharacterCard key={c.id} character={c} projectId={project.id} onChange={onReload} />
+              <motion.div key={c.id} variants={staggerItem}>
+                <CharacterCard character={c} projectId={project.id} onChange={onReload} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         <div className="eb" style={{ marginTop: 40, marginBottom: 14 }}>
@@ -115,11 +124,18 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
             </button>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+          >
             {locations.map((l) => (
-              <LocationCard key={l.id} location={l} projectId={project.id} onChange={onReload} />
+              <motion.div key={l.id} variants={staggerItem}>
+                <LocationCard location={l} projectId={project.id} onChange={onReload} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
 

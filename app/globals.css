@@ -1995,7 +1995,11 @@ strong, b {
 }
 
 .stitch-node {
-  position: absolute;
+  /* Must be `relative`, not `absolute`: React Flow measures the node wrapper's
+     height from its children. An absolutely-positioned child contributes no
+     height, collapsing the node to 0px (invisible on the board). `relative`
+     still anchors the absolute delete button / drag cue inside it. */
+  position: relative;
   width: 220px;
   background: var(--surface);
   border-radius: var(--radius);

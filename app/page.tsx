@@ -8,13 +8,17 @@ import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
 import { CommandPalette } from "./_components/CommandPalette";
 import { KeyVaultPanel } from "./_components/KeyVaultPanel";
 import { SkillsPanel } from "./_components/SkillsPanel";
+import dynamic from "next/dynamic";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
 import { Casting } from "./_workspaces/Casting";
-import { Storyboard } from "./_workspaces/Storyboard";
-import { Stitch } from "./_workspaces/Stitch";
-import { Library } from "./_workspaces/Library";
-import { Export as ExportWorkspace } from "./_workspaces/Export";
+// Conditionally-rendered workspaces are code-split so their weight (React Flow
+// in Stitch especially) stays out of the initial bundle and loads on first open.
+const wsLoading = () => <div className="main-inner" />;
+const Storyboard = dynamic(() => import("./_workspaces/Storyboard").then((m) => ({ default: m.Storyboard })), { ssr: false, loading: wsLoading });
+const Stitch = dynamic(() => import("./_workspaces/Stitch").then((m) => ({ default: m.Stitch })), { ssr: false, loading: wsLoading });
+const Library = dynamic(() => import("./_workspaces/Library").then((m) => ({ default: m.Library })), { ssr: false, loading: wsLoading });
+const ExportWorkspace = dynamic(() => import("./_workspaces/Export").then((m) => ({ default: m.Export })), { ssr: false, loading: wsLoading });
 import type {
   ActivityItem,
   AgentStatus,

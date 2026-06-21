@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, type LucideIcon } from "lucide-react";
 import {
+  ArrowRight,
+  type IconType,
   Boxes,
   Clapperboard,
   Folder,
@@ -12,7 +13,7 @@ import {
   CheckCircle,
   Wand2,
   Image as ImageIcon
-} from "lucide-react";
+} from "../_components/icons";
 import type {
   ActivityItem,
   Project,
@@ -29,7 +30,7 @@ interface Props {
 
 const PIPELINE: WorkspaceId[] = ["screenplay", "casting", "storyboard", "stitch", "export"];
 
-const ICONS: Record<WorkspaceId, LucideIcon> = {
+const ICONS: Record<WorkspaceId, IconType> = {
   dashboard: PenLine,
   screenplay: PenLine,
   casting: Folder,
@@ -57,7 +58,7 @@ const QUICK_CARDS: Array<{
   { ws: "export", title: "Export", ctaEmpty: "Export project", ctaActive: "Export project", emptyStatus: "Waiting on animatic", accent: "accent-3" }
 ];
 
-const AGENT_ICON: Record<string, LucideIcon> = {
+const AGENT_ICON: Record<string, IconType> = {
   "script-reader": PenLine,
   "beat-writer": PenLine,
   "bible-builder": Library,

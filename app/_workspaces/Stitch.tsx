@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -11,10 +11,13 @@ import {
   type Edge as RFEdge,
   type NodeChange,
   type EdgeChange,
-  type NodeTypes
+  type NodeTypes,
+  type ReactFlowInstance
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowRight, Film, Play, RefreshCcw, Trash2, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Film, Play, RefreshCcw, Trash2, X } from "../_components/icons";
+import { fadeUp } from "../_components/motion";
 import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
 
@@ -68,6 +71,8 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
   const [transitions, setTransitions] = useState<Transition[]>([]);
   const [rfNodes, setRfNodes] = useState<RFNode[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const rfInstance = useRef<ReactFlowInstance | null>(null);
+  const didFit = useRef(false);
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/projects/${project.id}/stitch`);
@@ -80,6 +85,18 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  // Frame the board once the first batch of nodes has mounted and been measured.
+  // `fitView` as a prop only runs on init (when nodes are still loading async),
+  // so it can miss; this guarantees the board is framed on first open.
+  useEffect(() => {
+    if (didFit.current || rfNodes.length === 0) return;
+    const t = setTimeout(() => {
+      rfInstance.current?.fitView({ padding: 0.25, maxZoom: 1, duration: 300 });
+      didFit.current = true;
+    }, 80);
+    return () => clearTimeout(t);
+  }, [rfNodes.length]);
 
   async function patchNode(id: string, patch: { x?: number; y?: number; duration?: number; scene_number?: number }) {
     await fetch(`/api/stitch/nodes/${id}`, {
@@ -213,7 +230,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
 
   return (
     <div className="main-inner" style={{ paddingBottom: 0 }}>
-      <header className="page-head">
+      <motion.header className="page-head" {...fadeUp}>
         <div>
           <span className="t-eyebrow crumb">05 / WORKSPACE · STITCH</span>
           <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Stitch</h1>
@@ -236,7 +253,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             Continue to Export <ArrowRight size={14} />
           </button>
         </div>
-      </header>
+      </motion.header>
 
       <div className="stitch-shell">
         <ReactFlow
@@ -248,6 +265,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
           onNodeDragStop={onNodeDragStop}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
+          onInit={(inst) => { rfInstance.current = inst; }}
           proOptions={{ hideAttribution: true }}
           fitView
           fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
@@ -438,7 +456,7 @@ function StitchInspector({
             setAnimating(true);
             try {
               const res = await onAnimate();
-              if (res?.simulated) setNote(res.note ?? "Simulated — add a video key to render real motion.");
+              if (res?.simulated) setNote(res.note ?? "Simulated — connect Higgsfield or add a video key to render real motion.");
               else if (res?.error) setNote(res.error);
               else if (res?.ok) setNote(`Clip rendered by ${res.vendor ?? "the video vendor"}.`);
             } finally {

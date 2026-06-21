@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../../lib/agents/video";
+import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
 
@@ -49,11 +50,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!node) return NextResponse.json({ error: "Shot not found" }, { status: 404 });
 
   const vendor = vendors.firstEnabledVideo();
-  if (!vendor) {
+  const useMcp = isHiggsfieldMcpConnected();
+
+  // No generator at all → simulation note (keeps the keyless demo working).
+  if (!useMcp && !vendor) {
     return NextResponse.json({
       ok: true,
       simulated: true,
-      note: "No video vendor configured — add a Fal video key in the Key Vault to render motion clips."
+      note: "No video generator — connect Higgsfield in the Key Vault, or add a Fal video key, to render motion clips."
     });
   }
 
@@ -80,21 +84,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const skill = skillForPart("video");
   const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
 
+  const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
   db.prepare("UPDATE stitch_nodes SET clip_state = 'generating' WHERE id = ?").run(id);
 
   try {
-    const video = await generateVideo({
-      prompt,
-      aspectRatio: node.aspect_ratio,
-      referenceImageUrl: refImage,
-      vendor
-    });
+    const video = useMcp
+      ? await generateVideoViaMcp({
+          prompt,
+          aspectRatio: node.aspect_ratio,
+          referenceImageUrl: refImage
+        })
+      : await generateVideo({
+          prompt,
+          aspectRatio: node.aspect_ratio,
+          referenceImageUrl: refImage,
+          vendor: vendor!
+        });
     const assetId = nanoid(10);
     db.prepare(
       "INSERT INTO assets (id, target_kind, target_id, kind, url, prompt, vendor_id) VALUES (?, 'stitch_clip', ?, 'video', ?, ?, ?)"
-    ).run(assetId, id, video.url, prompt, vendor.id);
+    ).run(assetId, id, video.url, prompt, useMcp ? null : vendor!.id);
     db.prepare("UPDATE stitch_nodes SET clip_asset_id = ?, clip_state = 'complete' WHERE id = ?").run(assetId, id);
-    return NextResponse.json({ ok: true, url: video.url, vendor: vendor.label });
+    return NextResponse.json({ ok: true, url: video.url, vendor: providerLabel });
   } catch (error: any) {
     db.prepare("UPDATE stitch_nodes SET clip_state = 'error' WHERE id = ?").run(id);
     return NextResponse.json({ error: error?.message ?? String(error) }, { status: 500 });
