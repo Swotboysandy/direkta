@@ -283,6 +283,15 @@ function migrate(db: DatabaseSync) {
       expires_at INTEGER NOT NULL DEFAULT 0,
       connected_at TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS codex_connection (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      access_token TEXT,
+      refresh_token TEXT,
+      account_id TEXT,
+      expires_at INTEGER NOT NULL DEFAULT 0,
+      connected_at TEXT
+    );
   `);
 
   // Backwards-compatible column upgrades for pre-existing databases.
@@ -308,6 +317,7 @@ function migrate(db: DatabaseSync) {
   ensureColumn(db, "projects", "full_synopsis", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "projects", "time_period", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "projects", "budget_tier", "TEXT NOT NULL DEFAULT 'indie'");
+  ensureColumn(db, "projects", "script_ai_generated", "INTEGER NOT NULL DEFAULT 0");
 
   // bible: tone, world, visual language, production notes
   ensureColumn(db, "bible", "themes", "TEXT NOT NULL DEFAULT '[]'");

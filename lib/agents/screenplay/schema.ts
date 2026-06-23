@@ -106,3 +106,27 @@ export const breakdownShape = {
 };
 
 export type Breakdown = z.infer<z.ZodObject<typeof breakdownShape>>;
+
+// Spelled-out shape for the fallback (Codex/vendor) engine, which has no forced-tool schema like
+// the Claude/MCP path. Keep in sync with breakdownShape (validated against it at runtime anyway).
+export const BREAKDOWN_JSON_INSTRUCTION = `Return ONLY a JSON object (no markdown, no preamble) with exactly these keys:
+{
+  "logline": string, "tagline": string, "genre": string, "time_period": string,
+  "short_synopsis": string, "full_synopsis": string,
+  "tone": string, "themes": string[],
+  "comparable_films": [{ "title": string, "note": string }],
+  "what_makes_different": string, "world_rules": string, "atmosphere": string,
+  "visual_palette": [{ "hex": "#RRGGBB", "name": string }],
+  "lighting_philosophy": string, "cinematography_notes": string, "editorial_rhythm": string,
+  "visual_motifs": string[], "casting_direction": string,
+  "characters": [{ "name": string, "role": "Lead"|"Supporting"|"Featured"|"Background",
+    "identity_descriptor": string, "background": string,
+    "psychology_want": string, "psychology_fear": string, "psychology_wound": string,
+    "arc_start": string, "arc_middle": string, "arc_end": string,
+    "voice": string, "key_quote": string, "wardrobe_direction": string }],
+  "locations": [{ "name": string, "int_ext": "INT"|"EXT", "time_of_day": string|null }],
+  "beats": [{ "scene_heading": string, "title": string, "summary": string,
+    "characters": string[], "location": string|null, "mood": string[], "props": string[],
+    "continuity_flag": string|null }],
+  "gaps": [{ "question": string, "why": string, "options": string[], "recommended": string }]
+}`;
