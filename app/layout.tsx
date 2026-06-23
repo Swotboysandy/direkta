@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// Display — Fraunces: a warm editorial serif. Cinematic at large sizes, pairs
-// with the cream palette far better than the old chunky display face.
-const display = Fraunces({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-display-loaded",
-  display: "swap"
-});
-
-// UI — Inter: clean, professional, full weight range for the interface.
+// One clean sans for everything — Inter. Headings reuse it (no separate
+// decorative display face), kept at restrained sizes/weights for a calm
+// dashboard feel.
 const ui = Inter({
   subsets: ["latin"],
   variable: "--font-ui-loaded",
@@ -38,7 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className={`${display.variable} ${ui.variable} ${mono.variable}`}
+      className={`${ui.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <head>
