@@ -19,7 +19,14 @@ import { motion } from "framer-motion";
 import { ArrowRight, Film, Trash2, X } from "../_components/icons";
 import { fadeUp } from "../_components/motion";
 import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
+import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, videoModel } from "../../lib/higgsfield/catalog";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
+
+interface Balance {
+  connected: boolean;
+  credits: number | null;
+  plan: string | null;
+}
 
 interface StitchNode {
   id: string;
@@ -71,8 +78,21 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
   const [transitions, setTransitions] = useState<Transition[]>([]);
   const [rfNodes, setRfNodes] = useState<RFNode[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<"board" | "timeline">("board");
   const rfInstance = useRef<ReactFlowInstance | null>(null);
   const didFit = useRef(false);
+  const [balance, setBalance] = useState<Balance | null>(null);
+
+  const loadBalance = useCallback(() => {
+    fetch("/api/higgsfield/balance")
+      .then((r) => r.json())
+      .then(setBalance)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadBalance();
+  }, [loadBalance]);
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/projects/${project.id}/stitch`);
@@ -124,16 +144,21 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     await patchNode(node.id, { duration });
   }
 
-  async function animate(node: StitchNode): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null> {
+  async function animate(node: StitchNode, modelId?: string): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null> {
     setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, clip_state: "generating" } : n)));
     let data: { ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null = null;
     try {
-      const res = await fetch(`/api/stitch/nodes/${node.id}/animate`, { method: "POST" });
+      const res = await fetch(`/api/stitch/nodes/${node.id}/animate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ model: modelId ?? DEFAULT_VIDEO_MODEL })
+      });
       data = await res.json().catch(() => null);
     } catch {
       /* network error surfaced via reload state */
     }
     await reload();
+    loadBalance(); // credits changed
     return data;
   }
 
@@ -240,6 +265,16 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
           </p>
         </div>
         <div className="actions">
+          {stitchNodes.length > 0 && (
+            <div className="view-toggle" role="tablist" aria-label="Stitch view">
+              <button role="tab" aria-selected={view === "board"} data-active={view === "board"} onClick={() => setView("board")}>
+                Board
+              </button>
+              <button role="tab" aria-selected={view === "timeline"} data-active={view === "timeline"} onClick={() => setView("timeline")}>
+                Timeline
+              </button>
+            </div>
+          )}
           <span
             className="pip-state"
             data-status={completedTransitions === transitions.length && transitions.length > 0 ? "done" : "working"}
@@ -253,6 +288,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
       </motion.header>
 
       <div className="stitch-shell">
+        {view === "board" ? (
         <ReactFlow
           nodes={rfNodes}
           edges={rfEdges}
@@ -270,7 +306,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
           maxZoom={2}
           defaultEdgeOptions={{ type: "smoothstep" }}
         >
-          <Background gap={28} size={1} color="rgba(42, 26, 18, 0.10)" />
+          <Background gap={28} size={1} color="rgba(125, 104, 85, 0.22)" />
           <Controls
             showInteractive={false}
             style={{ background: "var(--surface)", border: "none", boxShadow: "var(--shadow-1)", borderRadius: "var(--radius)" }}
@@ -279,7 +315,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             nodeStrokeWidth={0}
             nodeColor={(n) => (n.selected ? "#E84A35" : "#3DA89B")}
             nodeBorderRadius={6}
-            maskColor="rgba(42, 26, 18, 0.08)"
+            maskColor="rgba(125, 104, 85, 0.18)"
             style={{
               background: "var(--surface)",
               border: "none",
@@ -288,6 +324,9 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             }}
           />
         </ReactFlow>
+        ) : (
+          <StitchTimeline nodes={stitchNodes} selectedId={selectedId} onSelect={setSelectedId} />
+        )}
 
         {selected && (
           <StitchInspector
@@ -295,7 +334,8 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             onClose={() => setSelectedId(null)}
             onSetSceneNumber={(scene) => setSceneNumber(selected, scene)}
             onSetDuration={(duration) => setDuration(selected, duration)}
-            onAnimate={() => animate(selected)}
+            balance={balance}
+            onAnimate={(modelId) => animate(selected, modelId)}
             onDelete={() => {
               if (confirm("Remove this frame from Stitch? The transition clips connected to it will also be removed.")) {
                 deleteNode(selected.id);
@@ -308,6 +348,70 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
   );
 }
 
+/* ───────────────────────── Timeline view ───────────────────────── */
+
+function StitchTimeline({
+  nodes,
+  selectedId,
+  onSelect
+}: {
+  nodes: StitchNode[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const PX_PER_SEC = 46;
+  const ordered = [...nodes].sort((a, b) => (a.beat?.n ?? 999) - (b.beat?.n ?? 999) || a.x - b.x);
+  const total = ordered.reduce((s, n) => s + n.duration, 0);
+
+  if (ordered.length === 0) {
+    return (
+      <div className="stitch-timeline">
+        <span className="t-eyebrow" style={{ padding: "var(--sp-5)", color: "var(--mute)" }}>
+          NO SHOTS YET · push frames from Storyboard
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="stitch-timeline">
+      <div className="stitch-timeline-head">
+        <span className="t-eyebrow">TIMELINE · {ordered.length} SHOTS · {total.toFixed(1)}s RUNTIME</span>
+        <span className="t-mute" style={{ fontSize: 11 }}>Click a shot to edit · width ∝ duration</span>
+      </div>
+      <div className="stitch-timeline-track">
+        {ordered.map((n, i) => (
+          <button
+            key={n.id}
+            className="stitch-tl-clip"
+            data-selected={n.id === selectedId}
+            style={{ width: Math.max(110, n.duration * PX_PER_SEC) }}
+            onClick={() => onSelect(n.id)}
+            title={`${n.beat?.title ?? "Untitled"} · ${n.duration.toFixed(1)}s`}
+          >
+            <span className="stitch-tl-thumb">
+              {n.frame_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={n.frame_url} alt={n.beat?.title ?? ""} />
+              ) : (
+                <span className="t-eyebrow" style={{ color: "var(--mute)" }}>NO FRAME</span>
+              )}
+              {n.clip_url && <span className="stitch-tl-badge">▶ CLIP</span>}
+              {n.clip_state === "generating" && (
+                <span className="stitch-tl-badge" data-gen="true">RENDERING…</span>
+              )}
+            </span>
+            <span className="stitch-tl-meta">
+              <span className="stitch-tl-scene">S{String(n.beat?.n ?? i + 1).padStart(2, "0")}</span>
+              <span className="stitch-tl-dur">{n.duration.toFixed(1)}s</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ───────────────────────── Inspector ───────────────────────── */
 
 function StitchInspector({
@@ -315,6 +419,7 @@ function StitchInspector({
   onClose,
   onSetSceneNumber,
   onSetDuration,
+  balance,
   onAnimate,
   onDelete
 }: {
@@ -322,13 +427,18 @@ function StitchInspector({
   onClose: () => void;
   onSetSceneNumber: (n: number) => void;
   onSetDuration: (d: number) => void;
-  onAnimate: () => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
+  balance: Balance | null;
+  onAnimate: (modelId: string) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
   onDelete: () => void;
 }) {
   const [scene, setScene] = useState<number>(node.beat?.n ?? 1);
   const [duration, setDurationLocal] = useState<number>(node.duration);
   const [animating, setAnimating] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [modelId, setModelId] = useState<string>(DEFAULT_VIDEO_MODEL);
+  const model = videoModel(modelId);
+  const credits = balance?.credits ?? null;
+  const tooPoor = credits != null && credits < model.approxCost;
 
   useEffect(() => {
     setScene(node.beat?.n ?? 1);
@@ -354,7 +464,7 @@ function StitchInspector({
       </header>
 
       {node.clip_url ? (
-        <div style={{ overflow: "hidden", borderRadius: "var(--radius)", background: "var(--ink)" }}>
+        <div style={{ overflow: "hidden", borderRadius: "var(--radius)", background: "#14100c" }}>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video
             src={node.clip_url}
@@ -440,19 +550,46 @@ function StitchInspector({
         />
       </div>
 
-      <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "auto" }}>
+      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
+        <span className="t-eyebrow" style={{ color: "var(--mute)" }}>VIDEO MODEL</span>
+        <select value={modelId} onChange={(e) => setModelId(e.target.value)} style={{ width: "100%" }}>
+          {VIDEO_MODELS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label} · ≈{m.approxCost} cr
+            </option>
+          ))}
+        </select>
+        <p className="t-mute" style={{ fontSize: 11, lineHeight: 1.35, margin: 0 }}>{model.description}</p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            color: tooPoor ? "var(--accent)" : "var(--mute)"
+          }}
+        >
+          <span>≈ {model.approxCost} credits</span>
+          <span>
+            {credits != null
+              ? `Balance ${credits}`
+              : balance?.connected === false
+              ? "Higgsfield off"
+              : "—"}
+          </span>
+        </div>
         <button
           className="btn btn-sm btn-primary"
-          style={{ flex: 1, justifyContent: "center" }}
+          style={{ width: "100%", justifyContent: "center" }}
           disabled={animating || !node.frame_url}
           onClick={async () => {
             setNote(null);
             setAnimating(true);
             try {
-              const res = await onAnimate();
+              const res = await onAnimate(modelId);
               if (res?.simulated) setNote(res.note ?? "Simulated — connect Higgsfield or add a video key to render real motion.");
               else if (res?.error) setNote(res.error);
-              else if (res?.ok) setNote(`Clip rendered by ${res.vendor ?? "the video vendor"}.`);
+              else if (res?.ok) setNote(`Clip rendered by ${res.vendor ?? "the video model"}.`);
             } finally {
               setAnimating(false);
             }
@@ -460,6 +597,11 @@ function StitchInspector({
         >
           <Film size={12} /> {animating ? "Rendering…" : node.clip_url ? "Re-roll clip" : "Generate clip"}
         </button>
+        {tooPoor && (
+          <span style={{ fontSize: 11, color: "var(--accent)", lineHeight: 1.35 }}>
+            Balance is below ≈{model.approxCost} cr — top up Higgsfield or pick a cheaper model.
+          </span>
+        )}
       </div>
       {note && (
         <p className="t-mute" style={{ fontSize: 11, marginTop: "var(--sp-2)", lineHeight: 1.4 }}>

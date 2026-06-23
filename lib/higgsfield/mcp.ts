@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { nanoid } from "nanoid";
 import type { AspectRatio } from "../types";
 import { MCP_URL, getValidAccessToken, isConnected } from "./oauth";
@@ -116,9 +117,35 @@ function writeRemoteToOss(
     fs.mkdirSync(OSS_DIR, { recursive: true });
     const ext = kind === "video" || /\.mp4(\?|$)/i.test(url) ? "mp4" : "png";
     const filename = `${Date.now()}-${nanoid(8)}.${ext}`;
-    fs.writeFileSync(path.join(OSS_DIR, filename), buf);
+    const full = path.join(OSS_DIR, filename);
+    fs.writeFileSync(full, buf);
+    if (ext === "mp4") compressVideoInPlace(full);
     return { url: `/oss/${filename}`, relPath: `data/oss/${filename}` };
   });
+}
+
+/**
+ * Best-effort H.264 re-encode to shrink the clip + enable web fast-start.
+ * Replaces the file in place (URL unchanged). If ffmpeg is missing or fails,
+ * the original is kept untouched — generation must never break on this.
+ */
+function compressVideoInPlace(filePath: string): void {
+  try {
+    const out = filePath.replace(/\.mp4$/i, ".c.mp4");
+    const res = spawnSync(
+      "ffmpeg",
+      ["-y", "-i", filePath, "-c:v", "libx264", "-preset", "veryfast", "-crf", "26",
+       "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", out],
+      { timeout: 120_000, stdio: "ignore" }
+    );
+    if (res.status === 0 && fs.existsSync(out) && fs.statSync(out).size > 0) {
+      fs.renameSync(out, filePath);
+    } else if (fs.existsSync(out)) {
+      fs.unlinkSync(out);
+    }
+  } catch {
+    /* ffmpeg unavailable or errored — keep the original clip */
+  }
 }
 
 function firstUrl(node: any): string | undefined {
@@ -207,11 +234,23 @@ export async function generateImageViaMcp(input: {
  * frame URL into Higgsfield storage, then submit an image-to-video job and poll
  * it to completion. Returns the same shape as lib/agents/video.ts.
  */
+/** Read the connected workspace's credit balance + plan (read-only, free). */
+export async function getBalanceViaMcp(): Promise<{ credits: number; plan: string | null }> {
+  const token = await getValidAccessToken();
+  const s = new McpSession(token);
+  await s.connect();
+  const res = await s.callTool("balance", {});
+  const credits = Number(res?.credits_exact ?? res?.credits ?? 0);
+  const plan = res?.subscription_plan_type ?? res?.plan ?? null;
+  return { credits: Math.floor(credits), plan: plan ? String(plan) : null };
+}
+
 export async function generateVideoViaMcp(input: {
   prompt: string;
   aspectRatio: AspectRatio;
   referenceImageUrl: string;
-  model?: string;
+  /** Model + model-specific knobs from the catalog (must include `model`). */
+  modelParams?: Record<string, unknown>;
   duration?: number;
 }): Promise<{ url: string; relPath: string }> {
   const token = await getValidAccessToken();
@@ -233,21 +272,24 @@ export async function generateVideoViaMcp(input: {
   //    than a generic turbo model. Seedance supports a narrower aspect set, so
   //    coerce anything outside it (e.g. 4:5) to "auto".
   const SEEDANCE_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"];
-  const model = input.model || "seedance_2_0";
+  const mp = input.modelParams ?? {
+    model: "seedance_2_0",
+    mode: "fast",
+    resolution: "720p",
+    generate_audio: false
+  };
+  const model = String(mp.model || "seedance_2_0");
   const isSeedance = model.startsWith("seedance");
   const aspect = isSeedance && !SEEDANCE_RATIOS.includes(input.aspectRatio) ? "auto" : input.aspectRatio;
   const submitted = await s.callTool("generate_video", {
     params: {
-      model,
       prompt: input.prompt,
       aspect_ratio: aspect,
       duration: input.duration ?? 5,
       count: 1,
       medias: [{ role: "start_image", value: mediaId }],
-      // Seedance-specific knobs (ignored by other models):
-      ...(isSeedance
-        ? { mode: "fast", resolution: "720p", generate_audio: false, genre: "auto" }
-        : {})
+      ...(isSeedance ? { genre: "auto" } : {}),
+      ...mp // model + mode/resolution/etc. from the catalog
     }
   });
 

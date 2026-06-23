@@ -60,7 +60,7 @@ export function Export({ project }: Props) {
               duration, rendered to a single MP4 with ffmpeg.
             </div>
             {cut && (
-              <div style={{ borderRadius: "var(--r-md)", overflow: "hidden", background: "var(--ink)" }}>
+              <div style={{ borderRadius: "var(--r-md)", overflow: "hidden", background: "#14100c" }}>
                 {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                 <video src={cut.url} controls style={{ display: "block", width: "100%" }} />
               </div>
@@ -148,8 +148,7 @@ function ExportCard({
   icon: Icn,
   title,
   body,
-  options,
-  cta
+  options
 }: {
   icon: typeof Film;
   title: string;
@@ -157,15 +156,15 @@ function ExportCard({
   options: Array<{ label: string; values: string[] }>;
   cta: string;
 }) {
-  const [busy, setBusy] = useState(false);
-
+  // These exports aren't wired yet — show them honestly as planned rather than
+  // faking a "packaging…" spinner that produces nothing.
   return (
-    <div className="export-card">
+    <div className="export-card" style={{ opacity: 0.78 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <span style={{ color: "var(--tungsten)" }}>
           <Icn size={28} />
         </span>
-        <span className="eb">READY</span>
+        <span className="eb">SOON</span>
       </div>
       <div className="title">{title}</div>
       <div className="body">{body}</div>
@@ -173,7 +172,7 @@ function ExportCard({
         {options.map((opt) => (
           <label key={opt.label}>
             {opt.label}
-            <select defaultValue={opt.values[0]}>
+            <select defaultValue={opt.values[0]} disabled>
               {opt.values.map((v) => (
                 <option key={v} value={v}>
                   {v}
@@ -184,15 +183,12 @@ function ExportCard({
         ))}
       </div>
       <button
-        className="btn btn-primary"
-        style={{ marginTop: "auto", justifyContent: "center" }}
-        disabled={busy}
-        onClick={() => {
-          setBusy(true);
-          setTimeout(() => setBusy(false), 1400);
-        }}
+        className="btn"
+        style={{ marginTop: "auto", justifyContent: "center", cursor: "not-allowed" }}
+        disabled
+        title="Not available yet"
       >
-        <ArrowDown size={14} /> {busy ? "Packaging…" : cta}
+        Coming soon
       </button>
     </div>
   );

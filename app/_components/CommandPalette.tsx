@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import {
   Aperture,
   Boxes,
-  Camera,
   Clapperboard,
   Film,
   Folder,
@@ -27,7 +26,6 @@ interface Props {
   onSwitchProject: (id: string) => void;
   onNewProject: () => void;
   onOpenKeyVault: () => void;
-  onOpenBible?: () => void;
 }
 
 export function CommandPalette({
@@ -37,8 +35,7 @@ export function CommandPalette({
   onSwitchWorkspace,
   onSwitchProject,
   onNewProject,
-  onOpenKeyVault,
-  onOpenBible
+  onOpenKeyVault
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -95,9 +92,6 @@ export function CommandPalette({
           </Command.Group>
 
           <Command.Group heading="Project" className="cmd-group">
-            {project && onOpenBible && (
-              <CmdItem icon={Camera} label="Open Movie Bible" onSelect={run(onOpenBible)} hint={project.title} />
-            )}
             <CmdItem icon={KeyRound} label="Open Key Vault" onSelect={run(onOpenKeyVault)} hint="API keys" />
             <CmdItem icon={Settings} label="Settings page" onSelect={run(() => (window.location.href = "/settings"))} hint="Legacy fallback" />
           </Command.Group>

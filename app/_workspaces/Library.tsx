@@ -58,7 +58,10 @@ export function Library({ project }: Props) {
   useEffect(() => {
     fetch(`/api/projects/${project.id}/library`)
       .then((r) => r.json())
-      .then(setData);
+      .then(setData)
+      // Don't strand the UI on "Loading…" — fall back to empty so the empty
+      // states render instead.
+      .catch(() => setData({ generations: [], sequences: [], characters: [], locations: [] }));
   }, [project.id]);
 
   return (

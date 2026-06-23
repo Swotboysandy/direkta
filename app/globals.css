@@ -115,6 +115,102 @@ strong, b {
   color: var(--ink);
 }
 
+/* Stitch — timeline (NLE) view */
+.stitch-timeline {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+.stitch-timeline-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--cream-deep);
+  background: var(--surface);
+}
+.stitch-timeline-track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.stitch-tl-clip {
+  flex: 0 0 auto;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cream-deep);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  text-align: left;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
+}
+.stitch-tl-clip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+}
+.stitch-tl-clip[data-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-2), inset 0 0 0 2px var(--accent);
+}
+.stitch-tl-thumb {
+  position: relative;
+  flex: 1;
+  background: var(--cream-deep);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.stitch-tl-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.stitch-tl-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-eyebrow);
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  background: var(--viridian);
+  color: var(--on-accent-3);
+}
+.stitch-tl-badge[data-gen="true"] {
+  background: var(--mustard);
+  color: var(--on-accent-2);
+}
+.stitch-tl-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--tracking-mono);
+}
+.stitch-tl-scene {
+  color: var(--ink);
+  font-weight: 600;
+}
+.stitch-tl-dur {
+  color: var(--accent);
+}
+
 /* The .topnav class from brand sets card-like surface + shadow.
    Project-specific layout overrides for the AT-A-GLANCE row only. */
 .topnav .topnav-agents {
@@ -2006,7 +2102,7 @@ strong, b {
 .stitch-canvas {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(42, 26, 18, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(125, 104, 85, 0.12) 1px, transparent 1px);
   background-size: 24px 24px;
   cursor: grab;
 }

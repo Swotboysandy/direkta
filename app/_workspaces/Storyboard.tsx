@@ -940,7 +940,7 @@ function FrameLightbox({
           overflow: "hidden"
         }}
       >
-        <div style={{ background: "var(--ink)", display: "grid", placeItems: "center", padding: "var(--sp-5)" }}>
+        <div style={{ background: "#14100c", display: "grid", placeItems: "center", padding: "var(--sp-5)" }}>
           {variant.asset_url && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img

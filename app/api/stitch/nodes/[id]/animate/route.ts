@@ -4,6 +4,7 @@ import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../../lib/agents/video";
 import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../../lib/higgsfield/mcp";
+import { videoModel } from "../../../../../../lib/higgsfield/catalog";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
 
@@ -28,6 +29,8 @@ interface NodeRow {
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const body = await req.json().catch(() => ({} as { model?: string }));
+  const chosen = videoModel(typeof body.model === "string" ? body.model : undefined);
   const db = getDb();
 
   const node = db
@@ -92,7 +95,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       ? await generateVideoViaMcp({
           prompt,
           aspectRatio: node.aspect_ratio,
-          referenceImageUrl: refImage
+          referenceImageUrl: refImage,
+          modelParams: chosen.params
         })
       : await generateVideo({
           prompt,
