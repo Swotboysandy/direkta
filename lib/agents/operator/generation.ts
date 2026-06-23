@@ -121,3 +121,27 @@ export function importGeneration(
 
   return { variant_id: variantId, asset_id: assetId, url: input.url };
 }
+
+export interface ImportClipResult {
+  node_id: string;
+  asset_id: string;
+  url: string;
+}
+
+/** Attach a generated motion clip (image-to-video) to a stitch node and mark it complete. */
+export function importStitchClip(
+  nodeId: string,
+  input: { url: string; prompt?: string; model?: string }
+): ImportClipResult {
+  const db = getDb();
+  const node = db.prepare("SELECT id FROM stitch_nodes WHERE id = ?").get(nodeId) as { id: string } | undefined;
+  if (!node) throw new Error(`Stitch node not found: ${nodeId}`);
+
+  const assetId = nanoid(10);
+  db.prepare(
+    "INSERT INTO assets (id, target_kind, target_id, kind, url, prompt, vendor_id, meta) VALUES (?, 'stitch_clip', ?, 'video', ?, ?, NULL, ?)"
+  ).run(assetId, nodeId, input.url, input.prompt ?? "", JSON.stringify({ model: input.model ?? null, source: "mcp" }));
+  db.prepare("UPDATE stitch_nodes SET clip_asset_id = ?, clip_state = 'complete' WHERE id = ?").run(assetId, nodeId);
+
+  return { node_id: nodeId, asset_id: assetId, url: input.url };
+}

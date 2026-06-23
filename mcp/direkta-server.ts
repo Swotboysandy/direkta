@@ -19,6 +19,7 @@ import { importBreakdown } from "../lib/agents/screenplay/import";
 import { importShotlist } from "../lib/agents/cinematographer/import";
 import { buildLookLock, castIdentityLines } from "../lib/agents/cinematographer/lookLock";
 import { getShotlist, importGeneration } from "../lib/agents/operator/generation";
+import { writeWorklist, syncInbox } from "../lib/agents/operator/sync";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../lib/types";
 
 const server = new McpServer({ name: "direkta", version: "1.0.0" });
@@ -229,6 +230,44 @@ server.registerTool(
     try {
       clarifications.resolve(clarification_id, resolution);
       return ok({ ok: true });
+    } catch (e) {
+      return fail(e);
+    }
+  }
+);
+
+// ── Codex generation worker: write the worklist of shots to generate ───────
+server.registerTool(
+  "write_worklist",
+  {
+    description:
+      "Write the project's pending shots (id + prompt + negative + aspect) to worklist.json for the " +
+      "Codex Record-&-Replay generation worker. Codex's recorded skill iterates the worklist, generates " +
+      "each shot in a free web UI, and saves each download into the inbox folder named `frame_<id>.<ext>`.",
+    inputSchema: { project_id: z.string() }
+  },
+  async ({ project_id }) => {
+    try {
+      return ok(writeWorklist(project_id));
+    } catch (e) {
+      return fail(e);
+    }
+  }
+);
+
+// ── Codex generation worker: ingest finished files from the inbox ──────────
+server.registerTool(
+  "sync_generations",
+  {
+    description:
+      "Ingest generated files from the inbox folder into Direkta: each `frame_<variant_id>.<ext>` is " +
+      "copied to OSS and attached to its storyboard variant; each `clip_<stitch_node_id>.<ext>` to its " +
+      "stitch node. Processed files move to inbox/_done. Run after the Codex worker finishes generating.",
+    inputSchema: { inbox_dir: z.string().optional() }
+  },
+  async ({ inbox_dir }) => {
+    try {
+      return ok(syncInbox(inbox_dir ? { inboxDir: inbox_dir } : undefined));
     } catch (e) {
       return fail(e);
     }
