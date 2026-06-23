@@ -2,6 +2,12 @@
 
 > **You direct. AI delivers.**
 
+> **`inhouse` branch — internal build.** This branch runs Direkta as an internal tool where
+> **Claude is the backend** (via the `direkta` MCP server) and generation is **keyless** (the
+> user's Higgsfield account, or the free Codex Record-&-Replay path) — no per-user API keys.
+> See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md).
+> The sections below describe the public BYOK product, which the in-house model supersedes here.
+
 A browser-based film production platform with a full crew of specialised AI agents. Direkta turns scripts into animated short dramas through five purpose-built workspaces — Screenplay, Casting, Storyboard, Stitch, and Export — each driven by named agents that propose options for the director to commit.
 
 This branch is the merge of two upstream repos:
