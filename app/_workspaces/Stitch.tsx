@@ -16,7 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { motion } from "framer-motion";
-import { ArrowRight, Film, Play, RefreshCcw, Trash2, X } from "../_components/icons";
+import { ArrowRight, Film, Trash2, X } from "../_components/icons";
 import { fadeUp } from "../_components/motion";
 import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
@@ -246,9 +246,6 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
           >
             {completedTransitions} / {transitions.length || "—"} CLIPS · {totalDuration.toFixed(1)}s
           </span>
-          <button className="btn">
-            <Play size={14} /> Preview animatic
-          </button>
           <button className="btn btn-primary" onClick={() => onSwitchWorkspace("export")}>
             Continue to Export <ArrowRight size={14} />
           </button>
@@ -444,9 +441,6 @@ function StitchInspector({
       </div>
 
       <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "auto" }}>
-        <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }}>
-          <RefreshCcw size={12} /> Replace frame
-        </button>
         <button
           className="btn btn-sm btn-primary"
           style={{ flex: 1, justifyContent: "center" }}

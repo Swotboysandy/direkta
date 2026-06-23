@@ -75,7 +75,7 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
               textTransform: "uppercase"
             }}
           >
-            SOUL ID TRAINING IS STUBBED IN V1
+            PORTRAITS ROLL ON YOUR HIGGSFIELD PLAN
           </div>
         </div>
 

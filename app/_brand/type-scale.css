@@ -5,25 +5,25 @@
 
 /* Display ─────────────────────────────────────────────────── */
 .t-display-l {
-  font-family: var(--font-ui);
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: var(--t-display-l);
   line-height: var(--leading-tight);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   color: var(--ink);
 }
 .t-display-m {
-  font-family: var(--font-ui);
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--t-display-m);
   line-height: var(--leading-tight);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   color: var(--ink);
 }
 
 /* Headings ────────────────────────────────────────────────── */
 .t-h1, h1 {
-  font-family: var(--font-ui);
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--t-h1);
   line-height: var(--leading-snug);

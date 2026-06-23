@@ -54,7 +54,9 @@ import {
   Settings01Icon,
   Alert01Icon,
   Menu01Icon,
-  Search01Icon
+  Search01Icon,
+  Sun03Icon,
+  Moon02Icon
 } from "@hugeicons/core-free-icons";
 
 export interface IconProps {
@@ -136,3 +138,5 @@ export const Settings = make(Settings01Icon);
 export const AlertCircle = make(Alert01Icon);
 export const Menu = make(Menu01Icon);
 export const Search = make(Search01Icon);
+export const Sun = make(Sun03Icon);
+export const Moon = make(Moon02Icon);

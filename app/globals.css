@@ -94,6 +94,27 @@ strong, b {
   background: var(--bg);
 }
 
+/* Dashboard "production at a glance" stat strip */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+.dash-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.dash-stat-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+}
+
 /* The .topnav class from brand sets card-like surface + shadow.
    Project-specific layout overrides for the AT-A-GLANCE row only. */
 .topnav .topnav-agents {

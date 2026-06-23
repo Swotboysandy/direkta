@@ -607,7 +607,7 @@ function BeatRow({
                 </button>
                 <button
                   className="storyboard-frame-btn"
-                  title="Regenerate this variant"
+                  title="Open to refine & regenerate"
                   onClick={() => onLightbox(variant)}
                 >
                   <RefreshCcw size={14} />
@@ -843,7 +843,6 @@ function BottomStrip({
   variants: StoryboardVariant[];
   stitchedVariantIds: Set<string>;
 }) {
-  const beatByVariant = useMemo(() => Object.fromEntries(variants.map((v) => [v.id, v])), [variants]);
   const beatsByN = useMemo(() => Object.fromEntries(beats.map((b) => [b.id, b])), [beats]);
   // The sequence on Stitch — every stitched variant in beat-number order.
   const stitched = useMemo(() => {
@@ -853,9 +852,6 @@ function BottomStrip({
       .filter((row) => row.beat)
       .sort((a, b) => (a.beat!.n - b.beat!.n) || (a.variant.n - b.variant.n));
   }, [variants, stitchedVariantIds, beatsByN]);
-
-  // Use beatByVariant to silence the unused-var lint while keeping it handy for future work.
-  void beatByVariant;
 
   return (
     <div className="storyboard-bottom-strip">

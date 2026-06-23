@@ -14,6 +14,7 @@ import {
   Wand2,
   Image as ImageIcon
 } from "../_components/icons";
+import { staggerContainer, staggerItem } from "../_components/motion";
 import type {
   ActivityItem,
   Project,
@@ -21,10 +22,17 @@ import type {
   WorkspaceMeta
 } from "../../lib/types";
 
+interface DashStats {
+  beats: number;
+  characters: number;
+  locations: number;
+}
+
 interface Props {
   project: Project;
   workspaces: WorkspaceMeta[];
   activity: ActivityItem[];
+  stats: DashStats;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
@@ -71,7 +79,7 @@ const AGENT_ICON: Record<string, IconType> = {
   "producer": ImageIcon
 };
 
-export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: Props) {
+export function Dashboard({ project, workspaces, activity, stats, onSwitchWorkspace }: Props) {
   const wsMap = Object.fromEntries(workspaces.map((w) => [w.id, w]));
   const hasScript = project.script_submitted;
 
@@ -93,17 +101,28 @@ export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: 
           </div>
         </div>
         <div className="page-head-actions">
-          <button className="btn btn-secondary">Edit project</button>
           <button
             className="btn btn-primary"
             onClick={() => onSwitchWorkspace(hasScript ? "casting" : "screenplay")}
           >
-            Continue working <ArrowRight size={14} />
+            {hasScript ? "Continue working" : "Start with the script"} <ArrowRight size={14} />
           </button>
         </div>
       </header>
 
       <div className="page-body">
+        <motion.div
+          className="dash-stats"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <StatCard value={hasScript ? "Submitted" : "Draft"} label="Script" accent={hasScript ? "var(--accent-3)" : undefined} />
+          <StatCard value={stats.beats} label="Beats" />
+          <StatCard value={stats.characters} label="Characters" />
+          <StatCard value={stats.locations} label="Locations" />
+        </motion.div>
+
         <div className="eyebrow-row">
           <span className="t-eyebrow">PRODUCTION PIPELINE · 5 STAGES</span>
         </div>
@@ -287,8 +306,19 @@ export function Dashboard({ project, workspaces, activity, onSwitchWorkspace }: 
   );
 }
 
+function StatCard({ value, label, accent }: { value: string | number; label: string; accent?: string }) {
+  return (
+    <motion.div className="card dash-stat" variants={staggerItem}>
+      <span className="dash-stat-value" style={accent ? { color: accent } : undefined}>{value}</span>
+      <span className="t-eyebrow">{label}</span>
+    </motion.div>
+  );
+}
+
 function formatActivity(text: string): string {
-  return text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  // Escape HTML first so AI/user content can't inject markup, then apply **bold**.
+  const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 }
 
 function relativeTime(iso: string): string {

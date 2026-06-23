@@ -176,16 +176,15 @@ export default function Home() {
       {
         id: "storyboard",
         label: "Storyboard",
-        status: "in-progress",
+        status: beatsDone ? "in-progress" : "idle",
         unlocked: true,
-        note: "v1.2 grid pending"
+        note: beatsDone ? `${bundle.beats.length} beats ready` : undefined
       },
       {
         id: "stitch",
         label: "Stitch",
-        status: "in-progress",
-        unlocked: true,
-        note: "v1.2 canvas pending"
+        status: beatsDone ? "in-progress" : "idle",
+        unlocked: true
       },
       {
         id: "library",
@@ -300,6 +299,11 @@ export default function Home() {
                   project={bundle.project}
                   workspaces={workspaces}
                   activity={bundle.activity}
+                  stats={{
+                    beats: bundle.beats.length,
+                    characters: bundle.characters.length,
+                    locations: bundle.locations.length
+                  }}
                   onSwitchWorkspace={switchWorkspace}
                 />
               )}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   ChevronDown,
   Key,
@@ -164,7 +165,7 @@ export function TopNav({
       </div>
 
       <div className="topnav-right">
-        <span className="topnav-saved">● SAVED · just now</span>
+        <ThemeToggle />
         <button
           className="tn-icon-btn"
           data-active={skillsOpen}
