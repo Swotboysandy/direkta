@@ -250,8 +250,8 @@ export function Screenplay({
               >
                 <BibleStat n={String(bible?.word_count ?? 0)} lbl="Words" />
                 <BibleStat n={String(beats.length)} lbl="Beats" />
-                <BibleStat n="—" lbl="Characters" />
-                <BibleStat n="—" lbl="Locations" />
+                <BibleStat n={String(characters.length)} lbl="Characters" />
+                <BibleStat n={String(locations.length)} lbl="Locations" />
               </div>
               <button
                 className="btn btn-sm btn-secondary"
