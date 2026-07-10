@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { ArrowRight, Check, FileText, Flag, RefreshCw, Sparkles, Upload } from "../_components/icons";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
+import { staggerContainer, staggerItem } from "../_components/motion";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
 
 const TILTS = ["var(--tilt-card-a)", "var(--tilt-card-b)", "var(--tilt-card-c)"];
@@ -326,11 +328,11 @@ export function Screenplay({
               {extracting && <span className="pip-state" data-status="working" style={{ alignSelf: "flex-start" }}>WORKING</span>}
             </div>
           ) : (
-            <div className="scene-board">
+            <motion.div className="scene-board" variants={staggerContainer} initial="hidden" animate="show">
               {beats.map((beat, i) => (
                 <SceneCard key={beat.id} beat={beat} rot={TILTS[i % 3]} />
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       ) : (
@@ -432,14 +434,16 @@ export function Screenplay({
             <span className="t-eyebrow" style={{ display: "block", marginTop: "var(--sp-5)", marginBottom: "var(--sp-3)" }}>
               BEATS
             </span>
-            {beats.map((beat) => (
-              <BeatCard
-                key={beat.id}
-                beat={beat}
-                expanded={activeBeat === beat.id}
-                onToggle={() => setActiveBeat(activeBeat === beat.id ? null : beat.id)}
-              />
-            ))}
+            <motion.div variants={staggerContainer} initial="hidden" animate="show">
+              {beats.map((beat) => (
+                <BeatCard
+                  key={beat.id}
+                  beat={beat}
+                  expanded={activeBeat === beat.id}
+                  onToggle={() => setActiveBeat(activeBeat === beat.id ? null : beat.id)}
+                />
+              ))}
+            </motion.div>
           </div>
         </div>
 
@@ -543,8 +547,9 @@ function BeatCard({
   onToggle: () => void;
 }) {
   return (
-    <button
+    <motion.button
       type="button"
+      variants={staggerItem}
       onClick={onToggle}
       className="card"
       style={{
@@ -603,13 +608,13 @@ function BeatCard({
       {expanded && beat.summary && (
         <p className="t-body-s t-mute" style={{ marginTop: "var(--sp-1)" }}>{beat.summary}</p>
       )}
-    </button>
+    </motion.button>
   );
 }
 
 function SceneCard({ beat, rot }: { beat: Beat; rot: string }) {
   return (
-    <article className="scene-card" style={{ "--card-rot": rot } as React.CSSProperties}>
+    <motion.article className="scene-card" variants={staggerItem} style={{ "--card-rot": rot } as React.CSSProperties}>
       <div className="scene-card-head">
         <span className="scene-card-no">SCENE {String(beat.n).padStart(2, "0")}</span>
         {beat.flag && (
@@ -628,7 +633,7 @@ function SceneCard({ beat, rot }: { beat: Beat; rot: string }) {
           ))}
         </div>
       )}
-    </article>
+    </motion.article>
   );
 }
 

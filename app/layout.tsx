@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 
-// One clean sans for everything — Inter. Headings reuse it (no separate
-// decorative display face), kept at restrained sizes/weights for a calm
-// dashboard feel.
+// Inter for body/UI text; Manrope for display headings + mono/eyebrow
+// metadata (film-slate feel) — the v3 studio-shell pairing.
 const ui = Inter({
   subsets: ["latin"],
   variable: "--font-ui-loaded",
   display: "swap"
 });
 
-const mono = JetBrains_Mono({
-  weight: ["400", "500", "600"],
+const display = Manrope({
+  weight: ["500", "600", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-mono-loaded",
+  variable: "--font-display-loaded",
   display: "swap"
 });
 
@@ -31,7 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className={`${ui.variable} ${mono.variable}`}
+      className={`${ui.variable} ${display.variable}`}
       suppressHydrationWarning
     >
       <head>

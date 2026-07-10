@@ -1,6 +1,6 @@
 /* ============================================================
    DIREKTA — Design Tokens
-   v1.0 · Playful Retro Modern
+   v3.0 · Film-negative studio (dark-first, glass surfaces)
    ------------------------------------------------------------
    Single source of truth. Every component reads from these
    custom properties — DO NOT hard-code values elsewhere.
@@ -8,43 +8,43 @@
 
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* ─── Core palette ─────────────────────────────────────── */
-  --cream:        #F5EDDC;   /* page background */
-  --cream-warm:   #FFFBF1;   /* card surface — slightly lighter than --cream */
-  --cream-deep:   #EAD8B5;   /* track / scrub background, dividers on cream */
+  /* ─── Core palette — dark-first ground ─────────────────── */
+  --cream:        #0B0C10;   /* page background — near-black */
+  --cream-warm:   rgba(26,27,35,0.78);   /* card surface — translucent glass */
+  --cream-deep:   rgba(255,255,255,0.09); /* track / scrub background, dividers */
 
-  --cocoa:        #2A1A12;   /* primary ink — text, hairlines */
-  --cocoa-soft:   #4A382C;
-  --cocoa-mute:   #7A6855;   /* secondary text, captions */
+  --cocoa:        #F3F3F8;   /* primary ink — text, hairlines */
+  --cocoa-soft:   #C9C9D6;
+  --cocoa-mute:   #8F90A0;   /* secondary text, captions */
 
-  --tomato:       #E84A35;   /* primary accent — CTAs, error */
-  --tomato-deep:  #B6321F;   /* tomato pressed / hover-down */
+  --tomato:       #F0655A;   /* signal — error/danger */
+  --tomato-deep:  #FF8578;
 
-  --mustard:      #F2B83C;   /* secondary accent — in-progress, highlights */
-  --mustard-deep: #C7901C;
+  --mustard:      #F0B24A;   /* signal — in-progress, highlights */
+  --mustard-deep: #FFC75A;
 
-  --viridian:     #3DA89B;   /* tertiary accent — success, complete */
-  --viridian-deep:#26786E;
+  --viridian:     #57C793;   /* signal — success, complete */
+  --viridian-deep:#7EDCB0;
 
   /* ─── Semantic aliases (USE THESE in components) ────────── */
   --bg:           var(--cream);
   --surface:      var(--cream-warm);
-  --surface-2:    var(--cream-deep);
+  --surface-2:    rgba(255,255,255,0.08);
   --ink:          var(--cocoa);
   --ink-soft:     var(--cocoa-soft);
   --mute:         var(--cocoa-mute);
 
-  --accent:       var(--tomato);
-  --accent-hover: var(--tomato-deep);
-  --accent-2:     var(--mustard);
+  --accent:       #8B7BF7;   /* primary accent — CTAs, active state */
+  --accent-hover: #A296FF;
+  --accent-2:     rgba(255,255,255,0.09);
   --accent-3:     var(--viridian);
 
-  --on-accent:    var(--cream-warm);  /* text colour on tomato fills */
-  --on-accent-2:  var(--cocoa);       /* text colour on mustard fills */
-  --on-accent-3:  var(--cream-warm);  /* text colour on viridian fills */
-  --on-ink:       var(--cream);
+  --on-accent:    #FFFFFF;
+  --on-accent-2:  var(--cocoa);
+  --on-accent-3:  #06130C;
+  --on-ink:       #101118;
 
   --signal-success: var(--viridian);
   --signal-warning: var(--mustard);
@@ -53,8 +53,8 @@
   /* ─── Type ─────────────────────────────────────────────── */
   /* --font-*-loaded vars are set by next/font/google in app/layout.tsx; fallbacks follow. */
   --font-ui:      var(--font-ui-loaded), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: var(--font-ui);  /* same clean sans — no separate decorative face */
-  --font-mono:    var(--font-mono-loaded), "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: var(--font-display-loaded), "Manrope", var(--font-ui);
+  --font-mono:    var(--font-display-loaded), "Manrope", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Type scale — restrained: clean dashboard, not oversized hero type */
   --t-display-l: clamp(26px, 2.8vw, 34px);
@@ -100,11 +100,11 @@
   --sp-9:  96px;
 
   /* ─── Elevation ────────────────────────────────────────── */
-  /* Soft pillow shadows — no offset block. Three depths. */
-  --shadow-1: 0 2px  6px rgba(42, 26, 18, 0.06),  0 1px 2px rgba(42, 26, 18, 0.04);
-  --shadow-2: 0 6px 14px rgba(42, 26, 18, 0.10),  0 2px 4px rgba(42, 26, 18, 0.06);
-  --shadow-3: 0 14px 32px rgba(42, 26, 18, 0.14), 0 4px 8px rgba(42, 26, 18, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(232, 74, 53, 0.30);
+  /* Glass cards — inset hairline + soft drop, no offset block. Three depths. */
+  --shadow-1: inset 0 0 0 1px rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.35);
+  --shadow-2: inset 0 0 0 1px rgba(255,255,255,0.10), 0 14px 32px rgba(0,0,0,0.45);
+  --shadow-3: inset 0 0 0 1px rgba(255,255,255,0.14), 0 28px 64px rgba(0,0,0,0.6);
+  --shadow-focus: 0 0 0 3px rgba(139, 123, 247, 0.35);
 
   /* ─── Motion ───────────────────────────────────────────── */
   --dur-1:  120ms;
@@ -127,41 +127,43 @@
 }
 
 /* ============================================================
-   DARK THEME — warm near-black. Only the core palette + a few
+   LIGHT THEME — clean, cool paper. Only the core palette + a few
    contrast-sensitive aliases are overridden; every semantic and
    legacy token derives from these, so the whole app follows.
    ============================================================ */
-:root[data-theme="dark"] {
-  color-scheme: dark;
+:root[data-theme="light"] {
+  color-scheme: light;
 
-  --cream:        #161210;   /* page background — warm near-black */
-  --cream-warm:   #211B15;   /* card surface */
-  --cream-deep:   #34291F;   /* dividers, tracks, hairlines */
+  --cream:        #F3F3F7;   /* page background */
+  --cream-warm:   rgba(255,255,255,0.85);   /* card surface */
+  --cream-deep:   rgba(16,17,24,0.08);      /* dividers, tracks, hairlines */
 
-  --cocoa:        #F3E9D6;   /* primary text — warm cream */
-  --cocoa-soft:   #D8C9B2;
-  --cocoa-mute:   #9C8B73;   /* secondary text, captions */
+  --cocoa:        #17181F;   /* primary text */
+  --cocoa-soft:   #3E3F4C;
+  --cocoa-mute:   #7A7B8A;   /* secondary text, captions */
 
-  /* Accents brighten slightly so they read on the dark ground. */
-  --tomato:       #FF5C46;
-  --tomato-deep:  #D03B27;
-  --mustard:      #F7C254;
-  --mustard-deep: #CE9A22;
-  --viridian:     #46C7B6;
-  --viridian-deep:#2E948A;
+  --tomato:       #D8402E;
+  --tomato-deep:  #B32F1F;
+  --mustard:      #D9930F;
+  --mustard-deep: #B87A08;
+  --viridian:     #1F9E68;
+  --viridian-deep:#177A4F;
 
-  /* Text-on-fill: keep light on tomato/viridian, dark on mustard, and
-     dark on the now-light "ink" fills. */
-  --on-accent:    #1A130E;
-  --on-accent-2:  #1A130E;
-  --on-accent-3:  #07110F;
-  --on-ink:       #161210;
+  --surface-2:    rgba(16,17,24,0.07);
 
-  /* Cocoa-tinted shadows vanish on dark — use black with more depth. */
-  --shadow-1: 0 2px  6px rgba(0, 0, 0, 0.40), 0 1px 2px rgba(0, 0, 0, 0.30);
-  --shadow-2: 0 6px 16px rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.34);
-  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.58), 0 5px 12px rgba(0, 0, 0, 0.40);
-  --shadow-focus: 0 0 0 3px rgba(255, 92, 70, 0.40);
+  --accent:       #6B59E8;
+  --accent-hover: #5847CC;
+  --accent-2:     rgba(16,17,24,0.06);
+
+  --on-accent:    #FFFFFF;
+  --on-accent-2:  var(--cocoa);
+  --on-accent-3:  #FFFFFF;
+  --on-ink:       #F3F3F7;
+
+  --shadow-1: inset 0 0 0 1px rgba(16,17,24,0.07), 0 2px 6px rgba(16,17,24,0.06);
+  --shadow-2: inset 0 0 0 1px rgba(16,17,24,0.07), 0 12px 28px rgba(16,17,24,0.10);
+  --shadow-3: inset 0 0 0 1px rgba(16,17,24,0.09), 0 24px 56px rgba(16,17,24,0.16);
+  --shadow-focus: 0 0 0 3px rgba(107, 89, 232, 0.30);
 }
 
 /* ============================================================
@@ -178,4 +180,4 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
-::selection { background: var(--accent); color: var(--on-accent); }
+::selection { background: var(--accent); color: #FFFFFF; }
