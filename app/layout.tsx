@@ -24,7 +24,9 @@ export const metadata: Metadata = {
 };
 
 // Set the theme on <html> before first paint to avoid a light→dark flash.
-const THEME_BOOTSTRAP = `(function(){try{var k='direkta:theme';var t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){}})();`;
+// v3 is dark-first: default to dark regardless of OS preference. The storage
+// key is versioned so a pre-v3 stored "light" doesn't override the new default.
+const THEME_BOOTSTRAP = `(function(){try{var k='direkta:theme:v3';var t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t='dark';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -162,7 +162,6 @@ strong, b {
     border-color var(--dur-1) var(--ease-out);
 }
 .stitch-tl-clip:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-2);
 }
 .stitch-tl-clip[data-selected="true"] {
@@ -189,7 +188,7 @@ strong, b {
   left: 6px;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: var(--tracking-eyebrow);
+  letter-spacing: 0.02em;
   padding: 2px 6px;
   border-radius: var(--r-pill);
   background: var(--viridian);
@@ -284,7 +283,6 @@ strong, b {
 }
 
 .tn-icon-btn:hover {
-  transform: translateY(-1px);
   box-shadow: var(--shadow-2);
 }
 
@@ -328,8 +326,7 @@ strong, b {
 .sb-title {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -366,8 +363,7 @@ strong, b {
   padding: var(--sp-2) var(--sp-3);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -385,8 +381,7 @@ strong, b {
 .sidebar-item .si-meta {
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -449,8 +444,7 @@ strong, b {
 .view-toggle button {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   padding: 6px 14px;
   border: none;
   border-radius: var(--r-pill);
@@ -502,7 +496,6 @@ strong, b {
   transform: translateX(-50%);
 }
 .scene-card:hover {
-  transform: rotate(0deg) translateY(-4px);
   box-shadow: var(--shadow-3);
   z-index: 2;
 }
@@ -514,15 +507,13 @@ strong, b {
 .scene-card-no {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--accent);
 }
 .scene-card-slug {
   font-family: var(--font-mono);
   font-size: var(--t-body-s);
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--mute);
 }
 .scene-card-title {
@@ -588,8 +579,7 @@ strong, b {
 .cast-empty-label {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 .cast-portrait-top {
   position: absolute;
@@ -612,8 +602,7 @@ strong, b {
   z-index: 1;
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--cream-warm);
 }
 .cast-body {
@@ -627,15 +616,13 @@ strong, b {
   font-family: var(--font-display);
   font-size: 24px;
   letter-spacing: 0.02em;
-  text-transform: uppercase;
   color: var(--ink);
   line-height: 1;
 }
 .cast-meta {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 .cast-looks {
@@ -655,7 +642,6 @@ strong, b {
   transition: border-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
 }
 .cast-look:hover {
-  transform: translateY(-2px);
 }
 .cast-look[data-active="true"] {
   border-color: var(--accent);
@@ -738,7 +724,6 @@ strong, b {
 }
 .sb-card:hover {
   box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
 }
 .sb-card-frame {
   position: relative;
@@ -769,8 +754,7 @@ strong, b {
   left: var(--sp-2);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: #FFFBF1;
   background: rgba(8, 8, 10, 0.62);
   padding: 2px 6px;
@@ -785,7 +769,7 @@ strong, b {
   gap: 3px;
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
+  letter-spacing: 0.02em;
   color: var(--on-accent-3);
   background: var(--viridian);
   padding: 2px 6px;
@@ -818,8 +802,7 @@ strong, b {
 .sb-card-scene {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 .sb-card-tags {
@@ -852,7 +835,6 @@ strong, b {
   transition: border-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
 }
 .sb-framing-cell:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-2);
 }
 .sb-framing-cell[data-active="true"] {
@@ -866,8 +848,7 @@ strong, b {
 .sb-framing-label {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--ink-soft);
 }
 
@@ -883,8 +864,7 @@ strong, b {
   left: 6px;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--on-accent-3);
   background: var(--viridian);
   padding: 2px 6px;
@@ -938,8 +918,7 @@ strong, b {
 .skill-pill {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--on-accent-3);
   background: var(--viridian);
   padding: 2px 8px;
@@ -1042,8 +1021,7 @@ strong, b {
   gap: 4px;
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 .lb-review-status[data-a="approved"] {
@@ -1083,8 +1061,7 @@ strong, b {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
   font-weight: 500;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--accent);
 }
 
@@ -1116,8 +1093,7 @@ strong, b {
 .muted-tiny {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -1274,8 +1250,7 @@ strong, b {
   margin: 0 !important;
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -1292,8 +1267,7 @@ strong, b {
   margin-top: var(--sp-2);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .kv-vendor-status[data-state="connected"] { color: var(--accent-3); }
@@ -1350,8 +1324,7 @@ strong, b {
 .project-picker-meta {
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   opacity: 0.7;
 }
 
@@ -1367,8 +1340,7 @@ strong, b {
   color: var(--on-accent);
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   font-weight: 500;
   border: 0;
   cursor: pointer;
@@ -1403,19 +1375,6 @@ strong, b {
   cursor: pointer;
 }
 
-.codirector-launcher .cd-pulse {
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 2px solid var(--accent);
-  animation: cd-pulse 2.4s var(--ease-out) infinite;
-}
-
-@keyframes cd-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(1.08); }
-}
-
 /* ============================================================
    DEBOUNCED INLINE EDIT FIELDS (Inspector + dashboard text)
    ============================================================ */
@@ -1428,8 +1387,7 @@ strong, b {
 .debounced-field > span {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -1557,8 +1515,7 @@ strong, b {
 .storyboard-beat-scene {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -1581,8 +1538,7 @@ strong, b {
   color: #FFFBF1;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   border-radius: var(--r-pill);
   pointer-events: none;
 }
@@ -1666,7 +1622,6 @@ strong, b {
 .storyboard-frame-btn:hover {
   background: var(--accent);
   color: var(--on-accent);
-  transform: scale(1.05);
 }
 
 .storyboard-frame-btn[data-primary="true"] {
@@ -1677,7 +1632,6 @@ strong, b {
 
 .storyboard-frame-btn[data-primary="true"]:hover {
   background: var(--accent-hover);
-  transform: scale(1.08);
 }
 
 /* Toast pinned bottom-centre during Storyboard interactions. */
@@ -1777,8 +1731,7 @@ strong, b {
 .beat-editor-field > span {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -1920,7 +1873,6 @@ strong, b {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
 /* React Flow Controls (zoom +/-, fit, lock) — brand pill cluster. */
@@ -2032,8 +1984,7 @@ strong, b {
   text-align: center;
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -2041,8 +1992,7 @@ strong, b {
   padding: var(--sp-3) var(--sp-3) var(--sp-1);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -2078,8 +2028,7 @@ strong, b {
   background: var(--bg);
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -2189,7 +2138,6 @@ strong, b {
 }
 
 .stitch-node:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-3);
 }
 
@@ -2228,9 +2176,8 @@ strong, b {
 .stitch-node .meta .duration {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
+  letter-spacing: 0.02em;
   color: var(--accent);
-  text-transform: uppercase;
 }
 
 .stitch-edges {
@@ -2270,8 +2217,7 @@ strong, b {
   background: var(--surface);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--ink);
   border-radius: var(--r-pill);
   box-shadow: var(--shadow-1);
@@ -2362,14 +2308,12 @@ strong, b {
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   border-radius: var(--r-pill);
   box-shadow: var(--shadow-1);
 }
 
 .library-tabs button:hover {
-  transform: translateY(-1px);
   box-shadow: var(--shadow-2);
 }
 
@@ -2395,7 +2339,6 @@ strong, b {
 }
 
 .library-card:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-2);
 }
 
@@ -2430,8 +2373,7 @@ strong, b {
 .library-card .meta {
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
   display: flex;
   gap: var(--sp-2);
@@ -2486,8 +2428,7 @@ strong, b {
   color: var(--mute);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .export-card .options select {
@@ -2527,8 +2468,7 @@ strong, b {
   box-shadow: var(--shadow-1);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   text-align: left;
   padding-left: var(--sp-4);
 }
@@ -2536,7 +2476,6 @@ strong, b {
 .add-node-grid button:hover {
   background: var(--accent-2);
   color: var(--on-accent-2);
-  transform: translateY(-1px);
   box-shadow: var(--shadow-2);
 }
 
@@ -2630,8 +2569,7 @@ strong, b {
   margin-left: auto;
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 
@@ -2676,8 +2614,7 @@ textarea {
   font-family: var(--font-mono);
   font-weight: 500;
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--accent);
 }
 
@@ -2759,8 +2696,7 @@ textarea {
   margin-top: var(--sp-4);
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 

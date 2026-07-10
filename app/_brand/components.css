@@ -25,8 +25,8 @@
               background var(--dur-1) var(--ease-out);
   white-space: nowrap;
 }
-.btn:hover     { transform: translateY(-1px); box-shadow: var(--shadow-2); }
-.btn:active    { transform: translateY(0);    box-shadow: var(--shadow-1); }
+.btn:hover     { box-shadow: var(--shadow-2); }
+.btn:active    { box-shadow: var(--shadow-1); }
 .btn:focus-visible { outline: none; box-shadow: var(--shadow-2), var(--shadow-focus); }
 .btn[disabled] { opacity: 0.5; pointer-events: none; }
 
@@ -79,8 +79,7 @@
   font-family: var(--font-mono);
   font-size: var(--t-eyebrow);
   font-weight: 500;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   border-radius: var(--r-pill);
   background: var(--cream-deep);
   color: var(--ink-soft);
@@ -130,14 +129,11 @@
   box-shadow: var(--shadow-2);
   transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
 }
-.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-3); }
+.card:hover { box-shadow: var(--shadow-3); }
 
 .card-tilt-a { transform: rotate(var(--tilt-card-a)); }
 .card-tilt-b { transform: rotate(var(--tilt-card-b)); }
 .card-tilt-c { transform: rotate(var(--tilt-card-c)); }
-.card-tilt-a:hover { transform: rotate(var(--tilt-card-a)) translateY(-2px); }
-.card-tilt-b:hover { transform: rotate(var(--tilt-card-b)) translateY(-2px); }
-.card-tilt-c:hover { transform: rotate(var(--tilt-card-c)) translateY(-2px); }
 
 /* ─── Pipeline ─────────────────────────────────────────────── */
 
@@ -159,7 +155,7 @@
   cursor: pointer;
   transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
 }
-.stage-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-3); }
+.stage-card:hover { box-shadow: var(--shadow-3); }
 .stage-card > header {
   display: flex; justify-content: space-between; align-items: center;
 }
@@ -193,7 +189,7 @@
   text-decoration: none; color: inherit;
   transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
 }
-.quick-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-3); }
+.quick-card:hover { box-shadow: var(--shadow-3); }
 .quick-card .qc-icon {
   width: 44px; height: 44px;
   display: grid; place-items: center;
@@ -226,11 +222,11 @@
 .topnav-project .name { font-weight: 600; font-size: var(--t-body); letter-spacing: -0.005em; }
 .topnav-project .meta {
   font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: var(--tracking-eyebrow);
+  font-size: 9px; letter-spacing: 0.02em;
   text-transform: uppercase; opacity: 0.75;
 }
 .topnav-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-3); }
-.topnav-saved { font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: var(--tracking-eyebrow); color: var(--accent-3); }
+.topnav-saved { font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: 0.02em; color: var(--accent-3); }
 .topnav-avatar {
   width: 32px; height: 32px;
   border-radius: 50%;
@@ -292,7 +288,7 @@
 }
 .toast-icon { width: 24px; height: 24px; flex: 0 0 auto; display: grid; place-items: center; }
 .toast-body { flex: 1; min-width: 0; }
-.toast .agent { font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--mute); }
+.toast .agent { font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: 0.02em; text-transform: uppercase; color: var(--mute); }
 .toast .msg   { font-family: var(--font-ui); font-size: var(--t-body-s); color: var(--ink); margin-top: 2px; }
 .toast[data-kind="success"] .toast-icon { background: var(--accent-3); color: var(--on-accent-3); border-radius: 50%; }
 .toast[data-kind="danger"]  .toast-icon { background: var(--accent);   color: var(--on-accent);   border-radius: 50%; }

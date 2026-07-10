@@ -64,6 +64,11 @@ export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [bundle, setBundle] = useState<ProjectBundle | null>(null);
   const [agents, setAgents] = useState<AgentStatus[]>(DEFAULT_AGENTS);
+  // Pipeline gate data — how far production has actually progressed.
+  const [gate, setGate] = useState<{ frames: number; stitchNodes: number }>({
+    frames: 0,
+    stitchNodes: 0
+  });
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -110,6 +115,27 @@ export default function Home() {
     }
   }, [sidebarCollapsed]);
 
+  // Lightweight gate refresh — only the counts that unlock later stages.
+  // Kept separate from the full bundle reload so it can poll without
+  // clobbering in-flight edits (e.g. the Screenplay draft).
+  const refreshGate = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const [sbRes, stRes] = await Promise.all([
+        fetch(`/api/projects/${projectId}/storyboard`),
+        fetch(`/api/projects/${projectId}/stitch`)
+      ]);
+      const sb = sbRes.ok ? await sbRes.json() : { variants: [] };
+      const st = stRes.ok ? await stRes.json() : { nodes: [] };
+      setGate({
+        frames: (sb.variants ?? []).filter((v: { asset_url: string | null }) => v.asset_url).length,
+        stitchNodes: (st.nodes ?? []).length
+      });
+    } catch {
+      /* gates simply stay as they were */
+    }
+  }, [projectId]);
+
   const reload = useCallback(async () => {
     if (!projectId) return;
     const res = await fetch(`/api/projects/${projectId}`);
@@ -121,35 +147,50 @@ export default function Home() {
       const agentsData = await agentsRes.json();
       setAgents(agentsData.agents);
     }
-  }, [projectId]);
+    refreshGate();
+  }, [projectId, refreshGate]);
 
   useEffect(() => {
     reload();
   }, [reload]);
+
+  // Gates unlock work done inside self-contained workspaces (Storyboard,
+  // Stitch), so refresh them on every workspace switch and on a slow poll.
+  useEffect(() => {
+    refreshGate();
+    const timer = setInterval(refreshGate, 15_000);
+    return () => clearInterval(timer);
+  }, [refreshGate, activeWorkspace]);
 
   const reloadProjects = useCallback(async () => {
     const list = await fetch("/api/projects").then((r) => r.json());
     setProjects(list.projects as Project[]);
   }, []);
 
-  // Compute workspace meta — locks intentionally disabled during development
-  // so every workspace is reachable. Restore lockReason fields when V1 ships.
+  // Compute workspace meta — the pipeline is strictly sequential: each stage
+  // unlocks only when the previous one has produced something real.
   const workspaces = useMemo<WorkspaceMeta[]>(() => {
     if (!bundle) {
       return [
         { id: "dashboard", label: "Dashboard", status: "idle", unlocked: true },
         { id: "screenplay", label: "Screenplay", status: "idle", unlocked: true },
-        { id: "casting", label: "Casting", status: "idle", unlocked: true },
-        { id: "storyboard", label: "Storyboard", status: "idle", unlocked: true },
-        { id: "stitch", label: "Stitch", status: "idle", unlocked: true },
+        { id: "casting", label: "Casting", status: "idle", unlocked: false, lockReason: "Submit a script in Screenplay first" },
+        { id: "storyboard", label: "Storyboard", status: "idle", unlocked: false, lockReason: "Cast at least one character first" },
+        { id: "stitch", label: "Stitch", status: "idle", unlocked: false, lockReason: "Generate a storyboard frame first" },
         { id: "library", label: "Library", status: "idle", unlocked: true },
-        { id: "export", label: "Export", status: "idle", unlocked: true }
+        { id: "export", label: "Export", status: "idle", unlocked: false, lockReason: "Assemble shots in Stitch first" }
       ];
     }
     const submitted = bundle.project.script_submitted;
     const beatsDone = bundle.beats.length > 0;
+    const hasCast = bundle.characters.length > 0;
     const anyTrained = bundle.characters.some((c) => c.soul_id_state === "trained");
     const trainedCount = bundle.characters.filter((c) => c.soul_id_state === "trained").length;
+
+    const castingUnlocked = Boolean(submitted);
+    const storyboardUnlocked = castingUnlocked && hasCast;
+    const stitchUnlocked = storyboardUnlocked && gate.frames > 0;
+    const exportUnlocked = stitchUnlocked && gate.stitchNodes > 0;
 
     return [
       { id: "dashboard", label: "Dashboard", status: "idle", unlocked: true },
@@ -169,7 +210,8 @@ export default function Home() {
             : anyTrained && trainedCount === bundle.characters.length
             ? "complete"
             : "in-progress",
-        unlocked: true,
+        unlocked: castingUnlocked,
+        lockReason: castingUnlocked ? undefined : "Submit a script in Screenplay first",
         note:
           bundle.characters.length > 0
             ? `${trainedCount} / ${bundle.characters.length} soul ids`
@@ -178,15 +220,18 @@ export default function Home() {
       {
         id: "storyboard",
         label: "Storyboard",
-        status: beatsDone ? "in-progress" : "idle",
-        unlocked: true,
-        note: beatsDone ? `${bundle.beats.length} beats ready` : undefined
+        status: gate.frames > 0 ? "in-progress" : "idle",
+        unlocked: storyboardUnlocked,
+        lockReason: storyboardUnlocked ? undefined : "Cast at least one character first",
+        note: storyboardUnlocked && beatsDone ? `${bundle.beats.length} beats ready` : undefined
       },
       {
         id: "stitch",
         label: "Stitch",
-        status: beatsDone ? "in-progress" : "idle",
-        unlocked: true
+        status: gate.stitchNodes > 0 ? "in-progress" : "idle",
+        unlocked: stitchUnlocked,
+        lockReason: stitchUnlocked ? undefined : "Generate a storyboard frame first",
+        note: gate.stitchNodes > 0 ? `${gate.stitchNodes} shots` : undefined
       },
       {
         id: "library",
@@ -198,10 +243,11 @@ export default function Home() {
         id: "export",
         label: "Export",
         status: "idle",
-        unlocked: true
+        unlocked: exportUnlocked,
+        lockReason: exportUnlocked ? undefined : "Assemble shots in Stitch first"
       }
     ];
-  }, [bundle]);
+  }, [bundle, gate]);
 
   const switchWorkspace = useCallback(
     (ws: WorkspaceId) => {
@@ -211,6 +257,15 @@ export default function Home() {
     },
     [workspaces]
   );
+
+  // If the active workspace becomes locked (project switch, fresh project,
+  // stale ?ws= URL), snap back to the dashboard rather than showing a stage
+  // the pipeline hasn't reached.
+  useEffect(() => {
+    if (!bundle) return;
+    const active = workspaces.find((w) => w.id === activeWorkspace);
+    if (active && !active.unlocked) setActiveWorkspace("dashboard");
+  }, [bundle, workspaces, activeWorkspace]);
 
   const createProject = useCallback(
     async (input: {
@@ -268,26 +323,48 @@ export default function Home() {
         <main className="main">
           {!bundle ? (
             <div className="main-inner">
-              <div className="card" style={{ borderStyle: "dashed" }}>
-                <div className="eb">PRODUCER</div>
+              <div
+                style={{
+                  background: "var(--surface)",
+                  backdropFilter: "blur(18px)",
+                  borderRadius: 18,
+                  boxShadow: "var(--shadow-1)",
+                  padding: "36px 40px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 12
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: "0.02em",
+                    color: "var(--accent)"
+                  }}
+                >
+                  Producer
+                </span>
                 <h2
                   style={{
-                    fontFamily: "var(--f-display)",
-                    fontSize: 32,
-                    letterSpacing: "0.03em",
-                    textTransform: "uppercase",
-                    color: "var(--bone)",
-                    marginTop: 8
+                    margin: 0,
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 800,
+                    fontSize: "clamp(24px,2.4vw,32px)",
+                    letterSpacing: "-0.02em",
+                    color: "var(--ink)"
                   }}
                 >
                   No project loaded
                 </h2>
-                <p style={{ color: "var(--ink-70)", marginTop: 10 }}>
+                <p style={{ margin: 0, fontSize: 15, color: "var(--mute)" }}>
                   Start a project to bring the production pipeline online.
                 </p>
                 <button
                   className="btn btn-primary"
-                  style={{ marginTop: 14 }}
+                  style={{ marginTop: 8, fontFamily: "var(--font-ui)" }}
                   onClick={() => setNewProjectOpen(true)}
                 >
                   New project

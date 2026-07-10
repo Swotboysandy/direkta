@@ -34,9 +34,8 @@ export const staggerItem = {
   show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: EASE } }
 };
 
-/** Tactile press + lift for primary action buttons. */
+/** Tactile press for primary action buttons — press feedback only, no hover motion. */
 export const tap = {
-  whileHover: { y: -1 },
   whileTap: { scale: 0.97 },
   transition: { type: "spring" as const, stiffness: 420, damping: 26 }
 };

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sun, Moon } from "./icons";
 
-const KEY = "direkta:theme";
+const KEY = "direkta:theme:v3";
 type Theme = "light" | "dark";
 
 /**

@@ -84,10 +84,10 @@ const primaryPillStyle: CSSProperties = {
   cursor: "pointer"
 };
 
-/* `tap` (motion.ts) covers press/lift; these extend its hover target with the
-   background swap the mockup specifies for ghost vs. primary pills. */
-const GHOST_HOVER = { ...tap.whileHover, background: "color-mix(in srgb, var(--ink) 14%, transparent)" };
-const PRIMARY_HOVER = { ...tap.whileHover, background: "var(--accent-hover)" };
+/* `tap` (motion.ts) covers the press; hover is a background swap only —
+   the mockup's ghost vs. primary pill hover, no motion. */
+const GHOST_HOVER = { background: "color-mix(in srgb, var(--ink) 14%, transparent)" };
+const PRIMARY_HOVER = { background: "var(--accent-hover)" };
 
 function disabledStyle(disabled: boolean): CSSProperties {
   return disabled ? { opacity: 0.5, pointerEvents: "none" } : {};

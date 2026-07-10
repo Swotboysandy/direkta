@@ -94,12 +94,12 @@
   letter-spacing: var(--tracking-mono);
   color: var(--ink);
 }
+/* v3: small mono meta label — mixed case, tight tracking (mockup spec). */
 .t-eyebrow {
   font-family: var(--font-mono);
   font-weight: 500;
   font-size: var(--t-eyebrow);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-eyebrow);
+  letter-spacing: 0.02em;
   color: var(--mute);
 }
 

@@ -407,23 +407,6 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
         </motion.div>
       </section>
 
-      {!hasScript && (
-        <div className="banner" style={{ marginTop: "var(--sp-6)" }}>
-          <div style={{ flex: 1 }}>
-            <span className="t-eyebrow">PRODUCER</span>
-            <div className="t-h2" style={{ marginTop: "var(--sp-2)" }}>
-              Your crew is ready. Where&apos;s the script?
-            </div>
-            <p className="t-mute" style={{ marginTop: "var(--sp-2)", fontSize: "var(--t-body-s)" }}>
-              Open Screenplay to bring the production pipeline online.
-            </p>
-          </div>
-          <button className="btn btn-primary" onClick={() => onSwitchWorkspace("screenplay")}>
-            Open Screenplay <ArrowRight size={14} />
-          </button>
-        </div>
-      )}
-
       {/* LATEST FRAMES STRIP */}
       <section style={{ marginTop: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>

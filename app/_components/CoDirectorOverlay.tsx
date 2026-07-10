@@ -31,7 +31,6 @@ export function CoDirectorOverlay({ project, onSwitchWorkspace, onOpenKeyVault }
         aria-label="Open AI Co-Director"
         title="Co-Director"
       >
-        <span className="cd-pulse" />
         <Sparkles size={20} />
       </button>
     );
