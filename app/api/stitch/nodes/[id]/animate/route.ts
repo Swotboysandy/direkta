@@ -4,6 +4,7 @@ import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../../lib/agents/video";
 import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../../lib/higgsfield/mcp";
+import { generateVideoViaByteplus } from "../../../../../../lib/agents/byteplus-video";
 import { videoModel } from "../../../../../../lib/higgsfield/catalog";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
@@ -54,9 +55,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const vendor = vendors.firstEnabledVideo();
   const useMcp = isHiggsfieldMcpConnected();
+  const isByteplus = chosen.provider === "byteplus";
+
+  // BytePlus path needs its own API key (separate from Higgsfield).
+  const bp = isByteplus ? vendors.get("byteplus-video-default") : null;
+  if (isByteplus && !bp?.api_key) {
+    db.prepare("UPDATE stitch_nodes SET clip_state = 'error' WHERE id = ?").run(id);
+    return NextResponse.json(
+      { error: "Add your BytePlus API key in the Key Vault (Video vendors → BytePlus) to use Seedance 1.5 Pro." },
+      { status: 400 }
+    );
+  }
 
   // No generator at all → simulation note (keeps the keyless demo working).
-  if (!useMcp && !vendor) {
+  if (!isByteplus && !useMcp && !vendor) {
     return NextResponse.json({
       ok: true,
       simulated: true,
@@ -87,27 +99,39 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const skill = skillForPart("video");
   const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
 
-  const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
+  const providerLabel = isByteplus
+    ? "BytePlus · Seedance 1.5 Pro"
+    : useMcp
+      ? "Higgsfield (your account)"
+      : vendor!.label;
   db.prepare("UPDATE stitch_nodes SET clip_state = 'generating' WHERE id = ?").run(id);
 
   try {
-    const video = useMcp
-      ? await generateVideoViaMcp({
+    const video = isByteplus
+      ? await generateVideoViaByteplus({
+          apiKey: bp!.api_key,
+          model: chosen.byteplus!.model,
           prompt,
-          aspectRatio: node.aspect_ratio,
           referenceImageUrl: refImage,
-          modelParams: chosen.params
+          resolution: chosen.byteplus!.resolution
         })
-      : await generateVideo({
-          prompt,
-          aspectRatio: node.aspect_ratio,
-          referenceImageUrl: refImage,
-          vendor: vendor!
-        });
+      : useMcp
+        ? await generateVideoViaMcp({
+            prompt,
+            aspectRatio: node.aspect_ratio,
+            referenceImageUrl: refImage,
+            modelParams: chosen.params
+          })
+        : await generateVideo({
+            prompt,
+            aspectRatio: node.aspect_ratio,
+            referenceImageUrl: refImage,
+            vendor: vendor!
+          });
     const assetId = nanoid(10);
     db.prepare(
       "INSERT INTO assets (id, target_kind, target_id, kind, url, prompt, vendor_id) VALUES (?, 'stitch_clip', ?, 'video', ?, ?, ?)"
-    ).run(assetId, id, video.url, prompt, useMcp ? null : vendor!.id);
+    ).run(assetId, id, video.url, prompt, isByteplus ? bp!.id : useMcp ? null : vendor!.id);
     db.prepare("UPDATE stitch_nodes SET clip_asset_id = ?, clip_state = 'complete' WHERE id = ?").run(assetId, id);
     return NextResponse.json({ ok: true, url: video.url, vendor: providerLabel });
   } catch (error: any) {

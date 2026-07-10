@@ -133,7 +133,7 @@ export type VendorKind = "text" | "image" | "video";
 
 export type TextProvider = "anthropic" | "openai" | "google" | "deepseek" | "openai-compatible";
 export type ImageProvider = "fal" | "openai-image" | "higgsfield";
-export type VideoProvider = "fal-video" | "runway" | "minimax" | "higgsfield-video";
+export type VideoProvider = "fal-video" | "runway" | "minimax" | "higgsfield-video" | "byteplus-video";
 
 export type AssetKind = "image" | "video";
 

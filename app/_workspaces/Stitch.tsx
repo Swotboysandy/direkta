@@ -437,8 +437,9 @@ function StitchInspector({
   const [note, setNote] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string>(DEFAULT_VIDEO_MODEL);
   const model = videoModel(modelId);
+  const isHiggs = model.provider !== "byteplus";
   const credits = balance?.credits ?? null;
-  const tooPoor = credits != null && credits < model.approxCost;
+  const tooPoor = isHiggs && credits != null && credits < model.approxCost;
 
   useEffect(() => {
     setScene(node.beat?.n ?? 1);
@@ -555,7 +556,7 @@ function StitchInspector({
         <select value={modelId} onChange={(e) => setModelId(e.target.value)} style={{ width: "100%" }}>
           {VIDEO_MODELS.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.label} · ≈{m.approxCost} cr
+              {m.label} · {m.costText}
             </option>
           ))}
         </select>
@@ -569,9 +570,11 @@ function StitchInspector({
             color: tooPoor ? "var(--accent)" : "var(--mute)"
           }}
         >
-          <span>≈ {model.approxCost} credits</span>
+          <span>{model.costText}{isHiggs ? " credits" : " / clip"}</span>
           <span>
-            {credits != null
+            {!isHiggs
+              ? "BytePlus · free tokens"
+              : credits != null
               ? `Balance ${credits}`
               : balance?.connected === false
               ? "Higgsfield off"
