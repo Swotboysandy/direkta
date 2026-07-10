@@ -40,3 +40,10 @@ export const tap = {
   whileTap: { scale: 0.97 },
   transition: { type: "spring" as const, stiffness: 420, damping: 26 }
 };
+
+/** A popped-in floating panel — spring scale+fade, e.g. the Stitch inspector. */
+export const popIn = {
+  initial: { opacity: 0, scale: 0.94 },
+  animate: { opacity: 1, scale: 1 },
+  transition: { duration: 0.22, ease: [0.34, 1.56, 0.64, 1] as const }
+};

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Plus, RefreshCcw, X } from "../_components/icons";
-import { fadeUp, staggerContainer, staggerItem } from "../_components/motion";
+import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Character, Location, Project, WorkspaceId } from "../../lib/types";
 
 const LOOK_GRADS = [
@@ -21,6 +21,74 @@ function gradFor(name: string, seed: number): string {
   return LOOK_GRADS[(hashName(name) + seed) % LOOK_GRADS.length];
 }
 
+type Tone = "success" | "warning" | "danger" | "neutral";
+
+/** Status-pip colors — mirrors the mockup's per-state `pipBg`/`pipFg` pairs. */
+function toneColors(tone: Tone): { bg: string; fg: string } {
+  if (tone === "success") return { bg: "color-mix(in srgb, var(--viridian) 18%, transparent)", fg: "var(--viridian-deep)" };
+  if (tone === "warning") return { bg: "color-mix(in srgb, var(--mustard) 20%, transparent)", fg: "var(--mustard-deep)" };
+  if (tone === "danger") return { bg: "color-mix(in srgb, var(--tomato) 16%, transparent)", fg: "var(--tomato-deep)" };
+  return { bg: "var(--cream-deep)", fg: "var(--ink-soft)" };
+}
+
+/**
+ * The mockup pairs every hoverable element with a `style` + `style-hover`.
+ * Inline styles can't express `:hover` on their own, so these two primitives
+ * track pointer-over state and merge `hoverStyle` on top — a direct
+ * translation of that mockup convention into real React. `HoverButton` also
+ * carries the shared `tap` press/lift feel and restores the dim-when-disabled
+ * behavior the old shared `.btn[disabled]` rule used to give every button.
+ */
+type HoverButtonRestProps = Omit<
+  React.ComponentPropsWithoutRef<"button">,
+  // framer-motion's HTMLMotionProps redeclares these drag/animation handlers
+  // with its own (incompatible) signatures — drop the plain-DOM versions.
+  "style" | "disabled" | "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart" | "onAnimationEnd" | "onAnimationIteration"
+>;
+
+function HoverButton({
+  style,
+  hoverStyle,
+  disabled,
+  ...rest
+}: HoverButtonRestProps & {
+  style: React.CSSProperties;
+  hoverStyle?: React.CSSProperties;
+  disabled?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const base = hovered && hoverStyle && !disabled ? { ...style, ...hoverStyle } : style;
+  return (
+    <motion.button
+      {...tap}
+      {...rest}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={disabled ? { ...base, opacity: 0.5, pointerEvents: "none" } : base}
+    />
+  );
+}
+
+function HoverDiv({
+  style,
+  hoverStyle,
+  ...rest
+}: Omit<React.ComponentPropsWithoutRef<"div">, "style"> & {
+  style: React.CSSProperties;
+  hoverStyle?: React.CSSProperties;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      {...rest}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={hovered && hoverStyle ? { ...style, ...hoverStyle } : style}
+    />
+  );
+}
+
 interface Props {
   project: Project;
   characters: Character[];
@@ -34,65 +102,153 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
 
   const trained = characters.filter((c) => c.soul_id_state === "trained").length;
   const total = characters.length;
+  const castTone = toneColors(trained >= total && total > 0 ? "success" : "warning");
 
   return (
-    <div className="main-inner casting">
-      <motion.header className="page-head" {...fadeUp}>
-        <div>
-          <div className="crumb">03 / WORKSPACE · CASTING</div>
-          <h1>Casting</h1>
-          <div className="sub">
-            Train a <strong style={{ color: "var(--bone)" }}>Soul ID</strong> for every character and key location.
-            Consistency across every frame starts here.
-          </div>
-        </div>
-        <div className="actions">
-          <span className="pip-state" data-s={trained >= total && total > 0 ? "done" : "working"}>
-            {trained} / {total || "—"} SOUL IDS
+    <motion.div className="main-inner" {...pageIn}>
+      <motion.header
+        {...fadeUp}
+        style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 28, padding: "32px 0" }}
+      >
+        <div style={{ minWidth: 0, maxWidth: "64ch" }}>
+          <span
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: "0.02em",
+              color: "var(--accent)"
+            }}
+          >
+            03 / Workspace · Casting
           </span>
-          <button className="btn" onClick={() => setAdding("character")}>
+          <h1
+            style={{
+              margin: "8px 0 0",
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: "clamp(24px, 2.4vw, 32px)",
+              lineHeight: 1.15,
+              letterSpacing: "-0.02em",
+              color: "var(--ink)"
+            }}
+          >
+            Casting
+          </h1>
+          <p style={{ margin: "12px 0 0", fontWeight: 500, fontSize: 16, lineHeight: 1.5, color: "var(--ink)", maxWidth: "56ch" }}>
+            Train a <strong>Soul ID</strong> for every character and key location. Consistency across every frame
+            starts here.
+          </p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, flexWrap: "wrap", flexShrink: 0 }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: "0.02em",
+              borderRadius: 999,
+              background: castTone.bg,
+              color: castTone.fg
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
+            {trained} / {total || "—"} Soul IDs
+          </span>
+          <HoverButton
+            onClick={() => setAdding("character")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              fontWeight: 600,
+              fontSize: 14,
+              color: "var(--ink)",
+              background: "var(--surface)",
+              border: "none",
+              borderRadius: 999,
+              boxShadow: "var(--shadow-1)",
+              cursor: "pointer",
+              whiteSpace: "nowrap"
+            }}
+            hoverStyle={{ background: "color-mix(in srgb, var(--ink) 12%, transparent)" }}
+          >
             <Plus size={12} /> Add character
-          </button>
-          <button
-            className="btn btn-primary"
+          </HoverButton>
+          <HoverButton
             disabled={total === 0}
             onClick={() => onSwitchWorkspace("storyboard")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              fontWeight: 600,
+              fontSize: 14,
+              color: "var(--on-accent)",
+              background: "var(--accent)",
+              border: "none",
+              borderRadius: 999,
+              boxShadow: "var(--shadow-1)",
+              cursor: "pointer",
+              whiteSpace: "nowrap"
+            }}
+            hoverStyle={{ background: "var(--accent-hover)" }}
           >
             Continue to Storyboard <ArrowRight size={14} />
-          </button>
+          </HoverButton>
         </div>
       </motion.header>
 
       <div className="page-body">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-          <div className="eb">CHARACTERS · {total} CAST</div>
-          <div
-            style={{
-              fontFamily: "var(--f-mono)",
-              fontSize: 10,
-              letterSpacing: "0.22em",
-              color: "var(--ink-60)",
-              textTransform: "uppercase"
-            }}
-          >
-            PORTRAITS ROLL ON YOUR HIGGSFIELD PLAN
-          </div>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+            Characters · {total} cast
+          </span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+            Portraits roll on your image vendor
+          </span>
         </div>
 
         {characters.length === 0 ? (
-          <div className="card" style={{ borderStyle: "dashed" }}>
-            <div className="eb">CASTING DIRECTOR</div>
-            <p style={{ color: "var(--ink-70)", marginTop: 8 }}>
-              No characters cast yet. Submit your script in Screenplay and the Casting Director will
-              import them automatically — or add one manually now.
+          <div style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--accent)" }}>
+              Casting director
+            </span>
+            <p style={{ margin: "8px 0 0", color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5, maxWidth: "56ch" }}>
+              No characters cast yet. Submit your script in Screenplay and the Casting Director will import them
+              automatically — or add one manually now.
             </p>
-            <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => setAdding("character")}>
+            <HoverButton
+              onClick={() => setAdding("character")}
+              style={{
+                marginTop: 14,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 18px",
+                fontWeight: 600,
+                fontSize: 14,
+                color: "var(--on-accent)",
+                background: "var(--accent)",
+                border: "none",
+                borderRadius: 999,
+                boxShadow: "var(--shadow-1)",
+                cursor: "pointer"
+              }}
+              hoverStyle={{ background: "var(--accent-hover)" }}
+            >
               <Plus size={12} /> Add character
-            </button>
+            </HoverButton>
           </div>
         ) : (
           <motion.div
-            style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}
             variants={staggerContainer}
             initial="hidden"
             animate="show"
@@ -105,27 +261,43 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
           </motion.div>
         )}
 
-        <div className="eb" style={{ marginTop: 40, marginBottom: 14 }}>
-          LOCATIONS · {locations.length} IDENTIFIED
+        <div style={{ margin: "40px 0 14px" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+            Locations · {locations.length} identified
+          </span>
         </div>
 
         {locations.length === 0 ? (
-          <div className="card" style={{ borderStyle: "dashed" }}>
-            <p style={{ color: "var(--ink-70)" }}>
-              No locations cast yet. Submit your script and the crew will import the scene
-              locations — or add one manually.
+          <div style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
+            <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5, maxWidth: "56ch" }}>
+              No locations cast yet. Submit your script and the crew will import the scene locations — or add one
+              manually.
             </p>
-            <button
-              className="btn btn-primary"
-              style={{ marginTop: 14 }}
+            <HoverButton
               onClick={() => setAdding("location")}
+              style={{
+                marginTop: 14,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 18px",
+                fontWeight: 600,
+                fontSize: 14,
+                color: "var(--on-accent)",
+                background: "var(--accent)",
+                border: "none",
+                borderRadius: 999,
+                boxShadow: "var(--shadow-1)",
+                cursor: "pointer"
+              }}
+              hoverStyle={{ background: "var(--accent-hover)" }}
             >
               <Plus size={12} /> Add location
-            </button>
+            </HoverButton>
           </div>
         ) : (
           <motion.div
-            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}
             variants={staggerContainer}
             initial="hidden"
             animate="show"
@@ -150,7 +322,7 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
           }}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -193,136 +365,236 @@ function CharacterCard({
     }
   }
 
-  const statusPip = (() => {
-    if (state === "trained")
-      return (
-        <span className="pip-state" data-s="done">
-          TRAINED · {character.consistency?.toFixed(1) ?? "—"} / 10
-        </span>
-      );
-    if (state === "training")
-      return (
-        <span className="pip-state" data-s="working">
-          TRAINING · {pct}%
-        </span>
-      );
-    if (state === "failed")
-      return (
-        <span className="pip-state" data-s="attention">
-          TRAINING FAILED
-        </span>
-      );
-    return <span className="pip-state">NOT STARTED</span>;
-  })();
+  const pipLabel =
+    state === "trained"
+      ? `Trained · ${character.consistency?.toFixed(1) ?? "—"} / 10`
+      : state === "training"
+      ? `Training · ${pct}%`
+      : state === "failed"
+      ? "Training failed"
+      : "Not started";
+  const pipTone = toneColors(
+    state === "trained" ? "success" : state === "training" ? "warning" : state === "failed" ? "danger" : "neutral"
+  );
 
-  function plate(look: { url?: string; seed?: number } | undefined, klass: string) {
+  function plate(look: { url?: string; seed?: number } | undefined, fontSize: number) {
     if (look?.url) {
       // eslint-disable-next-line @next/next/no-img-element
-      return <img src={look.url} alt={character.name} className={`portrait-img ${klass}`} />;
+      return <img src={look.url} alt={character.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />;
     }
     return (
-      <div className={`${klass} cast-mono-plate`} style={{ background: gradFor(character.name, look?.seed ?? 0) }}>
-        <span className="cast-monogram">{character.name.trim()[0] ?? "?"}</span>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: gradFor(character.name, look?.seed ?? 0)
+        }}
+      >
+        <span style={{ fontFamily: "var(--font-display)", fontSize, color: "#FFFBF1" }}>
+          {character.name.trim()[0] ?? "?"}
+        </span>
       </div>
     );
   }
 
+  const mainActionStyle: React.CSSProperties = {
+    flex: 1,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "8px 14px",
+    fontWeight: 600,
+    fontSize: 13,
+    color: "var(--ink)",
+    background: "var(--bg)",
+    border: "none",
+    borderRadius: 999,
+    boxShadow: "var(--shadow-1)",
+    cursor: "pointer"
+  };
+  const editStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 14px",
+    fontWeight: 600,
+    fontSize: 13,
+    color: "var(--ink)",
+    backdropFilter: "blur(10px)",
+    background: "color-mix(in srgb, var(--ink) 5%, transparent)",
+    border: 0,
+    boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
+    borderRadius: 999,
+    cursor: "pointer"
+  };
+  const dimHover: React.CSSProperties = { background: "color-mix(in srgb, var(--ink) 12%, transparent)" };
+  const editHover: React.CSSProperties = { background: "color-mix(in srgb, var(--ink) 14%, transparent)" };
+
   return (
-    <div className="card cast-card">
-      <div className="cast-portrait">
+    <HoverDiv
+      style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", overflow: "hidden", display: "flex", flexDirection: "column" }}
+      hoverStyle={{ boxShadow: "var(--shadow-3)" }}
+    >
+      <div style={{ position: "relative", aspectRatio: "1 / 1", background: "var(--cream-deep)", overflow: "hidden" }}>
         {active ? (
-          plate(active, "cast-plate")
+          plate(active, 64)
         ) : (
-          <div className="cast-plate cast-plate-empty">
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              color: "var(--mute)"
+            }}
+          >
             <Plus size={18} />
-            <span className="cast-empty-label">ADD REFERENCE PHOTOS</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em" }}>Add reference photos</span>
           </div>
         )}
-        {state === "training" && (
-          <div className="cast-shimmer">
-            <span className="cast-shimmer-label">TRAINING SOUL ID · {pct}%</span>
-          </div>
-        )}
-        <div className="cast-portrait-top">{statusPip}</div>
+        {state === "training" && <div className="cast-shimmer" style={{ background: "none" }} />}
       </div>
 
-      <div className="cast-body">
-        <div className="cast-name">{character.name}</div>
-        <div className="cast-meta">
-          {character.role} · {character.scene_count} SCENES{character.dialogue ? " · SPEAKING" : ""}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 28, flex: 1 }}>
+        <div style={{ fontWeight: 600, fontSize: 19, letterSpacing: "-0.01em", color: "var(--ink)", lineHeight: 1.2 }}>
+          {character.name}
         </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          {character.role} · {character.scene_count} scenes{character.dialogue ? " · speaking" : ""}
+        </div>
+        <span
+          style={{
+            alignSelf: "flex-start",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 10px",
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            fontWeight: 600,
+            borderRadius: 999,
+            background: pipTone.bg,
+            color: pipTone.fg
+          }}
+        >
+          {pipLabel}
+        </span>
 
         {(looks.length > 0 || state !== "empty") && (
-          <div className="cast-looks" aria-label="Looks">
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {looks.map((l, i) => (
-              <button
+              <HoverButton
                 key={l.key}
-                className="cast-look"
-                data-active={i === sel}
                 onClick={() => setSel(i)}
                 aria-label={`Look ${i + 1}`}
+                style={{
+                  width: 40,
+                  height: 40,
+                  padding: 0,
+                  border: i === sel ? "2px solid var(--accent)" : "2px solid transparent",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  background: l.url ? "var(--cream-deep)" : gradFor(character.name, l.seed ?? 0),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+                hoverStyle={i === sel ? undefined : { filter: "brightness(1.12)" }}
               >
-                {plate(l, "cast-look-img")}
-              </button>
+                {plate(l, 18)}
+              </HoverButton>
             ))}
             {state !== "empty" && (
-              <button
-                className="cast-look cast-look-add"
+              <HoverButton
                 onClick={castLook}
                 disabled={casting}
                 aria-label="Cast a new look"
                 title="Cast a new look"
+                style={{
+                  width: 40,
+                  height: 40,
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--mute)",
+                  border: "2px dashed var(--surface-2)",
+                  background: "transparent",
+                  borderRadius: 12,
+                  cursor: "pointer"
+                }}
+                hoverStyle={{ color: "var(--accent)", borderColor: "var(--accent)" }}
               >
                 <Plus size={14} />
-              </button>
+              </HoverButton>
             )}
           </div>
         )}
 
         {state === "trained" && character.consistency != null && (
-          <div className="cast-meter" title={`Consistency ${character.consistency.toFixed(1)} / 10`}>
-            <div className="cast-meter-track">
-              <div className="cast-meter-fill" style={{ width: `${(character.consistency / 10) * 100}%` }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ flex: 1, height: 6, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
+              <div
+                style={{
+                  height: "100%",
+                  width: `${(character.consistency / 10) * 100}%`,
+                  background: "var(--viridian)",
+                  borderRadius: "inherit"
+                }}
+              />
             </div>
-            <span className="cast-meter-val">{character.consistency.toFixed(1)}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--viridian-deep)" }}>
+              {character.consistency.toFixed(1)}
+            </span>
           </div>
         )}
 
-        {state === "failed" && character.error && <div className="cast-error">{character.error}</div>}
+        {state === "failed" && character.error && (
+          <div
+            style={{
+              padding: 12,
+              background: "rgba(232,74,53,0.06)",
+              borderLeft: "2px solid var(--accent)",
+              color: "var(--ink-soft)",
+              fontSize: 13,
+              lineHeight: 1.5
+            }}
+          >
+            {character.error}
+          </div>
+        )}
 
-        <div className="cast-actions">
+        <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
           {state === "empty" && (
-            <button
-              className="btn btn-sm"
-              style={{ flex: 1, justifyContent: "center" }}
-              onClick={castLook}
-              disabled={casting}
-            >
+            <HoverButton onClick={castLook} disabled={casting} style={mainActionStyle} hoverStyle={dimHover}>
               {casting ? "Casting…" : "Begin casting"}
-            </button>
+            </HoverButton>
           )}
           {state === "training" && (
-            <button className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }} disabled>
+            <HoverButton disabled style={mainActionStyle}>
               In training… {pct}%
-            </button>
+            </HoverButton>
           )}
           {state === "trained" && (
             <>
-              <button
-                className="btn btn-sm"
-                style={{ flex: 1, justifyContent: "center" }}
-                onClick={castLook}
-                disabled={casting}
-              >
+              <HoverButton onClick={castLook} disabled={casting} style={mainActionStyle} hoverStyle={dimHover}>
                 {casting ? "Casting…" : "New look"}
-              </button>
-              <button className="btn btn-sm btn-ghost">Edit</button>
+              </HoverButton>
+              <HoverButton style={editStyle} hoverStyle={editHover}>
+                Edit
+              </HoverButton>
             </>
           )}
           {state === "failed" && (
-            <button
-              className="btn btn-sm"
-              style={{ flex: 1, justifyContent: "center" }}
+            <HoverButton
               onClick={async () => {
                 await fetch(`/api/characters/${character.id}`, {
                   method: "PATCH",
@@ -331,14 +603,15 @@ function CharacterCard({
                 });
                 await onChange();
               }}
+              style={mainActionStyle}
+              hoverStyle={dimHover}
             >
               <RefreshCcw size={12} /> Retry
-            </button>
+            </HoverButton>
           )}
         </div>
       </div>
-
-    </div>
+    </HoverDiv>
   );
 }
 
@@ -352,65 +625,67 @@ function LocationCard({
   onChange: () => Promise<void> | void;
 }) {
   const ref = location.refs[0];
+  const tone = toneColors(
+    location.soul_id_state === "trained"
+      ? "success"
+      : location.soul_id_state === "training"
+      ? "warning"
+      : location.soul_id_state === "failed"
+      ? "danger"
+      : "neutral"
+  );
+  const stateLabel =
+    location.soul_id_state === "trained"
+      ? "Trained"
+      : location.soul_id_state === "training"
+      ? "Training"
+      : location.soul_id_state === "failed"
+      ? "Training failed"
+      : "Not started";
+
   return (
-    <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 0, overflow: "hidden" }}>
-      {ref && location.soul_id_state !== "empty" && (
-        <div
-          style={{
-            aspectRatio: "16/9",
-            background: "var(--ink-15)",
-            borderBottom: "1px solid var(--ink-30)",
-            overflow: "hidden",
-            position: "relative"
-          }}
-          className={location.soul_id_state === "training" ? "shimmer" : ""}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ref} alt={location.name} className="portrait-img" />
-        </div>
-      )}
+    <HoverDiv
+      style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      hoverStyle={{ boxShadow: "var(--shadow-3)" }}
+    >
+      <div
+        className={location.soul_id_state === "training" ? "shimmer" : undefined}
+        style={{ position: "relative", aspectRatio: "16 / 9", background: "var(--cream-deep)", overflow: "hidden" }}
+      >
+        {ref && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={ref} alt={location.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        )}
+      </div>
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-        <div
-          style={{
-            fontFamily: "var(--f-display)",
-            fontSize: 16,
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-            color: "var(--bone)",
-            lineHeight: 1.15
-          }}
-        >
+        <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.005em", color: "var(--ink)", lineHeight: 1.25 }}>
           {location.name}
         </div>
-        <div
-          style={{
-            fontFamily: "var(--f-mono)",
-            fontSize: 10,
-            letterSpacing: "0.22em",
-            color: "var(--ink-60)",
-            textTransform: "uppercase"
-          }}
-        >
-          {location.int_ext} · {location.scene_count} SCENES
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          {location.int_ext} · {location.scene_count} scenes
         </div>
-        <div style={{ marginTop: "auto" }}>
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
           <span
-            className="pip-state"
-            data-s={
-              location.soul_id_state === "trained"
-                ? "done"
-                : location.soul_id_state === "training"
-                ? "working"
-                : location.soul_id_state === "failed"
-                ? "attention"
-                : undefined
-            }
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: "0.02em",
+              borderRadius: 999,
+              background: tone.bg,
+              color: tone.fg
+            }}
           >
-            {location.soul_id_state.toUpperCase()}
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
+            {stateLabel}
           </span>
         </div>
       </div>
-    </div>
+    </HoverDiv>
   );
 }
 

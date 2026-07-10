@@ -33,6 +33,7 @@ import {
   Stamp01Icon,
   ZoomInAreaIcon,
   PlayIcon,
+  PauseIcon,
   Delete02Icon,
   Add01Icon,
   ClapperboardIcon,
@@ -114,6 +115,7 @@ export const Grid = make(GridIcon);
 export const Stamp = make(Stamp01Icon);
 export const ZoomIn = make(ZoomInAreaIcon);
 export const Play = make(PlayIcon);
+export const Pause = make(PauseIcon);
 export const Trash2 = make(Delete02Icon);
 export const Plus = make(Add01Icon);
 export const Boxes = make(DashboardSquare02Icon);

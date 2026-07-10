@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, FileText, Film, ListChecks, BookOpen } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowDown, BookOpen, Film, FileText, ListChecks, type IconType } from "../_components/icons";
+import { fadeUp, staggerContainer, staggerItem } from "../_components/motion";
 import type { Project, WorkspaceId } from "../../lib/types";
 
 interface Props {
@@ -29,78 +31,204 @@ export function Export({ project }: Props) {
     }
   }
 
+  // The render route always pads/scales to the project's own canvas, so the
+  // real output aspect ratio is exactly this — not the mockup's fixed 16:9.
+  const aspect = project.aspect_ratio.replace(":", "/");
+  const exStatus = rendering ? "RENDERING…" : err ? "ERROR" : cut ? "RENDERED" : "READY";
+  const exBtnLabel = rendering ? "Rendering…" : cut ? "Re-render" : "Render final cut";
+
   return (
     <div className="main-inner">
-      <header className="page-head">
-        <div>
-          <div className="crumb">07 / WORKSPACE · EXPORT</div>
-          <h1>Export</h1>
-          <div className="sub">
+      <motion.header className="page-head" {...fadeUp}>
+        <div style={{ minWidth: 0, maxWidth: "64ch" }}>
+          <span
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: "0.02em",
+              color: "var(--accent)"
+            }}
+          >
+            07 / Workspace · Export
+          </span>
+          <h1
+            style={{
+              margin: "8px 0 0",
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: "clamp(24px, 2.4vw, 32px)",
+              lineHeight: 1.15,
+              letterSpacing: "-0.02em",
+              color: "var(--ink)"
+            }}
+          >
+            Export
+          </h1>
+          <p
+            style={{
+              margin: "12px 0 0",
+              fontWeight: 500,
+              fontSize: 16,
+              lineHeight: 1.5,
+              color: "var(--ink)",
+              maxWidth: "56ch"
+            }}
+          >
             Hand off the project. Animatic for pitch decks, storyboard for the crew, shot list for
             production, bible for the writers&apos; room.
-          </div>
+          </p>
         </div>
-        <div className="actions">
-          <span className="pip-state">{project.title.toUpperCase()}</span>
+        <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: "0.02em",
+              borderRadius: 999,
+              background: "var(--cream-deep)",
+              color: "var(--ink-soft)"
+            }}
+          >
+            {project.title}
+          </span>
         </div>
-      </header>
+      </motion.header>
 
       <div className="page-body">
-        <div className="export-grid">
-          <div className="export-card">
+        <motion.div
+          className="export-grid"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div
+            variants={staggerItem}
+            style={{
+              padding: 28,
+              background: "var(--surface)",
+              borderRadius: 18,
+              boxShadow: "var(--shadow-2)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              minHeight: 320
+            }}
+          >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <span style={{ color: "var(--tungsten)" }}>
+              <span style={{ color: "var(--accent-2)" }}>
                 <Film size={28} />
               </span>
-              <span className="eb">{cut ? "RENDERED" : "READY"}</span>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10,
+                  fontWeight: 500,
+                  letterSpacing: "0.02em",
+                  color: "var(--accent)"
+                }}
+              >
+                {exStatus}
+              </span>
             </div>
-            <div className="title">Final cut</div>
-            <div className="body">
+            <div style={{ fontWeight: 600, fontSize: 22, letterSpacing: "-0.01em", color: "var(--ink)", lineHeight: 1.25 }}>
+              Final cut
+            </div>
+            <div style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
               The full assembly — every shot on the Stitch board, in scene order, each held for its
-              duration, rendered to a single MP4 with ffmpeg.
+              duration, rendered to a single MP4.
             </div>
-            {cut && (
-              <div style={{ borderRadius: "var(--r-md)", overflow: "hidden", background: "#14100c" }}>
-                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                <video src={cut.url} controls style={{ display: "block", width: "100%" }} />
+
+            {rendering && (
+              <div
+                className="shimmer"
+                style={{
+                  position: "relative",
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  background: "var(--cream-deep)",
+                  aspectRatio: aspect,
+                  display: "grid",
+                  placeItems: "center"
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10,
+                    letterSpacing: "0.02em",
+                    color: "var(--mustard-deep)"
+                  }}
+                >
+                  STITCHING SHOTS + TRANSITIONS…
+                </span>
               </div>
             )}
+
+            {!rendering && cut && (
+              <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", background: "#14100c", aspectRatio: aspect }}>
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                <video
+                  src={cut.url}
+                  controls
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: 8,
+                    left: 8,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 9,
+                    letterSpacing: "0.02em",
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    background: "var(--viridian)",
+                    color: "var(--on-accent-3)",
+                    pointerEvents: "none"
+                  }}
+                >
+                  {cut.shots} SHOTS · {cut.duration}S
+                </span>
+              </div>
+            )}
+
             {err && <div className="cast-error">{err}</div>}
-            <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "auto", alignItems: "stretch" }}>
+
+            <div style={{ display: "flex", gap: 8, marginTop: "auto", alignItems: "stretch" }}>
               <button
                 className="btn btn-primary"
                 style={{ flex: 1, justifyContent: "center" }}
                 disabled={rendering}
                 onClick={renderCut}
               >
-                <Film size={14} /> {rendering ? "Rendering…" : cut ? "Re-render" : "Render final cut"}
+                {exBtnLabel}
               </button>
-              {cut && (
-                <a className="btn btn-sm" href={cut.url} download style={{ justifyContent: "center", alignItems: "center" }}>
+              {!rendering && cut && (
+                <a
+                  className="btn btn-sm"
+                  href={cut.url}
+                  download
+                  style={{ justifyContent: "center", alignItems: "center", background: "var(--bg)" }}
+                >
                   <ArrowDown size={14} /> Download
                 </a>
               )}
             </div>
-            {cut && (
-              <span className="t-mute" style={{ fontSize: 11 }}>
-                {cut.shots} shots · {cut.duration}s
-              </span>
-            )}
-          </div>
+          </motion.div>
 
           <ExportCard
             icon={FileText}
             title="Storyboard PDF"
             body="Selected frames laid out in narrative order. Bring it to a director, a DP, a producer, an investor."
             options={[
-              {
-                label: "Layout",
-                values: ["1 frame / page", "2 frames / page", "4 frames / page", "Contact sheet"]
-              },
-              {
-                label: "Annotations",
-                values: ["Frame only", "+ Beat description", "+ Scene + cast tags"]
-              }
+              { label: "Layout", values: ["2 frames / page", "1 frame / page", "4 frames / page", "Contact sheet"] },
+              { label: "Annotations", values: ["+ Beat description", "Frame only", "+ Scene + cast tags"] }
             ]}
             cta="Export storyboard"
           />
@@ -110,14 +238,8 @@ export function Export({ project }: Props) {
             title="Shot list"
             body="One row per beat with location, cast, props, mood, and continuity flags. The doc your AD will actually use."
             options={[
-              {
-                label: "Format",
-                values: ["PDF", "CSV", "XLSX"]
-              },
-              {
-                label: "Sort by",
-                values: ["Beat order", "Location", "Cast", "Day / Night"]
-              }
+              { label: "Format", values: ["CSV", "PDF", "XLSX"] },
+              { label: "Sort by", values: ["Beat order", "Location", "Cast", "Day / Night"] }
             ]}
             cta="Export shot list"
           />
@@ -127,18 +249,12 @@ export function Export({ project }: Props) {
             title="Production bible"
             body="Character profiles, world rules, tone document. Everything the Bible Builder put together — in one file."
             options={[
-              {
-                label: "Format",
-                values: ["PDF", "DOCX", "Markdown"]
-              },
-              {
-                label: "Sections",
-                values: ["Full bible", "Characters only", "World + tone only"]
-              }
+              { label: "Format", values: ["PDF", "DOCX", "Markdown"] },
+              { label: "Sections", values: ["Full bible", "Characters only", "World + tone only"] }
             ]}
             cta="Export bible"
           />
-        </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -150,7 +266,7 @@ function ExportCard({
   body,
   options
 }: {
-  icon: typeof Film;
+  icon: IconType;
   title: string;
   body: string;
   options: Array<{ label: string; values: string[] }>;
@@ -159,37 +275,102 @@ function ExportCard({
   // These exports aren't wired yet — show them honestly as planned rather than
   // faking a "packaging…" spinner that produces nothing.
   return (
-    <div className="export-card" style={{ opacity: 0.78 }}>
+    <motion.div
+      variants={staggerItem}
+      style={{
+        padding: 28,
+        background: "var(--surface)",
+        borderRadius: 18,
+        boxShadow: "var(--shadow-2)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        minHeight: 320,
+        opacity: 0.78
+      }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <span style={{ color: "var(--tungsten)" }}>
+        <span style={{ color: "var(--accent-2)" }}>
           <Icn size={28} />
         </span>
-        <span className="eb">SOON</span>
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            fontWeight: 500,
+            letterSpacing: "0.02em",
+            color: "var(--mute)"
+          }}
+        >
+          SOON
+        </span>
       </div>
-      <div className="title">{title}</div>
-      <div className="body">{body}</div>
-      <div className="options">
-        {options.map((opt) => (
-          <label key={opt.label}>
-            {opt.label}
-            <select defaultValue={opt.values[0]} disabled>
-              {opt.values.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
+      <div style={{ fontWeight: 600, fontSize: 22, letterSpacing: "-0.01em", color: "var(--ink)", lineHeight: 1.25 }}>
+        {title}
       </div>
+      <div style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>{body}</div>
+      {options.map((opt) => (
+        <label
+          key={opt.label}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            color: "var(--mute)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            letterSpacing: "0.02em"
+          }}
+        >
+          {opt.label}
+          <select
+            defaultValue={opt.values[0]}
+            disabled
+            style={{
+              padding: "10px 12px",
+              background: "var(--bg)",
+              color: "var(--ink)",
+              border: "none",
+              borderRadius: 18,
+              boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
+              fontFamily: "var(--font-ui)",
+              fontSize: 13,
+              fontWeight: 500,
+              textTransform: "none",
+              letterSpacing: 0
+            }}
+          >
+            {opt.values.map((v) => (
+              <option key={v} value={v}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+      ))}
       <button
-        className="btn"
-        style={{ marginTop: "auto", justifyContent: "center", cursor: "not-allowed" }}
         disabled
         title="Not available yet"
+        style={{
+          marginTop: "auto",
+          justifyContent: "center",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 18px",
+          fontWeight: 600,
+          fontSize: 14,
+          color: "var(--ink)",
+          background: "var(--bg)",
+          border: "none",
+          borderRadius: 999,
+          boxShadow: "var(--shadow-1)",
+          cursor: "not-allowed",
+          opacity: 0.6
+        }}
       >
         Coming soon
       </button>
-    </div>
+    </motion.div>
   );
 }

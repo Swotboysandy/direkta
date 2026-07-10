@@ -70,11 +70,23 @@ export function Sidebar({
   }, [workspaces]);
 
   return (
-    <aside className="sidebar">
-      <div className="sb-head">
-        <span className="sb-title">Workspaces</span>
+    <aside className="sidebar" style={{ backdropFilter: "blur(18px)" }}>
+      <div className="sb-head" style={{ justifyContent: collapsed ? "center" : "space-between" }}>
+        {!collapsed && (
+          <span
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.02em",
+              color: "var(--mute)"
+            }}
+          >
+            Workspaces
+          </span>
+        )}
         <button
           className="sb-collapse"
+          style={{ borderRadius: 12 }}
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -83,13 +95,37 @@ export function Sidebar({
       </div>
 
       <div className="sb-ws">
-        <div className="head">Production</div>
+        {!collapsed && (
+          <div
+            style={{
+              padding: "8px 12px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.02em",
+              color: "var(--mute)"
+            }}
+          >
+            Production
+          </div>
+        )}
         {workspaces.map((w) => {
           const Icn = ICONS[w.id] ?? FILMSTRIP;
+          const noteColor =
+            w.status === "complete"
+              ? "var(--viridian-deep)"
+              : w.status === "in-progress"
+              ? "var(--mustard-deep)"
+              : "var(--mute)";
           return (
             <div
               key={w.id}
               className="sidebar-item"
+              style={{
+                borderRadius: "var(--r-pill)",
+                gridTemplateColumns: collapsed ? "1fr" : "22px 1fr auto",
+                justifyItems: collapsed ? "center" : undefined,
+                padding: collapsed ? "10px" : undefined
+              }}
               data-active={w.id === activeWorkspace}
               data-locked={!w.unlocked}
               data-just-unlocked={justUnlocked[w.id] ? "true" : undefined}
@@ -99,17 +135,34 @@ export function Sidebar({
               <span className="si-icon">
                 <Icn size={18} />
               </span>
-              <div className="si-label">
-                <span style={{ fontWeight: 500 }}>{w.label}</span>
-                {w.note && <span className="si-meta">{w.note}</span>}
-              </div>
-              {!w.unlocked ? (
-                <Lock size={12} className="si-status" />
-              ) : (
-                <span
-                  className="si-status pip"
-                  data-status={w.status === "complete" ? "done" : w.status === "in-progress" ? "working" : "draft"}
-                />
+              {!collapsed && (
+                <>
+                  <span
+                    style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, lineHeight: 1.25 }}
+                  >
+                    <span style={{ fontWeight: 500 }}>{w.label}</span>
+                    {w.note && (
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 9,
+                          letterSpacing: "0.02em",
+                          color: noteColor
+                        }}
+                      >
+                        {w.note}
+                      </span>
+                    )}
+                  </span>
+                  {!w.unlocked ? (
+                    <Lock size={12} className="si-status" />
+                  ) : (
+                    <span
+                      className="si-status pip"
+                      data-status={w.status === "complete" ? "done" : w.status === "in-progress" ? "working" : "draft"}
+                    />
+                  )}
+                </>
               )}
             </div>
           );

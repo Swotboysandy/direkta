@@ -5,6 +5,14 @@
 
 @media (prefers-reduced-motion: no-preference) {
 
+  /* Sheen sweep — a soft diagonal light pass over glass hero panels / primary
+     buttons. Duration varies per use (inline `animation: fxSheen <dur> …`);
+     the keyframe itself is shared so every screen's sweep looks identical. */
+  @keyframes fxSheen {
+    0%       { transform: translateX(-140%) skewX(-18deg); }
+    55%, 100% { transform: translateX(260%) skewX(-18deg); }
+  }
+
   /* Entry — fade + soft lift. Children can stagger via --fx-delay. */
   .fx-enter-up {
     animation: fx-enter-up var(--dur-3) var(--ease-out) both;

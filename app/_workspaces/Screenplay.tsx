@@ -2,12 +2,33 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, FileText, Flag, RefreshCw, Sparkles, Upload } from "../_components/icons";
+import { ArrowRight, Check, FileText, Flag, Lock, RefreshCw, Sparkles, Upload } from "../_components/icons";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
-import { staggerContainer, staggerItem } from "../_components/motion";
+import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
 
 const TILTS = ["var(--tilt-card-a)", "var(--tilt-card-b)", "var(--tilt-card-c)"];
+
+/* Shared inline-style fragments — the mockup's small mono "eyebrow" labels
+   (10px / weight 500 / 0.02em tracking, mixed case) recur across the header,
+   pills and stat cells. Kept local to this file rather than a global class so
+   we don't disturb the app-wide .t-eyebrow convention (all-caps, wide tracking). */
+const mono10: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 10,
+  fontWeight: 500,
+  letterSpacing: "0.02em"
+};
+
+/* Glass panel base for the split-view chrome (stat strip, beat rail, script
+   pane) — surface + 18px radius + shadow-1, no padding/hover baked in since
+   each panel controls its own inner spacing. */
+const panelStyle: React.CSSProperties = {
+  background: "var(--surface)",
+  borderRadius: 18,
+  boxShadow: "var(--shadow-1)",
+  overflow: "hidden"
+};
 
 interface Props {
   project: Project;
@@ -176,20 +197,30 @@ export function Screenplay({
   if (!project.script_submitted) {
     return (
       <div className="main-inner screenplay">
-        <header className="page-head">
+        <motion.header className="page-head" {...fadeUp}>
           <div>
-            <span className="t-eyebrow crumb">02 / WORKSPACE · SCREENPLAY</span>
-            <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Screenplay</h1>
-            <p className="lead" style={{ marginTop: "var(--sp-3)", maxWidth: "64ch" }}>
-              Paste your script or write it here. Once you submit,{" "}
-              <strong>Script Reader</strong> breaks it into beats,{" "}
-              <strong>Beat Writer</strong> structures them, and{" "}
-              <strong>Bible Builder</strong> drafts the production bible.
+            <span style={{ ...mono10, color: "var(--accent)" }}>02 / Workspace · Screenplay</span>
+            <h1
+              style={{
+                margin: "8px 0 0",
+                fontFamily: "var(--font-display)",
+                fontWeight: 800,
+                fontSize: "clamp(24px,2.4vw,32px)",
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                color: "var(--ink)"
+              }}
+            >
+              Screenplay
+            </h1>
+            <p style={{ margin: "12px 0 0", fontWeight: 500, fontSize: 16, lineHeight: 1.5, color: "var(--ink)", maxWidth: "56ch" }}>
+              Paste your script or write it here. Once you submit, <strong>Script Reader</strong> breaks it
+              into beats and <strong>Bible Builder</strong> drafts the production bible.
             </p>
           </div>
           <div className="page-head-actions">
-            <span className="pip-state">
-              {words} {words === 1 ? "WORD" : "WORDS"}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: "var(--cream-deep)", color: "var(--ink-soft)" }}>
+              {words} {words === 1 ? "word" : "words"}
             </span>
             {/* Hidden file input — accepts .txt .fountain .fdx .md */}
             <input
@@ -199,15 +230,17 @@ export function Screenplay({
               style={{ display: "none" }}
               onChange={importFile}
             />
-            <button
+            <motion.button
+              {...tap}
               className="btn"
               disabled={busy || generating || importing}
               onClick={() => fileInputRef.current?.click()}
               title="Import a script file (.txt, .fountain, .fdx, .pdf)"
             >
               <Upload size={14} /> {importing ? "Reading PDF…" : "Import file"}
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              {...tap}
               className={project.script_ai_generated ? "btn btn-primary" : "btn"}
               disabled={busy || generating}
               onClick={generateScript}
@@ -219,15 +252,23 @@ export function Screenplay({
               ) : (
                 <><Sparkles size={14} /> Generate with AI</>
               )}
-            </button>
-            <button className="btn btn-primary" disabled={!canSubmit || busy || generating} onClick={submit}>
+            </motion.button>
+            <motion.button {...tap} className="btn btn-primary" disabled={!canSubmit || busy || generating} onClick={submit}>
               {busy ? "Reading…" : "Submit to Script Reader"} <ArrowRight size={14} />
-            </button>
+            </motion.button>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="page-body">
-          <div className="card" style={{ padding: 0, opacity: generating ? 0.85 : 1 }}>
+        <motion.div className="page-body" {...pageIn}>
+          <div
+            style={{
+              background: "var(--surface)",
+              borderRadius: 18,
+              boxShadow: "var(--shadow-2)",
+              overflow: "hidden",
+              opacity: generating ? 0.85 : 1
+            }}
+          >
             <textarea
               value={draft}
               readOnly={generating}
@@ -240,12 +281,14 @@ export function Screenplay({
                 border: "none",
                 boxShadow: "none",
                 resize: "vertical",
-                padding: "var(--sp-5) var(--sp-6)",
+                padding: "28px 32px",
                 fontFamily: "var(--font-mono)",
                 fontSize: 13,
                 lineHeight: 1.75,
                 color: "var(--ink)",
-                borderRadius: 0
+                borderRadius: 0,
+                outline: "none",
+                boxSizing: "border-box"
               }}
             />
           </div>
@@ -254,37 +297,75 @@ export function Screenplay({
             Script Reader detect beats cleanly.
           </p>
           {genError && (
-            <p style={{ fontSize: 12, marginTop: "var(--sp-2)", color: "var(--accent)" }}>
+            <p style={{ fontSize: 12, marginTop: "var(--sp-2)", color: "var(--tomato)" }}>
               {genError}
             </p>
           )}
-        </div>
+        </motion.div>
       </div>
     );
   }
 
+  const beatsPillBg =
+    beats.length > 0 ? "rgba(61,168,155,0.18)" : extracting ? "rgba(242,184,60,0.20)" : "var(--cream-deep)";
+  const beatsPillFg =
+    beats.length > 0 ? "var(--viridian-deep)" : extracting ? "var(--mustard-deep)" : "var(--mute)";
+  const beatsPillLabel =
+    beats.length > 0
+      ? `${beats.length} beat${beats.length === 1 ? "" : "s"} · locked`
+      : extracting
+      ? "Extracting…"
+      : "Awaiting extraction";
+
   return (
     <div className="main-inner screenplay">
-      <header className="page-head">
+      <motion.header className="page-head" {...fadeUp}>
         <div>
-          <span className="t-eyebrow crumb">02 / WORKSPACE · SCREENPLAY</span>
-          <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Screenplay</h1>
-          <p className="lead" style={{ marginTop: "var(--sp-3)", maxWidth: "64ch" }}>
+          <span style={{ ...mono10, color: "var(--accent)" }}>02 / Workspace · Screenplay</span>
+          <h1
+            style={{
+              margin: "8px 0 0",
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: "clamp(24px,2.4vw,32px)",
+              lineHeight: 1.15,
+              letterSpacing: "-0.02em",
+              color: "var(--ink)"
+            }}
+          >
+            Screenplay
+          </h1>
+          <p style={{ margin: "12px 0 0", fontWeight: 500, fontSize: 16, lineHeight: 1.5, color: "var(--ink)", maxWidth: "56ch" }}>
             {beats.length === 0
               ? extracting
                 ? "Script Reader is reading your screenplay — beats will appear shortly."
                 : "Script submitted. Click Extract beats to break it into scenes."
-              : `${beats.length} beats extracted. ${bible?.built ? "Bible is built." : "Bible Builder is queued."}`}
+              : `${beats.length} beat${beats.length === 1 ? "" : "s"} extracted. ${
+                  bible?.built ? "Bible is built." : "Bible Builder is queued."
+                } The script is locked — everything downstream builds from this draft.`}
           </p>
         </div>
         <div className="page-head-actions">
           {beats.length > 0 && (
-            <div className="view-toggle" role="tablist" aria-label="Breakdown view">
+            <div role="tablist" aria-label="Breakdown view" style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: 999 }}>
               <button
                 role="tab"
                 aria-selected={view === "split"}
                 data-active={view === "split"}
                 onClick={() => setView("split")}
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10,
+                  fontWeight: 400,
+                  letterSpacing: "0.02em",
+                  padding: "6px 14px",
+                  border: "none",
+                  borderRadius: 999,
+                  cursor: "pointer",
+                  color: view === "split" ? "var(--ink)" : "var(--mute)",
+                  background: view === "split" ? "var(--surface)" : "transparent",
+                  boxShadow: view === "split" ? "var(--shadow-1)" : "none"
+                }}
               >
                 Split
               </button>
@@ -293,39 +374,61 @@ export function Screenplay({
                 aria-selected={view === "board"}
                 data-active={view === "board"}
                 onClick={() => setView("board")}
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10,
+                  fontWeight: 400,
+                  letterSpacing: "0.02em",
+                  padding: "6px 14px",
+                  border: "none",
+                  borderRadius: 999,
+                  cursor: "pointer",
+                  color: view === "board" ? "var(--ink)" : "var(--mute)",
+                  background: view === "board" ? "var(--surface)" : "transparent",
+                  boxShadow: view === "board" ? "var(--shadow-1)" : "none"
+                }}
               >
                 Board
               </button>
             </div>
           )}
-          <span className="pip-state" data-status={beats.length > 0 ? "done" : "working"}>
-            {beats.length > 0 ? `${beats.length} BEATS` : "PROCESSING"}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: beatsPillBg, color: beatsPillFg }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
+            {beatsPillLabel}
           </span>
-          <button className="btn" onClick={() => setBibleOpen(true)}>
+          <motion.button {...tap} className="btn" onClick={() => setBibleOpen(true)}>
             <FileText size={14} /> View Bible
-          </button>
-          <button className="btn btn-primary" onClick={() => onSwitchWorkspace("casting")}>
+          </motion.button>
+          <motion.button {...tap} className="btn btn-primary" onClick={() => onSwitchWorkspace("casting")}>
             Continue to Casting <ArrowRight size={14} />
-          </button>
+          </motion.button>
         </div>
-      </header>
+      </motion.header>
 
       {view === "board" ? (
-        <div className="page-body">
+        <motion.div className="page-body" {...pageIn}>
           {beats.length === 0 ? (
-            <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
-              <span className="t-eyebrow">
-                <Sparkles size={12} /> SCRIPT READER
+            <div className="card" style={{ borderRadius: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, ...mono10, color: "var(--accent)" }}>
+                <Sparkles size={12} /> Script Reader
               </span>
-              <p className="t-mute" style={{ fontSize: 13 }}>
+              <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink-soft)", margin: 0 }}>
                 {extracting ? "Reading script — extracting beats…" : "Beats will appear here as scene cards once extracted."}
               </p>
-              {!extracting && (
-                <button className="btn btn-sm btn-primary" style={{ alignSelf: "flex-start" }} onClick={extractBeats}>
-                  <Sparkles size={12} /> {extractError ? "Retry extraction" : "Extract beats"}
-                </button>
+              {extractError && (
+                <p style={{ fontSize: 12, color: "var(--tomato)", margin: 0 }}>{extractError}</p>
               )}
-              {extracting && <span className="pip-state" data-status="working" style={{ alignSelf: "flex-start" }}>WORKING</span>}
+              {!extracting && (
+                <motion.button {...tap} className="btn btn-sm btn-primary" style={{ alignSelf: "flex-start" }} onClick={extractBeats}>
+                  <Sparkles size={12} /> {extractError ? "Retry extraction" : "Extract beats"}
+                </motion.button>
+              )}
+              {extracting && (
+                <span style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: "rgba(242,184,60,0.20)", color: "var(--mustard-deep)" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
+                  Working
+                </span>
+              )}
             </div>
           ) : (
             <motion.div className="scene-board" variants={staggerContainer} initial="hidden" animate="show">
@@ -334,171 +437,133 @@ export function Screenplay({
               ))}
             </motion.div>
           )}
-        </div>
+        </motion.div>
       ) : (
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1.15fr",
-          gap: 0,
-          height: "calc(100vh - 64px - 220px)",
-          borderRadius: "var(--radius)",
-          overflow: "hidden",
-          background: "var(--surface)",
-          boxShadow: "var(--shadow-1)"
-        }}
-      >
-        {/* BREAKDOWN — LEFT */}
-        <div style={{ overflowY: "auto", borderRight: "1px solid var(--cream-deep)", background: "var(--bg)" }}>
-          <div
-            style={{
-              padding: "var(--sp-4) var(--sp-6)",
-              position: "sticky",
-              top: 0,
-              background: "var(--bg)",
-              zIndex: 5,
-              borderBottom: "1px solid var(--cream-deep)"
-            }}
+        <motion.div className="page-body" {...pageIn}>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+            style={{ ...panelStyle, display: "grid", gridTemplateColumns: "repeat(4, 1fr) auto", marginBottom: 16 }}
           >
-            <span className="t-eyebrow">
-              BREAKDOWN · {beats.length} OF {beats.length} BEATS
-            </span>
-          </div>
-
-          <div style={{ padding: "var(--sp-5) var(--sp-6) 80px" }}>
-            <div
-              className="card"
-              style={{ marginBottom: "var(--sp-4)" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <span className="t-eyebrow">BIBLE BUILDER · {bible?.built ? "COMPLETE" : "QUEUED"}</span>
-                  <h3 className="t-h3" style={{ marginTop: "var(--sp-2)" }}>Production bible</h3>
-                </div>
-                {bible?.built && <Check size={18} style={{ color: "var(--accent-3)" }} />}
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: "var(--sp-3)",
-                  marginTop: "var(--sp-4)",
-                  paddingTop: "var(--sp-4)",
-                  borderTop: "1px solid var(--cream-deep)"
-                }}
-              >
-                <BibleStat n={String(bible?.word_count ?? 0)} lbl="Words" />
-                <BibleStat n={String(beats.length)} lbl="Beats" />
-                <BibleStat n={String(characters.length)} lbl="Characters" />
-                <BibleStat n={String(locations.length)} lbl="Locations" />
-              </div>
-              <button
-                className="btn btn-sm btn-secondary"
-                style={{ marginTop: "var(--sp-4)" }}
-                onClick={() => setBibleOpen(true)}
-              >
-                <FileText size={12} /> View full bible
-              </button>
-            </div>
-
-            {beats.length === 0 && (
-              <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
-                <span className="t-eyebrow">
-                  <Sparkles size={12} /> SCRIPT READER
-                </span>
-                <p className="t-mute" style={{ fontSize: 13 }}>
-                  {extracting
-                    ? "Reading script — extracting beats and scene structure…"
-                    : "AI will break your script into beats, detect characters, locations, mood, and props."}
-                </p>
-                {extractError && (
-                  <p style={{ fontSize: 11, color: "var(--accent)" }}>{extractError}</p>
-                )}
-                {!extracting && (
-                  <button
-                    className="btn btn-sm btn-primary"
-                    style={{ alignSelf: "flex-start" }}
-                    onClick={extractBeats}
-                  >
-                    <Sparkles size={12} /> {extractError ? "Retry extraction" : "Extract beats"}
-                  </button>
-                )}
-                {extracting && (
-                  <span className="pip-state" data-status="working" style={{ alignSelf: "flex-start" }}>
-                    WORKING
-                  </span>
-                )}
-              </div>
-            )}
-
-            <span className="t-eyebrow" style={{ display: "block", marginTop: "var(--sp-5)", marginBottom: "var(--sp-3)" }}>
-              BEATS
-            </span>
-            <motion.div variants={staggerContainer} initial="hidden" animate="show">
-              {beats.map((beat) => (
-                <BeatCard
-                  key={beat.id}
-                  beat={beat}
-                  expanded={activeBeat === beat.id}
-                  onToggle={() => setActiveBeat(activeBeat === beat.id ? null : beat.id)}
-                />
-              ))}
+            <StatCell value={(bible?.word_count ?? 0).toLocaleString()} label="Bible words" />
+            <StatCell value={String(beats.length)} label="Beats" />
+            <StatCell value={String(characters.length)} label="Characters" />
+            <StatCell value={String(locations.length)} label="Locations" />
+            <motion.div variants={staggerItem} style={{ padding: "14px 20px", display: "flex", alignItems: "center", gap: 10 }}>
+              {bible?.built ? (
+                <Check size={16} style={{ color: "var(--viridian)" }} />
+              ) : (
+                <Sparkles size={16} style={{ color: "var(--mustard)" }} />
+              )}
+              <span style={{ ...mono10, color: "var(--mute)" }}>{bible?.built ? "Bible built" : "Bible pending"}</span>
             </motion.div>
-          </div>
-        </div>
+          </motion.div>
 
-        {/* SCRIPT — RIGHT */}
-        <div style={{ overflowY: "auto", background: "var(--surface)" }}>
-          <div
-            style={{
-              padding: "var(--sp-4) var(--sp-6)",
-              position: "sticky",
-              top: 0,
-              background: "var(--surface)",
-              zIndex: 5,
-              borderBottom: "1px solid var(--cream-deep)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "var(--sp-3)"
-            }}
-          >
-            <div>
-              <span className="t-eyebrow">SCRIPT · READ-ONLY</span>
-              <h3 className="t-h3" style={{ marginTop: "var(--sp-1)" }}>
-                {project.title}
-              </h3>
-            </div>
-            <button
-              className="btn btn-sm"
-              onClick={async () => {
-                if (!confirm("Edit the script? Beat extraction will need to re-run.")) return;
-                await fetch(`/api/projects/${project.id}`, {
-                  method: "PATCH",
-                  headers: { "content-type": "application/json" },
-                  body: JSON.stringify({ script_submitted: false })
-                });
-                await onReload();
+          <div style={{ display: "grid", gridTemplateColumns: "250px minmax(0, 1fr)", gap: 16, alignItems: "start" }}>
+            {/* BEAT INDEX — LEFT RAIL */}
+            <div
+              style={{
+                ...panelStyle,
+                position: "sticky",
+                top: 16,
+                padding: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                maxHeight: "calc(100vh - 180px)",
+                overflow: "auto"
               }}
             >
-              Edit script
-            </button>
+              <div style={{ padding: "8px 10px", ...mono10, color: "var(--mute)" }}>Beat index</div>
+              {beats.length === 0 ? (
+                <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--ink-soft)", margin: 0 }}>
+                    {extracting
+                      ? "Reading script — extracting beats and scene structure…"
+                      : "AI will break your script into beats, detect characters, locations, mood, and props."}
+                  </p>
+                  {extractError && (
+                    <p style={{ fontSize: 11, color: "var(--tomato)", margin: 0 }}>{extractError}</p>
+                  )}
+                  {!extracting && (
+                    <motion.button {...tap} className="btn btn-sm btn-primary" style={{ alignSelf: "flex-start" }} onClick={extractBeats}>
+                      <Sparkles size={12} /> {extractError ? "Retry" : "Extract beats"}
+                    </motion.button>
+                  )}
+                </div>
+              ) : (
+                <motion.div variants={staggerContainer} initial="hidden" animate="show" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {beats.map((beat) => (
+                    <RailBeatItem
+                      key={beat.id}
+                      beat={beat}
+                      expanded={activeBeat === beat.id}
+                      onToggle={() => setActiveBeat(activeBeat === beat.id ? null : beat.id)}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </div>
+
+            {/* SCRIPT — RIGHT PANEL */}
+            <div style={panelStyle}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "14px 32px",
+                  borderBottom: "1px solid var(--cream-deep)"
+                }}
+              >
+                <div>
+                  <span style={{ ...mono10, color: "var(--mute)" }}>Script · Locked · Read-only</span>
+                  <h3 style={{ margin: "4px 0 0", fontWeight: 600, fontSize: 17, letterSpacing: "-0.01em", color: "var(--ink)" }}>
+                    {project.title}
+                  </h3>
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: "rgba(95,191,143,0.16)", color: "var(--viridian-deep)" }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
+                    Draft {project.draft_version}
+                  </span>
+                  <motion.button
+                    {...tap}
+                    className="btn btn-sm"
+                    style={{ background: "var(--bg)" }}
+                    onClick={async () => {
+                      if (!confirm("Edit the script? Beat extraction will need to re-run.")) return;
+                      await fetch(`/api/projects/${project.id}`, {
+                        method: "PATCH",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ script_submitted: false })
+                      });
+                      await onReload();
+                    }}
+                  >
+                    <Lock size={12} /> Unlock & edit
+                  </motion.button>
+                </div>
+              </div>
+              <div style={{ maxWidth: 720, margin: "0 auto", padding: "56px 48px 120px" }}>
+                <pre
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 13,
+                    lineHeight: 1.95,
+                    color: "var(--ink-soft)",
+                    whiteSpace: "pre-wrap",
+                    margin: 0
+                  }}
+                >
+                  {project.script}
+                </pre>
+              </div>
+            </div>
           </div>
-          <pre
-            style={{
-              padding: "var(--sp-5) var(--sp-6) 80px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 13,
-              lineHeight: 1.75,
-              color: "var(--ink-soft)",
-              whiteSpace: "pre-wrap",
-              margin: 0
-            }}
-          >
-            {project.script}
-          </pre>
-        </div>
-      </div>
+        </motion.div>
       )}
 
       {bibleOpen && bible && (
@@ -515,29 +580,19 @@ export function Screenplay({
   );
 }
 
-function BibleStat({ n, lbl }: { n: string; lbl: string }) {
+function StatCell({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <div
-        style={{
-          fontFamily: "var(--font-ui)",
-          fontWeight: 600,
-          fontSize: 28,
-          letterSpacing: "-0.02em",
-          color: "var(--ink)",
-          lineHeight: 1
-        }}
-      >
-        {n}
-      </div>
-      <span className="t-eyebrow" style={{ display: "block", marginTop: "var(--sp-1)" }}>
-        {lbl}
-      </span>
-    </div>
+    <motion.div
+      variants={staggerItem}
+      style={{ padding: "14px 20px", borderRight: "1px solid var(--cream-deep)", display: "flex", flexDirection: "column", gap: 2 }}
+    >
+      <span style={{ fontWeight: 600, fontSize: 20, color: "var(--ink)", lineHeight: 1.2 }}>{value}</span>
+      <span style={{ ...mono10, color: "var(--mute)" }}>{label}</span>
+    </motion.div>
   );
 }
 
-function BeatCard({
+function RailBeatItem({
   beat,
   expanded,
   onToggle
@@ -546,90 +601,105 @@ function BeatCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const pad = String(beat.n).padStart(2, "0");
   return (
     <motion.button
       type="button"
       variants={staggerItem}
       onClick={onToggle}
-      className="card"
       style={{
-        width: "100%",
+        display: "grid",
+        gridTemplateColumns: "30px 1fr",
+        gap: 10,
+        alignItems: "start",
         textAlign: "left",
-        marginBottom: "var(--sp-2)",
-        display: "flex",
-        flexDirection: "column",
-        gap: "var(--sp-2)",
-        cursor: "pointer"
+        width: "100%",
+        padding: 10,
+        border: 0,
+        borderRadius: 12,
+        cursor: "pointer",
+        background: expanded ? "var(--cream-deep)" : "transparent",
+        color: "var(--ink)",
+        fontFamily: "var(--font-ui)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
-        <span
-          className="tag tag-accent"
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            letterSpacing: "var(--tracking-eyebrow)"
-          }}
-        >
-          B {String(beat.n).padStart(2, "0")}
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 12,
-            color: "var(--mute)",
-            textTransform: "uppercase",
-            letterSpacing: "var(--tracking-eyebrow)"
-          }}
-        >
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: expanded ? "var(--accent)" : "var(--mute)", paddingTop: 2 }}>
+        {pad}
+      </span>
+      <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+        <span style={{ fontWeight: 500, fontSize: 13, lineHeight: 1.35 }}>{beat.title || "Untitled beat"}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: "0.02em", color: "var(--mute)" }}>
           {beat.scene_heading || "—"}
         </span>
         {beat.flag && (
           <span
-            className="pip-state"
-            data-status="error"
-            style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4 }}
+            style={{
+              alignSelf: "flex-start",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 8px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 9,
+              letterSpacing: "0.02em",
+              borderRadius: 999,
+              background: "rgba(232,74,53,0.16)",
+              color: "var(--tomato-deep)"
+            }}
           >
-            <Flag size={10} />
-            {beat.flag.toUpperCase()}
+            <Flag size={8} /> {beat.flag.toUpperCase()}
           </span>
         )}
-      </div>
-      <div style={{ fontFamily: "var(--font-ui)", fontWeight: 600, fontSize: 16, letterSpacing: "-0.005em", color: "var(--ink)" }}>
-        {beat.title || "Untitled beat"}
-      </div>
-      {beat.characters.length > 0 && (
-        <div className="tag-strip">
-          {beat.characters.map((c) => (
-            <span key={c} className="tag">{c}</span>
-          ))}
-        </div>
-      )}
-      {expanded && beat.summary && (
-        <p className="t-body-s t-mute" style={{ marginTop: "var(--sp-1)" }}>{beat.summary}</p>
-      )}
+        {expanded && beat.summary && (
+          <span style={{ fontSize: 12, lineHeight: 1.5, color: "var(--ink-soft)", marginTop: 2 }}>{beat.summary}</span>
+        )}
+      </span>
     </motion.button>
   );
 }
 
 function SceneCard({ beat, rot }: { beat: Beat; rot: string }) {
   return (
-    <motion.article className="scene-card" variants={staggerItem} style={{ "--card-rot": rot } as React.CSSProperties}>
+    <motion.article
+      className="scene-card"
+      variants={staggerItem}
+      style={{ "--card-rot": rot, borderRadius: 18 } as React.CSSProperties}
+    >
       <div className="scene-card-head">
-        <span className="scene-card-no">SCENE {String(beat.n).padStart(2, "0")}</span>
+        <span className="scene-card-no" style={{ letterSpacing: "0.02em" }}>
+          SCENE {String(beat.n).padStart(2, "0")}
+        </span>
         {beat.flag && (
-          <span className="pip-state" data-status="error" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span
+            style={{
+              marginLeft: "auto",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "4px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.02em",
+              borderRadius: 999,
+              background: "rgba(232,74,53,0.16)",
+              color: "var(--tomato-deep)"
+            }}
+          >
             <Flag size={10} /> {beat.flag.toUpperCase()}
           </span>
         )}
       </div>
       <div className="scene-card-slug">{beat.scene_heading || "—"}</div>
-      <h3 className="scene-card-title">{beat.title || "Untitled beat"}</h3>
+      <h3 className="scene-card-title" style={{ fontWeight: 600 }}>
+        {beat.title || "Untitled beat"}
+      </h3>
       {beat.summary && <p className="scene-card-sum">{beat.summary}</p>}
       {beat.characters.length > 0 && (
         <div className="tag-strip" style={{ marginTop: "auto" }}>
           {beat.characters.map((c) => (
-            <span key={c} className="tag">{c}</span>
+            <span key={c} className="tag" style={{ background: "var(--bg)" }}>
+              {c}
+            </span>
           ))}
         </div>
       )}

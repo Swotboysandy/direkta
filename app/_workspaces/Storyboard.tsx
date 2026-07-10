@@ -12,6 +12,7 @@ import {
   Flag,
   Layers,
   LayoutGrid,
+  Play,
   RefreshCcw,
   Stamp,
   Sparkles,
@@ -263,7 +264,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
           <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Storyboard</h1>
           <p className="lead" style={{ marginTop: "var(--sp-3)", maxWidth: "64ch" }}>
             The Cinematographer rolls 4 variants per beat. Pick a winner. Click a beat to edit its
-            prompt and camera direction, or open any frame to refine a single take.
+            prompt and camera direction, or open any frame to review a single take.
           </p>
         </div>
         <div className="actions">
@@ -311,7 +312,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
           <span className="t-mute" style={{ fontSize: "var(--t-body-s)" }}>
             {view === "grid"
               ? "Click any frame to open it"
-              : "Click a beat row to expand prompt + camera direction"}
+              : "Hover a frame for actions · click a beat row to expand prompt + camera direction"}
           </span>
         </div>
 
@@ -422,7 +423,7 @@ function GlobalStyleStrip({
       <StyleCell label="Camera" value={style.camera} options={CAMERA_OPTIONS} onChange={(v) => onChange({ ...style, camera: v })} />
       <div style={{ padding: "12px 18px", display: "flex", alignItems: "center" }}>
         <span className="pip-state" data-status="working">
-          <Wand2 size={10} /> APPLIED TO ALL
+          APPLIED TO ALL
         </span>
       </div>
     </div>
@@ -519,11 +520,11 @@ function BeatRow({
         <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "auto", flexWrap: "wrap" }}>
           {stitchedCount > 0 && (
             <span className="pip-state" data-status="done" title="Variants from this beat that are on the Stitch board">
-              <Film size={10} /> {stitchedCount} ON STITCH
+              <Play size={10} /> {stitchedCount} ON STITCH
             </span>
           )}
           <button
-            className="btn btn-sm btn-ghost"
+            className="sb-ghost-btn"
             onClick={onToggleExpand}
             style={{ marginLeft: stitchedCount > 0 ? 0 : "auto" }}
           >
@@ -667,11 +668,11 @@ function BeatEditor({
           <Sparkles size={14} />
           <span className="t-eyebrow">IMAGE PROMPT</span>
           <button
-            className="btn btn-sm btn-ghost"
+            className="sb-ghost-btn"
             onClick={() => setPrompt(defaultPromptFor(beat, beatStyle, globalStyle))}
             style={{ marginLeft: "auto" }}
           >
-            <RefreshCcw size={11} /> Reset to default
+            Reset to default
           </button>
         </div>
         <textarea
@@ -692,7 +693,7 @@ function BeatEditor({
           <Eye size={14} />
           <span className="t-eyebrow">CAMERA DIRECTION</span>
           <button
-            className="btn btn-sm btn-ghost"
+            className="sb-ghost-btn"
             style={{ marginLeft: "auto" }}
             onClick={() => setFramingOpen(true)}
           >
@@ -769,12 +770,6 @@ function BeatEditor({
             ? "Cinematographer is rolling 4 variants…"
             : "Frames roll on your connected Higgsfield account, or a configured image vendor. Without either, this previews in simulation."}
         </span>
-        <button
-          className="btn btn-sm"
-          onClick={() => onPatchRow({ style: { prompt_override: prompt } })}
-        >
-          Save prompt
-        </button>
         <button
           className="btn btn-sm btn-primary"
           disabled={isGenerating}
@@ -875,7 +870,7 @@ function BottomStrip({
             )}
             <span
               className="storyboard-frame-label"
-              style={{ bottom: 4, left: 4, fontSize: 9 }}
+              style={{ bottom: 4, left: 4, fontSize: 9, padding: "2px 6px", background: "rgba(8,8,10,0.74)", color: "#F5EDDC" }}
             >
               S{String(beat!.n).padStart(2, "0")}·V{String(variant.n).padStart(2, "0")}
             </span>
@@ -1201,7 +1196,7 @@ function StoryboardCard({
         <span className="sb-card-no">BEAT {String(beat.n).padStart(2, "0")}</span>
         {stitched.length > 0 && (
           <span className="sb-card-stitch" title="On the Stitch board">
-            <Film size={10} /> {stitched.length}
+            <Play size={10} /> {stitched.length}
           </span>
         )}
         {beat.flag && (

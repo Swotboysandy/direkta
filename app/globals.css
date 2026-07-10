@@ -91,7 +91,12 @@ strong, b {
   grid-template-rows: 64px 1fr;
   height: 100vh;
   min-width: 1280px;
-  background: var(--bg);
+  /* v3 mockup: ambient studio glow — purple top-right, teal bottom-left. */
+  background:
+    radial-gradient(1100px 540px at 82% -12%, rgba(139, 123, 247, 0.16), transparent 62%),
+    radial-gradient(950px 560px at -8% 112%, rgba(64, 170, 182, 0.13), transparent 62%),
+    var(--bg);
+  overflow: hidden;
 }
 
 /* Dashboard "production at a glance" stat strip */
@@ -263,31 +268,6 @@ strong, b {
   background: var(--viridian);
   border-radius: var(--r-pill);
   box-shadow: 0 0 0 2px var(--surface);
-}
-
-.tn-agent .tt {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 10px;
-  background: var(--ink);
-  color: var(--on-ink);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  white-space: nowrap;
-  border-radius: var(--r-sm);
-  box-shadow: var(--shadow-2);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--dur-1) var(--ease-out);
-  z-index: 80;
-}
-
-.tn-agent:hover .tt {
-  opacity: 1;
 }
 
 .tn-icon-btn {
@@ -751,7 +731,7 @@ strong, b {
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  border-radius: var(--r-md);
+  border-radius: 18px;
   box-shadow: var(--shadow-1);
   overflow: hidden;
   transition: box-shadow var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
@@ -763,7 +743,7 @@ strong, b {
 .sb-card-frame {
   position: relative;
   aspect-ratio: 16 / 9;
-  background: var(--ink);
+  background: var(--cream-deep);
   border: none;
   padding: 0;
   cursor: pointer;
@@ -791,10 +771,10 @@ strong, b {
   font-size: var(--t-eyebrow);
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
-  color: var(--cream-warm);
-  background: rgba(42, 26, 18, 0.55);
+  color: #FFFBF1;
+  background: rgba(8, 8, 10, 0.62);
   padding: 2px 6px;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-pill);
 }
 .sb-card-stitch {
   position: absolute;
@@ -809,7 +789,7 @@ strong, b {
   color: var(--on-accent-3);
   background: var(--viridian);
   padding: 2px 6px;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-pill);
 }
 .sb-card-flag {
   position: absolute;
@@ -817,8 +797,8 @@ strong, b {
   right: var(--sp-2);
   display: inline-flex;
   align-items: center;
-  color: var(--on-accent);
-  background: var(--accent);
+  color: #FFF7F2;
+  background: var(--tomato);
   padding: 3px;
   border-radius: var(--r-sm);
 }
@@ -1022,8 +1002,8 @@ strong, b {
   box-shadow: 0 2px 4px rgba(42, 26, 18, 0.25);
 }
 .frame-approval[data-a="needs"] {
-  color: var(--on-accent);
-  background: var(--accent);
+  color: #FFF7F2;
+  background: var(--tomato);
 }
 .sb-card-approval {
   position: absolute;
@@ -1037,8 +1017,8 @@ strong, b {
   border-radius: var(--r-sm);
 }
 .sb-card-approval[data-a="needs"] {
-  color: var(--on-accent);
-  background: var(--accent);
+  color: #FFF7F2;
+  background: var(--tomato);
 }
 
 .lb-review {
@@ -1054,7 +1034,7 @@ strong, b {
   border-left-color: var(--viridian);
 }
 .lb-review[data-approval="needs_work"] {
-  border-left-color: var(--accent);
+  border-left-color: var(--tomato);
 }
 .lb-review-status {
   display: inline-flex;
@@ -1070,7 +1050,7 @@ strong, b {
   color: var(--viridian-deep);
 }
 .lb-review-status[data-a="needs_work"] {
-  color: var(--accent);
+  color: var(--tomato);
 }
 .lb-review-note {
   width: 100%;
@@ -1094,8 +1074,8 @@ strong, b {
   color: var(--on-accent-3);
 }
 .lb-review-actions .btn[data-review="reject"] {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--tomato);
+  color: #FFF7F2;
 }
 
 .page-head .crumb,
@@ -1468,7 +1448,7 @@ strong, b {
   display: grid;
   grid-template-columns: repeat(5, 1fr) auto;
   background: var(--surface);
-  border-radius: var(--radius);
+  border-radius: 18px;
   box-shadow: var(--shadow-1);
   overflow: hidden;
 }
@@ -1511,15 +1491,39 @@ strong, b {
   margin: var(--sp-5) 0 var(--sp-3);
 }
 
+/* Glass ghost pill — secondary actions (reset, collapse, 3×3 framing) that sit
+   on beat row / editor surfaces without the hard-outline look .btn-ghost uses
+   elsewhere in the app. */
+.sb-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ink);
+  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  border: 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease-out);
+}
+.sb-ghost-btn:hover {
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
 .storyboard-beat-row {
   display: grid;
   grid-template-columns: 260px 1fr;
   background: var(--surface);
-  border-radius: var(--radius);
+  border-radius: 18px;
   box-shadow: var(--shadow-1);
   overflow: hidden;
   transition: box-shadow var(--dur-2) var(--ease-out);
-  min-height: 220px;
+  min-height: 200px;
   align-items: stretch;
 }
 
@@ -1573,8 +1577,8 @@ strong, b {
   bottom: 8px;
   left: 10px;
   padding: 3px 8px;
-  background: rgba(42, 26, 18, 0.7);
-  color: var(--cream);
+  background: rgba(8, 8, 10, 0.7);
+  color: #FFFBF1;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: var(--tracking-eyebrow);
@@ -1594,7 +1598,7 @@ strong, b {
   overflow: hidden;
   transition: opacity var(--dur-1) var(--ease-out);
   height: 100%;
-  min-height: 220px;
+  min-height: 200px;
 }
 
 .storyboard-frame img {
@@ -1616,11 +1620,11 @@ strong, b {
 }
 
 .storyboard-frame-generating .t-eyebrow {
-  color: var(--accent-2);
+  color: var(--mustard-deep);
 }
 
 .storyboard-frame-error .t-eyebrow {
-  color: var(--accent);
+  color: var(--tomato);
 }
 
 .storyboard-frame[data-selected="true"] {
@@ -1628,7 +1632,7 @@ strong, b {
 }
 
 .storyboard-frame[data-flagged="true"] {
-  box-shadow: inset 0 0 0 3px var(--accent);
+  box-shadow: inset 0 0 0 3px var(--tomato);
 }
 
 .storyboard-frame-actions {
@@ -1636,7 +1640,7 @@ strong, b {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(42, 26, 18, 0.55);
+  background: rgba(8, 8, 10, 0.62);
   opacity: 0;
   transition: opacity var(--dur-1) var(--ease-out);
   gap: var(--sp-2);
@@ -1700,8 +1704,8 @@ strong, b {
 }
 
 .storyboard-toast[data-kind="error"] {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--tomato);
+  color: #FFF7F2;
 }
 
 @keyframes storyboard-toast-in {
@@ -1744,7 +1748,7 @@ strong, b {
   background: var(--surface);
   border: none;
   box-shadow: inset 0 0 0 1.5px var(--cream-deep);
-  border-radius: var(--radius);
+  border-radius: 18px;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.55;
@@ -1783,7 +1787,7 @@ strong, b {
   background: var(--surface);
   border: none;
   box-shadow: inset 0 0 0 1.5px var(--cream-deep);
-  border-radius: var(--radius);
+  border-radius: 18px;
   font-family: var(--font-ui);
   font-size: var(--t-body-s);
   font-weight: 500;
@@ -1819,6 +1823,7 @@ strong, b {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
+  transition: left 220ms var(--ease-out);
 }
 
 .app-body[data-collapsed="true"] .storyboard-bottom-strip {
@@ -1837,7 +1842,7 @@ strong, b {
   width: 120px;
   aspect-ratio: 16/9;
   background: var(--surface);
-  border-radius: var(--r-sm);
+  border-radius: 12px;
   box-shadow: var(--shadow-1);
   overflow: hidden;
   display: grid;

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { TopNav } from "./_components/TopNav";
 import { Sidebar } from "./_components/Sidebar";
 import { NewProjectModal } from "./_components/NewProjectModal";
+import { MovieBibleModal } from "./_components/MovieBibleModal";
 import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
 import { CommandPalette } from "./_components/CommandPalette";
 import { KeyVaultPanel } from "./_components/KeyVaultPanel";
@@ -68,6 +69,7 @@ export default function Home() {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [keyVaultOpen, setKeyVaultOpen] = useState(false);
   const [skillsOpen, setSkillsOpen] = useState(false);
+  const [bibleOpen, setBibleOpen] = useState(false);
 
   // Initial URL + storage resolution
   useEffect(() => {
@@ -304,7 +306,9 @@ export default function Home() {
                     characters: bundle.characters.length,
                     locations: bundle.locations.length
                   }}
+                  agents={agents}
                   onSwitchWorkspace={switchWorkspace}
+                  onOpenBible={() => setBibleOpen(true)}
                 />
               )}
 
@@ -352,6 +356,17 @@ export default function Home() {
 
       <KeyVaultPanel open={keyVaultOpen} onClose={() => setKeyVaultOpen(false)} />
       <SkillsPanel open={skillsOpen} onClose={() => setSkillsOpen(false)} />
+
+      {bundle && bibleOpen && (
+        <MovieBibleModal
+          project={bundle.project}
+          bible={bundle.bible}
+          beats={bundle.beats}
+          characters={bundle.characters}
+          locations={bundle.locations}
+          onClose={() => setBibleOpen(false)}
+        />
+      )}
 
       <NewProjectModal
         open={newProjectOpen}
