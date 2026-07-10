@@ -44,8 +44,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const skill = skillForPart("cinematography");
   const genPrompt = skill?.body ? `${prompt}\n\n${skill.body}` : prompt;
 
+  // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
+  // Higgsfield OAuth connection is the fallback when no vendor key is set.
   const vendor = vendors.firstEnabledImage();
-  const useMcp = isHiggsfieldMcpConnected();
+  const useMcp = !vendor && isHiggsfieldMcpConnected();
 
   // ── No generator at all → simulation. NEVER destroy completed takes:
   //    a fresh roll only happens when a real generator will actually replace them.

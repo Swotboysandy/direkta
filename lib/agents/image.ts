@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import { vendors } from "../db/repo";
+import { generateImageViaByteplus } from "./byteplus-image";
 import type { AspectRatio, VendorConfig } from "../types";
 
 /** On Vercel, /tmp is the only writable path. Files reset on cold start. */
@@ -43,8 +44,25 @@ export async function generateImage(input: {
   if (vendor.provider === "higgsfield") {
     return await generateWithHiggsfield(input.prompt, input.aspectRatio, vendor);
   }
+  if (vendor.provider === "byteplus-image") {
+    return await generateImageViaByteplus({
+      apiKey: vendor.api_key,
+      model: vendor.model,
+      prompt: input.prompt,
+      size: SEEDREAM_SIZES[input.aspectRatio]
+    });
+  }
   throw new Error(`Unsupported image provider: ${vendor.provider}`);
 }
+
+/* Seedream 4.5 needs >= ~3.69MP; these are the smallest valid sizes per ratio. */
+const SEEDREAM_SIZES: Record<AspectRatio, string> = {
+  "16:9": "2560x1440",
+  "9:16": "1440x2560",
+  "1:1": "2048x2048",
+  "4:5": "1728x2160",
+  "21:9": "2944x1264"
+};
 
 /**
  * Higgsfield Cloud (platform.higgsfield.ai). Authenticates with

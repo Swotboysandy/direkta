@@ -132,7 +132,7 @@ export interface Message {
 export type VendorKind = "text" | "image" | "video";
 
 export type TextProvider = "anthropic" | "openai" | "google" | "deepseek" | "openai-compatible";
-export type ImageProvider = "fal" | "openai-image" | "higgsfield";
+export type ImageProvider = "fal" | "openai-image" | "higgsfield" | "byteplus-image";
 export type VideoProvider = "fal-video" | "runway" | "minimax" | "higgsfield-video" | "byteplus-video";
 
 export type AssetKind = "image" | "video";

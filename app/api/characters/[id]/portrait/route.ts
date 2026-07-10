@@ -24,8 +24,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const project = projects.get(character.project_id);
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
+  // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
+  // Higgsfield OAuth connection is the fallback when no vendor key is set.
   const vendor = vendors.firstEnabledImage();
-  const useMcp = isHiggsfieldMcpConnected();
+  const useMcp = !vendor && isHiggsfieldMcpConnected();
 
   // ── No generator at all → do nothing destructive. The character's state
   //    and existing looks stay exactly as they are.

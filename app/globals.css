@@ -76,8 +76,12 @@ a {
   text-decoration: none;
 }
 
+/* The v3 mockup declares border:0 on every button; the browser default
+   border otherwise leaks through as a stray ring on unstyled buttons. */
 button {
   cursor: pointer;
+  border: 0;
+  font-family: var(--font-ui);
 }
 
 /* Tame the browser-default bold (700) on semantic <strong> / <b> tags
@@ -337,6 +341,7 @@ strong, b {
   place-items: center;
   color: var(--mute);
   background: transparent;
+  border: 0;
   border-radius: var(--r-sm);
 }
 

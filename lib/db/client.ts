@@ -398,6 +398,7 @@ function seed(db: DatabaseSync) {
   ensureVendor(db, "higgsfield-image-default", "Higgsfield Cloud", "higgsfield", "soul", "image", 0);
   ensureVendor(db, "higgsfield-video-default", "Higgsfield Cloud (DoP)", "higgsfield-video", "dop-preview", "video", 0);
   ensureVendor(db, "byteplus-video-default", "BytePlus · Seedance 1.5 Pro", "byteplus-video", "seedance-1-5-pro-251215", "video", 1);
+  ensureVendor(db, "byteplus-image-default", "BytePlus · Seedream 4.5", "byteplus-image", "seedream-4-5-251128", "image", 1);
 
   seedLisbonPact(db);
 }
