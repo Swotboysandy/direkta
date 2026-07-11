@@ -40,6 +40,7 @@ export type ProjectFormat =
   | "Other";
 
 export type LengthEstimate =
+  | "Under 1 min"
   | "Under 5 min"
   | "5–15 min"
   | "15–30 min"
@@ -69,6 +70,12 @@ export interface Project {
   script: string;
   script_submitted: boolean;
   script_ai_generated: boolean;
+  /** Creative direction — what this piece IS (tone, story, audience). Feeds
+   *  script generation, AI prompts and frame generation. */
+  creative_brief: string;
+  /** Brand & product placement — e.g. "Kindle Coffee: red-logo cups, barista
+   *  aprons, storefront sign". Folded into every frame prompt. */
+  brand_kit: string;
   /* Movie Bible — title page + synopsis + production meta */
   genre: string;
   tagline: string;

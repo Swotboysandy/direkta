@@ -260,6 +260,80 @@ export function Screenplay({
         </motion.header>
 
         <motion.div className="page-body" {...pageIn}>
+          {/* Creative direction — steers script generation, AI prompts and
+              every frame. Autosaves on blur. */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.5fr 1fr",
+              gap: 12,
+              marginBottom: 16
+            }}
+          >
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ ...mono10, color: "var(--mute)" }}>
+                Creative brief · what is this? (tone, audience, story — steers all generation)
+              </span>
+              <textarea
+                defaultValue={project.creative_brief}
+                onBlur={(e) =>
+                  fetch(`/api/projects/${project.id}`, {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ creative_brief: e.target.value })
+                  }).catch(() => {})
+                }
+                placeholder="e.g. funny 20-second meme about Monday mornings · or: warm cinematic family ad, golden light, no dialogue"
+                rows={2}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  border: 0,
+                  borderRadius: 14,
+                  boxShadow: "inset 0 0 0 1px var(--cream-deep)",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  resize: "vertical",
+                  outline: "none"
+                }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ ...mono10, color: "var(--mute)" }}>
+                Brand &amp; products · placed into scenes (cups, tees, bottles…)
+              </span>
+              <textarea
+                defaultValue={project.brand_kit}
+                onBlur={(e) =>
+                  fetch(`/api/projects/${project.id}`, {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ brand_kit: e.target.value })
+                  }).catch(() => {})
+                }
+                placeholder="e.g. Kindle Coffee — red-logo cup, barista apron, storefront sign"
+                rows={2}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  border: 0,
+                  borderRadius: 14,
+                  boxShadow: "inset 0 0 0 1px var(--cream-deep)",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  resize: "vertical",
+                  outline: "none"
+                }}
+              />
+            </label>
+          </div>
+
           <div
             style={{
               background: "var(--surface)",

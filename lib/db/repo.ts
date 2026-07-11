@@ -61,6 +61,8 @@ function rowToProject(row: Row): Project {
     script: String(row.script ?? ""),
     script_submitted: !!row.script_submitted,
     script_ai_generated: !!row.script_ai_generated,
+    creative_brief: String(row.creative_brief ?? ""),
+    brand_kit: String(row.brand_kit ?? ""),
     genre: String(row.genre ?? ""),
     tagline: String(row.tagline ?? ""),
     director_name: String(row.director_name ?? ""),
@@ -170,6 +172,8 @@ export const projects = {
         | "script"
         | "script_submitted"
         | "script_ai_generated"
+        | "creative_brief"
+        | "brand_kit"
       >
     >
   ) {

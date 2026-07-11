@@ -24,7 +24,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ beatId
   const beat = db
     .prepare(
       `SELECT b.n, b.title, b.scene_heading, b.summary, b.characters, b.mood,
-              p.title AS project_title, p.premise, p.genre, p.aspect_ratio
+              p.title AS project_title, p.premise, p.genre, p.aspect_ratio, p.creative_brief, p.brand_kit
        FROM beats b JOIN projects p ON p.id = b.project_id WHERE b.id = ?`
     )
     .get(beatId) as
@@ -39,6 +39,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ beatId
         premise: string;
         genre: string;
         aspect_ratio: string;
+        creative_brief: string;
+        brand_kit: string;
       }
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
@@ -50,7 +52,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ beatId
 
   const chars = safeList(beat.characters);
   const mood = safeList(beat.mood);
-  const userPrompt = `FILM: ${beat.project_title} (${beat.genre || "drama"}) — ${beat.premise}
+  const userPrompt = `FILM: ${beat.project_title} (${beat.genre || "drama"}) — ${beat.premise}${
+    beat.creative_brief ? `\nCREATIVE BRIEF: ${beat.creative_brief}` : ""
+  }${beat.brand_kit ? `\nPRODUCT PLACEMENT (include naturally when it fits): ${beat.brand_kit}` : ""}
 BEAT ${beat.n}: ${beat.title}
 SCENE: ${beat.scene_heading}
 WHAT HAPPENS: ${beat.summary || beat.title}

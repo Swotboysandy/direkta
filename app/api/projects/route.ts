@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_ASPECTS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5", "21:9"];
 const VALID_FORMATS: ProjectFormat[] = ["Short Film", "Music Video", "Ad", "Series", "Feature", "Other"];
-const VALID_LENGTHS: LengthEstimate[] = ["Under 5 min", "5–15 min", "15–30 min", "30+ min"];
+const VALID_LENGTHS: LengthEstimate[] = ["Under 1 min", "Under 5 min", "5–15 min", "15–30 min", "30+ min"];
 
 export async function GET() {
   return NextResponse.json({ projects: projects.list() });
@@ -27,5 +27,17 @@ export async function POST(req: Request) {
     : "Under 5 min";
 
   const project = projects.create({ title, premise, logline, aspect_ratio, format, length_estimate });
-  return NextResponse.json({ project }, { status: 201 });
+
+  // Optional creative direction, set at birth so the very first script
+  // generation already follows it.
+  const creative_brief = typeof body.creative_brief === "string" ? body.creative_brief.slice(0, 2000) : "";
+  const brand_kit = typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 1000) : "";
+  if (creative_brief || brand_kit) {
+    projects.update(project.id, {
+      creative_brief: creative_brief || undefined,
+      brand_kit: brand_kit || undefined
+    });
+  }
+
+  return NextResponse.json({ project: projects.get(project.id) }, { status: 201 });
 }

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_ASPECTS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5", "21:9"];
 const VALID_FORMATS: ProjectFormat[] = ["Short Film", "Music Video", "Ad", "Series", "Feature", "Other"];
-const VALID_LENGTHS: LengthEstimate[] = ["Under 5 min", "5–15 min", "15–30 min", "30+ min"];
+const VALID_LENGTHS: LengthEstimate[] = ["Under 1 min", "Under 5 min", "5–15 min", "15–30 min", "30+ min"];
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -43,6 +43,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     title: typeof body.title === "string" ? body.title : undefined,
     premise: typeof body.premise === "string" ? body.premise : undefined,
     logline: typeof body.logline === "string" ? body.logline : undefined,
+    creative_brief: typeof body.creative_brief === "string" ? body.creative_brief.slice(0, 2000) : undefined,
+    brand_kit: typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 1000) : undefined,
     script: typeof body.script === "string" ? body.script : undefined,
     script_submitted: typeof body.script_submitted === "boolean" ? body.script_submitted : undefined,
     script_ai_generated: typeof body.script_ai_generated === "boolean" ? body.script_ai_generated : undefined,

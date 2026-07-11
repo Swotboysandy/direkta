@@ -8,7 +8,7 @@ import { pageIn, tap } from "./motion";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../../lib/types";
 
 const FORMATS: ProjectFormat[] = ["Short Film", "Music Video", "Ad", "Series", "Feature", "Other"];
-const LENGTHS: LengthEstimate[] = ["Under 5 min", "5–15 min", "15–30 min", "30+ min"];
+const LENGTHS: LengthEstimate[] = ["Under 1 min", "Under 5 min", "5–15 min", "15–30 min", "30+ min"];
 const ASPECTS: { value: AspectRatio; label: string }[] = [
   { value: "16:9", label: "16:9 landscape" },
   { value: "9:16", label: "9:16 portrait" },
@@ -23,6 +23,8 @@ interface Props {
   onCreate: (input: {
     title: string;
     logline: string;
+    creative_brief: string;
+    brand_kit: string;
     format: ProjectFormat;
     length_estimate: LengthEstimate;
     aspect_ratio: AspectRatio;
@@ -113,6 +115,8 @@ function chipStyle(active: boolean, mono = false): CSSProperties {
 export function NewProjectModal({ open, onClose, onCreate }: Props) {
   const [title, setTitle] = useState("");
   const [logline, setLogline] = useState("");
+  const [brief, setBrief] = useState("");
+  const [brand, setBrand] = useState("");
   const [format, setFormat] = useState<ProjectFormat>("Short Film");
   const [length, setLength] = useState<LengthEstimate>("Under 5 min");
   const [aspect, setAspect] = useState<AspectRatio>("16:9");
@@ -128,12 +132,16 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
       await onCreate({
         title: title.trim(),
         logline: logline.trim(),
+        creative_brief: brief.trim(),
+        brand_kit: brand.trim(),
         format,
         length_estimate: length,
         aspect_ratio: aspect
       });
       setTitle("");
       setLogline("");
+      setBrief("");
+      setBrand("");
       setFormat("Short Film");
       setLength("Under 5 min");
       setAspect("16:9");
@@ -205,6 +213,27 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
               placeholder="One sentence. What's the story?"
               rows={2}
               style={{ ...fieldInputStyle, resize: "vertical" }}
+            />
+          </label>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={fieldLabelStyle}>Creative brief (optional — steers every generation)</span>
+            <textarea
+              value={brief}
+              onChange={(e) => setBrief(e.target.value)}
+              placeholder="What is this? Tone, audience, story you want — e.g. 'funny 20s meme about Monday mornings' or 'warm cinematic ad, family feeling, golden light'"
+              rows={3}
+              style={{ ...fieldInputStyle, resize: "vertical" }}
+            />
+          </label>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={fieldLabelStyle}>Brand &amp; products (optional — placed into scenes)</span>
+            <input
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              placeholder="e.g. Kindle Coffee — red-logo cups, barista aprons, storefront sign"
+              style={fieldInputStyle}
             />
           </label>
 

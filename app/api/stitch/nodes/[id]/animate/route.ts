@@ -15,6 +15,7 @@ export const runtime = "nodejs";
 
 interface NodeRow {
   id: string;
+  duration: number;
   beat_title: string | null;
   beat_scene: string | null;
   row_style: string | null;
@@ -37,7 +38,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const node = db
     .prepare(
-      `SELECT sn.id,
+      `SELECT sn.id, sn.duration,
               b.title as beat_title, b.scene_heading as beat_scene,
               sr.style as row_style,
               p.aspect_ratio, p.premise,
@@ -53,6 +54,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .get(id) as NodeRow | undefined;
 
   if (!node) return NextResponse.json({ error: "Shot not found" }, { status: 404 });
+
+  // The shot's duration slider drives the clip length. Seedance 1.5 Pro
+  // accepts 5s or 10s, so snap to the nearest; other providers keep 5s.
+  const clipDuration = Number(node.duration) >= 7.5 ? 10 : 5;
 
   const vendor = vendors.firstEnabledVideo();
   const useMcp = isHiggsfieldMcpConnected();
@@ -121,7 +126,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           model: chosen.byteplus!.model,
           prompt,
           referenceImageUrl: refImage,
-          resolution: chosen.byteplus!.resolution
+          resolution: chosen.byteplus!.resolution,
+          duration: clipDuration
         })
       : useMcp
         ? await generateVideoViaMcp({

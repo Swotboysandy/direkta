@@ -298,6 +298,8 @@ export default function Home() {
     async (input: {
       title: string;
       logline: string;
+      creative_brief: string;
+      brand_kit: string;
       format: ProjectFormat;
       length_estimate: LengthEstimate;
       aspect_ratio: AspectRatio;

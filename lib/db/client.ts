@@ -333,6 +333,9 @@ function migrate(db: DatabaseSync) {
   ensureColumn(db, "projects", "full_synopsis", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "projects", "time_period", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "projects", "budget_tier", "TEXT NOT NULL DEFAULT 'indie'");
+  // Creative direction + brand/product placement (fed into all generation).
+  ensureColumn(db, "projects", "creative_brief", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "brand_kit", "TEXT NOT NULL DEFAULT ''");
 
   // bible: tone, world, visual language, production notes
   ensureColumn(db, "bible", "themes", "TEXT NOT NULL DEFAULT '[]'");

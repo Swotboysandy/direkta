@@ -30,11 +30,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 
   const beat = db
     .prepare(
-      `SELECT b.id, b.title, b.scene_heading, b.characters, b.project_id, p.aspect_ratio, p.premise
+      `SELECT b.id, b.title, b.scene_heading, b.characters, b.project_id, p.aspect_ratio, p.premise, p.brand_kit
        FROM beats b JOIN projects p ON p.id = b.project_id WHERE b.id = ?`
     )
     .get(beatId) as
-    | { id: string; title: string; scene_heading: string; characters: string; project_id: string; aspect_ratio: AspectRatio; premise: string }
+    | { id: string; title: string; scene_heading: string; characters: string; project_id: string; aspect_ratio: AspectRatio; premise: string; brand_kit: string }
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
 
@@ -93,9 +93,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const castLock = referencedNames.length
     ? `The SAME person(s) as in the attached reference image(s): ${referencedDescs.join(" · ")} — identical face, hair and wardrobe as the reference.`
     : "";
+  // Brand/product placement rides on every frame when the project defines it.
+  const brandLine = beat.brand_kit
+    ? `Product placement, shown naturally where it fits the scene: ${beat.brand_kit}. Brand items look real and unobtrusive — no oversized logos, no text overlays.`
+    : "";
   const antiGrid =
     "One single cinematic frame depicting ONE moment — never a grid, collage, contact sheet, storyboard, split screen, or multiple panels.";
-  const genPrompt = [castLock, prompt, skill?.body ?? "", antiGrid].filter(Boolean).join("\n\n");
+  const genPrompt = [castLock, prompt, brandLine, skill?.body ?? "", antiGrid].filter(Boolean).join("\n\n");
 
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
