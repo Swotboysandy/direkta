@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus, RefreshCcw, X } from "../_components/icons";
+import { ArrowRight, Plus, RefreshCcw, Sparkles, X } from "../_components/icons";
 import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Character, Location, Project, WorkspaceId } from "../../lib/types";
 
@@ -99,10 +99,41 @@ interface Props {
 
 export function Casting({ project, characters, locations, onSwitchWorkspace, onReload }: Props) {
   const [adding, setAdding] = useState<"character" | "location" | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importNote, setImportNote] = useState<string | null>(null);
 
   const trained = characters.filter((c) => c.soul_id_state === "trained").length;
   const total = characters.length;
   const castTone = toneColors(trained >= total && total > 0 ? "success" : "warning");
+
+  /** Have the AI casting director read the script and add anyone missing.
+   *  Never touches beats or existing characters — safe on any project. */
+  async function importFromScript() {
+    if (importing) return;
+    setImporting(true);
+    setImportNote(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/characters/import`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setImportNote(data.error ?? "Import failed");
+        return;
+      }
+      await onReload();
+      setImportNote(
+        data.characters_added || data.locations_added
+          ? `Imported ${data.characters_added} character(s) + ${data.locations_added} location(s)${
+              data.added?.length ? ` — ${data.added.join(", ")}` : ""
+            }`
+          : "Everyone in the script is already cast."
+      );
+    } catch (e) {
+      setImportNote(String(e));
+    } finally {
+      setImporting(false);
+      setTimeout(() => setImportNote(null), 6000);
+    }
+  }
 
   return (
     <motion.div className="main-inner" {...pageIn}>
@@ -160,6 +191,41 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
             {trained} / {total || "—"} Soul IDs
           </span>
           <HoverButton
+            onClick={importFromScript}
+            disabled={importing || !project.script_submitted}
+            title={
+              project.script_submitted
+                ? "AI reads the script and adds every character + location it finds (existing cast untouched)"
+                : "Submit a script in Screenplay first"
+            }
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              fontWeight: 600,
+              fontSize: 14,
+              color: "var(--ink)",
+              background: "var(--surface)",
+              border: "none",
+              borderRadius: 999,
+              boxShadow: "var(--shadow-1)",
+              cursor: "pointer",
+              whiteSpace: "nowrap"
+            }}
+            hoverStyle={{ background: "color-mix(in srgb, var(--ink) 12%, transparent)" }}
+          >
+            {importing ? (
+              <>
+                <RefreshCcw size={12} className="fx-rotate-load" /> Reading script…
+              </>
+            ) : (
+              <>
+                <Sparkles size={12} /> Import from script
+              </>
+            )}
+          </HoverButton>
+          <HoverButton
             onClick={() => setAdding("character")}
             style={{
               display: "inline-flex",
@@ -204,6 +270,22 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
           </HoverButton>
         </div>
       </motion.header>
+
+      {importNote && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "12px 18px",
+            borderRadius: 14,
+            background: "color-mix(in srgb, var(--accent) 10%, transparent)",
+            color: "var(--ink)",
+            fontSize: 13,
+            lineHeight: 1.5
+          }}
+        >
+          {importNote}
+        </div>
+      )}
 
       <div className="page-body">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
