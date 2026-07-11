@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus, RefreshCcw, Sparkles, X } from "../_components/icons";
+import { ArrowRight, Check, Plus, RefreshCcw, Sparkles, X } from "../_components/icons";
 import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Character, Location, Project, WorkspaceId } from "../../lib/types";
 
@@ -288,13 +289,22 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
       )}
 
       <div className="page-body">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
             Characters · {total} cast
           </span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
-            Portraits roll on your image vendor
-          </span>
+          <BatchGenerate
+            label="Cast all"
+            verb="portrait"
+            items={characters.map((c) => ({ id: c.id, name: c.name, hasLook: (c.refs ?? []).length > 0 }))}
+            endpoint={(cid) => `/api/characters/${cid}/portrait`}
+            onProgress={(msg) => setImportNote(msg)}
+            onDone={async (n) => {
+              await onReload();
+              setImportNote(n ? `Cast ${n} portrait(s) — they're now reference-locked for the storyboard.` : null);
+              setTimeout(() => setImportNote(null), 6000);
+            }}
+          />
         </div>
 
         {characters.length === 0 ? (
@@ -343,10 +353,22 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
           </motion.div>
         )}
 
-        <div style={{ margin: "40px 0 14px" }}>
+        <div style={{ margin: "40px 0 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
             Locations · {locations.length} identified
           </span>
+          <BatchGenerate
+            label="Scout all"
+            verb="plate"
+            items={locations.map((l) => ({ id: l.id, name: l.name, hasLook: (l.refs ?? []).length > 0 }))}
+            endpoint={(lid) => `/api/locations/${lid}/plate`}
+            onProgress={(msg) => setImportNote(msg)}
+            onDone={async (n) => {
+              await onReload();
+              setImportNote(n ? `Scouted ${n} location plate(s).` : null);
+              setTimeout(() => setImportNote(null), 6000);
+            }}
+          />
         </div>
 
         {locations.length === 0 ? (
@@ -944,6 +966,20 @@ function LocationCard({
   projectId: string;
   onChange: () => Promise<void> | void;
 }) {
+  void projectId;
+  const [scouting, setScouting] = useState(false);
+
+  async function scoutPlate() {
+    if (scouting) return;
+    setScouting(true);
+    try {
+      await fetch(`/api/locations/${location.id}/plate`, { method: "POST" });
+      await onChange();
+    } finally {
+      setScouting(false);
+    }
+  }
+
   const ref = location.refs[0];
   const tone = toneColors(
     location.soul_id_state === "trained"
@@ -1003,9 +1039,231 @@ function LocationCard({
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
             {stateLabel}
           </span>
+          <HoverButton
+            onClick={scoutPlate}
+            disabled={scouting}
+            title="Generate an establishing plate for this location · ≈14k tokens"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 13px",
+              fontWeight: 600,
+              fontSize: 12,
+              fontFamily: "var(--font-ui)",
+              color: "var(--ink)",
+              background: "var(--surface-2)",
+              borderRadius: 999,
+              cursor: "pointer",
+              whiteSpace: "nowrap"
+            }}
+            hoverStyle={{ background: "color-mix(in srgb, var(--ink) 12%, transparent)" }}
+          >
+            {scouting ? (
+              <>
+                <RefreshCcw size={11} className="fx-rotate-load" /> Scouting…
+              </>
+            ) : ref ? (
+              "New plate · ≈14k tok"
+            ) : (
+              "Scout plate · ≈14k tok"
+            )}
+          </HoverButton>
         </div>
       </div>
     </HoverDiv>
+  );
+}
+
+/* Batch generation with selection + cost preview: pick which items to roll,
+   see the total token price live, then run sequentially with progress. */
+function BatchGenerate({
+  label,
+  verb,
+  items,
+  endpoint,
+  onProgress,
+  onDone
+}: {
+  label: string;
+  verb: string;
+  items: Array<{ id: string; name: string; hasLook: boolean }>;
+  endpoint: (id: string) => string;
+  onProgress: (msg: string) => void;
+  onDone: (generated: number) => Promise<void> | void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  const missing = items.filter((i) => !i.hasLook);
+  // Default selection: everything without a look yet.
+  useEffect(() => {
+    if (!open) return;
+    setPicked(new Set(missing.map((i) => i.id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  if (items.length === 0) return null;
+
+  const costK = Math.round((picked.size * 14_400) / 1000);
+
+  async function run() {
+    if (running || picked.size === 0) return;
+    setOpen(false);
+    setRunning(true);
+    const ids = items.filter((i) => picked.has(i.id));
+    let done = 0;
+    try {
+      for (const item of ids) {
+        onProgress(`Generating ${verb} for ${item.name} — ${done + 1} / ${ids.length}…`);
+        const res = await fetch(endpoint(item.id), { method: "POST" });
+        if (res.ok) done++;
+      }
+    } finally {
+      setRunning(false);
+      await onDone(done);
+    }
+  }
+
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger asChild>
+        <button
+          disabled={running}
+          title={`Generate ${verb}s in batch — pick who's included and see the cost first`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 15px",
+            fontWeight: 600,
+            fontSize: 13,
+            fontFamily: "var(--font-ui)",
+            color: "var(--ink)",
+            background: "var(--surface)",
+            borderRadius: 999,
+            boxShadow: "var(--shadow-1)",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            opacity: running ? 0.7 : 1
+          }}
+        >
+          {running ? (
+            <>
+              <RefreshCcw size={12} className="fx-rotate-load" /> Generating…
+            </>
+          ) : (
+            <>
+              <Sparkles size={12} /> {label}
+              {missing.length > 0 && (
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--mute)" }}>
+                  {missing.length} missing
+                </span>
+              )}
+            </>
+          )}
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          align="end"
+          sideOffset={8}
+          style={{
+            width: 300,
+            background: "var(--surface)",
+            backdropFilter: "blur(20px)",
+            borderRadius: 18,
+            boxShadow: "var(--shadow-3)",
+            padding: 14,
+            zIndex: 90,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10
+          }}
+        >
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: "0.02em", color: "var(--mute)" }}>
+            {label} · pick who to generate
+          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: 260, overflowY: "auto" }}>
+            {items.map((i) => {
+              const on = picked.has(i.id);
+              return (
+                <button
+                  key={i.id}
+                  onClick={() =>
+                    setPicked((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(i.id)) next.delete(i.id);
+                      else next.add(i.id);
+                      return next;
+                    })
+                  }
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    background: "transparent",
+                    color: "var(--ink)",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-ui)",
+                    fontSize: 13,
+                    fontWeight: 500
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "color-mix(in srgb, var(--ink) 8%, transparent)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span
+                    style={{
+                      width: 16,
+                      height: 16,
+                      display: "grid",
+                      placeItems: "center",
+                      borderRadius: 5,
+                      background: on ? "var(--accent)" : "var(--surface-2)",
+                      color: "var(--on-accent)",
+                      flexShrink: 0
+                    }}
+                  >
+                    {on && <Check size={10} strokeWidth={3} />}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {i.name}
+                  </span>
+                  {i.hasLook && (
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--viridian)", flexShrink: 0 }}>
+                      has look
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={run}
+            disabled={picked.size === 0}
+            style={{
+              width: "100%",
+              padding: "10px 16px",
+              fontWeight: 600,
+              fontSize: 13,
+              fontFamily: "var(--font-ui)",
+              color: "var(--on-accent)",
+              background: "var(--accent)",
+              borderRadius: 999,
+              cursor: "pointer",
+              opacity: picked.size === 0 ? 0.5 : 1
+            }}
+          >
+            Generate {picked.size} · ≈{costK}k tok
+          </button>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 
