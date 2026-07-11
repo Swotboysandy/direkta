@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -110,6 +111,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   const [cast, setCast] = useState<CastMember[]>([]);
   const [batchRolling, setBatchRolling] = useState(false);
   const [batchStitching, setBatchStitching] = useState(false);
+  const [rollMenuOpen, setRollMenuOpen] = useState(false);
   const [globalStyle, setGlobalStyle] = useState<GlobalStyle>({
     visual: "Noir",
     aspect: project.aspect_ratio,
@@ -274,18 +276,21 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     (b) => !(variantsByBeat[b.id] ?? []).some((v) => v.state === "complete" && v.asset_url)
   );
 
-  /** Roll every beat that has no frame yet — one take each, sequentially. */
-  async function rollAllMissing() {
+  /** Roll every beat that has no frame yet — N takes each, sequentially. */
+  async function rollAllMissing(takesPerBeat: number) {
     if (batchRolling || missingBeats.length === 0) return;
     setBatchRolling(true);
     try {
       for (let i = 0; i < missingBeats.length; i++) {
         const beat = missingBeats[i];
-        flashToast("info", `Rolling beat ${String(beat.n).padStart(2, "0")} — ${i + 1} / ${missingBeats.length}…`);
+        flashToast(
+          "info",
+          `Rolling beat ${String(beat.n).padStart(2, "0")} (${takesPerBeat} ${takesPerBeat === 1 ? "take" : "takes"}) — ${i + 1} / ${missingBeats.length}…`
+        );
         const row = rowByBeat[beat.id];
         const style = row?.style ?? {};
         const prompt = style.prompt_override || defaultPromptFor(beat, style, globalStyle);
-        await generate(beat.id, prompt, 1);
+        await generate(beat.id, prompt, takesPerBeat);
       }
       flashToast("success", `Rolled ${missingBeats.length} beats — review the takes, then Stitch all.`);
     } finally {
@@ -385,22 +390,102 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
             {approvedBeatCount} / {beats.length || "—"} APPROVED
           </span>
           {missingBeats.length > 0 && (
-            <button
-              className="btn"
-              disabled={batchRolling}
-              onClick={rollAllMissing}
-              title={`Generate one take for every beat without a frame · ≈${Math.round((missingBeats.length * 14_400) / 1000)}k tokens`}
-            >
-              {batchRolling ? (
-                <>
-                  <RefreshCcw size={14} className="fx-rotate-load" /> Rolling…
-                </>
-              ) : (
-                <>
-                  <Wand2 size={14} /> Roll all {missingBeats.length} · ≈{Math.round((missingBeats.length * 14_400) / 1000)}k tok
-                </>
-              )}
-            </button>
+            <Popover.Root open={rollMenuOpen} onOpenChange={setRollMenuOpen}>
+              <Popover.Trigger asChild>
+                <button
+                  className="btn"
+                  disabled={batchRolling}
+                  title={`Generate frames for every beat without one — pick how many takes per scene`}
+                >
+                  {batchRolling ? (
+                    <>
+                      <RefreshCcw size={14} className="fx-rotate-load" /> Rolling…
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 size={14} /> Roll all {missingBeats.length} beats
+                    </>
+                  )}
+                </button>
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  align="end"
+                  sideOffset={8}
+                  style={{
+                    width: 260,
+                    background: "var(--surface)",
+                    backdropFilter: "blur(20px)",
+                    borderRadius: 18,
+                    boxShadow: "var(--shadow-3)",
+                    padding: 10,
+                    zIndex: 90,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4
+                  }}
+                >
+                  <span
+                    style={{
+                      padding: "6px 10px 8px",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: "0.02em",
+                      color: "var(--mute)"
+                    }}
+                  >
+                    Takes per scene · {missingBeats.length} beats to roll
+                  </span>
+                  {[1, 2, 4].map((n) => {
+                    const costK = Math.round((missingBeats.length * n * 14_400) / 1000);
+                    return (
+                      <button
+                        key={n}
+                        onClick={() => {
+                          setRollMenuOpen(false);
+                          rollAllMissing(n);
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "10px 12px",
+                          borderRadius: 12,
+                          background: "transparent",
+                          color: "var(--ink)",
+                          cursor: "pointer",
+                          fontFamily: "var(--font-ui)",
+                          fontSize: 14,
+                          fontWeight: 500
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "color-mix(in srgb, var(--ink) 8%, transparent)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        <span>
+                          {n} {n === 1 ? "take" : "takes"} each
+                          {n === 1 ? (
+                            <span style={{ marginLeft: 6, fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--viridian)" }}>
+                              cheapest
+                            </span>
+                          ) : n === 4 ? (
+                            <span style={{ marginLeft: 6, fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--mute)" }}>
+                              most choice
+                            </span>
+                          ) : null}
+                        </span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: "var(--mute)", whiteSpace: "nowrap" }}>
+                          ≈{costK}k tok
+                        </span>
+                      </button>
+                    );
+                  })}
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
           )}
           <button className="btn" disabled={beats.length === 0} onClick={startReview}>
             <Stamp size={14} /> Review dailies
