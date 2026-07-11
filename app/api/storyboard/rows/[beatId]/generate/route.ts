@@ -55,11 +55,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     ? rowStyle.cast_override.filter((x: unknown) => typeof x === "string")
     : [];
   const castRows = db
-    .prepare("SELECT name, refs FROM characters WHERE project_id = ?")
-    .all(beat.project_id) as Array<{ name: string; refs: string }>;
+    .prepare("SELECT name, refs, brief FROM characters WHERE project_id = ?")
+    .all(beat.project_id) as Array<{ name: string; refs: string; brief: string }>;
   const promptLower = prompt.toLowerCase();
   const referenceImages: string[] = [];
   const referencedNames: string[] = [];
+  const referencedDescs: string[] = [];
   for (const c of castRows) {
     const name = c.name.trim();
     const onBeat = beatCharNames.some((n) => n.trim().toLowerCase() === name.toLowerCase());
@@ -72,23 +73,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
       // the identity lock considerably.
       referenceImages.push(...refs.slice(0, 2));
       referencedNames.push(c.name);
+      // Physical anchor from the casting brief, folded into the lock preamble.
+      let brief: Record<string, unknown> = {};
+      try {
+        brief = JSON.parse(c.brief ?? "{}");
+      } catch {
+        /* brief stays empty */
+      }
+      const traits = [brief.features, brief.wardrobe].filter(Boolean).join("; ");
+      referencedDescs.push(traits ? `${c.name} (${traits})` : c.name);
     }
     if (referenceImages.length >= 6) break;
   }
   // Fold in the editable Cinematography skill so frames follow the house style.
   const skill = skillForPart("cinematography");
-  // Hard framing constraints: one scene per image (Seedream happily produces
-  // contact-sheet grids when the script says "montage"), and lock any cast
-  // members to their reference portraits.
-  const constraints = [
-    "One single cinematic frame depicting ONE moment — never a grid, collage, contact sheet, storyboard, split screen, or multiple panels.",
-    referencedNames.length
-      ? `The character(s) ${referencedNames.join(", ")} must exactly match the appearance, face, hair and wardrobe of the person(s) in the attached reference image(s).`
-      : ""
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const genPrompt = [prompt, skill?.body ?? "", constraints].filter(Boolean).join("\n\n");
+  // The cast lock LEADS the prompt — Seedream weighs early instructions far
+  // more heavily, so burying the reference note after the style block lets
+  // identity drift (verified A/B). The anti-grid constraint closes it out.
+  const castLock = referencedNames.length
+    ? `The SAME person(s) as in the attached reference image(s): ${referencedDescs.join(" · ")} — identical face, hair and wardrobe as the reference.`
+    : "";
+  const antiGrid =
+    "One single cinematic frame depicting ONE moment — never a grid, collage, contact sheet, storyboard, split screen, or multiple panels.";
+  const genPrompt = [castLock, prompt, skill?.body ?? "", antiGrid].filter(Boolean).join("\n\n");
 
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
