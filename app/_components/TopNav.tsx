@@ -18,6 +18,7 @@ import {
   Upload,
   Check,
   Sparkles,
+  Trash2,
   type IconType
 } from "./icons";
 import type { AgentStatus, Project, WorkspaceId } from "../../lib/types";
@@ -56,6 +57,7 @@ interface Props {
   skillsOpen: boolean;
   onSwitchProject: (id: string) => void;
   onNewProject: () => void;
+  onDeleteProject: (id: string) => void;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
   onOpenKeyVault: () => void;
   onOpenSkills: () => void;
@@ -221,6 +223,7 @@ export function TopNav({
   skillsOpen,
   onSwitchProject,
   onNewProject,
+  onDeleteProject,
   onSwitchWorkspace,
   onOpenKeyVault,
   onOpenSkills
@@ -310,28 +313,68 @@ export function TopNav({
             collisionPadding={16}
           >
             {projects.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => {
-                  onSwitchProject(p.id);
-                  setMenuOpen(false);
-                }}
-                className="project-picker-item"
-                data-active={p.id === activeProjectId}
-              >
-                <span className="project-picker-title">{p.title}</span>
-                <span
+              <div key={p.id} style={{ position: "relative" }}>
+                <button
+                  onClick={() => {
+                    onSwitchProject(p.id);
+                    setMenuOpen(false);
+                  }}
+                  className="project-picker-item"
+                  data-active={p.id === activeProjectId}
+                  style={{ paddingRight: 40 }}
+                >
+                  <span className="project-picker-title">{p.title}</span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 10,
+                      letterSpacing: "0.02em",
+                      textTransform: "none",
+                      opacity: 0.7
+                    }}
+                  >
+                    {p.format} · {p.aspect_ratio}
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (
+                      confirm(
+                        `Delete "${p.title}"?\n\nThis permanently removes its script, beats, characters, storyboard frames and clips.`
+                      )
+                    ) {
+                      onDeleteProject(p.id);
+                    }
+                  }}
+                  aria-label={`Delete ${p.title}`}
+                  title={`Delete ${p.title}`}
                   style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10,
-                    letterSpacing: "0.02em",
-                    textTransform: "none",
-                    opacity: 0.7
+                    position: "absolute",
+                    top: "50%",
+                    right: 8,
+                    transform: "translateY(-50%)",
+                    width: 26,
+                    height: 26,
+                    display: "grid",
+                    placeItems: "center",
+                    background: "transparent",
+                    color: "var(--mute)",
+                    borderRadius: 999,
+                    cursor: "pointer"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--tomato)";
+                    e.currentTarget.style.background = "color-mix(in srgb, var(--tomato) 12%, transparent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--mute)";
+                    e.currentTarget.style.background = "transparent";
                   }}
                 >
-                  {p.format} · {p.aspect_ratio}
-                </span>
-              </button>
+                  <Trash2 size={13} />
+                </button>
+              </div>
             ))}
             <button
               onClick={() => {

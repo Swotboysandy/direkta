@@ -267,6 +267,25 @@ export default function Home() {
     if (active && !active.unlocked) setActiveWorkspace("dashboard");
   }, [bundle, workspaces, activeWorkspace]);
 
+  const deleteProject = useCallback(
+    async (id: string) => {
+      await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      const list = await fetch("/api/projects").then((r) => r.json());
+      const all = list.projects as Project[];
+      setProjects(all);
+      if (id === projectId) {
+        const next = all[0]?.id ?? null;
+        setProjectId(next);
+        setActiveWorkspace("dashboard");
+        if (!next) {
+          setBundle(null);
+          setNewProjectOpen(true);
+        }
+      }
+    },
+    [projectId]
+  );
+
   const createProject = useCallback(
     async (input: {
       title: string;
@@ -306,6 +325,7 @@ export default function Home() {
           setActiveWorkspace("dashboard");
         }}
         onNewProject={() => setNewProjectOpen(true)}
+        onDeleteProject={deleteProject}
         onSwitchWorkspace={switchWorkspace}
         onOpenKeyVault={() => setKeyVaultOpen(true)}
         onOpenSkills={() => setSkillsOpen(true)}
