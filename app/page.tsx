@@ -69,6 +69,7 @@ export default function Home() {
     frames: 0,
     stitchNodes: 0
   });
+  const [gateLoaded, setGateLoaded] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -131,9 +132,15 @@ export default function Home() {
         frames: (sb.variants ?? []).filter((v: { asset_url: string | null }) => v.asset_url).length,
         stitchNodes: (st.nodes ?? []).length
       });
+      setGateLoaded(true);
     } catch {
       /* gates simply stay as they were */
     }
+  }, [projectId]);
+
+  // New project selected → gates are unknown again until the first fetch.
+  useEffect(() => {
+    setGateLoaded(false);
   }, [projectId]);
 
   const reload = useCallback(async () => {
@@ -260,12 +267,13 @@ export default function Home() {
 
   // If the active workspace becomes locked (project switch, fresh project,
   // stale ?ws= URL), snap back to the dashboard rather than showing a stage
-  // the pipeline hasn't reached.
+  // the pipeline hasn't reached. Waits for the gate fetch so a deep link to
+  // e.g. ?ws=stitch isn't bounced while the counts are still loading.
   useEffect(() => {
-    if (!bundle) return;
+    if (!bundle || !gateLoaded) return;
     const active = workspaces.find((w) => w.id === activeWorkspace);
     if (active && !active.unlocked) setActiveWorkspace("dashboard");
-  }, [bundle, workspaces, activeWorkspace]);
+  }, [bundle, gateLoaded, workspaces, activeWorkspace]);
 
   const deleteProject = useCallback(
     async (id: string) => {

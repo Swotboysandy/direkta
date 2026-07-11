@@ -1893,17 +1893,22 @@ strong, b {
   gap: 2px;
 }
 
+/* React Flow ships its own button styles (white fill) that load after ours —
+   force the glass treatment so the icons stay visible on the dark canvas. */
 .react-flow__controls-button {
   width: 32px;
   height: 32px;
-  background: transparent;
+  background: transparent !important;
   border: 0 !important;
-  color: var(--ink);
+  color: var(--ink) !important;
   border-radius: var(--r-pill);
 }
 
 .react-flow__controls-button svg {
-  fill: var(--ink);
+  fill: var(--ink) !important;
+  stroke: var(--ink);
+  max-width: 14px;
+  max-height: 14px;
 }
 
 .react-flow__controls-button:hover {

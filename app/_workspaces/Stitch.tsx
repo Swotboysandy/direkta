@@ -267,8 +267,9 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
 
   const selected = stitchNodes.find((n) => n.id === selectedId) ?? null;
   const totalDuration = stitchNodes.reduce((sum, n) => sum + n.duration, 0);
-  const completedTransitions = transitions.filter((t) => t.state === "complete").length;
-  const allClipsDone = completedTransitions === transitions.length && transitions.length > 0;
+  // Motion-clip progress: how many SHOTS have a rendered clip.
+  const clipsDone = stitchNodes.filter((n) => n.clip_url).length;
+  const allClipsDone = clipsDone === stitchNodes.length && stitchNodes.length > 0;
   const balanceLabel =
     balance?.connected === false ? "Higgsfield off" : balance?.credits != null ? `${balance.credits} credits` : "—";
 
@@ -362,7 +363,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             }}
           >
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
-            {completedTransitions} / {transitions.length || "—"} CLIPS · {totalDuration.toFixed(1)}s
+            {clipsDone} / {stitchNodes.length || "—"} clips · {totalDuration.toFixed(1)}s
           </span>
           <span
             style={{
@@ -535,6 +536,28 @@ function StitchTimeline({
     return () => cancelAnimationFrame(raf);
   }, [playing, total]);
 
+  // Monitor video sync — when the current shot has a rendered clip, the
+  // <video> plays it in the monitor, kept loosely in sync with the playhead.
+  const monitorVideoRef = useRef<HTMLVideoElement | null>(null);
+  const currentEntry =
+    offsets.find((e) => playheadSec >= e.start && playheadSec < e.end) ?? offsets[offsets.length - 1] ?? null;
+  useEffect(() => {
+    const v = monitorVideoRef.current;
+    if (!v || !currentEntry) return;
+    const local = Math.max(0, playheadSec - currentEntry.start);
+    // Re-seek only when meaningfully off (scrub or shot change) — the video's
+    // own clock carries playback between corrections.
+    if (Math.abs(v.currentTime - local) > 0.35) {
+      try {
+        v.currentTime = local;
+      } catch {
+        /* metadata not ready yet */
+      }
+    }
+    if (playing && v.paused) v.play().catch(() => {});
+    if (!playing && !v.paused) v.pause();
+  }, [playing, playheadSec, currentEntry]);
+
   if (ordered.length === 0) {
     return (
       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
@@ -579,7 +602,19 @@ function StitchTimeline({
       {/* Monitor */}
       <div style={{ position: "relative", display: "grid", placeItems: "center", background: "#060607", overflow: "hidden", borderBottom: "1px solid var(--cream-deep)", padding: 20 }}>
         <div style={{ position: "relative", height: "100%", maxHeight: "100%", aspectRatio: "16/9", maxWidth: "100%", background: "#000", borderRadius: 12, overflow: "hidden", boxShadow: "var(--shadow-2)" }}>
-          {current.node.frame_url ? (
+          {current.node.clip_url ? (
+            /* eslint-disable-next-line jsx-a11y/media-has-caption */
+            <video
+              key={current.node.id}
+              ref={monitorVideoRef}
+              src={current.node.clip_url}
+              poster={current.node.frame_url ?? undefined}
+              muted
+              playsInline
+              preload="auto"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : current.node.frame_url ? (
             <div
               role="img"
               aria-label={current.node.beat?.title ?? ""}
@@ -904,7 +939,7 @@ function StitchInspector({
       </header>
 
       {node.clip_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "#14100c", aspectRatio: "16/9" }}>
+        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "#14100c", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video
             src={node.clip_url}
@@ -934,7 +969,7 @@ function StitchInspector({
           </span>
         </div>
       ) : node.frame_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "var(--cream-deep)", aspectRatio: "16/9" }}>
+        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "var(--cream-deep)", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
           <div
             role="img"
             aria-label={node.beat?.title ?? ""}

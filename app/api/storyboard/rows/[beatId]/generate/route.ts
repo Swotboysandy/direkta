@@ -46,6 +46,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   //    when they're on the beat's cast list OR named in the prompt itself —
   //    typed or AI-written prompts lock too.
   const beatCharNames: string[] = safeJsonArray(beat.characters);
+  // Hand-picked "Cast in frame" chips are stored on the row style.
+  const existingRow = db.prepare("SELECT style FROM storyboard_rows WHERE beat_id = ?").get(beatId) as
+    | { style: string }
+    | undefined;
+  const rowStyle = existingRow?.style ? JSON.parse(existingRow.style) : {};
+  const overrideNames: string[] = Array.isArray(rowStyle.cast_override)
+    ? rowStyle.cast_override.filter((x: unknown) => typeof x === "string")
+    : [];
   const castRows = db
     .prepare("SELECT name, refs FROM characters WHERE project_id = ?")
     .all(beat.project_id) as Array<{ name: string; refs: string }>;
@@ -55,8 +63,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   for (const c of castRows) {
     const name = c.name.trim();
     const onBeat = beatCharNames.some((n) => n.trim().toLowerCase() === name.toLowerCase());
+    const picked = overrideNames.some((n) => n.trim().toLowerCase() === name.toLowerCase());
     const inPrompt = name.length >= 3 && promptLower.includes(name.toLowerCase());
-    if (!onBeat && !inPrompt) continue;
+    if (!onBeat && !picked && !inPrompt) continue;
     const refs = safeJsonArray(c.refs);
     if (refs.length) {
       // Two looks per character when available — extra references tighten

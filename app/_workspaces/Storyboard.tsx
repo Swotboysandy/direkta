@@ -53,6 +53,13 @@ interface BeatStyle {
   lens?: string;
   movement?: string;
   shot_size?: string;
+  /** Cast members explicitly placed in this frame (reference-locked). */
+  cast_override?: string[];
+}
+
+interface CastMember {
+  name: string;
+  hasLook: boolean;
 }
 
 interface GlobalStyle {
@@ -100,6 +107,9 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   const [expandedBeat, setExpandedBeat] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "grid">("list");
   const [toast, setToast] = useState<{ kind: "success" | "info" | "error"; text: string } | null>(null);
+  const [cast, setCast] = useState<CastMember[]>([]);
+  const [batchRolling, setBatchRolling] = useState(false);
+  const [batchStitching, setBatchStitching] = useState(false);
   const [globalStyle, setGlobalStyle] = useState<GlobalStyle>({
     visual: "Noir",
     aspect: project.aspect_ratio,
@@ -113,6 +123,19 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     if (!res.ok) return;
     const data = await res.json();
     setBeats(data.beats);
+
+    // Project cast — powers the "Cast in frame" chips in each beat editor.
+    fetch(`/api/projects/${project.id}/characters`)
+      .then((r) => (r.ok ? r.json() : { characters: [] }))
+      .then((d) =>
+        setCast(
+          (d.characters ?? []).map((c: { name: string; refs?: string[] }) => ({
+            name: c.name,
+            hasLook: (c.refs ?? []).length > 0
+          }))
+        )
+      )
+      .catch(() => {});
     setRows(
       (data.rows as Array<{ beat_id: string; state: StoryboardRow["state"]; selected_variant_id: string | null; style: BeatStyle | Record<string, unknown> }>).map(
         (r) => ({ ...r, style: (r.style ?? {}) as BeatStyle })
@@ -246,6 +269,50 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     }).catch(() => {});
   }
 
+  // Beats that don't yet have a single finished frame.
+  const missingBeats = beats.filter(
+    (b) => !(variantsByBeat[b.id] ?? []).some((v) => v.state === "complete" && v.asset_url)
+  );
+
+  /** Roll every beat that has no frame yet — one take each, sequentially. */
+  async function rollAllMissing() {
+    if (batchRolling || missingBeats.length === 0) return;
+    setBatchRolling(true);
+    try {
+      for (let i = 0; i < missingBeats.length; i++) {
+        const beat = missingBeats[i];
+        flashToast("info", `Rolling beat ${String(beat.n).padStart(2, "0")} — ${i + 1} / ${missingBeats.length}…`);
+        const row = rowByBeat[beat.id];
+        const style = row?.style ?? {};
+        const prompt = style.prompt_override || defaultPromptFor(beat, style, globalStyle);
+        await generate(beat.id, prompt, 1);
+      }
+      flashToast("success", `Rolled ${missingBeats.length} beats — review the takes, then Stitch all.`);
+    } finally {
+      setBatchRolling(false);
+    }
+  }
+
+  /** Put each beat's best take (approved, else first complete) on the Stitch board. */
+  async function stitchAllBest() {
+    if (batchStitching) return;
+    setBatchStitching(true);
+    try {
+      let added = 0;
+      for (const beat of [...beats].sort((a, b) => a.n - b.n)) {
+        const vs = (variantsByBeat[beat.id] ?? []).filter((v) => v.state === "complete" && v.asset_url);
+        if (!vs.length) continue;
+        const best = vs.find((v) => v.approval === "approved") ?? vs[0];
+        if (stitchedVariantIds.has(best.id)) continue;
+        await addVariantToStitch(best);
+        added++;
+      }
+      flashToast(added ? "success" : "info", added ? `${added} shots on the Stitch board.` : "Every beat's best take is already on Stitch.");
+    } finally {
+      setBatchStitching(false);
+    }
+  }
+
   async function generate(beatId: string, prompt: string, takes: number = 4) {
     // Optimistic: flip the row to "generating" and drop shimmer placeholders
     // in immediately — the POST is synchronous and can take a minute.
@@ -317,8 +384,42 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
           <span className="pip-state" data-status={approvedBeatCount === beats.length && beats.length > 0 ? "done" : "working"}>
             {approvedBeatCount} / {beats.length || "—"} APPROVED
           </span>
+          {missingBeats.length > 0 && (
+            <button
+              className="btn"
+              disabled={batchRolling}
+              onClick={rollAllMissing}
+              title={`Generate one take for every beat without a frame · ≈${Math.round((missingBeats.length * 14_400) / 1000)}k tokens`}
+            >
+              {batchRolling ? (
+                <>
+                  <RefreshCcw size={14} className="fx-rotate-load" /> Rolling…
+                </>
+              ) : (
+                <>
+                  <Wand2 size={14} /> Roll all {missingBeats.length} · ≈{Math.round((missingBeats.length * 14_400) / 1000)}k tok
+                </>
+              )}
+            </button>
+          )}
           <button className="btn" disabled={beats.length === 0} onClick={startReview}>
             <Stamp size={14} /> Review dailies
+          </button>
+          <button
+            className="btn"
+            disabled={batchStitching || completeCount === 0}
+            onClick={stitchAllBest}
+            title="Put each beat's best take (approved, else first finished) on the Stitch board"
+          >
+            {batchStitching ? (
+              <>
+                <RefreshCcw size={14} className="fx-rotate-load" /> Stitching…
+              </>
+            ) : (
+              <>
+                <Film size={14} /> Stitch all best
+              </>
+            )}
           </button>
           <button
             className="btn btn-primary"
@@ -371,6 +472,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
                     stitchedVariantIds={stitchedVariantIds}
                     expanded={expanded}
                     globalStyle={globalStyle}
+                    cast={cast}
                     onToggleExpand={() => setExpandedBeat(expanded ? null : beat.id)}
                     onAddToStitch={(variant) => addVariantToStitch(variant)}
                     onRemoveFromStitch={(variant) => removeVariantFromStitch(variant)}
@@ -503,6 +605,7 @@ function BeatRow({
   stitchedVariantIds,
   expanded,
   globalStyle,
+  cast,
   onToggleExpand,
   onAddToStitch,
   onRemoveFromStitch,
@@ -516,6 +619,7 @@ function BeatRow({
   stitchedVariantIds: Set<string>;
   expanded: boolean;
   globalStyle: GlobalStyle;
+  cast: CastMember[];
   onToggleExpand: () => void;
   onAddToStitch: (variant: StoryboardVariant) => Promise<void> | void;
   onRemoveFromStitch: (variant: StoryboardVariant) => Promise<void> | void;
@@ -655,6 +759,7 @@ function BeatRow({
           beatStyle={beatStyle}
           globalStyle={globalStyle}
           state={state}
+          cast={cast}
           onPatchRow={onPatchRow}
           onGenerate={onGenerate}
         />
@@ -670,6 +775,7 @@ function BeatEditor({
   beatStyle,
   globalStyle,
   state,
+  cast,
   onPatchRow,
   onGenerate
 }: {
@@ -677,6 +783,7 @@ function BeatEditor({
   beatStyle: BeatStyle;
   globalStyle: GlobalStyle;
   state: StoryboardRow["state"];
+  cast: CastMember[];
   onPatchRow: (patch: { style?: BeatStyle }) => void;
   onGenerate: (prompt: string, takes?: number) => void;
 }) {
@@ -699,7 +806,9 @@ function BeatEditor({
     beatStyle.visual,
     beatStyle.light,
     beatStyle.temp,
-    beatStyle.aspect
+    beatStyle.aspect,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(beatStyle.cast_override ?? [])
   ]);
 
   const isGenerating = state === "generating";
@@ -772,6 +881,64 @@ function BeatEditor({
           {prompt.length} chars · auto-saves on blur
         </span>
       </div>
+
+      {cast.length > 0 && (
+        <div className="beat-editor-section">
+          <div className="beat-editor-section-head">
+            <Sparkles size={14} />
+            <span className="t-eyebrow">CAST IN FRAME</span>
+            <span className="t-mute" style={{ marginLeft: "auto", fontSize: 11 }}>
+              Selected cast are reference-locked to their portraits
+            </span>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {cast.map((m) => {
+              const inBeat = beat.characters.some((n) => n.trim().toLowerCase() === m.name.trim().toLowerCase());
+              const selected =
+                inBeat || (beatStyle.cast_override ?? []).some((n) => n.toLowerCase() === m.name.toLowerCase());
+              return (
+                <button
+                  key={m.name}
+                  onClick={() => {
+                    if (inBeat) return; // from the script itself — always locked in
+                    const cur = beatStyle.cast_override ?? [];
+                    const next = selected
+                      ? cur.filter((n) => n.toLowerCase() !== m.name.toLowerCase())
+                      : [...cur, m.name];
+                    onPatchRow({ style: { cast_override: next } });
+                  }}
+                  title={
+                    inBeat
+                      ? `${m.name} is in this beat's script — always included`
+                      : m.hasLook
+                        ? `Toggle ${m.name} into this frame (portrait reference-locked)`
+                        : `Toggle ${m.name} — cast a portrait in Casting first for a tighter lock`
+                  }
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "6px 13px",
+                    borderRadius: 999,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: inBeat ? "default" : "pointer",
+                    background: selected ? "var(--accent)" : "var(--surface-2)",
+                    color: selected ? "var(--on-accent)" : "var(--ink-soft)",
+                    opacity: inBeat ? 0.85 : 1
+                  }}
+                >
+                  {selected && <Check size={11} />}
+                  {m.name}
+                  {!m.hasLook && (
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.7 }}>no look</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="beat-editor-section">
         <div className="beat-editor-section-head">
@@ -957,7 +1124,12 @@ function defaultPromptFor(beat: Beat, beatStyle: BeatStyle, globalStyle: GlobalS
   const angle = beatStyle.camera_angle ?? "Eye level";
   const lens = beatStyle.lens ?? "35mm";
   const movement = beatStyle.movement ?? "Locked";
-  return `${shot} shot, ${angle.toLowerCase()} angle, ${lens}, ${movement.toLowerCase()} camera. ${beat.scene_heading}. ${beat.title}. ${beat.characters.length ? `Featuring ${beat.characters.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
+  // Script cast ∪ hand-picked cast — everyone named here gets reference-locked.
+  const names = [...beat.characters];
+  for (const n of beatStyle.cast_override ?? []) {
+    if (!names.some((x) => x.trim().toLowerCase() === n.trim().toLowerCase())) names.push(n);
+  }
+  return `${shot} shot, ${angle.toLowerCase()} angle, ${lens}, ${movement.toLowerCase()} camera. ${beat.scene_heading}. ${beat.title}. ${names.length ? `Featuring ${names.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
 }
 
 /* ───────────────────────── Bottom Strip ───────────────────────── */
