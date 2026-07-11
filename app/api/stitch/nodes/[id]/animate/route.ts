@@ -5,6 +5,7 @@ import { vendors } from "../../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../../lib/agents/video";
 import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../../lib/higgsfield/mcp";
 import { generateVideoViaByteplus } from "../../../../../../lib/agents/byteplus-video";
+import { referenceToDataUri } from "../../../../../../lib/agents/byteplus-image";
 import { videoModel } from "../../../../../../lib/higgsfield/catalog";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
@@ -83,21 +84,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     );
   }
 
-  // The video model fetches the reference image by URL, so it must be absolute
-  // and publicly reachable (works on the deployed domain via Caddy headers).
+  // Local OSS frames are embedded as data URIs for BytePlus (its URL fetcher
+  // intermittently rejects our public domain); other providers get the
+  // absolute URL as before.
   const proto = req.headers.get("x-forwarded-proto") || "https";
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
   const origin = `${proto}://${host}`;
-  const refImage = node.frame_url.startsWith("http") ? node.frame_url : `${origin}${node.frame_url}`;
+  const absUrl = node.frame_url.startsWith("http") ? node.frame_url : `${origin}${node.frame_url}`;
+  const refImage = isByteplus ? referenceToDataUri(node.frame_url) ?? absUrl : absUrl;
 
   const style = node.row_style ? JSON.parse(node.row_style) : {};
   const motion = [style.movement, style.shot_size].filter(Boolean).join(", ");
   const base = `${node.beat_title ?? "Film shot"}. ${node.beat_scene ?? ""}. ${
     motion ? `${motion} — ` : ""
   }${node.premise ?? ""}`.trim();
+  // Identity hold — the character-consistency chain runs through this clip:
+  // whoever is in the source frame must stay exactly themselves in motion.
+  const consistency =
+    "Preserve the exact appearance of every person from the first frame — identical face, hair and " +
+    "wardrobe throughout the clip. Natural motion only; no morphing, no identity drift, no new characters.";
   // Fold in the editable Video Director skill so motion follows the house style.
   const skill = skillForPart("video");
-  const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
+  const prompt = [base, skill?.body ?? "", consistency].filter(Boolean).join("\n\n");
 
   const providerLabel = isByteplus
     ? "BytePlus · Seedance 1.5 Pro"

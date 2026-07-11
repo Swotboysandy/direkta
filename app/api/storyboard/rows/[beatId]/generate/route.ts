@@ -58,11 +58,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     const inPrompt = name.length >= 3 && promptLower.includes(name.toLowerCase());
     if (!onBeat && !inPrompt) continue;
     const refs = safeJsonArray(c.refs);
-    if (refs[0]) {
-      referenceImages.push(refs[0]);
+    if (refs.length) {
+      // Two looks per character when available — extra references tighten
+      // the identity lock considerably.
+      referenceImages.push(...refs.slice(0, 2));
       referencedNames.push(c.name);
     }
-    if (referenceImages.length >= 4) break;
+    if (referenceImages.length >= 6) break;
   }
   // Fold in the editable Cinematography skill so frames follow the house style.
   const skill = skillForPart("cinematography");
