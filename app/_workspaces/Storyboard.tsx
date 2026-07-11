@@ -704,7 +704,24 @@ function BeatEditor({
 
   const isGenerating = state === "generating";
   const [takes, setTakes] = useState<number>(4);
+  const [aiWriting, setAiWriting] = useState(false);
   const takeCostK = Math.round((takes * 14_400) / 1000);
+
+  async function aiWritePrompt() {
+    if (aiWriting) return;
+    setAiWriting(true);
+    try {
+      const res = await fetch(`/api/storyboard/rows/${beat.id}/prompt`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.prompt) {
+        handEdited.current = true;
+        setPrompt(data.prompt);
+        onPatchRow({ style: { prompt_override: data.prompt } });
+      }
+    } finally {
+      setAiWriting(false);
+    }
+  }
 
   return (
     <div className="beat-editor">
@@ -714,12 +731,28 @@ function BeatEditor({
           <span className="t-eyebrow">IMAGE PROMPT</span>
           <button
             className="sb-ghost-btn"
+            onClick={aiWritePrompt}
+            disabled={aiWriting}
+            title="Have the AI cinematographer write this prompt from the script, beat and camera settings"
+            style={{ marginLeft: "auto", color: aiWriting ? "var(--mute)" : "var(--accent)" }}
+          >
+            {aiWriting ? (
+              <>
+                <RefreshCcw size={11} className="fx-rotate-load" /> Writing…
+              </>
+            ) : (
+              <>
+                <Sparkles size={11} /> AI prompt from script
+              </>
+            )}
+          </button>
+          <button
+            className="sb-ghost-btn"
             onClick={() => {
               handEdited.current = false;
               setPrompt(defaultPromptFor(beat, beatStyle, globalStyle));
               onPatchRow({ style: { prompt_override: "" } });
             }}
-            style={{ marginLeft: "auto" }}
           >
             Reset to default
           </button>

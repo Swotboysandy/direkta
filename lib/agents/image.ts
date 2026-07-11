@@ -29,6 +29,9 @@ export async function generateImage(input: {
   prompt: string;
   aspectRatio: AspectRatio;
   vendor?: VendorConfig;
+  /** Reference images (e.g. cast portraits) for character consistency.
+   *  Honored by providers with reference support (BytePlus Seedream). */
+  referenceImages?: string[];
 }): Promise<{ url: string; relPath: string }> {
   const vendor = input.vendor ?? vendors.firstEnabledImage();
   if (!vendor) throw new ImageVendorUnavailableError();
@@ -49,7 +52,8 @@ export async function generateImage(input: {
       apiKey: vendor.api_key,
       model: vendor.model,
       prompt: input.prompt,
-      size: SEEDREAM_SIZES[input.aspectRatio]
+      size: SEEDREAM_SIZES[input.aspectRatio],
+      imageUrls: input.referenceImages
     });
   }
   throw new Error(`Unsupported image provider: ${vendor.provider}`);

@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { nanoid } from "nanoid";
 import { logUsage, TOKEN_COSTS } from "../usage";
 
@@ -20,6 +22,37 @@ const OSS_DIR =
 const BASE =
   process.env.BYTEPLUS_ARK_BASE || "https://ark.ap-southeast.bytepluses.com/api/v3";
 
+/**
+ * Resolve a reference image (an /oss/… URL, bare filename, local path, or
+ * remote URL) to a JPEG data URI. BytePlus's fetcher intermittently rejects
+ * our public URLs, so embedding the bytes is the only reliable transport.
+ * Downscales to ≤1280px via ffmpeg to keep the payload small; falls back to
+ * the raw file when ffmpeg is unavailable.
+ */
+export function referenceToDataUri(ref: string): string | null {
+  try {
+    if (ref.startsWith("data:")) return ref;
+    let local: string | null = null;
+    if (ref.startsWith("/oss/")) local = path.join(OSS_DIR, ref.slice(5));
+    else if (!ref.startsWith("http") && fs.existsSync(ref)) local = ref;
+    else if (!ref.startsWith("http")) local = path.join(OSS_DIR, ref.replace(/^\/+/, ""));
+    if (!local || !fs.existsSync(local)) return ref.startsWith("http") ? ref : null;
+
+    const jpg = path.join(os.tmpdir(), `ref_${Date.now()}_${nanoid(4)}.jpg`);
+    const r = spawnSync("ffmpeg", ["-y", "-i", local, "-vf", "scale='min(1280,iw)':-2", "-q:v", "4", jpg], {
+      timeout: 30_000,
+      stdio: "ignore"
+    });
+    const use = r.status === 0 && fs.existsSync(jpg) ? jpg : local;
+    const mime = use.endsWith(".jpg") ? "image/jpeg" : "image/png";
+    const uri = `data:${mime};base64,${fs.readFileSync(use).toString("base64")}`;
+    if (use === jpg) fs.unlinkSync(jpg);
+    return uri;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateImageViaByteplus(input: {
   apiKey: string;
   model: string; // Seedream model id, e.g. seedream-4-5-251128
@@ -31,13 +64,20 @@ export async function generateImageViaByteplus(input: {
   // smallest valid 16:9 (a preset like "2K" can default to the wrong aspect).
   const size = input.size || "2560x1440";
 
+  // Local /oss references are embedded as data URIs so BytePlus never has to
+  // fetch them (its fetcher intermittently rejects our public URLs).
+  const refs = (input.imageUrls ?? [])
+    .map((u) => referenceToDataUri(u))
+    .filter((u): u is string => Boolean(u))
+    .slice(0, 6);
+
   const res = await fetch(`${BASE}/images/generations`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${input.apiKey}` },
     body: JSON.stringify({
       model: input.model,
       prompt: input.prompt,
-      ...(input.imageUrls?.length ? { image_urls: input.imageUrls } : {}),
+      ...(refs.length ? { image_urls: refs } : {}),
       sequential_image_generation: "disabled",
       response_format: "url",
       size,

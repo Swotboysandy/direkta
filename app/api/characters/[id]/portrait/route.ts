@@ -46,9 +46,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
   const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
   try {
+    // Subsequent looks must keep the same face: pass the existing looks as
+    // reference images so Seedream locks identity across the wardrobe change.
+    const priorLooks = (character.refs ?? []).slice(0, 2);
+    const consistency = priorLooks.length
+      ? `${prompt}\n\nThis is the SAME person as in the attached reference image(s) — identical face, age, build and hair. One single portrait — no grid, collage or multiple panels.`
+      : `${prompt}\n\nOne single portrait — no grid, collage or multiple panels.`;
     const image = useMcp
-      ? await generateImageViaMcp({ prompt, aspectRatio: "4:5" })
-      : await generateImage({ prompt, aspectRatio: "4:5", vendor: vendor! });
+      ? await generateImageViaMcp({ prompt: consistency, aspectRatio: "4:5" })
+      : await generateImage({ prompt: consistency, aspectRatio: "4:5", vendor: vendor!, referenceImages: priorLooks });
     const refs = [image.url, ...(character.refs ?? [])];
     characters.update(id, { refs, soul_id_state: "trained", error: null });
     return NextResponse.json({ ok: true, url: image.url, vendor: providerLabel });

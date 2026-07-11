@@ -30,19 +30,48 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 
   const beat = db
     .prepare(
-      `SELECT b.id, b.title, b.scene_heading, p.aspect_ratio, p.premise
+      `SELECT b.id, b.title, b.scene_heading, b.characters, b.project_id, p.aspect_ratio, p.premise
        FROM beats b JOIN projects p ON p.id = b.project_id WHERE b.id = ?`
     )
     .get(beatId) as
-    | { id: string; title: string; scene_heading: string; aspect_ratio: AspectRatio; premise: string }
+    | { id: string; title: string; scene_heading: string; characters: string; project_id: string; aspect_ratio: AspectRatio; premise: string }
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
+
+  // ── Cast reference lock: pull the beat's characters' portraits (their
+  //    "Soul ID" looks from Casting) so every frame keeps the same faces.
+  const beatCharNames: string[] = safeJsonArray(beat.characters);
+  const castRows = db
+    .prepare("SELECT name, refs FROM characters WHERE project_id = ?")
+    .all(beat.project_id) as Array<{ name: string; refs: string }>;
+  const referenceImages: string[] = [];
+  const referencedNames: string[] = [];
+  for (const c of castRows) {
+    if (!beatCharNames.some((n) => n.trim().toLowerCase() === c.name.trim().toLowerCase())) continue;
+    const refs = safeJsonArray(c.refs);
+    if (refs[0]) {
+      referenceImages.push(refs[0]);
+      referencedNames.push(c.name);
+    }
+    if (referenceImages.length >= 4) break;
+  }
 
   const prompt =
     promptIn || `Cinematic film frame. ${beat.scene_heading}. ${beat.title}. ${beat.premise}`;
   // Fold in the editable Cinematography skill so frames follow the house style.
   const skill = skillForPart("cinematography");
-  const genPrompt = skill?.body ? `${prompt}\n\n${skill.body}` : prompt;
+  // Hard framing constraints: one scene per image (Seedream happily produces
+  // contact-sheet grids when the script says "montage"), and lock any cast
+  // members to their reference portraits.
+  const constraints = [
+    "One single cinematic frame depicting ONE moment — never a grid, collage, contact sheet, storyboard, split screen, or multiple panels.",
+    referencedNames.length
+      ? `The character(s) ${referencedNames.join(", ")} must exactly match the appearance, face, hair and wardrobe of the person(s) in the attached reference image(s).`
+      : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const genPrompt = [prompt, skill?.body ?? "", constraints].filter(Boolean).join("\n\n");
 
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
@@ -133,7 +162,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
             model: modelIn,
             resolution: resolutionIn
           })
-        : generateImage({ prompt: genPrompt, aspectRatio: aspect, vendor: vendor! })
+        : generateImage({ prompt: genPrompt, aspectRatio: aspect, vendor: vendor!, referenceImages })
     )
   );
 
@@ -172,4 +201,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
         ? `${generated} frame(s) rolled, ${failed} failed via ${providerLabel}.`
         : `${generated} frame(s) rolled by ${providerLabel}.`
   });
+}
+
+function safeJsonArray(raw: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(raw ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
 }
