@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Plus, RefreshCcw, X } from "../_components/icons";
 import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
@@ -343,6 +343,7 @@ function CharacterCard({
 
   const [sel, setSel] = useState(0);
   const [casting, setCasting] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   // Looks: real reference photos if present, else stub plates derived from the
   // Soul ID state. Casting a look generates a real portrait on the server.
@@ -600,10 +601,15 @@ function CharacterCard({
               >
                 {casting ? "Casting…" : "New look · ≈14k tok"}
               </HoverButton>
-              <HoverButton style={editStyle} hoverStyle={editHover}>
+              <HoverButton onClick={() => setEditing(true)} style={editStyle} hoverStyle={editHover}>
                 Edit
               </HoverButton>
             </>
+          )}
+          {state !== "trained" && state !== "training" && (
+            <HoverButton onClick={() => setEditing(true)} style={editStyle} hoverStyle={editHover}>
+              Edit
+            </HoverButton>
           )}
           {state === "failed" && (
             <HoverButton
@@ -623,7 +629,227 @@ function CharacterCard({
           )}
         </div>
       </div>
+
+      {editing && (
+        <CharacterEditModal
+          character={character}
+          onClose={() => setEditing(false)}
+          onSaved={async () => {
+            setEditing(false);
+            await onChange();
+          }}
+        />
+      )}
     </HoverDiv>
+  );
+}
+
+/* Edit a character's identity: name, role, dialogue, physical brief — the
+   fields the portrait prompt and reference lock are built from. */
+function CharacterEditModal({
+  character,
+  onClose,
+  onSaved
+}: {
+  character: Character;
+  onClose: () => void;
+  onSaved: () => Promise<void> | void;
+}) {
+  const [name, setName] = useState(character.name);
+  const [role, setRole] = useState<Character["role"]>(character.role);
+  const [dialogue, setDialogue] = useState(character.dialogue);
+  const [brief, setBrief] = useState({
+    age: character.brief?.age ?? "",
+    build: character.brief?.build ?? "",
+    features: character.brief?.features ?? "",
+    wardrobe: character.brief?.wardrobe ?? "",
+    personality: character.brief?.personality ?? ""
+  });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  async function save() {
+    if (busy || !name.trim()) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/characters/${character.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), role, dialogue, brief })
+      });
+      await onSaved();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (busy) return;
+    if (!confirm(`Delete ${character.name}?\n\nTheir looks and reference lock go with them. Frames already generated stay as they are.`)) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/characters/${character.id}`, { method: "DELETE" });
+      await onSaved();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const fieldLabel: React.CSSProperties = {
+    fontFamily: "var(--font-mono)",
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.02em",
+    color: "var(--mute)"
+  };
+  const fieldInput: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 14px",
+    background: "var(--bg)",
+    color: "var(--ink)",
+    border: 0,
+    borderRadius: 12,
+    fontFamily: "var(--font-ui)",
+    fontSize: 14,
+    outline: "none",
+    boxShadow: "inset 0 0 0 1px var(--cream-deep)"
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(6,6,10,0.6)",
+        backdropFilter: "blur(4px)",
+        display: "grid",
+        placeItems: "center",
+        zIndex: 100
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(480px, calc(100vw - 48px))",
+          maxHeight: "min(640px, calc(100vh - 48px))",
+          overflowY: "auto",
+          background: "var(--surface)",
+          backdropFilter: "blur(20px)",
+          borderRadius: 24,
+          boxShadow: "var(--shadow-3)",
+          padding: 28,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", color: "var(--accent)" }}>
+            Edit character
+          </span>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{ width: 30, height: 30, display: "grid", placeItems: "center", borderRadius: 999, background: "var(--surface-2)", color: "var(--ink)", cursor: "pointer" }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={fieldLabel}>Name</span>
+          <input style={fieldInput} value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={fieldLabel}>Role</span>
+            <select style={{ ...fieldInput, cursor: "pointer" }} value={role} onChange={(e) => setRole(e.target.value as Character["role"])}>
+              {(["Lead", "Supporting", "Featured", "Background"] as const).map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={fieldLabel}>Dialogue</span>
+            <button
+              onClick={() => setDialogue((d) => !d)}
+              style={{ ...fieldInput, cursor: "pointer", textAlign: "left", color: dialogue ? "var(--viridian)" : "var(--mute)" }}
+            >
+              {dialogue ? "Speaking role" : "Non-speaking"}
+            </button>
+          </div>
+        </div>
+
+        {([
+          ["age", "Age", "e.g. 20s"],
+          ["build", "Build", "e.g. slight, wiry"],
+          ["features", "Features", "e.g. bob haircut, freckles"],
+          ["wardrobe", "Wardrobe", "e.g. grey tee, denim jacket"],
+          ["personality", "Personality", "one line"]
+        ] as const).map(([key, label, ph]) => (
+          <div key={key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={fieldLabel}>{label}</span>
+            <input
+              style={fieldInput}
+              placeholder={ph}
+              value={brief[key]}
+              onChange={(e) => setBrief((b) => ({ ...b, [key]: e.target.value }))}
+            />
+          </div>
+        ))}
+
+        <span style={{ fontSize: 11, color: "var(--mute)", lineHeight: 1.5 }}>
+          These fields shape the portrait prompt. After a big change, cast a New look so the reference matches.
+        </span>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <button
+            onClick={save}
+            disabled={busy || !name.trim()}
+            style={{
+              flex: 1,
+              padding: "11px 20px",
+              fontWeight: 600,
+              fontSize: 14,
+              fontFamily: "var(--font-ui)",
+              color: "var(--on-accent)",
+              background: "var(--accent)",
+              borderRadius: 999,
+              cursor: "pointer",
+              opacity: busy || !name.trim() ? 0.6 : 1
+            }}
+          >
+            {busy ? "Saving…" : "Save changes"}
+          </button>
+          <button
+            onClick={remove}
+            disabled={busy}
+            title="Delete this character"
+            style={{
+              padding: "11px 18px",
+              fontWeight: 600,
+              fontSize: 14,
+              fontFamily: "var(--font-ui)",
+              color: "var(--tomato)",
+              background: "color-mix(in srgb, var(--tomato) 12%, transparent)",
+              borderRadius: 999,
+              cursor: "pointer"
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
