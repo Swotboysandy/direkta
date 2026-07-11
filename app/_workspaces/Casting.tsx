@@ -107,6 +107,31 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
   const total = characters.length;
   const castTone = toneColors(trained >= total && total > 0 ? "success" : "warning");
 
+  /** Wipe every character's generated looks (files stay on disk; frames
+   *  already generated keep them). Characters revert to "not started". */
+  async function clearAllLooks() {
+    const withLooks = characters.filter((c) => (c.refs ?? []).length > 0);
+    if (withLooks.length === 0) return;
+    const totalImages = withLooks.reduce((n, c) => n + (c.refs?.length ?? 0), 0);
+    if (
+      !confirm(
+        `Delete all cast images?\n\n${totalImages} look(s) across ${withLooks.length} character(s) will be removed. Frames already generated keep their picture, but new frames won't be reference-locked until you cast new looks.`
+      )
+    )
+      return;
+    setImportNote(`Clearing looks for ${withLooks.length} character(s)…`);
+    for (const c of withLooks) {
+      await fetch(`/api/characters/${c.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ refs: [], soul_id_state: "empty" })
+      }).catch(() => {});
+    }
+    await onReload();
+    setImportNote(`Cleared ${totalImages} cast image(s).`);
+    setTimeout(() => setImportNote(null), 6000);
+  }
+
   /** Have the AI casting director read the script and add anyone missing.
    *  Never touches beats or existing characters — safe on any project. */
   async function importFromScript() {
@@ -293,18 +318,43 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
             Characters · {total} cast
           </span>
-          <BatchGenerate
-            label="Cast all"
-            verb="portrait"
-            items={characters.map((c) => ({ id: c.id, name: c.name, hasLook: (c.refs ?? []).length > 0 }))}
-            endpoint={(cid) => `/api/characters/${cid}/portrait`}
-            onProgress={(msg) => setImportNote(msg)}
-            onDone={async (n) => {
-              await onReload();
-              setImportNote(n ? `Cast ${n} portrait(s) — they're now reference-locked for the storyboard.` : null);
-              setTimeout(() => setImportNote(null), 6000);
-            }}
-          />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {characters.some((c) => (c.refs ?? []).length > 0) && (
+              <HoverButton
+                onClick={clearAllLooks}
+                title="Delete every generated cast image (characters stay; frames already generated keep their picture)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 15px",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  fontFamily: "var(--font-ui)",
+                  color: "var(--tomato)",
+                  background: "transparent",
+                  borderRadius: 999,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap"
+                }}
+                hoverStyle={{ background: "color-mix(in srgb, var(--tomato) 12%, transparent)" }}
+              >
+                <X size={12} /> Delete all cast images
+              </HoverButton>
+            )}
+            <BatchGenerate
+              label="Cast all"
+              verb="portrait"
+              items={characters.map((c) => ({ id: c.id, name: c.name, hasLook: (c.refs ?? []).length > 0 }))}
+              endpoint={(cid) => `/api/characters/${cid}/portrait`}
+              onProgress={(msg) => setImportNote(msg)}
+              onDone={async (n) => {
+                await onReload();
+                setImportNote(n ? `Cast ${n} portrait(s) — they're now reference-locked for the storyboard.` : null);
+                setTimeout(() => setImportNote(null), 6000);
+              }}
+            />
+          </div>
         </div>
 
         {characters.length === 0 ? (
@@ -806,6 +856,23 @@ function CharacterEditModal({
     }
   }
 
+  async function clearLooks() {
+    if (busy) return;
+    const n = character.refs?.length ?? 0;
+    if (!confirm(`Delete ${character.name}'s ${n} cast image(s)?\n\nThe character stays; cast a new look to re-lock their identity.`)) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/characters/${character.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ refs: [], soul_id_state: "empty" })
+      });
+      await onSaved();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const fieldLabel: React.CSSProperties = {
     fontFamily: "var(--font-mono)",
     fontSize: 10,
@@ -915,12 +982,13 @@ function CharacterEditModal({
           These fields shape the portrait prompt. After a big change, cast a New look so the reference matches.
         </span>
 
-        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+        <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
           <button
             onClick={save}
             disabled={busy || !name.trim()}
             style={{
               flex: 1,
+              minWidth: 150,
               padding: "11px 20px",
               fontWeight: 600,
               fontSize: 14,
@@ -934,6 +1002,26 @@ function CharacterEditModal({
           >
             {busy ? "Saving…" : "Save changes"}
           </button>
+          {(character.refs?.length ?? 0) > 0 && (
+            <button
+              onClick={clearLooks}
+              disabled={busy}
+              title="Delete this character's generated images (the character stays)"
+              style={{
+                padding: "11px 18px",
+                fontWeight: 600,
+                fontSize: 14,
+                fontFamily: "var(--font-ui)",
+                color: "var(--tomato)",
+                background: "transparent",
+                boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--tomato) 45%, transparent)",
+                borderRadius: 999,
+                cursor: "pointer"
+              }}
+            >
+              Clear looks ({character.refs?.length ?? 0})
+            </button>
+          )}
           <button
             onClick={remove}
             disabled={busy}
