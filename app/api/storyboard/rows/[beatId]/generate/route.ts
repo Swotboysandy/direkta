@@ -87,6 +87,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     | undefined;
   const style = existing?.style ? JSON.parse(existing.style) : {};
   style.prompt_override = prompt;
+
+  // Per-beat aspect override (Style override → Aspect) wins over the project default.
+  const VALID_ASPECTS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5", "21:9"];
+  const aspect: AspectRatio = VALID_ASPECTS.includes(style.aspect) ? style.aspect : beat.aspect_ratio;
   if (existing) {
     db.prepare(
       "UPDATE storyboard_rows SET state = 'generating', style = ?, updated_at = datetime('now') WHERE beat_id = ?"
@@ -125,11 +129,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
       useMcp
         ? generateImageViaMcp({
             prompt: genPrompt,
-            aspectRatio: beat.aspect_ratio,
+            aspectRatio: aspect,
             model: modelIn,
             resolution: resolutionIn
           })
-        : generateImage({ prompt: genPrompt, aspectRatio: beat.aspect_ratio, vendor: vendor! })
+        : generateImage({ prompt: genPrompt, aspectRatio: aspect, vendor: vendor! })
     )
   );
 

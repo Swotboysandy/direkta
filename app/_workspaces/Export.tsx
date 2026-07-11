@@ -35,7 +35,7 @@ export function Export({ project }: Props) {
   // real output aspect ratio is exactly this — not the mockup's fixed 16:9.
   const aspect = project.aspect_ratio.replace(":", "/");
   const exStatus = rendering ? "RENDERING…" : err ? "ERROR" : cut ? "RENDERED" : "READY";
-  const exBtnLabel = rendering ? "Rendering…" : cut ? "Re-render" : "Render final cut";
+  const exBtnLabel = rendering ? "Rendering…" : cut ? "Re-render · free" : "Render final cut · free";
 
   return (
     <div className="main-inner">

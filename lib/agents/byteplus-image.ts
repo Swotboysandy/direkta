@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
+import { logUsage, TOKEN_COSTS } from "../usage";
 
 /**
  * BytePlus ModelArk — Seedream text-to-image (keyframes).
@@ -59,5 +60,15 @@ export async function generateImageViaByteplus(input: {
   fs.mkdirSync(OSS_DIR, { recursive: true });
   const filename = `${Date.now()}-${nanoid(8)}.png`;
   fs.writeFileSync(path.join(OSS_DIR, filename), Buffer.from(await dl.arrayBuffer()));
+
+  // Spend ledger — exact tokens when the API reports them, estimate otherwise.
+  const reported = Number(data.usage?.total_tokens ?? data.usage?.completion_tokens);
+  logUsage({
+    kind: "image",
+    tokens: Number.isFinite(reported) && reported > 0 ? reported : TOKEN_COSTS.image,
+    estimated: !(Number.isFinite(reported) && reported > 0),
+    note: `seedream ${input.model} ${size}`
+  });
+
   return { url: `/oss/${filename}`, relPath: `data/oss/${filename}` };
 }

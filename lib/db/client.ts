@@ -295,6 +295,19 @@ function migrate(db: DatabaseSync) {
       expires_at INTEGER NOT NULL DEFAULT 0,
       connected_at TEXT
     );
+
+    -- BytePlus token-pack spend ledger. Every Seedream/Seedance generation
+    -- appends a row (exact tokens when the API reports usage, an estimate
+    -- otherwise) so the top bar can show what's left of the pack.
+    CREATE TABLE IF NOT EXISTS usage_log (
+      id TEXT PRIMARY KEY,
+      provider TEXT NOT NULL DEFAULT 'byteplus',
+      kind TEXT NOT NULL,              -- 'image' | 'video' | 'baseline'
+      tokens INTEGER NOT NULL,
+      estimated INTEGER NOT NULL DEFAULT 0,
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   // Backwards-compatible column upgrades for pre-existing databases.

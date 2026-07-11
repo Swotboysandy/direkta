@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { nanoid } from "nanoid";
+import { logUsage, TOKEN_COSTS } from "../usage";
 
 /**
  * BytePlus ModelArk — Seedance image-to-video.
@@ -66,6 +67,7 @@ export async function generateVideoViaByteplus(input: {
 
   // 2. Poll the task to completion (~up to 8 min).
   let videoUrl: string | undefined;
+  let usageTokens = 0;
   for (let i = 0; i < 120 && !videoUrl; i++) {
     await new Promise((r) => setTimeout(r, 4000));
     const q = await fetch(`${BASE}/contents/generations/tasks/${taskId}`, { headers });
@@ -81,6 +83,7 @@ export async function generateVideoViaByteplus(input: {
         data.content?.video?.url ??
         data.data?.video_url;
       if (!videoUrl) throw new Error("BytePlus task succeeded but no video URL was returned");
+      usageTokens = Number(data.usage?.completion_tokens ?? data.usage?.total_tokens) || 0;
       break;
     }
     if (status === "failed" || status === "error" || status === "cancelled") {
@@ -89,6 +92,15 @@ export async function generateVideoViaByteplus(input: {
     }
   }
   if (!videoUrl) throw new Error("BytePlus video timed out");
+
+  // Spend ledger — the task result reports exact completion tokens.
+  const estimate = (resolution === "1080p" ? TOKEN_COSTS.clip1080 : TOKEN_COSTS.clip720) * (duration / 5);
+  logUsage({
+    kind: "video",
+    tokens: usageTokens > 0 ? usageTokens : Math.round(estimate),
+    estimated: usageTokens <= 0,
+    note: `seedance ${input.model} ${resolution} ${duration}s`
+  });
 
   // 3. Download → OSS → best-effort compress.
   const dl = await fetch(videoUrl);

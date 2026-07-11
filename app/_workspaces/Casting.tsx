@@ -574,8 +574,14 @@ function CharacterCard({
 
         <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
           {state === "empty" && (
-            <HoverButton onClick={castLook} disabled={casting} style={mainActionStyle} hoverStyle={dimHover}>
-              {casting ? "Casting…" : "Begin casting"}
+            <HoverButton
+              onClick={castLook}
+              disabled={casting}
+              style={mainActionStyle}
+              hoverStyle={dimHover}
+              title="Generates one Seedream portrait · ≈14k tokens"
+            >
+              {casting ? "Casting…" : "Begin casting · ≈14k tok"}
             </HoverButton>
           )}
           {state === "training" && (
@@ -585,8 +591,14 @@ function CharacterCard({
           )}
           {state === "trained" && (
             <>
-              <HoverButton onClick={castLook} disabled={casting} style={mainActionStyle} hoverStyle={dimHover}>
-                {casting ? "Casting…" : "New look"}
+              <HoverButton
+                onClick={castLook}
+                disabled={casting}
+                style={mainActionStyle}
+                hoverStyle={dimHover}
+                title="Generates one Seedream portrait · ≈14k tokens"
+              >
+                {casting ? "Casting…" : "New look · ≈14k tok"}
               </HoverButton>
               <HoverButton style={editStyle} hoverStyle={editHover}>
                 Edit

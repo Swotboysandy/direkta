@@ -37,7 +37,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     label: "Seedance 1.5 Pro · BytePlus (1080p)",
     description: "High quality, image-led. Runs on your BytePlus free tokens / metered API — cheapest at volume.",
     provider: "byteplus",
-    costText: "~$0.10",
+    costText: "≈245k tok · 5s",
     approxCost: 0,
     params: {},
     byteplus: { model: "seedance-1-5-pro-251215", resolution: "1080p" }
@@ -47,7 +47,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     label: "Seedance 1.5 Pro · BytePlus (720p)",
     description: "Cheaper + faster draft tier on BytePlus. Still near-2.0 quality.",
     provider: "byteplus",
-    costText: "~$0.06",
+    costText: "≈109k tok · 5s",
     approxCost: 0,
     params: {},
     byteplus: { model: "seedance-1-5-pro-251215", resolution: "720p" }

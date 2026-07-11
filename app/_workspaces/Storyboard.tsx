@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -658,6 +658,23 @@ function BeatEditor({
     beatStyle.prompt_override || defaultPromptFor(beat, beatStyle, globalStyle)
   );
   const [framingOpen, setFramingOpen] = useState(false);
+  // Camera/style selects must actually reach the generator: recompose the
+  // prompt whenever a setting changes, unless the director hand-edited it.
+  const handEdited = useRef(Boolean(beatStyle.prompt_override));
+  useEffect(() => {
+    if (handEdited.current) return;
+    setPrompt(defaultPromptFor(beat, beatStyle, globalStyle));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    beatStyle.shot_size,
+    beatStyle.camera_angle,
+    beatStyle.lens,
+    beatStyle.movement,
+    beatStyle.visual,
+    beatStyle.light,
+    beatStyle.temp,
+    beatStyle.aspect
+  ]);
 
   const isGenerating = state === "generating";
 
@@ -669,7 +686,11 @@ function BeatEditor({
           <span className="t-eyebrow">IMAGE PROMPT</span>
           <button
             className="sb-ghost-btn"
-            onClick={() => setPrompt(defaultPromptFor(beat, beatStyle, globalStyle))}
+            onClick={() => {
+              handEdited.current = false;
+              setPrompt(defaultPromptFor(beat, beatStyle, globalStyle));
+              onPatchRow({ style: { prompt_override: "" } });
+            }}
             style={{ marginLeft: "auto" }}
           >
             Reset to default
@@ -678,7 +699,10 @@ function BeatEditor({
         <textarea
           className="beat-editor-prompt"
           value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          onChange={(e) => {
+            handEdited.current = true;
+            setPrompt(e.target.value);
+          }}
           onBlur={() => onPatchRow({ style: { prompt_override: prompt } })}
           rows={4}
           placeholder="Cinematographer prompt — what should the model compose?"
@@ -768,14 +792,15 @@ function BeatEditor({
         <span className="t-mute" style={{ fontSize: "var(--t-body-s)" }}>
           {isGenerating
             ? "Cinematographer is rolling 4 variants…"
-            : "Frames roll on your connected Higgsfield account, or a configured image vendor. Without either, this previews in simulation."}
+            : "Frames roll on Seedream via your BytePlus pack (or Higgsfield when connected)."}
         </span>
         <button
           className="btn btn-sm btn-primary"
           disabled={isGenerating}
           onClick={() => onGenerate(prompt)}
+          title="4 Seedream frames · ≈58k tokens"
         >
-          <Wand2 size={12} /> {isGenerating ? "Rolling…" : "Generate 4 variants"}
+          <Wand2 size={12} /> {isGenerating ? "Rolling…" : "Generate 4 variants · ≈58k tok"}
         </button>
       </div>
 
@@ -822,9 +847,10 @@ function defaultPromptFor(beat: Beat, beatStyle: BeatStyle, globalStyle: GlobalS
   const temp = beatStyle.temp ?? globalStyle.temp;
   const aspect = beatStyle.aspect ?? globalStyle.aspect;
   const shot = beatStyle.shot_size ?? "Wide";
+  const angle = beatStyle.camera_angle ?? "Eye level";
   const lens = beatStyle.lens ?? "35mm";
   const movement = beatStyle.movement ?? "Locked";
-  return `${shot} shot, ${lens}, ${movement.toLowerCase()} camera. ${beat.scene_heading}. ${beat.title}. ${beat.characters.length ? `Featuring ${beat.characters.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
+  return `${shot} shot, ${angle.toLowerCase()} angle, ${lens}, ${movement.toLowerCase()} camera. ${beat.scene_heading}. ${beat.title}. ${beat.characters.length ? `Featuring ${beat.characters.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
 }
 
 /* ───────────────────────── Bottom Strip ───────────────────────── */
