@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Plus, RefreshCcw, Sparkles, X } from "../_components/icons";
@@ -1095,6 +1095,8 @@ function BatchGenerate({
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  // Stop signal — halts before the NEXT item (the one in flight completes).
+  const stopRef = useRef(false);
 
   const missing = items.filter((i) => !i.hasLook);
   // Default selection: everything without a look yet.
@@ -1112,25 +1114,58 @@ function BatchGenerate({
     if (running || picked.size === 0) return;
     setOpen(false);
     setRunning(true);
+    stopRef.current = false;
     const ids = items.filter((i) => picked.has(i.id));
     let done = 0;
     try {
       for (const item of ids) {
+        if (stopRef.current) {
+          onProgress(`Stopped — ${done} of ${ids.length} generated.`);
+          return;
+        }
         onProgress(`Generating ${verb} for ${item.name} — ${done + 1} / ${ids.length}…`);
         const res = await fetch(endpoint(item.id), { method: "POST" });
         if (res.ok) done++;
       }
     } finally {
       setRunning(false);
+      stopRef.current = false;
       await onDone(done);
     }
+  }
+
+  if (running) {
+    return (
+      <button
+        onClick={() => {
+          stopRef.current = true;
+          onProgress("Stopping after the current one…");
+        }}
+        title={`Stop after the ${verb} currently generating (its cost is already committed)`}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "8px 15px",
+          fontWeight: 600,
+          fontSize: 13,
+          fontFamily: "var(--font-ui)",
+          color: "var(--tomato)",
+          background: "color-mix(in srgb, var(--tomato) 12%, transparent)",
+          borderRadius: 999,
+          cursor: "pointer",
+          whiteSpace: "nowrap"
+        }}
+      >
+        <X size={12} /> Stop
+      </button>
+    );
   }
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
-          disabled={running}
           title={`Generate ${verb}s in batch — pick who's included and see the cost first`}
           style={{
             display: "inline-flex",
@@ -1145,23 +1180,14 @@ function BatchGenerate({
             borderRadius: 999,
             boxShadow: "var(--shadow-1)",
             cursor: "pointer",
-            whiteSpace: "nowrap",
-            opacity: running ? 0.7 : 1
+            whiteSpace: "nowrap"
           }}
         >
-          {running ? (
-            <>
-              <RefreshCcw size={12} className="fx-rotate-load" /> Generating…
-            </>
-          ) : (
-            <>
-              <Sparkles size={12} /> {label}
-              {missing.length > 0 && (
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--mute)" }}>
-                  {missing.length} missing
-                </span>
-              )}
-            </>
+          <Sparkles size={12} /> {label}
+          {missing.length > 0 && (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--mute)" }}>
+              {missing.length} missing
+            </span>
           )}
         </button>
       </Popover.Trigger>

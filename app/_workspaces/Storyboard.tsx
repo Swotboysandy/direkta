@@ -112,6 +112,9 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   const [batchRolling, setBatchRolling] = useState(false);
   const [batchStitching, setBatchStitching] = useState(false);
   const [rollMenuOpen, setRollMenuOpen] = useState(false);
+  // Stop signal for the batch loops — halts before the NEXT item starts
+  // (the item already generating finishes; its spend is already committed).
+  const batchStop = useRef(false);
   const [globalStyle, setGlobalStyle] = useState<GlobalStyle>({
     visual: "Noir",
     aspect: project.aspect_ratio,
@@ -280,8 +283,14 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   async function rollAllMissing(takesPerBeat: number) {
     if (batchRolling || missingBeats.length === 0) return;
     setBatchRolling(true);
+    batchStop.current = false;
+    let done = 0;
     try {
       for (let i = 0; i < missingBeats.length; i++) {
+        if (batchStop.current) {
+          flashToast("info", `Stopped — ${done} of ${missingBeats.length} beats rolled.`);
+          return;
+        }
         const beat = missingBeats[i];
         flashToast(
           "info",
@@ -291,10 +300,12 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
         const style = row?.style ?? {};
         const prompt = style.prompt_override || defaultPromptFor(beat, style, globalStyle);
         await generate(beat.id, prompt, takesPerBeat);
+        done++;
       }
       flashToast("success", `Rolled ${missingBeats.length} beats — review the takes, then Stitch all.`);
     } finally {
       setBatchRolling(false);
+      batchStop.current = false;
     }
   }
 
@@ -302,9 +313,14 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   async function stitchAllBest() {
     if (batchStitching) return;
     setBatchStitching(true);
+    batchStop.current = false;
     try {
       let added = 0;
       for (const beat of [...beats].sort((a, b) => a.n - b.n)) {
+        if (batchStop.current) {
+          flashToast("info", `Stopped — ${added} shots added.`);
+          return;
+        }
         const vs = (variantsByBeat[beat.id] ?? []).filter((v) => v.state === "complete" && v.asset_url);
         if (!vs.length) continue;
         const best = vs.find((v) => v.approval === "approved") ?? vs[0];
@@ -315,6 +331,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
       flashToast(added ? "success" : "info", added ? `${added} shots on the Stitch board.` : "Every beat's best take is already on Stitch.");
     } finally {
       setBatchStitching(false);
+      batchStop.current = false;
     }
   }
 
@@ -389,23 +406,27 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
           <span className="pip-state" data-status={approvedBeatCount === beats.length && beats.length > 0 ? "done" : "working"}>
             {approvedBeatCount} / {beats.length || "—"} APPROVED
           </span>
-          {missingBeats.length > 0 && (
+          {batchRolling && (
+            <button
+              className="btn"
+              onClick={() => {
+                batchStop.current = true;
+                flashToast("info", "Stopping after the current beat…");
+              }}
+              title="Stop after the beat currently generating (its cost is already committed)"
+              style={{ color: "var(--tomato)", background: "color-mix(in srgb, var(--tomato) 12%, transparent)" }}
+            >
+              <X size={14} /> Stop rolling
+            </button>
+          )}
+          {missingBeats.length > 0 && !batchRolling && (
             <Popover.Root open={rollMenuOpen} onOpenChange={setRollMenuOpen}>
               <Popover.Trigger asChild>
                 <button
                   className="btn"
-                  disabled={batchRolling}
                   title={`Generate frames for every beat without one — pick how many takes per scene`}
                 >
-                  {batchRolling ? (
-                    <>
-                      <RefreshCcw size={14} className="fx-rotate-load" /> Rolling…
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 size={14} /> Roll all {missingBeats.length} beats
-                    </>
-                  )}
+                  <Wand2 size={14} /> Roll all {missingBeats.length} beats
                 </button>
               </Popover.Trigger>
               <Popover.Portal>
@@ -492,13 +513,18 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
           </button>
           <button
             className="btn"
-            disabled={batchStitching || completeCount === 0}
-            onClick={stitchAllBest}
-            title="Put each beat's best take (approved, else first finished) on the Stitch board"
+            disabled={!batchStitching && completeCount === 0}
+            onClick={batchStitching ? () => (batchStop.current = true) : stitchAllBest}
+            title={
+              batchStitching
+                ? "Stop adding shots"
+                : "Put each beat's best take (approved, else first finished) on the Stitch board"
+            }
+            style={batchStitching ? { color: "var(--tomato)", background: "color-mix(in srgb, var(--tomato) 12%, transparent)" } : undefined}
           >
             {batchStitching ? (
               <>
-                <RefreshCcw size={14} className="fx-rotate-load" /> Stitching…
+                <X size={14} /> Stop stitching
               </>
             ) : (
               <>
