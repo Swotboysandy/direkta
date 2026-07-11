@@ -38,16 +38,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
 
-  // ── Cast reference lock: pull the beat's characters' portraits (their
-  //    "Soul ID" looks from Casting) so every frame keeps the same faces.
+  const prompt =
+    promptIn || `Cinematic film frame. ${beat.scene_heading}. ${beat.title}. ${beat.premise}`;
+
+  // ── Cast reference lock: pull cast portraits (the "Soul ID" looks from
+  //    Casting) so every frame keeps the same faces. A character qualifies
+  //    when they're on the beat's cast list OR named in the prompt itself —
+  //    typed or AI-written prompts lock too.
   const beatCharNames: string[] = safeJsonArray(beat.characters);
   const castRows = db
     .prepare("SELECT name, refs FROM characters WHERE project_id = ?")
     .all(beat.project_id) as Array<{ name: string; refs: string }>;
+  const promptLower = prompt.toLowerCase();
   const referenceImages: string[] = [];
   const referencedNames: string[] = [];
   for (const c of castRows) {
-    if (!beatCharNames.some((n) => n.trim().toLowerCase() === c.name.trim().toLowerCase())) continue;
+    const name = c.name.trim();
+    const onBeat = beatCharNames.some((n) => n.trim().toLowerCase() === name.toLowerCase());
+    const inPrompt = name.length >= 3 && promptLower.includes(name.toLowerCase());
+    if (!onBeat && !inPrompt) continue;
     const refs = safeJsonArray(c.refs);
     if (refs[0]) {
       referenceImages.push(refs[0]);
@@ -55,9 +64,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     }
     if (referenceImages.length >= 4) break;
   }
-
-  const prompt =
-    promptIn || `Cinematic film frame. ${beat.scene_heading}. ${beat.title}. ${beat.premise}`;
   // Fold in the editable Cinematography skill so frames follow the house style.
   const skill = skillForPart("cinematography");
   // Hard framing constraints: one scene per image (Seedream happily produces
@@ -196,10 +202,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     failed,
     vendor: providerLabel,
     error: errors[0],
+    locked_cast: referencedNames,
     note:
       failed > 0
         ? `${generated} frame(s) rolled, ${failed} failed via ${providerLabel}.`
-        : `${generated} frame(s) rolled by ${providerLabel}.`
+        : `${generated} frame(s) rolled by ${providerLabel}${
+            referencedNames.length ? ` — locked to ${referencedNames.join(", ")}` : ""
+          }.`
   });
 }
 
