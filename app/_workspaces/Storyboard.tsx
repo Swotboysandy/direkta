@@ -246,13 +246,39 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     }).catch(() => {});
   }
 
-  async function generate(beatId: string, prompt: string) {
-    await fetch(`/api/storyboard/rows/${beatId}/generate`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ variants: 4, prompt })
+  async function generate(beatId: string, prompt: string, takes: number = 4) {
+    // Optimistic: flip the row to "generating" and drop shimmer placeholders
+    // in immediately — the POST is synchronous and can take a minute.
+    setRows((prev) => {
+      const has = prev.some((r) => r.beat_id === beatId);
+      const next = prev.map((r) => (r.beat_id === beatId ? { ...r, state: "generating" as const } : r));
+      return has
+        ? next
+        : [...next, { beat_id: beatId, state: "generating" as const, selected_variant_id: null, style: {} }];
     });
-    await reload();
+    setVariants((prev) => [
+      ...prev.filter((v) => v.beat_id !== beatId),
+      ...Array.from({ length: takes }, (_, i) => ({
+        id: `pending-${beatId}-${i}`,
+        beat_id: beatId,
+        n: i + 1,
+        prompt,
+        state: "generating",
+        asset_id: null,
+        asset_url: null,
+        approval: "pending",
+        note: ""
+      }))
+    ]);
+    try {
+      await fetch(`/api/storyboard/rows/${beatId}/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ variants: takes, prompt })
+      });
+    } finally {
+      await reload();
+    }
   }
 
 
@@ -350,7 +376,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
                     onRemoveFromStitch={(variant) => removeVariantFromStitch(variant)}
                     onLightbox={(variant) => setLightbox({ beat, variant })}
                     onPatchRow={(patch) => patchRow(beat.id, patch)}
-                    onGenerate={(prompt) => generate(beat.id, prompt)}
+                    onGenerate={(prompt, takes) => generate(beat.id, prompt, takes)}
                   />
                 </motion.div>
               );
@@ -495,7 +521,7 @@ function BeatRow({
   onRemoveFromStitch: (variant: StoryboardVariant) => Promise<void> | void;
   onLightbox: (variant: StoryboardVariant) => void;
   onPatchRow: (patch: { style?: BeatStyle }) => void;
-  onGenerate: (prompt: string) => void;
+  onGenerate: (prompt: string, takes?: number) => void;
 }) {
   const state = row?.state ?? "waiting";
   const beatStyle = row?.style ?? {};
@@ -652,7 +678,7 @@ function BeatEditor({
   globalStyle: GlobalStyle;
   state: StoryboardRow["state"];
   onPatchRow: (patch: { style?: BeatStyle }) => void;
-  onGenerate: (prompt: string) => void;
+  onGenerate: (prompt: string, takes?: number) => void;
 }) {
   const [prompt, setPrompt] = useState(
     beatStyle.prompt_override || defaultPromptFor(beat, beatStyle, globalStyle)
@@ -677,6 +703,8 @@ function BeatEditor({
   ]);
 
   const isGenerating = state === "generating";
+  const [takes, setTakes] = useState<number>(4);
+  const takeCostK = Math.round((takes * 14_400) / 1000);
 
   return (
     <div className="beat-editor">
@@ -791,16 +819,62 @@ function BeatEditor({
       <div className="beat-editor-actions">
         <span className="t-mute" style={{ fontSize: "var(--t-body-s)" }}>
           {isGenerating
-            ? "Cinematographer is rolling 4 variants…"
+            ? `Cinematographer is rolling ${takes} ${takes === 1 ? "take" : "takes"} — frames land here as they finish…`
             : "Frames roll on Seedream via your BytePlus pack (or Higgsfield when connected)."}
         </span>
+        {!isGenerating && (
+          <div
+            role="radiogroup"
+            aria-label="Number of takes"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 2,
+              padding: 3,
+              background: "var(--surface-2)",
+              borderRadius: 999
+            }}
+          >
+            {[1, 2, 4].map((n) => (
+              <button
+                key={n}
+                role="radio"
+                aria-checked={takes === n}
+                onClick={() => setTakes(n)}
+                title={`${n} ${n === 1 ? "take" : "takes"} · ≈${Math.round((n * 14_400) / 1000)}k tokens`}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: 999,
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                  cursor: "pointer",
+                  color: takes === n ? "var(--ink)" : "var(--mute)",
+                  background: takes === n ? "var(--surface)" : "transparent",
+                  boxShadow: takes === n ? "var(--shadow-1)" : "none"
+                }}
+              >
+                {n} {n === 1 ? "take" : "takes"}
+              </button>
+            ))}
+          </div>
+        )}
         <button
           className="btn btn-sm btn-primary"
           disabled={isGenerating}
-          onClick={() => onGenerate(prompt)}
-          title="4 Seedream frames · ≈58k tokens"
+          onClick={() => onGenerate(prompt, takes)}
+          title={`${takes} Seedream ${takes === 1 ? "frame" : "frames"} · ≈${takeCostK}k tokens`}
         >
-          <Wand2 size={12} /> {isGenerating ? "Rolling…" : "Generate 4 variants · ≈58k tok"}
+          {isGenerating ? (
+            <>
+              <RefreshCcw size={12} className="fx-rotate-load" /> Rolling {takes}…
+            </>
+          ) : (
+            <>
+              <Wand2 size={12} /> Generate {takes} {takes === 1 ? "take" : "takes"} · ≈{takeCostK}k tok
+            </>
+          )}
         </button>
       </div>
 
