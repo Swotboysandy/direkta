@@ -140,7 +140,7 @@
 
   --cocoa:        #17181F;   /* primary text */
   --cocoa-soft:   #3E3F4C;
-  --cocoa-mute:   #7A7B8A;   /* secondary text, captions */
+  --cocoa-mute:   #666778;   /* secondary text, captions — AA (was #7A7B8A ≈3.8:1) */
 
   --tomato:       #D8402E;
   --tomato-deep:  #B32F1F;

@@ -112,13 +112,26 @@ export function Sidebar({
         )}
         {workspaces.map((w) => {
           const Icn = ICONS[w.id] ?? FILMSTRIP;
-          const noteColor =
-            w.status === "complete"
-              ? "var(--viridian-deep)"
-              : w.status === "in-progress"
-              ? "var(--mustard-deep)"
-              : "var(--mute)";
           const active = w.id === activeWorkspace;
+          // On the active pill --ink flips per theme (near-white in dark, near-
+          // black in light), so a raw status colour fails contrast one way or
+          // the other. Derive the note from --on-ink (always contrast-safe on
+          // the pill) with a 30% hue hint; the pip still carries the full colour.
+          const statusHue =
+            w.status === "complete"
+              ? "var(--viridian)"
+              : w.status === "in-progress"
+              ? "var(--mustard)"
+              : null;
+          const noteColor = active
+            ? statusHue
+              ? `color-mix(in srgb, var(--on-ink) 70%, ${statusHue})`
+              : "color-mix(in srgb, var(--on-ink) 62%, transparent)"
+            : w.status === "complete"
+            ? "var(--viridian-deep)"
+            : w.status === "in-progress"
+            ? "var(--mustard-deep)"
+            : "var(--mute)";
           return (
             <motion.div
               key={w.id}
@@ -178,7 +191,13 @@ export function Sidebar({
                   ) : (
                     <span
                       className="si-status pip"
-                      style={{ position: "relative", zIndex: 1 }}
+                      style={{
+                        position: "relative",
+                        zIndex: 1,
+                        // Faint halo in the pill's text colour so the dot stays
+                        // visible whether the pill is near-white or near-black.
+                        boxShadow: active ? "0 0 0 2px color-mix(in srgb, var(--on-ink) 22%, transparent)" : undefined
+                      }}
                       data-status={w.status === "complete" ? "done" : w.status === "in-progress" ? "working" : "draft"}
                     />
                   )}
