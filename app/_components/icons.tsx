@@ -57,7 +57,8 @@ import {
   Menu01Icon,
   Search01Icon,
   Sun03Icon,
-  Moon02Icon
+  Moon02Icon,
+  MusicNote01Icon
 } from "@hugeicons/core-free-icons";
 
 export interface IconProps {
@@ -142,3 +143,4 @@ export const Menu = make(Menu01Icon);
 export const Search = make(Search01Icon);
 export const Sun = make(Sun03Icon);
 export const Moon = make(Moon02Icon);
+export const Music = make(MusicNote01Icon);

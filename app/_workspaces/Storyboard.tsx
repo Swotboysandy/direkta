@@ -8,6 +8,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Clapperboard,
   Eye,
   Film,
   Flag,
@@ -85,6 +86,82 @@ const SHOT_SIZE_OPTIONS = ["Wide", "Medium", "Close", "Extreme close", "Two-shot
 const LENS_OPTIONS = ["24mm", "35mm", "50mm", "85mm", "135mm"];
 const MOVEMENT_OPTIONS = ["Locked", "Pan", "Tilt", "Dolly", "Handheld", "Push in", "Pull out", "Whip"];
 const ANGLE_OPTIONS = ["Eye level", "Low", "High", "Dutch", "Bird's eye", "Worm's eye"];
+
+/**
+ * Shot recipes — one click sets shot size + angle + lens + movement together,
+ * so a beat gets a deliberate, named look instead of tweaking four selects by
+ * hand. Values are drawn from the same option lists above; onPatchRow merges
+ * them into the beat's style same as any single-field change.
+ */
+interface ShotRecipe {
+  id: string;
+  label: string;
+  hint: string;
+  style: { shot_size: string; camera_angle: string; lens: string; movement: string };
+}
+
+const SHOT_RECIPES: ShotRecipe[] = [
+  {
+    id: "establishing",
+    label: "Establishing wide",
+    hint: "Sets the scene — wide, high angle, locked",
+    style: { shot_size: "Establishing", camera_angle: "High", lens: "24mm", movement: "Locked" }
+  },
+  {
+    id: "hero-product",
+    label: "Hero / product",
+    hint: "Clean close-up on a face or product, eye level",
+    style: { shot_size: "Close", camera_angle: "Eye level", lens: "85mm", movement: "Locked" }
+  },
+  {
+    id: "talking-head",
+    label: "Talking head",
+    hint: "Dialogue coverage, natural lens, locked off",
+    style: { shot_size: "Medium", camera_angle: "Eye level", lens: "50mm", movement: "Locked" }
+  },
+  {
+    id: "two-shot",
+    label: "Two-shot dialogue",
+    hint: "Two people in frame, eye level, locked",
+    style: { shot_size: "Two-shot", camera_angle: "Eye level", lens: "35mm", movement: "Locked" }
+  },
+  {
+    id: "over-shoulder",
+    label: "Over-the-shoulder",
+    hint: "Conversation reverse angle",
+    style: { shot_size: "Over-shoulder", camera_angle: "Eye level", lens: "50mm", movement: "Locked" }
+  },
+  {
+    id: "action",
+    label: "Action / movement",
+    hint: "Low angle, wide lens, handheld energy",
+    style: { shot_size: "Medium", camera_angle: "Low", lens: "24mm", movement: "Handheld" }
+  },
+  {
+    id: "emotional-cu",
+    label: "Emotional close-up",
+    hint: "Extreme close, compressed lens, intimate",
+    style: { shot_size: "Extreme close", camera_angle: "Eye level", lens: "85mm", movement: "Locked" }
+  },
+  {
+    id: "dutch-tension",
+    label: "Dutch tension",
+    hint: "Tilted frame, handheld, unease",
+    style: { shot_size: "Medium", camera_angle: "Dutch", lens: "35mm", movement: "Handheld" }
+  },
+  {
+    id: "insert-detail",
+    label: "Insert / detail",
+    hint: "A single object or hand action, tight",
+    style: { shot_size: "Insert", camera_angle: "Eye level", lens: "85mm", movement: "Locked" }
+  },
+  {
+    id: "sweeping-reveal",
+    label: "Sweeping reveal",
+    hint: "Wide shot pulling back to open up the space",
+    style: { shot_size: "Wide", camera_angle: "High", lens: "24mm", movement: "Pull out" }
+  }
+];
 
 const FRAMINGS: Array<{ shot: string; angle: string; label: string }> = [
   { shot: "Wide", angle: "High", label: "Wide · High" },
@@ -902,6 +979,7 @@ function BeatEditor({
     beatStyle.prompt_override || defaultPromptFor(beat, beatStyle, globalStyle)
   );
   const [framingOpen, setFramingOpen] = useState(false);
+  const [recipeOpen, setRecipeOpen] = useState(false);
   // Camera/style selects must actually reach the generator: recompose the
   // prompt whenever a setting changes, unless the director hand-edited it.
   const handEdited = useRef(Boolean(beatStyle.prompt_override));
@@ -1055,9 +1133,62 @@ function BeatEditor({
         <div className="beat-editor-section-head">
           <Eye size={14} />
           <span className="t-eyebrow">CAMERA DIRECTION</span>
+          <Popover.Root open={recipeOpen} onOpenChange={setRecipeOpen}>
+            <Popover.Trigger asChild>
+              <button className="sb-ghost-btn" style={{ marginLeft: "auto" }} title="Apply a named shot recipe — sets size, angle, lens and movement together">
+                <Clapperboard size={11} /> Shot recipe
+              </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content
+                align="end"
+                sideOffset={8}
+                style={{
+                  width: 260,
+                  background: "var(--surface)",
+                  backdropFilter: "blur(20px)",
+                  borderRadius: 18,
+                  boxShadow: "var(--shadow-3)",
+                  padding: 8,
+                  zIndex: 90,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  maxHeight: 340,
+                  overflowY: "auto"
+                }}
+              >
+                {SHOT_RECIPES.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      onPatchRow({ style: { ...r.style } });
+                      setRecipeOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: 2,
+                      padding: "8px 10px",
+                      borderRadius: 12,
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left"
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-2)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <span style={{ fontWeight: 600, fontSize: 13, color: "var(--ink)" }}>{r.label}</span>
+                    <span style={{ fontSize: 11, color: "var(--mute)" }}>{r.hint}</span>
+                  </button>
+                ))}
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
           <button
             className="sb-ghost-btn"
-            style={{ marginLeft: "auto" }}
             onClick={() => setFramingOpen(true)}
           >
             <LayoutGrid size={11} /> 3×3 framing

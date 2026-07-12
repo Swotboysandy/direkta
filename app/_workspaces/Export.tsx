@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, BookOpen, Film, FileText, ListChecks, type IconType } from "../_components/icons";
-import { fadeUp, staggerContainer, staggerItem } from "../_components/motion";
+import { ArrowDown, BookOpen, Film, FileText, ListChecks, Music, X, type IconType } from "../_components/icons";
+import { fadeUp, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Project, WorkspaceId } from "../../lib/types";
 
 interface Props {
@@ -11,10 +11,29 @@ interface Props {
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
+interface RenderResult {
+  url: string;
+  shots: number;
+  duration: number;
+  titled?: boolean;
+  scored?: boolean;
+  hasAudio?: boolean;
+}
+
 export function Export({ project }: Props) {
   const [rendering, setRendering] = useState(false);
-  const [cut, setCut] = useState<{ url: string; shots: number; duration: number } | null>(null);
+  const [cut, setCut] = useState<RenderResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [score, setScore] = useState<{ attached: boolean; ext: string | null } | null>(null);
+  const [scoreBusy, setScoreBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch(`/api/projects/${project.id}/score`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setScore(d))
+      .catch(() => {});
+  }, [project.id]);
 
   async function renderCut() {
     setRendering(true);
@@ -22,12 +41,38 @@ export function Export({ project }: Props) {
     try {
       const res = await fetch(`/api/projects/${project.id}/render`, { method: "POST" });
       const data = await res.json();
-      if (data.url) setCut({ url: data.url, shots: data.shots, duration: data.duration });
+      if (data.url) setCut(data as RenderResult);
       else setErr(data.error || "Render failed.");
     } catch (e: any) {
       setErr(e?.message ?? String(e));
     } finally {
       setRendering(false);
+    }
+  }
+
+  async function uploadScore(file: File) {
+    setScoreBusy(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/projects/${project.id}/score`, { method: "POST", body: form });
+      const data = await res.json();
+      if (res.ok) setScore({ attached: true, ext: data.ext });
+      else setErr(data.error || "Couldn't attach that track.");
+    } catch (e: any) {
+      setErr(e?.message ?? String(e));
+    } finally {
+      setScoreBusy(false);
+    }
+  }
+
+  async function removeScore() {
+    setScoreBusy(true);
+    try {
+      await fetch(`/api/projects/${project.id}/score`, { method: "DELETE" });
+      setScore({ attached: false, ext: null });
+    } finally {
+      setScoreBusy(false);
     }
   }
 
@@ -140,8 +185,66 @@ export function Export({ project }: Props) {
               Final cut
             </div>
             <div style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
-              The full assembly — every shot on the Stitch board, in scene order, each held for its
-              duration, rendered to a single MP4.
+              The full assembly — title card, Ken Burns on stills, crossfades between shots, and a
+              fade to black at each end. 1080p, ready to hand off.
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 14px",
+                background: "var(--bg)",
+                borderRadius: 14,
+                fontSize: 12
+              }}
+            >
+              <Music size={15} style={{ color: score?.attached ? "var(--viridian)" : "var(--mute)", flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: "var(--ink)" }}>
+                  {score?.attached ? `Music score attached (.${score.ext})` : "No music score"}
+                </div>
+                <div style={{ color: "var(--mute)", fontSize: 11 }}>
+                  {score?.attached
+                    ? "Mixed under the cut on the next render — ducked automatically if a clip has its own audio."
+                    : "Attach an MP3/WAV and it rides under the cut with a fade in/out."}
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".mp3,.m4a,.wav,.aac,audio/*"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadScore(f);
+                  e.target.value = "";
+                }}
+              />
+              <motion.button
+                {...tap}
+                type="button"
+                disabled={scoreBusy}
+                onClick={() => fileInputRef.current?.click()}
+                className="btn btn-sm"
+                style={{ background: "var(--surface)", flexShrink: 0 }}
+              >
+                {scoreBusy ? "…" : score?.attached ? "Replace" : "Attach track"}
+              </motion.button>
+              {score?.attached && (
+                <motion.button
+                  {...tap}
+                  type="button"
+                  disabled={scoreBusy}
+                  onClick={removeScore}
+                  title="Remove the attached score"
+                  className="btn btn-sm"
+                  style={{ background: "var(--surface)", color: "var(--tomato)", flexShrink: 0, padding: "8px 10px" }}
+                >
+                  <X size={12} />
+                </motion.button>
+              )}
             </div>
 
             {rendering && (
@@ -195,6 +298,29 @@ export function Export({ project }: Props) {
                 >
                   {cut.shots} SHOTS · {cut.duration}S
                 </span>
+              </div>
+            )}
+
+            {!rendering && cut && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span className="pip-state" data-status="done">
+                  MASTER FINISH
+                </span>
+                {cut.titled && (
+                  <span className="pip-state" data-status="done">
+                    TITLE CARD
+                  </span>
+                )}
+                {cut.scored && (
+                  <span className="pip-state" data-status="done">
+                    SCORED
+                  </span>
+                )}
+                {cut.hasAudio && !cut.scored && (
+                  <span className="pip-state" data-status="done">
+                    CLIP AUDIO
+                  </span>
+                )}
               </div>
             )}
 

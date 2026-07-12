@@ -14,6 +14,7 @@ export const maxDuration = 300;
 
 const run = promisify(execFile);
 const FFMPEG = process.env.FFMPEG_PATH || "ffmpeg";
+const FFPROBE = process.env.FFPROBE_PATH || "ffprobe";
 
 const OSS_DIR =
   process.env.OSS_DIR ||
@@ -44,6 +45,15 @@ const FONT = FONT_CANDIDATES.find((f) => {
   }
 });
 
+/** ffmpeg's drawtext parses `:` as its option separator, so a Windows drive
+ * letter (`C:/Windows/...`) breaks the filter string unless the value is
+ * single-quoted AND the colon is still backslash-escaped inside the quotes
+ * (verified against this ffmpeg build — quoting alone is not enough). Linux
+ * font paths have no colon, so this is a no-op there. */
+function drawtextFontfile(font: string): string {
+  return `'${font.replace(/:/g, "\\:")}'`;
+}
+
 const TRANSITION = 0.4; // crossfade seconds between shots
 const TITLE_DUR = 2.6; // title card seconds
 
@@ -72,6 +82,25 @@ function safeText(s: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 60);
+}
+
+/** Does this file have an audio stream? Used to decide whether a Seedance
+ * clip's native audio (the Stitch "Native audio" toggle) survives the master
+ * render, or whether we need to synthesize silence so every segment has a
+ * uniform audio stream for the crossfade chain. */
+async function hasAudioStream(file: string): Promise<boolean> {
+  try {
+    const { stdout } = await run(FFPROBE, [
+      "-v", "error",
+      "-select_streams", "a",
+      "-show_entries", "stream=index",
+      "-of", "csv=p=0",
+      file
+    ]);
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
 }
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -123,34 +152,40 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   fs.mkdirSync(work, { recursive: true });
 
   const enc = ["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-r", "24"];
+  const aenc = ["-c:a", "aac", "-b:a", "192k"];
+  const silentAudio = ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"];
 
   try {
     // ── Build normalised segments ──────────────────────────────────────────
     // seg[0] is the title card (skipped when no font is available); every shot
     // becomes a clean WxH / 24fps clip. Stills get a slow Ken Burns push-in.
+    // Every segment carries exactly one audio stream — real audio from a
+    // Seedance clip generated with "Native audio" on, or silence otherwise —
+    // so the crossfade chain below can treat every input the same way.
     const segFiles: string[] = [];
     const segDurs: number[] = [];
+    let hasRealAudio = false;
 
     if (FONT) {
       const titleSeg = path.join(work, "seg_title.mp4");
+      const fontfile = drawtextFontfile(FONT);
       const title = safeText(project.title || "Untitled");
       const sub = safeText(project.tagline || project.logline || "");
       const titleDraw =
-        `drawtext=fontfile=${FONT}:text='${title}':fontcolor=white:fontsize=${Math.round(H * 0.072)}:` +
+        `drawtext=fontfile=${fontfile}:text='${title}':fontcolor=white:fontsize=${Math.round(H * 0.072)}:` +
         `x=(w-tw)/2:y=(h-th)/2-${sub ? Math.round(H * 0.03) : 0}` +
         (sub
-          ? `,drawtext=fontfile=${FONT}:text='${sub}':fontcolor=0xB9B9C6:fontsize=${Math.round(H * 0.03)}:x=(w-tw)/2:y=(h/2)+${Math.round(H * 0.03)}`
+          ? `,drawtext=fontfile=${fontfile}:text='${sub}':fontcolor=0xB9B9C6:fontsize=${Math.round(H * 0.03)}:x=(w-tw)/2:y=(h/2)+${Math.round(H * 0.03)}`
           : "");
       const titleVf = `${titleDraw},fade=t=in:st=0:d=0.6,fade=t=out:st=${(TITLE_DUR - 0.6).toFixed(2)}:d=0.6,setsar=1,format=yuv420p`;
       await run(FFMPEG, [
         "-y",
-        "-f",
-        "lavfi",
-        "-i",
-        `color=c=0x0B0C10:s=${W}x${H}:d=${TITLE_DUR}:r=24`,
-        "-vf",
-        titleVf,
-        ...enc,
+        "-f", "lavfi", "-i", `color=c=0x0B0C10:s=${W}x${H}:d=${TITLE_DUR}:r=24`,
+        ...silentAudio,
+        "-vf", titleVf,
+        "-map", "0:v", "-map", "1:a",
+        "-t", String(TITLE_DUR),
+        ...enc, ...aenc, "-shortest",
         titleSeg
       ]);
       segFiles.push(titleSeg);
@@ -168,10 +203,31 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
           `scale=-2:${Math.round(H * 1.2)}:force_original_aspect_ratio=increase,` +
           `zoompan=z='min(1.001+0.0011*on,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${W}x${H}:fps=24,` +
           `setsar=1,format=yuv420p`;
-        await run(FFMPEG, ["-y", "-i", s.file, "-vf", vf, ...enc, seg]);
+        await run(FFMPEG, [
+          "-y",
+          "-i", s.file,
+          ...silentAudio,
+          "-vf", vf,
+          "-map", "0:v", "-map", "1:a",
+          "-t", String(s.duration),
+          ...enc, ...aenc, "-shortest",
+          seg
+        ]);
       } else {
         const vf = `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=24,format=yuv420p`;
-        await run(FFMPEG, ["-y", "-t", String(s.duration), "-i", s.file, "-vf", vf, "-an", ...enc, seg]);
+        const clipHasAudio = await hasAudioStream(s.file);
+        const args = ["-y", "-t", String(s.duration), "-i", s.file];
+        if (!clipHasAudio) args.push(...silentAudio);
+        else hasRealAudio = true;
+        args.push(
+          "-vf", vf,
+          "-map", "0:v",
+          "-map", clipHasAudio ? "0:a" : "1:a",
+          "-t", String(s.duration),
+          ...enc, ...aenc, "-shortest",
+          seg
+        );
+        await run(FFMPEG, args);
       }
       segFiles.push(seg);
       segDurs.push(s.duration);
@@ -181,63 +237,56 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const outFile = path.join(OSS_DIR, outName);
 
     // ── Assemble ───────────────────────────────────────────────────────────
-    // A single segment needs no crossfade; otherwise chain xfade dissolves.
+    // A single segment needs no crossfade; otherwise chain xfade (video) +
+    // acrossfade (audio) together so real Seedance clip audio (when the
+    // "Native audio" toggle was on) survives the dissolve, not just silence.
     if (segFiles.length === 1) {
       const total = segDurs[0];
       await run(FFMPEG, [
         "-y",
-        "-i",
-        segFiles[0],
-        "-vf",
-        `fade=t=in:st=0:d=0.5,fade=t=out:st=${Math.max(0, total - 0.7).toFixed(2)}:d=0.7`,
-        "-c:v",
-        "libx264",
-        "-preset",
-        "medium",
-        "-crf",
-        "18",
-        "-pix_fmt",
-        "yuv420p",
-        "-movflags",
-        "+faststart",
+        "-i", segFiles[0],
+        "-vf", `fade=t=in:st=0:d=0.5,fade=t=out:st=${Math.max(0, total - 0.7).toFixed(2)}:d=0.7`,
+        "-af", `afade=t=in:st=0:d=0.5,afade=t=out:st=${Math.max(0, total - 0.7).toFixed(2)}:d=0.7`,
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart",
         outFile
       ]);
     } else {
       const inputs: string[] = [];
       segFiles.forEach((f) => inputs.push("-i", f));
-      // xfade offsets accumulate: offset[i] = offset[i-1] + dur[i] - T.
-      const parts: string[] = [];
-      let prevLabel = "0";
+      // xfade/acrossfade offsets accumulate in lockstep: offset[i] = offset[i-1] + dur[i] - T.
+      const vParts: string[] = [];
+      const aParts: string[] = [];
+      let vPrev = "0:v";
+      let aPrev = "0:a";
       let offset = segDurs[0] - TRANSITION;
       let total = segDurs[0];
       for (let i = 1; i < segFiles.length; i++) {
-        const out = i === segFiles.length - 1 ? "vx" : `v${i}`;
-        parts.push(
-          `[${prevLabel}][${i}]xfade=transition=fade:duration=${TRANSITION}:offset=${offset.toFixed(3)}[${out}]`
-        );
+        const vOut = i === segFiles.length - 1 ? "vx" : `v${i}`;
+        const aOut = i === segFiles.length - 1 ? "ax" : `a${i}`;
+        vParts.push(`[${vPrev}][${i}:v]xfade=transition=fade:duration=${TRANSITION}:offset=${offset.toFixed(3)}[${vOut}]`);
+        aParts.push(`[${aPrev}][${i}:a]acrossfade=d=${TRANSITION}:c1=tri:c2=tri[${aOut}]`);
         total += segDurs[i] - TRANSITION;
         offset += segDurs[i] - TRANSITION;
-        prevLabel = out;
+        vPrev = vOut;
+        aPrev = aOut;
       }
       const filter =
-        parts.join(";") + `;[vx]fade=t=in:st=0:d=0.5,fade=t=out:st=${Math.max(0, total - 0.7).toFixed(2)}:d=0.7[vout]`;
+        vParts.join(";") +
+        ";" +
+        aParts.join(";") +
+        `;[vx]fade=t=in:st=0:d=0.5,fade=t=out:st=${Math.max(0, total - 0.7).toFixed(2)}:d=0.7[vout]` +
+        `;[ax]afade=t=in:st=0:d=0.5,afade=t=out:st=${Math.max(0, total - 0.7).toFixed(2)}:d=0.7[aout]`;
       await run(FFMPEG, [
         "-y",
         ...inputs,
-        "-filter_complex",
-        filter,
-        "-map",
-        "[vout]",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "medium",
-        "-crf",
-        "18",
-        "-pix_fmt",
-        "yuv420p",
-        "-movflags",
-        "+faststart",
+        "-filter_complex", filter,
+        "-map", "[vout]",
+        "-map", "[aout]",
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart",
         outFile
       ]);
     }
@@ -252,6 +301,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     if (scoreFile) {
       const totalDur = segDurs.reduce((a, b) => a + b, 0) - (segFiles.length - 1) * TRANSITION;
       const scoredOut = path.join(OSS_DIR, `scored_${outName}`);
+      // Duck the score harder when real Seedance dialogue/foley survived the
+      // cut (hasRealAudio) — mix rather than replace, so a user who turned on
+      // Native audio for their clips doesn't lose it under the score.
+      const scoreVol = hasRealAudio ? 0.35 : 0.7;
       try {
         await run(FFMPEG, [
           "-y",
@@ -262,7 +315,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
           "-i",
           scoreFile,
           "-filter_complex",
-          `[1:a]volume=0.7,afade=t=in:st=0:d=1.2,afade=t=out:st=${Math.max(0, totalDur - 1.5).toFixed(2)}:d=1.5[a]`,
+          `[1:a]volume=${scoreVol},afade=t=in:st=0:d=1.2,afade=t=out:st=${Math.max(0, totalDur - 1.5).toFixed(2)}:d=1.5[wet];` +
+            `[0:a][wet]amix=inputs=2:duration=first:dropout_transition=2:normalize=0[a]`,
           "-map",
           "0:v",
           "-map",
@@ -284,7 +338,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         fs.renameSync(scoredOut, outFile);
         scored = true;
       } catch {
-        /* keep the silent master if muxing the score fails */
+        /* keep the unscored master if muxing the score fails */
       }
     }
 
@@ -301,6 +355,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       shots: sources.length,
       titled: Boolean(FONT),
       scored,
+      hasAudio: hasRealAudio || scored,
       duration: Math.round(totalDuration * 10) / 10
     });
   } catch (error: any) {
