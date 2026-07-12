@@ -1452,11 +1452,8 @@ function AddModal({
                   <button
                     key={r}
                     type="button"
-                    className="btn btn-sm"
-                    style={{
-                      borderColor: role === r ? "var(--tungsten)" : undefined,
-                      color: role === r ? "var(--tungsten)" : undefined
-                    }}
+                    className={`btn btn-sm chip-select${role === r ? " is-active" : ""}`}
+                    aria-pressed={role === r}
                     onClick={() => setRole(r)}
                   >
                     {r}
@@ -1473,11 +1470,8 @@ function AddModal({
                   <button
                     key={t}
                     type="button"
-                    className="btn btn-sm"
-                    style={{
-                      borderColor: intExt === t ? "var(--tungsten)" : undefined,
-                      color: intExt === t ? "var(--tungsten)" : undefined
-                    }}
+                    className={`btn btn-sm chip-select${intExt === t ? " is-active" : ""}`}
+                    aria-pressed={intExt === t}
                     onClick={() => setIntExt(t)}
                   >
                     {t}

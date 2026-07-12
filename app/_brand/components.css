@@ -28,7 +28,40 @@
 .btn:hover     { box-shadow: var(--shadow-2); }
 .btn:active    { box-shadow: var(--shadow-1); transform: scale(0.96); }
 .btn:focus-visible { outline: none; box-shadow: var(--shadow-2), var(--shadow-focus); }
-.btn[disabled] { opacity: 0.5; pointer-events: none; }
+
+/* Disabled: flat muted pill with a still-legible label, instead of dropping
+   everything (gradient + text) to 50% opacity — a washed-out primary made the
+   label nearly invisible. */
+.btn[disabled], .btn:disabled {
+  opacity: 1;
+  background: var(--surface-2);
+  color: var(--mute);
+  box-shadow: inset 0 0 0 1px var(--cream-deep);
+  border-color: transparent;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* Selection chips (role / type / mode) — a `.btn`-based toggle with a clear
+   active fill and readable text in every state. Fixes chips that coloured
+   their active label with a translucent fill token (invisible text). */
+.chip-select {
+  color: var(--ink);
+  font-weight: 600;
+}
+.chip-select:hover { color: var(--ink); background: var(--surface-2); box-shadow: var(--shadow-1); }
+.chip-select.is-active,
+.chip-select[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.chip-select.is-active:hover,
+.chip-select[aria-pressed="true"]:hover {
+  background: var(--accent-hover);
+  color: var(--on-accent);
+}
 
 /* Watermelon-style primary: top-lit gradient + inner highlight + tonal border,
    so the pill reads as a physical, slightly-domed key. */

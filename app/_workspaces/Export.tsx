@@ -121,7 +121,7 @@ export function Export({ project }: Props) {
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <span style={{ color: "var(--accent-2)" }}>
+              <span style={{ color: "var(--mute)" }}>
                 <Film size={28} />
               </span>
               <span
@@ -290,7 +290,7 @@ function ExportCard({
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <span style={{ color: "var(--accent-2)" }}>
+        <span style={{ color: "var(--mute)" }}>
           <Icn size={28} />
         </span>
         <span

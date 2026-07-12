@@ -26,7 +26,7 @@ export function WorkspaceStub({ id, label, crumb, description, icon: Icn, onSwit
       </header>
 
       <div className="workspace-stub">
-        <Icn size={42} style={{ color: "var(--tungsten)" }} />
+        <Icn size={42} style={{ color: "var(--mute)" }} />
         <h2>{label}</h2>
         <p>{description}</p>
         <button className="btn" onClick={() => onSwitchWorkspace("dashboard")}>
