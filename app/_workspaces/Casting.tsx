@@ -102,6 +102,17 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
   const [adding, setAdding] = useState<"character" | "location" | null>(null);
   const [importing, setImporting] = useState(false);
   const [importNote, setImportNote] = useState<string | null>(null);
+  // Ids currently mid-generation in a batch — the card shimmers while its id is
+  // here, so "Cast all" / "Scout all" show live per-card feedback (not just a
+  // toast). Single generations use each card's own local busy flag.
+  const [genIds, setGenIds] = useState<Set<string>>(new Set());
+  const markGenerating = (id: string, on: boolean) =>
+    setGenIds((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   const trained = characters.filter((c) => c.soul_id_state === "trained").length;
   const total = characters.length;
@@ -348,6 +359,8 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
               items={characters.map((c) => ({ id: c.id, name: c.name, hasLook: (c.refs ?? []).length > 0 }))}
               endpoint={(cid) => `/api/characters/${cid}/portrait`}
               onProgress={(msg) => setImportNote(msg)}
+              onItemStart={(id) => markGenerating(id, true)}
+              onItemDone={(id) => markGenerating(id, false)}
               onDone={async (n) => {
                 await onReload();
                 setImportNote(n ? `Cast ${n} portrait(s) — they're now reference-locked for the storyboard.` : null);
@@ -397,7 +410,7 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
           >
             {characters.map((c) => (
               <motion.div key={c.id} variants={staggerItem}>
-                <CharacterCard character={c} projectId={project.id} onChange={onReload} />
+                <CharacterCard character={c} projectId={project.id} generating={genIds.has(c.id)} onChange={onReload} />
               </motion.div>
             ))}
           </motion.div>
@@ -413,6 +426,8 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
             items={locations.map((l) => ({ id: l.id, name: l.name, hasLook: (l.refs ?? []).length > 0 }))}
             endpoint={(lid) => `/api/locations/${lid}/plate`}
             onProgress={(msg) => setImportNote(msg)}
+            onItemStart={(id) => markGenerating(id, true)}
+            onItemDone={(id) => markGenerating(id, false)}
             onDone={async (n) => {
               await onReload();
               setImportNote(n ? `Scouted ${n} location plate(s).` : null);
@@ -458,7 +473,7 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
           >
             {locations.map((l) => (
               <motion.div key={l.id} variants={staggerItem}>
-                <LocationCard location={l} projectId={project.id} onChange={onReload} />
+                <LocationCard location={l} projectId={project.id} generating={genIds.has(l.id)} onChange={onReload} />
               </motion.div>
             ))}
           </motion.div>
@@ -483,10 +498,12 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
 function CharacterCard({
   character,
   projectId,
+  generating = false,
   onChange
 }: {
   character: Character;
   projectId: string;
+  generating?: boolean;
   onChange: () => Promise<void> | void;
 }) {
   void projectId;
@@ -498,6 +515,8 @@ function CharacterCard({
   const [sel, setSel] = useState(0);
   const [casting, setCasting] = useState(false);
   const [editing, setEditing] = useState(false);
+  // Busy = generating via a batch (generating prop) or this card's own button.
+  const busy = generating || casting;
 
   // Looks: real reference photos if present, else stub plates derived from the
   // Soul ID state. Casting a look generates a real portrait on the server.
@@ -520,8 +539,9 @@ function CharacterCard({
     }
   }
 
-  const pipLabel =
-    state === "trained"
+  const pipLabel = busy
+    ? "Casting…"
+    : state === "trained"
       ? `Trained · ${character.consistency?.toFixed(1) ?? "—"} / 10`
       : state === "training"
       ? `Training · ${pct}%`
@@ -529,7 +549,7 @@ function CharacterCard({
       ? "Training failed"
       : "Not started";
   const pipTone = toneColors(
-    state === "trained" ? "success" : state === "training" ? "warning" : state === "failed" ? "danger" : "neutral"
+    busy ? "warning" : state === "trained" ? "success" : state === "training" ? "warning" : state === "failed" ? "danger" : "neutral"
   );
 
   function plate(look: { url?: string; seed?: number } | undefined, fontSize: number) {
@@ -594,7 +614,7 @@ function CharacterCard({
       style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", overflow: "hidden", display: "flex", flexDirection: "column" }}
       hoverStyle={{ boxShadow: "var(--shadow-3)" }}
     >
-      <div style={{ position: "relative", aspectRatio: "1 / 1", background: "var(--cream-deep)", overflow: "hidden" }}>
+      <div className={busy ? "shimmer" : undefined} style={{ position: "relative", aspectRatio: "1 / 1", background: "var(--cream-deep)", overflow: "hidden" }}>
         {active ? (
           plate(active, 64)
         ) : (
@@ -614,7 +634,28 @@ function CharacterCard({
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em" }}>Add reference photos</span>
           </div>
         )}
-        {state === "training" && <div className="cast-shimmer" style={{ background: "none" }} />}
+        {(state === "training" || busy) && <div className="cast-shimmer" style={{ background: "none" }} />}
+        {busy && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              background: "color-mix(in srgb, var(--bg) 50%, transparent)",
+              backdropFilter: "blur(1px)",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.04em",
+              color: "var(--ink)",
+              zIndex: 1
+            }}
+          >
+            <RefreshCcw size={12} className="fx-rotate-load" /> CASTING…
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 28, flex: 1 }}>
@@ -670,7 +711,7 @@ function CharacterCard({
             {state !== "empty" && (
               <HoverButton
                 onClick={castLook}
-                disabled={casting}
+                disabled={busy}
                 aria-label="Cast a new look"
                 title="Cast a new look"
                 style={{
@@ -731,12 +772,12 @@ function CharacterCard({
           {state === "empty" && (
             <HoverButton
               onClick={castLook}
-              disabled={casting}
+              disabled={busy}
               style={mainActionStyle}
               hoverStyle={dimHover}
               title="Generates one Seedream portrait · ≈14k tokens"
             >
-              {casting ? "Casting…" : "Begin casting · ≈14k tok"}
+              {busy ? "Casting…" : "Begin casting · ≈14k tok"}
             </HoverButton>
           )}
           {state === "training" && (
@@ -748,12 +789,12 @@ function CharacterCard({
             <>
               <HoverButton
                 onClick={castLook}
-                disabled={casting}
+                disabled={busy}
                 style={mainActionStyle}
                 hoverStyle={dimHover}
                 title="Generates one Seedream portrait · ≈14k tokens"
               >
-                {casting ? "Casting…" : "New look · ≈14k tok"}
+                {busy ? "Casting…" : "New look · ≈14k tok"}
               </HoverButton>
               <HoverButton onClick={() => setEditing(true)} style={editStyle} hoverStyle={editHover}>
                 Edit
@@ -1048,14 +1089,19 @@ function CharacterEditModal({
 function LocationCard({
   location,
   projectId,
+  generating = false,
   onChange
 }: {
   location: Location;
   projectId: string;
+  generating?: boolean;
   onChange: () => Promise<void> | void;
 }) {
   void projectId;
   const [scouting, setScouting] = useState(false);
+  // Shimmer whenever this card is generating — via a batch (generating prop) or
+  // its own Scout button (local scouting flag). Single source of truth.
+  const busy = generating || scouting;
 
   async function scoutPlate() {
     if (scouting) return;
@@ -1070,7 +1116,9 @@ function LocationCard({
 
   const ref = location.refs[0];
   const tone = toneColors(
-    location.soul_id_state === "trained"
+    busy
+      ? "warning"
+      : location.soul_id_state === "trained"
       ? "success"
       : location.soul_id_state === "training"
       ? "warning"
@@ -1078,8 +1126,9 @@ function LocationCard({
       ? "danger"
       : "neutral"
   );
-  const stateLabel =
-    location.soul_id_state === "trained"
+  const stateLabel = busy
+    ? "Scouting…"
+    : location.soul_id_state === "trained"
       ? "Trained"
       : location.soul_id_state === "training"
       ? "Training"
@@ -1093,12 +1142,33 @@ function LocationCard({
       hoverStyle={{ boxShadow: "var(--shadow-3)" }}
     >
       <div
-        className={location.soul_id_state === "training" ? "shimmer" : undefined}
+        className={busy || location.soul_id_state === "training" ? "shimmer" : undefined}
         style={{ position: "relative", aspectRatio: "16 / 9", background: "var(--cream-deep)", overflow: "hidden" }}
       >
         {ref && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={ref} alt={location.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        )}
+        {busy && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              background: "color-mix(in srgb, var(--bg) 55%, transparent)",
+              backdropFilter: "blur(1px)",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.04em",
+              color: "var(--ink)",
+              zIndex: 1
+            }}
+          >
+            <RefreshCcw size={12} className="fx-rotate-load" /> SCOUTING…
+          </div>
         )}
       </div>
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
@@ -1129,7 +1199,7 @@ function LocationCard({
           </span>
           <HoverButton
             onClick={scoutPlate}
-            disabled={scouting}
+            disabled={busy}
             title="Generate an establishing plate for this location · ≈14k tokens"
             style={{
               display: "inline-flex",
@@ -1147,7 +1217,7 @@ function LocationCard({
             }}
             hoverStyle={{ background: "color-mix(in srgb, var(--ink) 12%, transparent)" }}
           >
-            {scouting ? (
+            {busy ? (
               <>
                 <RefreshCcw size={11} className="fx-rotate-load" /> Scouting…
               </>
@@ -1171,6 +1241,8 @@ function BatchGenerate({
   items,
   endpoint,
   onProgress,
+  onItemStart,
+  onItemDone,
   onDone
 }: {
   label: string;
@@ -1178,6 +1250,8 @@ function BatchGenerate({
   items: Array<{ id: string; name: string; hasLook: boolean }>;
   endpoint: (id: string) => string;
   onProgress: (msg: string) => void;
+  onItemStart?: (id: string) => void;
+  onItemDone?: (id: string) => void;
   onDone: (generated: number) => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
@@ -1212,8 +1286,13 @@ function BatchGenerate({
           return;
         }
         onProgress(`Generating ${verb} for ${item.name} — ${done + 1} / ${ids.length}…`);
-        const res = await fetch(endpoint(item.id), { method: "POST" });
-        if (res.ok) done++;
+        onItemStart?.(item.id);
+        try {
+          const res = await fetch(endpoint(item.id), { method: "POST" });
+          if (res.ok) done++;
+        } finally {
+          onItemDone?.(item.id);
+        }
       }
     } finally {
       setRunning(false);

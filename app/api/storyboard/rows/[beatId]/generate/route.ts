@@ -89,9 +89,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const skill = skillForPart("cinematography");
   // The cast lock LEADS the prompt — Seedream weighs early instructions far
   // more heavily, so burying the reference note after the style block lets
-  // identity drift (verified A/B). The anti-grid constraint closes it out.
+  // identity drift (verified A/B). Language is deliberately forceful: a soft
+  // "the same person" produces a loose look-alike with drifting skin tone and
+  // wardrobe (and sometimes a duplicate of the subject); this locks all of it.
   const castLock = referencedNames.length
-    ? `The SAME person(s) as in the attached reference image(s): ${referencedDescs.join(" · ")} — identical face, hair and wardrobe as the reference.`
+    ? [
+        `IDENTITY LOCK — the ${referencedNames.length === 1 ? "person" : "people"} in this frame MUST be the exact same ${
+          referencedNames.length === 1 ? "individual" : "individuals"
+        } shown in the attached reference image(s): ${referencedDescs.join(" · ")}.`,
+        "Match the reference precisely: same face and facial structure, same skin tone, same hair, same wardrobe. This is the same person, NOT a look-alike or a different actor.",
+        referencedNames.length === 1
+          ? `Exactly ONE person in the entire frame — ${referencedNames[0]}. Never duplicate them, no twins, no clone, no second copy of the same person.`
+          : `Exactly ${referencedNames.length} distinct people (${referencedNames.join(", ")}), each matching their own reference — do not merge or blend their faces.`
+      ].join(" ")
     : "";
   // Brand/product placement rides on every frame when the project defines it.
   const brandLine = beat.brand_kit

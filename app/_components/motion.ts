@@ -19,17 +19,27 @@ export const SPRING_SNAPPY = { type: "spring" as const, stiffness: 640, damping:
 /** A touch of overshoot — pop-ins that should feel alive (panels, checks). */
 export const SPRING_POP = { type: "spring" as const, stiffness: 420, damping: 26, mass: 0.7 };
 
-/** A single element easing up + in on mount. Spread onto a motion element. */
+/*
+ * Entrance variants are TRANSFORM-ONLY (no opacity gating) on purpose.
+ * framer-motion drives animations off requestAnimationFrame, which the browser
+ * throttles/pauses in a backgrounded tab — and our generation batches run for
+ * minutes, so users routinely switch away mid-run. An opacity:0 → 1 entrance
+ * that never gets a frame strands its content INVISIBLE (the "overlay opacity"
+ * dimming). A stranded y-offset of a few px is imperceptible, so content is
+ * always readable no matter what happens to the animation.
+ */
+
+/** A single element rising in on mount. Spread onto a motion element. */
 export const fadeUp = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
+  initial: { y: 12 },
+  animate: { y: 0 },
   transition: SPRING_SMOOTH
 };
 
-/** A whole page/section easing in on mount (slightly gentler). */
+/** A whole page/section rising in on mount (slightly gentler). */
 export const pageIn = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
+  initial: { y: 8 },
+  animate: { y: 0 },
   transition: SPRING_SMOOTH
 };
 
@@ -41,8 +51,8 @@ export const staggerContainer = {
 
 /** Child of `staggerContainer` — inherits the parent's `show` state on mount. */
 export const staggerItem = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: SPRING_SMOOTH }
+  hidden: { y: 16 },
+  show: { y: 0, transition: SPRING_SMOOTH }
 };
 
 /** Tactile press for primary action buttons — press feedback only, no hover motion. */
