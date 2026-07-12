@@ -30,14 +30,16 @@ export async function generateVideoViaByteplus(input: {
   resolution?: string; // "720p" | "1080p"
   duration?: number;
   audio?: boolean; // Seedance native audio (default true); false appends --audio false
+  cameraFixed?: boolean; // true = locked-off shot (--camerafixed true)
 }): Promise<{ url: string; relPath: string }> {
   const resolution = input.resolution || "1080p";
   const duration = input.duration ?? 5;
+  const cameraFixed = input.cameraFixed === true;
 
   // Seedance reads parameters from the end of the text prompt.
   const text =
     `${input.prompt} --resolution ${resolution} --duration ${duration} ` +
-    `--camerafixed false --watermark false${input.audio === false ? " --audio false" : ""}`;
+    `--camerafixed ${cameraFixed} --watermark false${input.audio === false ? " --audio false" : ""}`;
 
   const headers = {
     "content-type": "application/json",

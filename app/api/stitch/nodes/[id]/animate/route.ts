@@ -6,7 +6,7 @@ import { generateVideo } from "../../../../../../lib/agents/video";
 import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../../lib/higgsfield/mcp";
 import { generateVideoViaByteplus } from "../../../../../../lib/agents/byteplus-video";
 import { referenceToDataUri } from "../../../../../../lib/agents/byteplus-image";
-import { videoModel } from "../../../../../../lib/higgsfield/catalog";
+import { videoModel, cameraMotion } from "../../../../../../lib/higgsfield/catalog";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import type { AspectRatio } from "../../../../../../lib/types";
 
@@ -32,8 +32,12 @@ interface NodeRow {
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await req.json().catch(() => ({} as { model?: string }));
+  const body = await req
+    .json()
+    .catch(() => ({} as { model?: string; motion?: string; audio?: boolean }));
   const chosen = videoModel(typeof body.model === "string" ? body.model : undefined);
+  const cameraMove = cameraMotion(typeof body.motion === "string" ? body.motion : undefined);
+  const wantAudio = body.audio === true;
   const db = getDb();
 
   const node = db
@@ -110,7 +114,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     "wardrobe throughout the clip. Natural motion only; no morphing, no identity drift, no new characters.";
   // Fold in the editable Video Director skill so motion follows the house style.
   const skill = skillForPart("video");
-  const prompt = [base, skill?.body ?? "", consistency].filter(Boolean).join("\n\n");
+  // The chosen camera move (Stitch inspector → Motion) leads the direction line
+  // so Seedance animates the shot the way the user picked, not at random.
+  const cameraLine = cameraMove.phrase ? `Camera: ${cameraMove.phrase}` : "";
+  const prompt = [cameraLine, base, skill?.body ?? "", consistency].filter(Boolean).join("\n\n");
 
   const providerLabel = isByteplus
     ? "BytePlus · Seedance 1.5 Pro"
@@ -127,7 +134,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           prompt,
           referenceImageUrl: refImage,
           resolution: chosen.byteplus!.resolution,
-          duration: clipDuration
+          duration: clipDuration,
+          cameraFixed: cameraMove.cameraFixed,
+          audio: wantAudio
         })
       : useMcp
         ? await generateVideoViaMcp({

@@ -103,3 +103,37 @@ export const DEFAULT_VIDEO_MODEL = "byteplus_seedance_1_5_1080p";
 export function videoModel(id: string | undefined): VideoModel {
   return VIDEO_MODELS.find((m) => m.id === id) ?? VIDEO_MODELS[0];
 }
+
+/**
+ * Camera-motion presets for the animate (video) step. Seedance reads the move
+ * from the prompt tail and honours `--camerafixed`; a locked-off shot sets
+ * cameraFixed true, everything else describes the move. Shared by the Stitch
+ * inspector (the picker) and the animate route (the prompt + flag).
+ */
+export interface CameraMotion {
+  id: string;
+  label: string;
+  /** Sentence folded into the video prompt. Empty = let the model decide. */
+  phrase: string;
+  cameraFixed: boolean;
+}
+
+export const CAMERA_MOTIONS: CameraMotion[] = [
+  { id: "auto", label: "Auto (let the model decide)", phrase: "", cameraFixed: false },
+  { id: "static", label: "Static / locked-off", phrase: "Locked-off static shot — the camera does not move at all.", cameraFixed: true },
+  { id: "push_in", label: "Slow push-in", phrase: "Slow cinematic push-in, the camera dollies gently toward the subject.", cameraFixed: false },
+  { id: "pull_out", label: "Pull-out reveal", phrase: "Slow pull-out, the camera dollies back to reveal the wider scene.", cameraFixed: false },
+  { id: "pan_left", label: "Pan left", phrase: "The camera pans smoothly to the left.", cameraFixed: false },
+  { id: "pan_right", label: "Pan right", phrase: "The camera pans smoothly to the right.", cameraFixed: false },
+  { id: "tilt_up", label: "Tilt up", phrase: "The camera tilts upward.", cameraFixed: false },
+  { id: "tilt_down", label: "Tilt down", phrase: "The camera tilts downward.", cameraFixed: false },
+  { id: "orbit", label: "Orbit around subject", phrase: "The camera arcs in a smooth orbit around the subject.", cameraFixed: false },
+  { id: "tracking", label: "Tracking follow", phrase: "A tracking shot that follows the subject's movement.", cameraFixed: false },
+  { id: "handheld", label: "Handheld", phrase: "Subtle handheld camera motion for documentary energy.", cameraFixed: false },
+  { id: "zoom_in", label: "Zoom in", phrase: "A gradual zoom in on the subject.", cameraFixed: false },
+  { id: "crane_up", label: "Crane up", phrase: "A sweeping crane move rising upward over the scene.", cameraFixed: false }
+];
+
+export function cameraMotion(id: string | undefined): CameraMotion {
+  return CAMERA_MOTIONS.find((m) => m.id === id) ?? CAMERA_MOTIONS[0];
+}

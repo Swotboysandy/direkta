@@ -19,7 +19,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Film, Pause, Play, Trash2, X } from "../_components/icons";
 import { fadeUp, popIn } from "../_components/motion";
 import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
-import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, videoModel } from "../../lib/higgsfield/catalog";
+import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, videoModel, CAMERA_MOTIONS } from "../../lib/higgsfield/catalog";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
 
 interface Balance {
@@ -167,14 +167,19 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     await patchNode(node.id, { duration });
   }
 
-  async function animate(node: StitchNode, modelId?: string): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null> {
+  async function animate(
+    node: StitchNode,
+    modelId?: string,
+    motion?: string,
+    audio?: boolean
+  ): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null> {
     setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, clip_state: "generating" } : n)));
     let data: { ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null = null;
     try {
       const res = await fetch(`/api/stitch/nodes/${node.id}/animate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: modelId ?? DEFAULT_VIDEO_MODEL })
+        body: JSON.stringify({ model: modelId ?? DEFAULT_VIDEO_MODEL, motion: motion ?? "auto", audio: audio ?? false })
       });
       data = await res.json().catch(() => null);
     } catch {
@@ -459,7 +464,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             onSetSceneNumber={(scene) => setSceneNumber(selected, scene)}
             onSetDuration={(duration) => setDuration(selected, duration)}
             balance={balance}
-            onAnimate={(modelId) => animate(selected, modelId)}
+            onAnimate={(modelId, motion, audio) => animate(selected, modelId, motion, audio)}
             onDelete={() => {
               if (confirm("Remove this frame from Stitch? The transition clips connected to it will also be removed.")) {
                 deleteNode(selected.id);
@@ -867,7 +872,11 @@ function StitchInspector({
   onSetSceneNumber: (n: number) => void;
   onSetDuration: (d: number) => void;
   balance: Balance | null;
-  onAnimate: (modelId: string) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
+  onAnimate: (
+    modelId: string,
+    motion: string,
+    audio: boolean
+  ) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
   onDelete: () => void;
 }) {
   const [scene, setScene] = useState<number>(node.beat?.n ?? 1);
@@ -875,6 +884,8 @@ function StitchInspector({
   const [animating, setAnimating] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string>(DEFAULT_VIDEO_MODEL);
+  const [motionId, setMotionId] = useState<string>("auto");
+  const [audioOn, setAudioOn] = useState<boolean>(false);
   const model = videoModel(modelId);
   const isHiggs = model.provider !== "byteplus";
   const credits = balance?.credits ?? null;
@@ -1073,7 +1084,57 @@ function StitchInspector({
       </div>
 
       <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Video model</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Camera motion</span>
+        <select
+          value={motionId}
+          onChange={(e) => setMotionId(e.target.value)}
+          title="How Seedance moves the camera for this shot"
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            background: "var(--bg)",
+            color: "var(--ink)",
+            border: "none",
+            borderRadius: 18,
+            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
+            fontFamily: "var(--font-ui)",
+            fontSize: 13,
+            fontWeight: 500,
+            outline: "none",
+            cursor: "pointer"
+          }}
+        >
+          {CAMERA_MOTIONS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            marginTop: 2,
+            cursor: "pointer",
+            fontFamily: "var(--font-ui)",
+            fontSize: 13,
+            color: "var(--ink)"
+          }}
+          title="Let Seedance generate a native audio track for this clip (off = silent, scored later in Export)"
+        >
+          <span>Native audio</span>
+          <input
+            type="checkbox"
+            checked={audioOn}
+            onChange={(e) => setAudioOn(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: "var(--accent)", cursor: "pointer" }}
+          />
+        </label>
+
+        <span style={{ marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Video model</span>
         <select
           value={modelId}
           onChange={(e) => setModelId(e.target.value)}
@@ -1128,7 +1189,7 @@ function StitchInspector({
             setNote(null);
             setAnimating(true);
             try {
-              const res = await onAnimate(modelId);
+              const res = await onAnimate(modelId, motionId, audioOn);
               if (res?.simulated) setNote(res.note ?? "Simulated — connect Higgsfield or add a video key to render real motion.");
               else if (res?.error) setNote(res.error);
               else if (res?.ok) setNote(`Clip rendered by ${res.vendor ?? "the video model"}.`);
