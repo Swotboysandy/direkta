@@ -1,25 +1,36 @@
 /**
- * Shared framer-motion variants for the pipeline workspaces.
+ * Shared framer-motion (motion.dev) variants for the pipeline workspaces.
+ *
+ * Premium feel = physics, not durations: entrances and presses ride springs
+ * so they settle naturally instead of easing to a stop. Two shared springs:
+ *  - SPRING_SMOOTH — critically-damped glide for entrances/layout (no bounce)
+ *  - SPRING_SNAPPY — tight, fast settle for presses and small UI
  *
  * All entrance variants animate from a hidden state to a fully-visible one on
  * mount (no scroll/viewport gating), so content is never left stuck invisible.
- * Keep easings consistent with the Dashboard's existing cubic curve.
  */
 
-const EASE = [0.22, 0.61, 0.36, 1] as const;
+/** Smooth glide — entrances, layout shifts, the sidebar's sliding pill. */
+export const SPRING_SMOOTH = { type: "spring" as const, stiffness: 320, damping: 34, mass: 0.8 };
+
+/** Tight settle — button presses, chips, toggles. */
+export const SPRING_SNAPPY = { type: "spring" as const, stiffness: 640, damping: 32, mass: 0.6 };
+
+/** A touch of overshoot — pop-ins that should feel alive (panels, checks). */
+export const SPRING_POP = { type: "spring" as const, stiffness: 420, damping: 26, mass: 0.7 };
 
 /** A single element easing up + in on mount. Spread onto a motion element. */
 export const fadeUp = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, ease: EASE }
+  transition: SPRING_SMOOTH
 };
 
 /** A whole page/section easing in on mount (slightly gentler). */
 export const pageIn = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.34, ease: EASE }
+  transition: SPRING_SMOOTH
 };
 
 /** Container that staggers its children. Use with `staggerItem` on each child. */
@@ -31,18 +42,26 @@ export const staggerContainer = {
 /** Child of `staggerContainer` — inherits the parent's `show` state on mount. */
 export const staggerItem = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: EASE } }
+  show: { opacity: 1, y: 0, transition: SPRING_SMOOTH }
 };
 
 /** Tactile press for primary action buttons — press feedback only, no hover motion. */
 export const tap = {
-  whileTap: { scale: 0.97 },
-  transition: { type: "spring" as const, stiffness: 420, damping: 26 }
+  whileTap: { scale: 0.965 },
+  transition: SPRING_SNAPPY
 };
 
 /** A popped-in floating panel — spring scale+fade, e.g. the Stitch inspector. */
 export const popIn = {
   initial: { opacity: 0, scale: 0.94 },
   animate: { opacity: 1, scale: 1 },
-  transition: { duration: 0.22, ease: [0.34, 1.56, 0.64, 1] as const }
+  transition: SPRING_POP
 };
+
+/*
+ * Note on modal exits: AnimatePresence exit-unmounts never complete in this
+ * app's React 19 + Next dev setup (verified live — the element fades to 0 but
+ * stays mounted, blocking clicks). Modals instead stay mounted and drive
+ * open/close through `animate` with `transitionEnd: { visibility: "hidden" }`,
+ * as NewProjectModal does.
+ */

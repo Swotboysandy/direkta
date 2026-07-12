@@ -26,21 +26,44 @@
   white-space: nowrap;
 }
 .btn:hover     { box-shadow: var(--shadow-2); }
-.btn:active    { box-shadow: var(--shadow-1); }
+.btn:active    { box-shadow: var(--shadow-1); transform: scale(0.96); }
 .btn:focus-visible { outline: none; box-shadow: var(--shadow-2), var(--shadow-focus); }
 .btn[disabled] { opacity: 0.5; pointer-events: none; }
 
+/* Watermelon-style primary: top-lit gradient + inner highlight + tonal border,
+   so the pill reads as a physical, slightly-domed key. */
 .btn-primary {
-  background: var(--accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-hover) 88%, #fff 12%) 0%,
+    var(--accent) 100%
+  );
   color: var(--on-accent);
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, #000 40%);
 }
-.btn-primary:hover  { background: var(--accent-hover); }
+.btn-primary:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-hover) 82%, #fff 18%) 0%,
+    var(--accent-hover) 100%
+  );
+  box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: scale(0.97); }
 
 .btn-secondary {
-  background: var(--accent-2);
-  color: var(--on-accent-2);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mustard) 92%, #fff 12%) 0%,
+    var(--mustard-deep) 100%
+  );
+  color: var(--on-accent);
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  border: 1px solid color-mix(in srgb, var(--mustard-deep) 60%, #000 40%);
 }
-.btn-secondary:hover { background: var(--mustard-deep); color: var(--on-accent); }
+.btn-secondary:hover { transform: translateY(-1px); box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255, 255, 255, 0.28); }
 
 .btn-ghost {
   background: transparent;
@@ -49,10 +72,34 @@
 }
 .btn-ghost:hover { background: var(--ink); color: var(--on-ink); box-shadow: var(--shadow-2); }
 
-.btn-danger {
-  background: var(--accent);
-  color: var(--on-accent);
+/* ── Watermelon tinted actions — soft colour fill, full-strength border + text.
+   Use for semantic verbs: danger (delete/stop), warning, success, info. ── */
+.btn-tinted {
+  --tint: var(--accent);
+  background: color-mix(in srgb, var(--tint) 12%, transparent);
+  box-shadow: none;
+  border: 1px solid color-mix(in srgb, var(--tint) 52%, transparent);
+  color: var(--tint);
 }
+.btn-tinted:hover {
+  background: color-mix(in srgb, var(--tint) 20%, transparent);
+  border-color: var(--tint);
+  box-shadow: none;
+}
+.btn-tinted:active { transform: scale(0.96); }
+.btn-tint-danger  { --tint: var(--tomato); }
+.btn-tint-warning { --tint: var(--mustard-deep); }
+.btn-tint-success { --tint: var(--viridian); }
+.btn-tint-info    { --tint: var(--accent); }
+
+/* Legacy `.btn-danger` now resolves to the solid-tomato key (it previously
+   mis-mapped to --accent). */
+.btn-danger {
+  background: var(--tomato);
+  color: #fff;
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.btn-danger:hover { background: var(--tomato-deep); transform: translateY(-1px); }
 
 .btn-sm { padding: 8px 14px; font-size: 13px; }
 .btn-lg { padding: 16px 28px; font-size: 18px; }
@@ -249,9 +296,12 @@
   transition: background var(--dur-1) var(--ease-out);
 }
 .sidebar-item:hover { background: var(--surface-2); }
+/* Active background is painted by the sliding layoutId pill in Sidebar.tsx —
+   keeping it out of CSS lets the highlight glide between items. */
 .sidebar-item[data-active="true"] {
-  background: var(--ink); color: var(--on-ink);
+  color: var(--on-ink);
 }
+.sidebar-item[data-active="true"]:hover { background: transparent; }
 .sidebar-item[data-locked="true"] { opacity: 0.4; cursor: not-allowed; }
 .sidebar-item .si-icon { width: 22px; height: 22px; display: grid; place-items: center; }
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { SPRING_SMOOTH } from "./motion";
 import {
   Boxes,
   ChevronLeft,
@@ -116,29 +118,46 @@ export function Sidebar({
               : w.status === "in-progress"
               ? "var(--mustard-deep)"
               : "var(--mute)";
+          const active = w.id === activeWorkspace;
           return (
-            <div
+            <motion.div
               key={w.id}
               className="sidebar-item"
+              whileTap={w.unlocked ? { scale: 0.98 } : undefined}
+              transition={SPRING_SMOOTH}
               style={{
+                position: "relative",
                 borderRadius: "var(--r-pill)",
                 gridTemplateColumns: collapsed ? "1fr" : "22px 1fr auto",
                 justifyItems: collapsed ? "center" : undefined,
                 padding: collapsed ? "10px" : undefined
               }}
-              data-active={w.id === activeWorkspace}
+              data-active={active}
               data-locked={!w.unlocked}
               data-just-unlocked={justUnlocked[w.id] ? "true" : undefined}
               title={collapsed ? `${w.label}${w.note ? ` · ${w.note}` : ""}` : undefined}
               onClick={() => w.unlocked && onSwitchWorkspace(w.id)}
             >
-              <span className="si-icon">
+              {active && (
+                <motion.span
+                  layoutId="sb-active-pill"
+                  transition={SPRING_SMOOTH}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "var(--ink)",
+                    borderRadius: "var(--r-pill)",
+                    zIndex: 0
+                  }}
+                />
+              )}
+              <span className="si-icon" style={{ position: "relative", zIndex: 1 }}>
                 <Icn size={18} />
               </span>
               {!collapsed && (
                 <>
                   <span
-                    style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, lineHeight: 1.25 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, lineHeight: 1.25, position: "relative", zIndex: 1 }}
                   >
                     <span style={{ fontWeight: 500 }}>{w.label}</span>
                     {w.note && (
@@ -155,16 +174,17 @@ export function Sidebar({
                     )}
                   </span>
                   {!w.unlocked ? (
-                    <Lock size={12} className="si-status" />
+                    <Lock size={12} className="si-status" style={{ position: "relative", zIndex: 1 }} />
                   ) : (
                     <span
                       className="si-status pip"
+                      style={{ position: "relative", zIndex: 1 }}
                       data-status={w.status === "complete" ? "done" : w.status === "in-progress" ? "working" : "draft"}
                     />
                   )}
                 </>
               )}
-            </div>
+            </motion.div>
           );
         })}
       </div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "./icons";
-import { pageIn, tap } from "./motion";
+import { SPRING_SMOOTH, tap } from "./motion";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../../lib/types";
 
 const FORMATS: ProjectFormat[] = ["Short Film", "Music Video", "Ad", "Series", "Feature", "Other"];
@@ -122,8 +122,6 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
   const [aspect, setAspect] = useState<AspectRatio>("16:9");
   const [busy, setBusy] = useState(false);
 
-  if (!open) return null;
-
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!title.trim() || busy) return;
@@ -152,12 +150,14 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
 
   const submitDisabled = !title.trim() || busy;
 
+  if (!open) return null;
+
   return (
     <motion.div
       onClick={onClose}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       style={{
         position: "fixed",
         inset: 0,
@@ -172,7 +172,9 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
       <motion.form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        {...pageIn}
+        initial={{ opacity: 0, scale: 0.96, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={SPRING_SMOOTH}
         style={{
           backdropFilter: "blur(24px)",
           background: "var(--surface)",

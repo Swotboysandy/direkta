@@ -350,6 +350,15 @@ strong, b {
   color: var(--ink);
 }
 
+.sb-collapse {
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
+}
+
+.sb-collapse:active {
+  transform: scale(0.88);
+}
+
 .app-body[data-collapsed="true"] .sb-title {
   display: none;
 }
@@ -2773,4 +2782,23 @@ textarea {
   aspect-ratio: 16/9;
   overflow: hidden;
   background: var(--cream-deep);
+}
+
+/* ============================================================
+   THEME TOGGLE — clip-path circular reveal (View Transitions API)
+   ------------------------------------------------------------
+   ThemeToggle.tsx drives an expanding circle() clip-path on the
+   incoming snapshot; here we kill the browser's default cross-fade
+   and stack the new theme on top so the circle wipes cleanly.
+   ============================================================ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 0;
+}
+::view-transition-new(root) {
+  z-index: 1;
 }
