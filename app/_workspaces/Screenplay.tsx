@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, FileText, Flag, Lock, RefreshCw, Sparkles, Upload } from "../_components/icons";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
-import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
+import { fadeUp, pageIn, SPRING_SMOOTH, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
 
 const TILTS = ["var(--tilt-card-a)", "var(--tilt-card-b)", "var(--tilt-card-c)"];
@@ -422,48 +422,52 @@ export function Screenplay({
         <div className="page-head-actions">
           {beats.length > 0 && (
             <div role="tablist" aria-label="Breakdown view" style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: 999 }}>
-              <button
-                role="tab"
-                aria-selected={view === "split"}
-                data-active={view === "split"}
-                onClick={() => setView("split")}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  fontWeight: 400,
-                  letterSpacing: "0.02em",
-                  padding: "6px 14px",
-                  border: "none",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  color: view === "split" ? "var(--ink)" : "var(--mute)",
-                  background: view === "split" ? "var(--surface)" : "transparent",
-                  boxShadow: view === "split" ? "var(--shadow-1)" : "none"
-                }}
-              >
-                Split
-              </button>
-              <button
-                role="tab"
-                aria-selected={view === "board"}
-                data-active={view === "board"}
-                onClick={() => setView("board")}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  fontWeight: 400,
-                  letterSpacing: "0.02em",
-                  padding: "6px 14px",
-                  border: "none",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  color: view === "board" ? "var(--ink)" : "var(--mute)",
-                  background: view === "board" ? "var(--surface)" : "transparent",
-                  boxShadow: view === "board" ? "var(--shadow-1)" : "none"
-                }}
-              >
-                Board
-              </button>
+              {(["split", "board"] as const).map((mode) => {
+                const active = view === mode;
+                return (
+                  <motion.button
+                    key={mode}
+                    role="tab"
+                    aria-selected={active}
+                    data-active={active}
+                    onClick={() => setView(mode)}
+                    whileTap={{ scale: 0.94 }}
+                    transition={SPRING_SMOOTH}
+                    style={{
+                      position: "relative",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 10,
+                      fontWeight: 400,
+                      letterSpacing: "0.02em",
+                      padding: "6px 14px",
+                      border: "none",
+                      borderRadius: 999,
+                      cursor: "pointer",
+                      background: "transparent",
+                      color: active ? "var(--ink)" : "var(--mute)",
+                      transition: "color 160ms ease"
+                    }}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="breakdown-view-pill"
+                        transition={SPRING_SMOOTH}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "var(--surface)",
+                          borderRadius: 999,
+                          boxShadow: "var(--shadow-1)",
+                          zIndex: 0
+                        }}
+                      />
+                    )}
+                    <span style={{ position: "relative", zIndex: 1 }}>
+                      {mode === "split" ? "Split" : "Board"}
+                    </span>
+                  </motion.button>
+                );
+              })}
             </div>
           )}
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: beatsPillBg, color: beatsPillFg }}>
