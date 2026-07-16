@@ -33,9 +33,29 @@ export interface ImageModel {
 
 export const VIDEO_MODELS: VideoModel[] = [
   {
+    id: "byteplus_dreamina_seedance_2_0_1080p",
+    label: "Dreamina Seedance 2.0 · BytePlus (1080p)",
+    description: "Best quality BytePlus tier — draws on your purchased Dreamina token pack (not the free tier).",
+    provider: "byteplus",
+    costText: "≈245k tok · 5s",
+    approxCost: 0,
+    params: {},
+    byteplus: { model: "dreamina-seedance-2-0-260128", resolution: "1080p" }
+  },
+  {
+    id: "byteplus_dreamina_seedance_2_0_720p",
+    label: "Dreamina Seedance 2.0 · BytePlus (720p)",
+    description: "Cheaper draft tier on the same purchased Dreamina pack.",
+    provider: "byteplus",
+    costText: "≈109k tok · 5s",
+    approxCost: 0,
+    params: {},
+    byteplus: { model: "dreamina-seedance-2-0-260128", resolution: "720p" }
+  },
+  {
     id: "byteplus_seedance_1_5_1080p",
     label: "Seedance 1.5 Pro · BytePlus (1080p)",
-    description: "High quality, image-led. Runs on your BytePlus free tokens / metered API — cheapest at volume.",
+    description: "Free-tier BytePlus model. Your free pack is exhausted, so this now bills pay-as-you-go per clip.",
     provider: "byteplus",
     costText: "≈245k tok · 5s",
     approxCost: 0,
@@ -45,7 +65,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   {
     id: "byteplus_seedance_1_5_720p",
     label: "Seedance 1.5 Pro · BytePlus (720p)",
-    description: "Cheaper + faster draft tier on BytePlus. Still near-2.0 quality.",
+    description: "Free-tier BytePlus model, cheaper draft tier. Your free pack is exhausted, so this now bills pay-as-you-go per clip.",
     provider: "byteplus",
     costText: "≈109k tok · 5s",
     approxCost: 0,
@@ -98,7 +118,11 @@ export const IMAGE_MODELS: ImageModel[] = [
   }
 ];
 
-export const DEFAULT_VIDEO_MODEL = "byteplus_seedance_1_5_1080p";
+// Default is the paid Dreamina Seedance 2.0 pack — the free Seedance 1.5 Pro
+// pack is exhausted and now bills pay-as-you-go per clip (verified live via
+// BytePlus's own quota alert + console), while the 2.0 pack still has real
+// purchased balance sitting unused.
+export const DEFAULT_VIDEO_MODEL = "byteplus_dreamina_seedance_2_0_1080p";
 
 export function videoModel(id: string | undefined): VideoModel {
   return VIDEO_MODELS.find((m) => m.id === id) ?? VIDEO_MODELS[0];

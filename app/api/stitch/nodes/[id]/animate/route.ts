@@ -119,8 +119,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const cameraLine = cameraMove.phrase ? `Camera: ${cameraMove.phrase}` : "";
   const prompt = [cameraLine, base, skill?.body ?? "", consistency].filter(Boolean).join("\n\n");
 
+  // Was hardcoded to "Seedance 1.5 Pro" regardless of which BytePlus model
+  // actually ran — harmless while there was only one BytePlus video model,
+  // but now that Dreamina 2.0 and 1.5 Pro draw from separate billing pools,
+  // a wrong label hides which pool a clip actually spent from.
   const providerLabel = isByteplus
-    ? "BytePlus · Seedance 1.5 Pro"
+    ? chosen.label
     : useMcp
       ? "Higgsfield (your account)"
       : vendor!.label;
