@@ -38,6 +38,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
 
+  // ── Location reference lock — beats.location_id is never populated by the
+  //    extractor, so match the scene heading against a location's name (the
+  //    slugline embeds it, e.g. "INT. MORNRISE COFFEE SHOP — GOLDEN HOUR").
+  //    Without this, only faces were locked — the set itself could drift
+  //    shot-to-shot even with the same characters in every frame.
+  const projectLocations = db
+    .prepare("SELECT name, refs FROM locations WHERE project_id = ?")
+    .all(beat.project_id) as Array<{ name: string; refs: string }>;
+  const headingUpper = beat.scene_heading.toUpperCase();
+  const matchedLocation = projectLocations
+    .filter((l) => l.name.trim().length >= 3 && headingUpper.includes(l.name.trim().toUpperCase()))
+    .sort((a, b) => b.name.length - a.name.length)[0];
+  const locationRefs = matchedLocation ? safeJsonArray(matchedLocation.refs).slice(0, 2) : [];
+
   const prompt =
     promptIn || `Cinematic film frame. ${beat.scene_heading}. ${beat.title}. ${beat.premise}`;
 
@@ -85,6 +99,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     }
     if (referenceImages.length >= 6) break;
   }
+  // The matched location's plate rides alongside the cast references — same
+  // reference-lock mechanism, just for the set instead of a face.
+  if (locationRefs.length) referenceImages.push(...locationRefs);
+
   // Fold in the editable Cinematography skill so frames follow the house style.
   const skill = skillForPart("cinematography");
   // The cast lock LEADS the prompt — Seedream weighs early instructions far
@@ -103,13 +121,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
           : `Exactly ${referencedNames.length} distinct people (${referencedNames.join(", ")}), each matching their own reference — do not merge or blend their faces.`
       ].join(" ")
     : "";
+  // Same mechanism as the cast lock, for the location — otherwise the room
+  // itself (counter, window, décor, machine) can drift between shots even
+  // when every character stays locked.
+  const locationLock = locationRefs.length
+    ? `LOCATION LOCK — this is the SAME location shown in the attached reference image(s) (${matchedLocation!.name}): same room, same counter/fixtures, same window and light direction, same décor. Do not redesign the space.`
+    : "";
   // Brand/product placement rides on every frame when the project defines it.
   const brandLine = beat.brand_kit
     ? `Product placement, shown naturally where it fits the scene: ${beat.brand_kit}. Brand items look real and unobtrusive — no oversized logos, no text overlays.`
     : "";
   const antiGrid =
     "One single cinematic frame depicting ONE moment — never a grid, collage, contact sheet, storyboard, split screen, or multiple panels.";
-  const genPrompt = [castLock, prompt, brandLine, skill?.body ?? "", antiGrid].filter(Boolean).join("\n\n");
+  const genPrompt = [castLock, locationLock, prompt, brandLine, skill?.body ?? "", antiGrid].filter(Boolean).join("\n\n");
 
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
@@ -235,12 +259,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     vendor: providerLabel,
     error: errors[0],
     locked_cast: referencedNames,
+    locked_location: matchedLocation?.name ?? null,
     note:
       failed > 0
         ? `${generated} frame(s) rolled, ${failed} failed via ${providerLabel}.`
         : `${generated} frame(s) rolled by ${providerLabel}${
             referencedNames.length ? ` — locked to ${referencedNames.join(", ")}` : ""
-          }.`
+          }${matchedLocation ? ` @ ${matchedLocation.name}` : ""}.`
   });
 }
 

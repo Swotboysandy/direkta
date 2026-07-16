@@ -73,15 +73,22 @@ function localPath(url: string | null): string | null {
   return null;
 }
 
-/** ffmpeg drawtext is picky — strip the characters that need escaping. */
-function safeText(s: string): string {
-  return s
+/** ffmpeg drawtext is picky — strip the characters that need escaping. Cuts on
+ * a word boundary rather than a hard character slice — a logline/premise
+ * fallback used as the title-card subtitle is often longer than a real
+ * tagline, and a mid-word cut (verified live: "...pour-ov") reads as broken,
+ * not stylistically truncated. */
+function safeText(s: string, maxLen = 60): string {
+  const cleaned = s
     .replace(/[’‘]/g, "'")
     .replace(/[“”]/g, '"')
     .replace(/['":\\%]/g, "")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 60);
+    .trim();
+  if (cleaned.length <= maxLen) return cleaned;
+  const cut = cleaned.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > maxLen * 0.4 ? cut.slice(0, lastSpace) : cut).trim() + "…";
 }
 
 /** Does this file have an audio stream? Used to decide whether a Seedance
@@ -170,7 +177,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       const titleSeg = path.join(work, "seg_title.mp4");
       const fontfile = drawtextFontfile(FONT);
       const title = safeText(project.title || "Untitled");
-      const sub = safeText(project.tagline || project.logline || "");
+      const sub = safeText(project.tagline || project.logline || "", 70);
       const titleDraw =
         `drawtext=fontfile=${fontfile}:text='${title}':fontcolor=white:fontsize=${Math.round(H * 0.072)}:` +
         `x=(w-tw)/2:y=(h-th)/2-${sub ? Math.round(H * 0.03) : 0}` +

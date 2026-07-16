@@ -437,11 +437,29 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
       }))
     ]);
     try {
-      await fetch(`/api/storyboard/rows/${beatId}/generate`, {
+      const res = await fetch(`/api/storyboard/rows/${beatId}/generate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ variants: takes, prompt })
       });
+      const data = await res.json().catch(() => null);
+      // Surface exactly who/what got reference-locked — otherwise the
+      // consistency system runs invisibly and there's no way to see it's
+      // actually working shot to shot.
+      if (data?.ok) {
+        const lockedBits = [
+          data.locked_cast?.length ? `cast: ${data.locked_cast.join(", ")}` : null,
+          data.locked_location ? `location: ${data.locked_location}` : null
+        ].filter(Boolean);
+        flashToast(
+          "success",
+          lockedBits.length
+            ? `${data.generated} frame(s) rolled — locked to ${lockedBits.join(" · ")}.`
+            : data.note || `${data.generated} frame(s) rolled.`
+        );
+      } else if (data?.error) {
+        flashToast("error", data.error);
+      }
     } finally {
       await reload();
     }

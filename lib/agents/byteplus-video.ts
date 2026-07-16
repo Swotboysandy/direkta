@@ -111,17 +111,23 @@ export async function generateVideoViaByteplus(input: {
   const filename = `${Date.now()}-${nanoid(8)}.mp4`;
   const full = path.join(OSS_DIR, filename);
   fs.writeFileSync(full, Buffer.from(await dl.arrayBuffer()));
-  compressInPlace(full);
+  // BytePlus's Seedance does not reliably honour --audio false — verified
+  // live: a clip requested with audio:false still came back with an audible
+  // ambient track (~-30dB, not silence). Strip it in post whenever the
+  // caller explicitly asked for no audio, so the "Native audio" toggle's
+  // off state is a real guarantee rather than a request the vendor may ignore.
+  compressInPlace(full, input.audio === false);
   return { url: `/oss/${filename}`, relPath: `data/oss/${filename}` };
 }
 
-function compressInPlace(filePath: string): void {
+function compressInPlace(filePath: string, stripAudio: boolean): void {
   try {
     const out = filePath.replace(/\.mp4$/i, ".c.mp4");
+    const audioArgs = stripAudio ? ["-an"] : ["-c:a", "aac"];
     const res = spawnSync(
       "ffmpeg",
       ["-y", "-i", filePath, "-c:v", "libx264", "-preset", "veryfast", "-crf", "24",
-       "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", out],
+       "-pix_fmt", "yuv420p", ...audioArgs, "-movflags", "+faststart", out],
       { timeout: 120_000, stdio: "ignore" }
     );
     if (res.status === 0 && fs.existsSync(out) && fs.statSync(out).size > 0) {
