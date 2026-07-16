@@ -8,6 +8,7 @@ import { generateVideoViaByteplus } from "../../../../../../lib/agents/byteplus-
 import { referenceToDataUri } from "../../../../../../lib/agents/byteplus-image";
 import { videoModel, cameraMotion } from "../../../../../../lib/higgsfield/catalog";
 import { skillForPart } from "../../../../../../lib/skills/loader";
+import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../../lib/usage";
 import type { AspectRatio } from "../../../../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +92,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       { error: "This shot has no frame yet — pick a storyboard frame for it first." },
       { status: 400 }
     );
+  }
+
+  // Hard budget stop — verified live that BytePlus's free packs silently
+  // fall through to pay-as-you-go once exhausted rather than erroring, so
+  // Direkta now refuses the call itself instead of letting that happen again.
+  if (isByteplus) {
+    const perClip = chosen.byteplus!.resolution === "1080p" ? TOKEN_COSTS.clip1080 : TOKEN_COSTS.clip720;
+    const estimate = perClip * (clipDuration / 5);
+    try {
+      assertBudget(estimate);
+    } catch (e) {
+      if (e instanceof BudgetExceededError) {
+        db.prepare("UPDATE stitch_nodes SET clip_state = 'error' WHERE id = ?").run(id);
+        return NextResponse.json({ error: e.message, budgetExceeded: true }, { status: 402 });
+      }
+      throw e;
+    }
   }
 
   // Local OSS frames are embedded as data URIs for BytePlus (its URL fetcher

@@ -5,6 +5,7 @@ import { vendors } from "../../../../../../lib/db/repo";
 import { generateImage } from "../../../../../../lib/agents/image";
 import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../../lib/skills/loader";
+import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../../lib/usage";
 import type { AspectRatio } from "../../../../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -171,6 +172,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   }
 
   const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
+
+  // Hard budget stop — only for the BytePlus token ledger (Higgsfield tracks
+  // its own credits separately via the balance chip). Refuses the whole
+  // batch upfront rather than generating some and failing partway.
+  if (!useMcp && vendor!.provider === "byteplus-image") {
+    try {
+      assertBudget(variantCount * TOKEN_COSTS.image);
+    } catch (e) {
+      if (e instanceof BudgetExceededError) {
+        return NextResponse.json({ error: e.message, budgetExceeded: true }, { status: 402 });
+      }
+      throw e;
+    }
+  }
 
   // ── Real generator — persist the prompt onto the row and flip it to generating.
   const existing = db.prepare("SELECT style FROM storyboard_rows WHERE beat_id = ?").get(beatId) as

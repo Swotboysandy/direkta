@@ -3,6 +3,7 @@ import { characters, projects, vendors } from "../../../../../lib/db/repo";
 import { generateImage } from "../../../../../lib/agents/image";
 import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../lib/skills/loader";
+import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../lib/usage";
 import type { Character } from "../../../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,23 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const skill = skillForPart("casting");
   const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
   const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
+
+  if (!useMcp && vendor!.provider === "byteplus-image") {
+    try {
+      assertBudget(TOKEN_COSTS.image);
+    } catch (e) {
+      if (e instanceof BudgetExceededError) {
+        // Persist onto the character so the card's existing "Training
+        // failed" + error-message display picks this up without any new
+        // client-side plumbing — a single click needs to be visible too,
+        // not just batch runs.
+        characters.update(id, { soul_id_state: "failed", error: e.message });
+        return NextResponse.json({ error: e.message, budgetExceeded: true }, { status: 402 });
+      }
+      throw e;
+    }
+  }
+
   try {
     // Subsequent looks must keep the same face: pass the existing looks as
     // reference images so Seedream locks identity across the wardrobe change.

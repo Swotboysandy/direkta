@@ -3,6 +3,7 @@ import { locations, projects, vendors } from "../../../../../lib/db/repo";
 import { generateImage } from "../../../../../lib/agents/image";
 import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../lib/skills/loader";
+import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../lib/usage";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -42,6 +43,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const prompt = [base, skill?.body ?? "", `${consistency}One single cinematic frame — no grid, collage or multiple panels. No text or watermarks.`]
     .filter(Boolean)
     .join("\n\n");
+
+  if (!useMcp && vendor!.provider === "byteplus-image") {
+    try {
+      assertBudget(TOKEN_COSTS.image);
+    } catch (e) {
+      if (e instanceof BudgetExceededError) {
+        return NextResponse.json({ error: e.message, budgetExceeded: true }, { status: 402 });
+      }
+      throw e;
+    }
+  }
 
   try {
     const image = useMcp

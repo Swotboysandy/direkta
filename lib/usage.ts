@@ -35,6 +35,32 @@ export function logUsage(input: {
   }
 }
 
+/** Thrown by assertBudget when a generation would exceed the tracked pack —
+ * routes catch this and return a 402 instead of calling BytePlus, so a
+ * silently-exhausted free pack can't keep billing pay-as-you-go unnoticed. */
+export class BudgetExceededError extends Error {
+  constructor(
+    public estimatedTokens: number,
+    public remaining: number
+  ) {
+    super(
+      `This would use ≈${estimatedTokens.toLocaleString()} tokens, but only ${remaining.toLocaleString()} remain in your tracked budget. ` +
+        `Raise DIREKTA_BYTEPLUS_PACK_TOKENS on the server (or generate less at once) to continue.`
+    );
+    this.name = "BudgetExceededError";
+  }
+}
+
+/** Hard stop — call before any billed BytePlus generation. Throws
+ * BudgetExceededError if the estimated cost would exceed the tracked pack;
+ * routes should catch it and return 402 rather than making the API call. */
+export function assertBudget(estimatedTokens: number): void {
+  const remaining = usageSummary().remaining;
+  if (estimatedTokens > remaining) {
+    throw new BudgetExceededError(estimatedTokens, remaining);
+  }
+}
+
 export function usageSummary(): {
   pack_total: number;
   spent: number;

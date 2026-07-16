@@ -1099,6 +1099,10 @@ function LocationCard({
 }) {
   void projectId;
   const [scouting, setScouting] = useState(false);
+  // Locations have no stored error column (unlike characters), so a blocked
+  // single-click attempt needs its own local message — otherwise a hard
+  // budget stop would fail with zero visible explanation.
+  const [localError, setLocalError] = useState<string | null>(null);
   // Shimmer whenever this card is generating — via a batch (generating prop) or
   // its own Scout button (local scouting flag). Single source of truth.
   const busy = generating || scouting;
@@ -1106,8 +1110,13 @@ function LocationCard({
   async function scoutPlate() {
     if (scouting) return;
     setScouting(true);
+    setLocalError(null);
     try {
-      await fetch(`/api/locations/${location.id}/plate`, { method: "POST" });
+      const res = await fetch(`/api/locations/${location.id}/plate`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setLocalError(data?.error || "Scout failed.");
+      }
       await onChange();
     } finally {
       setScouting(false);
@@ -1178,6 +1187,9 @@ function LocationCard({
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
           {location.int_ext} · {location.scene_count} scenes
         </div>
+        {localError && (
+          <div style={{ fontSize: 12, lineHeight: 1.4, color: "var(--tomato)" }}>{localError}</div>
+        )}
         <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
           <span
             style={{
@@ -1289,7 +1301,16 @@ function BatchGenerate({
         onItemStart?.(item.id);
         try {
           const res = await fetch(endpoint(item.id), { method: "POST" });
-          if (res.ok) done++;
+          if (res.ok) {
+            done++;
+          } else {
+            const data = await res.json().catch(() => null);
+            // A budget stop means every remaining item would fail the same
+            // way — report once and halt instead of silently skipping N-1
+            // more calls the user would never see a reason for.
+            onProgress(data?.error || `Stopped — ${done} of ${ids.length} generated (request failed).`);
+            if (data?.budgetExceeded) return;
+          }
         } finally {
           onItemDone?.(item.id);
         }
