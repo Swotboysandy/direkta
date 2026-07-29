@@ -74,6 +74,10 @@ TITLE: ${project.title}${project.genre ? `\nGENRE: ${project.genre}` : ""}${
       ? `\nSTYLE LOCK (these hold in every shot — reflect them in DIRECTION, never contradict them): ${project.style_template}`
       : ""
   }${
+    project.continuity_lock
+      ? `\nCONTINUITY LOCK (the cast, wardrobe, vehicles and world rules are already fixed — write to these exactly, never invent a different car, outfit or look, and name them the same way in every CONTINUITY line): ${project.continuity_lock}`
+      : ""
+  }${
     project.brand_kit
       ? `\nBRAND / PRODUCT PLACEMENT: ${project.brand_kit} — present naturally, never as an ad.`
       : ""
