@@ -249,6 +249,13 @@ export async function generateVideoViaMcp(input: {
   prompt: string;
   aspectRatio: AspectRatio;
   referenceImageUrl: string;
+  /**
+   * Optional final frame. When supplied the clip is interpolated between two
+   * pinned images instead of drifting outward from one — the strongest
+   * anti-drift control available, since neither end can wander. Used to hand a
+   * shot off to the next beat's own frame so cuts land on matching pixels.
+   */
+  endImageUrl?: string;
   /** Model + model-specific knobs from the catalog (must include `model`). */
   modelParams?: Record<string, unknown>;
   duration?: number;
@@ -265,6 +272,21 @@ export async function generateVideoViaMcp(input: {
   const mediaId = extractMediaId(imported);
   if (!mediaId) {
     throw new Error("Higgsfield could not import the start frame for animation");
+  }
+
+  // 1b. Optional end frame. A failure here must not sink the whole clip — a
+  //     start-frame-only render is still useful, so fall back rather than throw.
+  let endMediaId: string | null = null;
+  if (input.endImageUrl) {
+    try {
+      const importedEnd = await s.callTool("media_import_url", {
+        url: input.endImageUrl,
+        type: "image"
+      });
+      endMediaId = extractMediaId(importedEnd) ?? null;
+    } catch {
+      endMediaId = null;
+    }
   }
 
   // 2. Submit image-to-video. Default model is Seedance 2.0 (Fast): strong
@@ -287,7 +309,12 @@ export async function generateVideoViaMcp(input: {
       aspect_ratio: aspect,
       duration: input.duration ?? 5,
       count: 1,
-      medias: [{ role: "start_image", value: mediaId }],
+      medias: endMediaId
+        ? [
+            { role: "start_image", value: mediaId },
+            { role: "end_image", value: endMediaId }
+          ]
+        : [{ role: "start_image", value: mediaId }],
       ...(isSeedance ? { genre: "auto" } : {}),
       ...mp // model + mode/resolution/etc. from the catalog
     }

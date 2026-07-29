@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const body = await req
     .json()
-    .catch(() => ({} as { model?: string; motion?: string; audio?: boolean }));
+    .catch(() => ({} as { model?: string; motion?: string; audio?: boolean; endFrame?: boolean }));
   const chosen = videoModel(typeof body.model === "string" ? body.model : undefined);
   const cameraMove = cameraMotion(typeof body.motion === "string" ? body.motion : undefined);
   const wantAudio = body.audio === true;
@@ -188,6 +188,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 ${node.set_lock}
 Do not invent furniture, walls, windows, doors or layout beyond what is described or shown in the source frame.`
     : "Do not invent furniture, walls, windows, doors or layout beyond what is shown in the source frame.";
+  // End frame — the NEXT beat's own selected frame. Pinning both ends turns the
+  // clip into an interpolation between two known images instead of an outward
+  // drift from one, and it makes the cut land on matching pixels because the
+  // last frame of this shot IS the first frame of the next. Opt out with
+  // { endFrame: false }.
+  const wantEndFrame = body.endFrame !== false;
+  const nextFrame = wantEndFrame
+    ? (db
+        .prepare(
+          `SELECT COALESCE(a_direct.url, a_selected.url) as url
+             FROM stitch_nodes sn
+             JOIN beats b ON b.id = sn.beat_id
+             LEFT JOIN storyboard_rows sr ON sr.beat_id = sn.beat_id
+             LEFT JOIN assets a_direct ON a_direct.target_id = sn.variant_id AND a_direct.target_kind = 'storyboard_variant'
+             LEFT JOIN assets a_selected ON a_selected.target_id = sr.selected_variant_id AND a_selected.target_kind = 'storyboard_variant'
+            WHERE sn.project_id = (SELECT project_id FROM stitch_nodes WHERE id = ?)
+              AND b.n = (SELECT b2.n + 1 FROM stitch_nodes sn2 JOIN beats b2 ON b2.id = sn2.beat_id WHERE sn2.id = ?)
+            LIMIT 1`
+        )
+        .get(id, id) as { url: string | null } | undefined)
+    : undefined;
+  const endImageUrl = nextFrame?.url
+    ? (nextFrame.url.startsWith("http") ? nextFrame.url : `${origin}${nextFrame.url}`)
+    : undefined;
   const shotBlock = [cameraLine, base].filter(Boolean).join(" ");
   const avoidLine = node.avoid_prompt ? `AVOID
 ${node.avoid_prompt}` : "";
@@ -232,6 +256,7 @@ ${node.avoid_prompt}` : "";
             prompt,
             aspectRatio: node.aspect_ratio,
             referenceImageUrl: refImage,
+            endImageUrl,
             modelParams: chosen.params
           })
         : await generateVideo({
