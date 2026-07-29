@@ -167,6 +167,21 @@ function migrate(db: DatabaseSync) {
 
     CREATE INDEX IF NOT EXISTS idx_locations_project ON locations(project_id);
 
+    CREATE TABLE IF NOT EXISTS props (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      scene_count INTEGER NOT NULL DEFAULT 0,
+      soul_id_state TEXT NOT NULL DEFAULT 'empty',
+      soul_id_progress REAL NOT NULL DEFAULT 0,
+      refs TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_props_project ON props(project_id);
+
     CREATE TABLE IF NOT EXISTS bible (
       project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
       characters_doc TEXT NOT NULL DEFAULT '',
@@ -336,6 +351,11 @@ function migrate(db: DatabaseSync) {
   // Creative direction + brand/product placement (fed into all generation).
   ensureColumn(db, "projects", "creative_brief", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "projects", "brand_kit", "TEXT NOT NULL DEFAULT ''");
+  // Visual style template — prepended to every image AND video prompt so the
+  // look (and wardrobe/vehicle locks) can't drift shot to shot.
+  ensureColumn(db, "projects", "style_template", "TEXT NOT NULL DEFAULT ''");
+  // Per-beat shot direction lifted from the script's DIRECTION blocks.
+  ensureColumn(db, "beats", "direction", "TEXT NOT NULL DEFAULT ''");
 
   // bible: tone, world, visual language, production notes
   ensureColumn(db, "bible", "themes", "TEXT NOT NULL DEFAULT '[]'");
@@ -357,6 +377,16 @@ function migrate(db: DatabaseSync) {
   // stitch_nodes: per-shot motion clip (image-to-video) — asset + render state
   ensureColumn(db, "stitch_nodes", "clip_asset_id", "TEXT");
   ensureColumn(db, "stitch_nodes", "clip_state", "TEXT NOT NULL DEFAULT 'none'");
+  // stitch_nodes: which window of the generated clip to keep — lets a short
+  // beat (e.g. a 2s sting) pick the best few seconds out of a longer clip
+  // instead of always keeping it from frame zero.
+  ensureColumn(db, "stitch_nodes", "trim_start", "REAL NOT NULL DEFAULT 0");
+  // stitch_nodes: lip sync — an uploaded dialogue track + a sibling output
+  // slot to clip_asset_id/clip_state, so lip-syncing never destroys the
+  // original (silent or native-audio) clip it ran against.
+  ensureColumn(db, "stitch_nodes", "dialogue_audio_url", "TEXT");
+  ensureColumn(db, "stitch_nodes", "lipsync_asset_id", "TEXT");
+  ensureColumn(db, "stitch_nodes", "lipsync_state", "TEXT NOT NULL DEFAULT 'none'");
   // storyboard_variants: director review — approval state + director's note
   ensureColumn(db, "storyboard_variants", "approval", "TEXT NOT NULL DEFAULT 'pending'");
   ensureColumn(db, "storyboard_variants", "note", "TEXT NOT NULL DEFAULT ''");
@@ -392,7 +422,7 @@ function ensureVendor(
   label: string,
   provider: string,
   model: string,
-  kind: "text" | "image" | "video",
+  kind: "text" | "image" | "video" | "lipsync",
   enabled: 0 | 1
 ) {
   const existing = db.prepare("SELECT id FROM vendors WHERE id = ?").get(id);
@@ -415,6 +445,7 @@ function seed(db: DatabaseSync) {
   ensureVendor(db, "higgsfield-video-default", "Higgsfield Cloud (DoP)", "higgsfield-video", "dop-preview", "video", 0);
   ensureVendor(db, "byteplus-video-default", "BytePlus · Seedance 1.5 Pro", "byteplus-video", "seedance-1-5-pro-251215", "video", 1);
   ensureVendor(db, "byteplus-image-default", "BytePlus · Seedream 4.5", "byteplus-image", "seedream-4-5-251128", "image", 1);
+  ensureVendor(db, "sync-lipsync-default", "Sync.so (Lip Sync)", "sync-lipsync", "lipsync-2", "lipsync", 0);
 
   seedLisbonPact(db);
 }

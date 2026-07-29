@@ -19,9 +19,11 @@ interface NodeRow {
   duration: number;
   beat_title: string | null;
   beat_scene: string | null;
+  beat_direction: string | null;
   row_style: string | null;
   aspect_ratio: AspectRatio;
   premise: string | null;
+  style_template: string | null;
   frame_url: string | null;
 }
 
@@ -44,9 +46,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const node = db
     .prepare(
       `SELECT sn.id, sn.duration,
-              b.title as beat_title, b.scene_heading as beat_scene,
+              b.title as beat_title, b.scene_heading as beat_scene, b.direction as beat_direction,
               sr.style as row_style,
-              p.aspect_ratio, p.premise,
+              p.aspect_ratio, p.premise, p.style_template,
               COALESCE(a_direct.url, a_selected.url) as frame_url
        FROM stitch_nodes sn
        LEFT JOIN beats b ON b.id = sn.beat_id
@@ -60,9 +62,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (!node) return NextResponse.json({ error: "Shot not found" }, { status: 404 });
 
-  // The shot's duration slider drives the clip length. Seedance 1.5 Pro
-  // accepts 5s or 10s, so snap to the nearest; other providers keep 5s.
-  const clipDuration = Number(node.duration) >= 7.5 ? 10 : 5;
+  // The shot's duration slider drives the clip length. BytePlus accepts any
+  // integer within the model's real range (verified against BytePlus's own
+  // ModelArk docs: Seedance 1.5 Pro is [4,12]s, the 2.0 series is [4,15]s —
+  // they differ, so this clamps per the chosen model rather than a single
+  // hardcoded 5/10 snap that under-used both). Other providers keep 5s.
+  const [minDur, maxDur] = chosen.byteplus?.durationRange ?? [5, 5];
+  const clipDuration = Math.min(maxDur, Math.max(minDur, Math.round(Number(node.duration) || minDur)));
 
   const vendor = vendors.firstEnabledVideo();
   const useMcp = isHiggsfieldMcpConnected();
@@ -122,9 +128,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const style = node.row_style ? JSON.parse(node.row_style) : {};
   const motion = [style.movement, style.shot_size].filter(Boolean).join(", ");
+  // The lens/aperture/camera-body chosen in Storyboard describe the shot's
+  // optical look (depth of field, stock character) — without folding them in
+  // here too, a clip could animate with a different depth of field than the
+  // frame it started from.
+  const lensLine = [style.lens, style.aperture, style.camera_body].filter(Boolean).join(", ");
   const base = `${node.beat_title ?? "Film shot"}. ${node.beat_scene ?? ""}. ${
     motion ? `${motion} — ` : ""
-  }${node.premise ?? ""}`.trim();
+  }${lensLine ? `Shot on ${lensLine}. ` : ""}${node.premise ?? ""}`.trim();
   // Identity hold — the character-consistency chain runs through this clip:
   // whoever is in the source frame must stay exactly themselves in motion.
   const consistency =
@@ -135,7 +146,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // The chosen camera move (Stitch inspector → Motion) leads the direction line
   // so Seedance animates the shot the way the user picked, not at random.
   const cameraLine = cameraMove.phrase ? `Camera: ${cameraMove.phrase}` : "";
-  const prompt = [cameraLine, base, skill?.body ?? "", consistency].filter(Boolean).join("\n\n");
+  // Project-wide style template — the look/wardrobe/vehicle locks. Placed last
+  // so it overrides anything earlier in the prompt: animation is where a clip
+  // most often re-costumes a character or swaps a vehicle mid-shot.
+  const styleLine = node.style_template
+    ? `STYLE LOCK — these hold for every shot and must not change: ${node.style_template}`
+    : "";
+  // The beat's own direction — the move and sound it was written for, plus the
+  // continuity it inherits from the previous shot.
+  const directionLine = node.beat_direction
+    ? `SHOT DIRECTION — play the shot exactly this way: ${node.beat_direction}`
+    : "";
+  const prompt = [cameraLine, base, directionLine, skill?.body ?? "", consistency, styleLine]
+    .filter(Boolean)
+    .join("\n\n");
 
   // Was hardcoded to "Seedance 1.5 Pro" regardless of which BytePlus model
   // actually ran — harmless while there was only one BytePlus video model,

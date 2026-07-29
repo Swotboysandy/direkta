@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { activity, beats, bible, characters, edges, locations, nodes, projects } from "../../../../lib/db/repo";
+import { activity, beats, bible, characters, edges, locations, nodes, projects, props } from "../../../../lib/db/repo";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     beats: beats.forProject(id),
     characters: characters.forProject(id),
     locations: locations.forProject(id),
+    props: props.forProject(id),
     activity: activity.forProject(id, 20),
     nodes: nodes.forProject(id),
     edges: edges.forProject(id)
@@ -43,8 +44,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     title: typeof body.title === "string" ? body.title : undefined,
     premise: typeof body.premise === "string" ? body.premise : undefined,
     logline: typeof body.logline === "string" ? body.logline : undefined,
-    creative_brief: typeof body.creative_brief === "string" ? body.creative_brief.slice(0, 2000) : undefined,
-    brand_kit: typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 1000) : undefined,
+    creative_brief: typeof body.creative_brief === "string" ? body.creative_brief.slice(0, 8000) : undefined,
+    brand_kit: typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 4000) : undefined,
+    style_template: typeof body.style_template === "string" ? body.style_template.slice(0, 4000) : undefined,
     script: typeof body.script === "string" ? body.script : undefined,
     script_submitted: typeof body.script_submitted === "boolean" ? body.script_submitted : undefined,
     script_ai_generated: typeof body.script_ai_generated === "boolean" ? body.script_ai_generated : undefined,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateText } from "ai";
-import { beats, projects, characters, locations, activity } from "../../../../../../lib/db/repo";
+import { beats, projects, characters, locations, props, activity } from "../../../../../../lib/db/repo";
 import { isCodexConnected } from "../../../../../../lib/codex/token";
 import { generateTextViaCodex } from "../../../../../../lib/codex/generate";
 import { activeModel } from "../../../../../../lib/vendors/resolver";
@@ -9,7 +9,7 @@ import type { Character, Location } from "../../../../../../lib/types";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const SYSTEM = `You are a professional script breakdown supervisor. Break the screenplay down COMPLETELY: scene beats, the full cast, and every location.
+const SYSTEM = `You are a professional script breakdown supervisor. Break the screenplay down COMPLETELY: scene beats, the full cast, every location, and every recurring named prop.
 
 Return ONLY a JSON object with this exact shape:
 {
@@ -20,9 +20,11 @@ Return ONLY a JSON object with this exact shape:
       "title": <string: 3–6 word dramatic title for this beat>,
       "summary": <string: 1–2 sentences covering the action and dramatic stakes>,
       "characters": [<names of characters who appear or speak — use the exact names from "characters" below>],
+      "location": <string: exact name of the matching entry in "locations" below this beat takes place in, or "" if none apply>,
       "mood": [<1–3 mood tags, e.g. "tense", "melancholic", "action", "comedic", "intimate", "epic">],
-      "props": [<notable physical props or set pieces>],
+      "props": [<notable physical props or set pieces visible or used in this beat>],
       "notes": <string: production complexity note, or empty string>,
+      "direction": <string: if the script has a DIRECTION block for this scene, copy its SHOT / MOVE / LIGHT / SOUND / CONTINUITY lines here verbatim as one string. If it has none, write the shot yourself in the same form: "SHOT: … MOVE: … LIGHT: … SOUND: … CONTINUITY: …">,
       "flag": <"attention" if scene requires stunts/VFX/complex logistics, else null>
     }
   ],
@@ -36,20 +38,34 @@ Return ONLY a JSON object with this exact shape:
         "build": <string, or "">,
         "features": <string: distinctive physical description implied by the script, or "">,
         "wardrobe": <string, or "">,
-        "personality": <string: one line, or "">
+        "personality": <string: one line, or "">,
+        "physical_form": <"human" for an ordinary person; "creature" for a non-human being with a physical body (animal, monster, cosmic being); "colossus" for a giant/massive nonhuman entity; "abstract" for a presence that is NEVER physically shown on screen and exists only as voice-over, narration or an implied wrongness (no face, no body, no portrait is ever drawn of them) — default "human">
       }
     }
   ],
   "locations": [
     {
       "name": <string: location name, e.g. "WAREHOUSE", "SUV — INTERIOR">,
-      "int_ext": <"INT" | "EXT" | "INT/EXT">,
+      "int_ext": <"INT" | "EXT" | "INT/EXT" | "ABSTRACT" — use "ABSTRACT" only for a non-physical space with no real interior or exterior, e.g. a dream realm, a void, a memory-space>,
       "time_of_day": <string like "NIGHT", "DAY", "DAWN", or "">
+    }
+  ],
+  "props": [
+    {
+      "name": <string: a NAMED, recurring artifact or object that reappears across multiple scenes and needs a consistent visual design (a specific weapon, a signature vehicle, a magical item) — do NOT list generic one-off set dressing>,
+      "description": <string: material, shape, distinguishing detail implied by the script, or "">
     }
   ]
 }
 
-Even a commercial or montage script with no named characters usually implies people (a driver, a family, a kid) — list them as characters with invented working names so they can be cast. No markdown fences. No preamble. Pure JSON only.`;
+Even a commercial or montage script with no named characters usually implies people (a driver, a family, a kid) — list them as characters with invented working names so they can be cast. Do not invent a "locations" entry for non-spatial slugs like "BLACK SCREEN", "TITLE CARD" or "SUPER:" — only real places (or the special "ABSTRACT" non-physical spaces described above). No markdown fences. No preamble. Pure JSON only.`;
+
+const VALID_PHYSICAL_FORMS = ["human", "creature", "colossus", "abstract"];
+const VALID_INT_EXT = ["INT", "EXT", "INT/EXT", "ABSTRACT"];
+// Non-spatial slugs the AI sometimes reads as a "location" — these aren't
+// real places and would otherwise become fake Location rows that self-match
+// against the heading substring in the storyboard generate route.
+const NON_LOCATION_NAME = /^(BLACK|WHITE|BLANK)\s*(SCREEN)?$|^TITLE\s*(CARD)?$|^SUPER:?$|^CREDITS?$|^END$|^FADE\s*(IN|OUT)$|^MONTAGE$/i;
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -92,21 +108,52 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Could not parse breakdown", raw: raw.slice(0, 400) }, { status: 422 });
   }
 
+  // ── Auto-populate Locations from the breakdown FIRST — beats need each
+  //    location's id to populate beats.location_id below (a real per-beat
+  //    link, not just a heading-substring guess made later at frame time).
+  const existingLocs = locations.forProject(id);
+  const hasLoc = (name: string) =>
+    existingLocs.some((l) => l.name.trim().toLowerCase() === name.trim().toLowerCase());
+  const locData = Array.isArray(parsed.locations) ? (parsed.locations as Record<string, unknown>[]) : [];
+  const locNameToId = new Map<string, string>(
+    existingLocs.map((l) => [l.name.trim().toUpperCase(), l.id])
+  );
+  let locsAdded = 0;
+  for (const l of locData) {
+    const name = String((l as Record<string, unknown>).name ?? "").trim();
+    if (!name || NON_LOCATION_NAME.test(name)) continue;
+    const key = name.toUpperCase();
+    if (hasLoc(name)) continue;
+    const ie = String((l as Record<string, unknown>).int_ext ?? "INT");
+    const created = locations.create({
+      project_id: id,
+      name: name.slice(0, 80),
+      int_ext: (VALID_INT_EXT.includes(ie) ? ie : "INT") as Location["int_ext"],
+      time_of_day: String((l as Record<string, unknown>).time_of_day ?? "") || undefined,
+      scene_count: beatData.filter((b) => String(b.location ?? "").trim().toLowerCase() === name.toLowerCase()).length
+    });
+    locNameToId.set(key, created.id);
+    locsAdded++;
+  }
+
   beats.deleteForProject(id);
-  const created = beatData.map((b, i) =>
-    beats.create({
+  const created = beatData.map((b, i) => {
+    const beatLocationName = String(b.location ?? "").trim().toUpperCase();
+    return beats.create({
       project_id: id,
       n: Number(b.n) || i + 1,
       scene_heading: String(b.scene_heading ?? ""),
       title: String(b.title ?? ""),
       summary: String(b.summary ?? ""),
       characters: Array.isArray(b.characters) ? b.characters.map(String) : [],
+      location_id: beatLocationName ? locNameToId.get(beatLocationName) ?? null : null,
       mood: Array.isArray(b.mood) ? b.mood.map(String) : [],
       props: Array.isArray(b.props) ? b.props.map(String) : [],
       notes: String(b.notes ?? ""),
+      direction: String(b.direction ?? ""),
       flag: b.flag ? String(b.flag) : null
-    })
-  );
+    });
+  });
 
   // ── Auto-populate Casting: upsert characters found in the breakdown ──────
   // Existing characters (by name, case-insensitive) are left untouched so
@@ -134,35 +181,35 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const roleRaw = String((c as Record<string, unknown>).role ?? "Supporting");
     const role = (["Lead", "Supporting", "Featured"].includes(roleRaw) ? roleRaw : "Supporting") as Character["role"];
     const briefRaw = (c as Record<string, unknown>).brief;
+    const brief: Character["brief"] = typeof briefRaw === "object" && briefRaw ? { ...(briefRaw as Character["brief"]) } : {};
+    if (!VALID_PHYSICAL_FORMS.includes(brief.physical_form ?? "")) brief.physical_form = "human";
     characters.create({
       project_id: id,
       name: name.slice(0, 80),
       role,
       scene_count: sceneCountFor(name),
       dialogue: Boolean((c as Record<string, unknown>).dialogue ?? true),
-      brief: typeof briefRaw === "object" && briefRaw ? (briefRaw as Character["brief"]) : {}
+      brief
     });
     charsAdded++;
   }
 
-  // ── Auto-populate Locations from the breakdown ───────────────────────────
-  const existingLocs = locations.forProject(id);
-  const hasLoc = (name: string) =>
-    existingLocs.some((l) => l.name.trim().toLowerCase() === name.trim().toLowerCase());
-  const locData = Array.isArray(parsed.locations) ? (parsed.locations as Record<string, unknown>[]) : [];
-  let locsAdded = 0;
-  for (const l of locData) {
-    const name = String((l as Record<string, unknown>).name ?? "").trim();
-    if (!name || hasLoc(name)) continue;
-    const ie = String((l as Record<string, unknown>).int_ext ?? "INT");
-    locations.create({
+  // ── Auto-populate recurring props from the breakdown ─────────────────────
+  const existingProps = props.forProject(id);
+  const hasProp = (name: string) =>
+    existingProps.some((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+  const propData = Array.isArray(parsed.props) ? (parsed.props as Record<string, unknown>[]) : [];
+  let propsAdded = 0;
+  for (const p of propData) {
+    const name = String((p as Record<string, unknown>).name ?? "").trim();
+    if (!name || hasProp(name)) continue;
+    props.create({
       project_id: id,
-      name: name.slice(0, 80),
-      int_ext: (["INT", "EXT", "INT/EXT"].includes(ie) ? ie : "INT") as Location["int_ext"],
-      time_of_day: String((l as Record<string, unknown>).time_of_day ?? "") || undefined,
-      scene_count: created.filter((b) => b.scene_heading.toLowerCase().includes(name.toLowerCase())).length
+      name: name.slice(0, 120),
+      description: String((p as Record<string, unknown>).description ?? "").slice(0, 500),
+      scene_count: created.filter((b) => b.props.some((n) => n.trim().toLowerCase().includes(name.toLowerCase()))).length
     });
-    locsAdded++;
+    propsAdded++;
   }
 
   activity.append({
@@ -171,12 +218,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     kind: "success",
     text: `**Beat Writer** extracted ${created.length} beats from ${project.script.trim().split(/\s+/).length} words.`
   });
-  if (charsAdded || locsAdded) {
+  if (charsAdded || locsAdded || propsAdded) {
     activity.append({
       project_id: id,
       agent: "casting-dir",
       kind: "success",
-      text: `**Casting Director** pulled ${charsAdded} character(s) and ${locsAdded} location(s) from the script — cast their looks in Casting.`
+      text: `**Casting Director** pulled ${charsAdded} character(s), ${locsAdded} location(s) and ${propsAdded} prop(s) from the script — cast their looks in Casting.`
     });
   }
 
@@ -184,6 +231,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     beats: created,
     count: created.length,
     characters_added: charsAdded,
-    locations_added: locsAdded
+    locations_added: locsAdded,
+    props_added: propsAdded
   });
 }

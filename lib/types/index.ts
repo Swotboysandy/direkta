@@ -76,6 +76,11 @@ export interface Project {
   /** Brand & product placement — e.g. "Kindle Coffee: red-logo cups, barista
    *  aprons, storefront sign". Folded into every frame prompt. */
   brand_kit: string;
+  /** Visual style template — e.g. "35mm anamorphic, golden dusk light,
+   *  UTKARSH always in an olive overshirt over a blue tee; the car is always a
+   *  small white Maruti Swift hatchback". Folded into every image AND video
+   *  prompt so look, wardrobe and vehicles can't drift between shots. */
+  style_template: string;
   /* Movie Bible — title page + synopsis + production meta */
   genre: string;
   tagline: string;
@@ -136,11 +141,12 @@ export interface Message {
   created_at: string;
 }
 
-export type VendorKind = "text" | "image" | "video";
+export type VendorKind = "text" | "image" | "video" | "lipsync";
 
 export type TextProvider = "anthropic" | "openai" | "google" | "deepseek" | "openai-compatible";
 export type ImageProvider = "fal" | "openai-image" | "higgsfield" | "byteplus-image";
 export type VideoProvider = "fal-video" | "runway" | "minimax" | "higgsfield-video" | "byteplus-video";
+export type LipsyncProvider = "sync-lipsync";
 
 export type AssetKind = "image" | "video";
 
@@ -160,7 +166,7 @@ export interface Asset {
 export interface VendorConfig {
   id: string;
   label: string;
-  provider: TextProvider | ImageProvider | VideoProvider;
+  provider: TextProvider | ImageProvider | VideoProvider | LipsyncProvider;
   model: string;
   api_key: string;
   base_url?: string;
@@ -195,6 +201,11 @@ export interface Beat {
   mood: string[];
   props: string[];
   notes: string;
+  /** Director's shot direction for this beat — shot size/angle, camera move,
+   *  lighting, sound and the continuity that carries in from the previous
+   *  scene. Written by the script "Direct it" pass, then folded into both the
+   *  frame prompt and the animate prompt so the beat renders as directed. */
+  direction: string;
   flag: string | null;
   created_at: string;
   updated_at: string;
@@ -210,6 +221,10 @@ export interface CharacterBrief {
   wardrobe?: string;
   personality?: string;
   register?: string;
+  /** Governs portrait generation and cast identity-lock: "human" is the
+   *  default assumption everywhere else in the app; the other three opt a
+   *  character out of a photographic person-portrait entirely. */
+  physical_form?: "human" | "creature" | "colossus" | "abstract";
 }
 
 export interface Character {
@@ -245,8 +260,21 @@ export interface Location {
   id: string;
   project_id: string;
   name: string;
-  int_ext: "INT" | "EXT";
+  int_ext: "INT" | "EXT" | "INT/EXT" | "ABSTRACT";
   time_of_day: string | null;
+  scene_count: number;
+  soul_id_state: SoulIdState;
+  soul_id_progress: number;
+  refs: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Prop {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string;
   scene_count: number;
   soul_id_state: SoulIdState;
   soul_id_progress: number;
@@ -310,6 +338,15 @@ export interface StitchNode {
   x: number;
   y: number;
   duration: number;
+  /** Seconds into the generated clip where the kept window starts — lets a
+   *  short beat pick which few seconds of a longer clip to keep. */
+  trim_start: number;
+  /** Uploaded dialogue/voice track this shot's lip sync runs against. */
+  dialogue_audio_url: string | null;
+  /** Lip-synced output — a sibling to clip_asset_id, not a replacement, so the
+   *  pre-lipsync clip stays recoverable. */
+  lipsync_asset_id: string | null;
+  lipsync_state: "none" | "generating" | "complete" | "error";
   created_at: string;
 }
 

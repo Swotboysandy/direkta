@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, FileText, Flag, Lock, RefreshCw, Sparkles, Upload } from "../_components/icons";
+import { ArrowRight, Check, FileText, Flag, Lock, RefreshCw, Sparkles, Upload, Wand2 } from "../_components/icons";
 import { MovieBibleModal } from "../_components/MovieBibleModal";
 import { fadeUp, pageIn, SPRING_SMOOTH, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
@@ -116,6 +116,56 @@ export function Screenplay({
       });
       await onReload();
     } catch (err) {
+      setGenError(String(err));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  /* Rewrite whatever is in the editor into a director's shooting draft —
+     deeper subtext plus a per-scene DIRECTION block (shot, move, light, sound,
+     continuity) so each beat is filmable frame by frame. */
+  async function enhanceScript() {
+    if (busy || generating || !draft.trim()) return;
+    setGenerating(true);
+    setGenError(null);
+    const source = draft;
+    try {
+      const res = await fetch(`/api/projects/${project.id}/script/enhance`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ script: source })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Enhance failed" }));
+        setGenError(err.error ?? "Enhance failed");
+        return;
+      }
+      setDraft("");
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let full = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        setDraft(full);
+      }
+      // A failed/empty stream must not wipe the writer's draft.
+      if (!full.trim()) {
+        setDraft(source);
+        setGenError("Enhance returned nothing — draft restored.");
+        return;
+      }
+      lastSavedRef.current = full;
+      await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ script: full, script_ai_generated: true })
+      });
+      await onReload();
+    } catch (err) {
+      setDraft(source);
       setGenError(String(err));
     } finally {
       setGenerating(false);
@@ -253,6 +303,15 @@ export function Screenplay({
                 <><Sparkles size={14} /> Generate with AI</>
               )}
             </motion.button>
+            <motion.button
+              {...tap}
+              className="btn"
+              disabled={busy || generating || !draft.trim()}
+              onClick={enhanceScript}
+              title="Rewrite this draft deeper and attach per-scene shot direction"
+            >
+              <Wand2 size={14} /> Direct it
+            </motion.button>
             <motion.button {...tap} className="btn btn-primary" disabled={!canSubmit || busy || generating} onClick={submit}>
               {busy ? "Reading…" : "Submit to Script Reader"} <ArrowRight size={14} />
             </motion.button>
@@ -285,6 +344,7 @@ export function Screenplay({
                 }
                 placeholder="e.g. funny 20-second meme about Monday mornings · or: warm cinematic family ad, golden light, no dialogue"
                 rows={2}
+                maxLength={8000}
                 style={{
                   width: "100%",
                   padding: "12px 16px",
@@ -316,6 +376,39 @@ export function Screenplay({
                 }
                 placeholder="e.g. Kindle Coffee — red-logo cup, barista apron, storefront sign"
                 rows={2}
+                maxLength={4000}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  border: 0,
+                  borderRadius: 14,
+                  boxShadow: "inset 0 0 0 1px var(--cream-deep)",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  resize: "vertical",
+                  outline: "none"
+                }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ ...mono10, color: "var(--mute)" }}>
+                Style lock · applied to every frame and clip (look, wardrobe, vehicles)
+              </span>
+              <textarea
+                defaultValue={project.style_template}
+                onBlur={(e) =>
+                  fetch(`/api/projects/${project.id}`, {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ style_template: e.target.value })
+                  }).catch(() => {})
+                }
+                placeholder="e.g. 35mm anamorphic, golden dusk light · UTKARSH always in an olive overshirt over a blue tee · the car is always a small white Maruti Swift hatchback, never an SUV"
+                rows={2}
+                maxLength={4000}
                 style={{
                   width: "100%",
                   padding: "12px 16px",

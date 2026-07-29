@@ -31,27 +31,57 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 
   const beat = db
     .prepare(
-      `SELECT b.id, b.title, b.scene_heading, b.characters, b.project_id, p.aspect_ratio, p.premise, p.brand_kit
+      `SELECT b.id, b.title, b.scene_heading, b.characters, b.location_id, b.props, b.direction, b.project_id, p.aspect_ratio, p.premise, p.brand_kit, p.style_template
        FROM beats b JOIN projects p ON p.id = b.project_id WHERE b.id = ?`
     )
     .get(beatId) as
-    | { id: string; title: string; scene_heading: string; characters: string; project_id: string; aspect_ratio: AspectRatio; premise: string; brand_kit: string }
+    | {
+        id: string;
+        title: string;
+        scene_heading: string;
+        characters: string;
+        location_id: string | null;
+        props: string;
+        direction: string;
+        project_id: string;
+        aspect_ratio: AspectRatio;
+        premise: string;
+        brand_kit: string;
+        style_template: string;
+      }
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
 
-  // ── Location reference lock — beats.location_id is never populated by the
-  //    extractor, so match the scene heading against a location's name (the
-  //    slugline embeds it, e.g. "INT. MORNRISE COFFEE SHOP — GOLDEN HOUR").
-  //    Without this, only faces were locked — the set itself could drift
-  //    shot-to-shot even with the same characters in every frame.
+  // ── Location reference lock — prefer the beat's real location_id (set by
+  //    the extractor) and only fall back to matching the scene heading text
+  //    against a location's name for older beats that predate that column.
+  //    Without a location lock, only faces were locked — the set itself
+  //    could drift shot-to-shot even with the same characters in every frame.
   const projectLocations = db
-    .prepare("SELECT name, refs FROM locations WHERE project_id = ?")
-    .all(beat.project_id) as Array<{ name: string; refs: string }>;
+    .prepare("SELECT id, name, refs FROM locations WHERE project_id = ?")
+    .all(beat.project_id) as Array<{ id: string; name: string; refs: string }>;
   const headingUpper = beat.scene_heading.toUpperCase();
-  const matchedLocation = projectLocations
-    .filter((l) => l.name.trim().length >= 3 && headingUpper.includes(l.name.trim().toUpperCase()))
-    .sort((a, b) => b.name.length - a.name.length)[0];
+  const matchedLocation =
+    (beat.location_id && projectLocations.find((l) => l.id === beat.location_id)) ||
+    projectLocations
+      .filter((l) => l.name.trim().length >= 3 && headingUpper.includes(l.name.trim().toUpperCase()))
+      .sort((a, b) => b.name.length - a.name.length)[0];
   const locationRefs = matchedLocation ? safeJsonArray(matchedLocation.refs).slice(0, 2) : [];
+
+  // ── Prop reference lock — a beat's free-text props list (from the script
+  //    breakdown) is matched against the project's cast Prop entities so a
+  //    recurring named artifact (a weapon, a signature vehicle) keeps its
+  //    exact look across every shot it appears in, same mechanism as cast/set.
+  const beatPropNames: string[] = safeJsonArray(beat.props);
+  const projectProps = db
+    .prepare("SELECT name, refs FROM props WHERE project_id = ?")
+    .all(beat.project_id) as Array<{ name: string; refs: string }>;
+  const matchedProps = projectProps.filter((p) =>
+    beatPropNames.some(
+      (n) => n.trim().toLowerCase().includes(p.name.trim().toLowerCase()) || p.name.trim().toLowerCase().includes(n.trim().toLowerCase())
+    )
+  );
+  const propRefs = matchedProps.flatMap((p) => safeJsonArray(p.refs).slice(0, 1)).slice(0, 2);
 
   const prompt =
     promptIn || `Cinematic film frame. ${beat.scene_heading}. ${beat.title}. ${beat.premise}`;
@@ -103,6 +133,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   // The matched location's plate rides alongside the cast references — same
   // reference-lock mechanism, just for the set instead of a face.
   if (locationRefs.length) referenceImages.push(...locationRefs);
+  // Same again for any recurring prop this beat calls for.
+  if (propRefs.length) referenceImages.push(...propRefs);
 
   // Fold in the editable Cinematography skill so frames follow the house style.
   const skill = skillForPart("cinematography");
@@ -128,13 +160,44 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const locationLock = locationRefs.length
     ? `LOCATION LOCK — this is the SAME location shown in the attached reference image(s) (${matchedLocation!.name}): same room, same counter/fixtures, same window and light direction, same décor. Do not redesign the space.`
     : "";
+  // Same again for a recurring prop/artifact — object-neutral language (no
+  // "identity"/"person" phrasing, which fights an inanimate reference).
+  const propLock = matchedProps.length
+    ? `PROP LOCK — the ${matchedProps.length === 1 ? "object" : "objects"} named ${matchedProps
+        .map((p) => p.name)
+        .join(", ")} in this frame MUST exactly match the attached reference image(s): same shape, material, color and markings. Do not redesign ${
+        matchedProps.length === 1 ? "it" : "them"
+      }.`
+    : "";
   // Brand/product placement rides on every frame when the project defines it.
   const brandLine = beat.brand_kit
     ? `Product placement, shown naturally where it fits the scene: ${beat.brand_kit}. Brand items look real and unobtrusive — no oversized logos, no text overlays.`
     : "";
   const antiGrid =
     "One single cinematic frame depicting ONE moment — never a grid, collage, contact sheet, storyboard, split screen, or multiple panels.";
-  const genPrompt = [castLock, locationLock, prompt, brandLine, skill?.body ?? "", antiGrid].filter(Boolean).join("\n\n");
+  // Project-wide style template — one stored look/wardrobe/vehicle lock applied
+  // to every frame, so the style doesn't have to be retyped per shot (and can't
+  // silently differ between them).
+  const styleLine = beat.style_template
+    ? `STYLE LOCK — these hold for every shot and must not change: ${beat.style_template}`
+    : "";
+  // The director's shot for this beat — composition, light and continuity as
+  // written in the script's DIRECTION block. Frames the image the way the
+  // scene was directed instead of leaving it to the model.
+  const directionLine = beat.direction ? `SHOT DIRECTION — compose the frame exactly this way: ${beat.direction}` : "";
+  const genPrompt = [
+    castLock,
+    locationLock,
+    propLock,
+    prompt,
+    directionLine,
+    brandLine,
+    skill?.body ?? "",
+    antiGrid,
+    styleLine
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
@@ -275,12 +338,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
     error: errors[0],
     locked_cast: referencedNames,
     locked_location: matchedLocation?.name ?? null,
+    locked_props: matchedProps.map((p) => p.name),
     note:
       failed > 0
         ? `${generated} frame(s) rolled, ${failed} failed via ${providerLabel}.`
         : `${generated} frame(s) rolled by ${providerLabel}${
             referencedNames.length ? ` — locked to ${referencedNames.join(", ")}` : ""
-          }${matchedLocation ? ` @ ${matchedLocation.name}` : ""}.`
+          }${matchedLocation ? ` @ ${matchedLocation.name}` : ""}${
+            matchedProps.length ? ` · props: ${matchedProps.map((p) => p.name).join(", ")}` : ""
+          }.`
   });
 }
 

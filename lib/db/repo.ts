@@ -20,6 +20,7 @@ import type {
   NodeKind,
   PaletteSwatch,
   Project,
+  Prop,
   Proposal,
   StoryboardRow,
   StoryboardVariant,
@@ -63,6 +64,7 @@ function rowToProject(row: Row): Project {
     script_ai_generated: !!row.script_ai_generated,
     creative_brief: String(row.creative_brief ?? ""),
     brand_kit: String(row.brand_kit ?? ""),
+    style_template: String(row.style_template ?? ""),
     genre: String(row.genre ?? ""),
     tagline: String(row.tagline ?? ""),
     director_name: String(row.director_name ?? ""),
@@ -174,6 +176,7 @@ export const projects = {
         | "script_ai_generated"
         | "creative_brief"
         | "brand_kit"
+        | "style_template"
       >
     >
   ) {
@@ -369,6 +372,12 @@ export const vendors = {
       .get() as Row | undefined;
     return row ? rowToVendor(row) : null;
   },
+  firstEnabledLipsync(): VendorConfig | null {
+    const row = getDb()
+      .prepare("SELECT * FROM vendors WHERE enabled = 1 AND api_key != '' AND kind = 'lipsync' LIMIT 1")
+      .get() as Row | undefined;
+    return row ? rowToVendor(row) : null;
+  },
   update(id: string, patch: Partial<Omit<VendorConfig, "id">>) {
     const fields: string[] = [];
     const values: SQLInputValue[] = [];
@@ -402,6 +411,7 @@ function rowToBeat(row: Row): Beat {
     mood: row.mood ? JSON.parse(String(row.mood)) : [],
     props: row.props ? JSON.parse(String(row.props)) : [],
     notes: String(row.notes ?? ""),
+    direction: String(row.direction ?? ""),
     flag: row.flag ? String(row.flag) : null,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at)
@@ -436,12 +446,13 @@ export const beats = {
     mood?: string[];
     props?: string[];
     notes?: string;
+    direction?: string;
     flag?: string | null;
   }): Beat {
     const id = nanoid(10);
     getDb()
       .prepare(
-        "INSERT INTO beats (id, project_id, n, scene_heading, title, summary, characters, location_id, mood, props, notes, flag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO beats (id, project_id, n, scene_heading, title, summary, characters, location_id, mood, props, notes, direction, flag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       )
       .run(
         id,
@@ -455,6 +466,7 @@ export const beats = {
         JSON.stringify(input.mood ?? []),
         JSON.stringify(input.props ?? []),
         input.notes ?? "",
+        input.direction ?? "",
         input.flag ?? null
       );
     return this.get(id)!;
@@ -648,6 +660,72 @@ export const locations = {
   },
   delete(id: string) {
     getDb().prepare("DELETE FROM locations WHERE id = ?").run(id);
+  }
+};
+
+function rowToProp(row: Row): Prop {
+  return {
+    id: String(row.id),
+    project_id: String(row.project_id),
+    name: String(row.name),
+    description: String(row.description ?? ""),
+    scene_count: Number(row.scene_count ?? 0),
+    soul_id_state: (String(row.soul_id_state ?? "empty") as Prop["soul_id_state"]),
+    soul_id_progress: Number(row.soul_id_progress ?? 0),
+    refs: row.refs ? JSON.parse(String(row.refs)) : [],
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at)
+  };
+}
+
+export const props = {
+  forProject(projectId: string): Prop[] {
+    const rows = getDb()
+      .prepare("SELECT * FROM props WHERE project_id = ? ORDER BY name ASC")
+      .all(projectId) as Row[];
+    return rows.map(rowToProp);
+  },
+  get(id: string): Prop | null {
+    const row = getDb().prepare("SELECT * FROM props WHERE id = ?").get(id) as Row | undefined;
+    return row ? rowToProp(row) : null;
+  },
+  create(input: {
+    project_id: string;
+    name: string;
+    description?: string;
+    scene_count?: number;
+  }): Prop {
+    const id = nanoid(10);
+    getDb()
+      .prepare(
+        "INSERT INTO props (id, project_id, name, description, scene_count) VALUES (?, ?, ?, ?, ?)"
+      )
+      .run(id, input.project_id, input.name, input.description ?? "", input.scene_count ?? 0);
+    return this.get(id)!;
+  },
+  update(
+    id: string,
+    patch: Partial<Omit<Prop, "id" | "project_id" | "created_at" | "updated_at">>
+  ) {
+    const fields: string[] = [];
+    const values: SQLInputValue[] = [];
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === undefined) continue;
+      if (key === "refs") {
+        fields.push("refs = ?");
+        values.push(JSON.stringify(value));
+      } else if (typeof value === "string" || typeof value === "number" || value === null) {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+    }
+    if (!fields.length) return;
+    fields.push("updated_at = datetime('now')");
+    values.push(id);
+    getDb().prepare(`UPDATE props SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+  },
+  delete(id: string) {
+    getDb().prepare("DELETE FROM props WHERE id = ?").run(id);
   }
 };
 
