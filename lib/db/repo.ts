@@ -66,6 +66,8 @@ function rowToProject(row: Row): Project {
     brand_kit: String(row.brand_kit ?? ""),
     style_template: String(row.style_template ?? ""),
     continuity_lock: String(row.continuity_lock ?? ""),
+    set_lock: String(row.set_lock ?? ""),
+    avoid_prompt: String(row.avoid_prompt ?? ""),
     genre: String(row.genre ?? ""),
     tagline: String(row.tagline ?? ""),
     director_name: String(row.director_name ?? ""),
@@ -179,6 +181,8 @@ export const projects = {
         | "brand_kit"
         | "style_template"
         | "continuity_lock"
+        | "set_lock"
+        | "avoid_prompt"
       >
     >
   ) {

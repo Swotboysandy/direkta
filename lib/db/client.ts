@@ -355,6 +355,13 @@ function migrate(db: DatabaseSync) {
   // look (and wardrobe/vehicle locks) can't drift shot to shot.
   ensureColumn(db, "projects", "style_template", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "projects", "continuity_lock", "TEXT NOT NULL DEFAULT ''");
+  // Set lock — the room/geography anchor. Higgsfield's own Cat Story team found the
+  // model "helpfully" widening a room or adding furniture it was never shown was the
+  // single biggest source of drift between clips, worse than character drift.
+  ensureColumn(db, "projects", "set_lock", "TEXT NOT NULL DEFAULT ''");
+  // Avoid-instructions — explicit negatives. Every reference project repeats them
+  // ("not painterly, not 3D, no photobash, no CGI smoothness").
+  ensureColumn(db, "projects", "avoid_prompt", "TEXT NOT NULL DEFAULT ''");
   // Per-beat shot direction lifted from the script's DIRECTION blocks.
   ensureColumn(db, "beats", "direction", "TEXT NOT NULL DEFAULT ''");
 

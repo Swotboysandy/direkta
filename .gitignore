@@ -25,3 +25,6 @@ data/oss/
 .tmp_*
 .scratch/
 tsconfig.tsbuildinfo
+
+# Cloned reference repo — research only, not part of the app
+Research/dramaclaw/

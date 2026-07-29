@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 
   const beat = db
     .prepare(
-      `SELECT b.id, b.title, b.scene_heading, b.characters, b.location_id, b.props, b.direction, b.project_id, p.aspect_ratio, p.premise, p.brand_kit, p.style_template, p.continuity_lock
+      `SELECT b.id, b.title, b.scene_heading, b.characters, b.location_id, b.props, b.direction, b.project_id, p.aspect_ratio, p.premise, p.brand_kit, p.style_template, p.continuity_lock, p.set_lock, p.avoid_prompt
        FROM beats b JOIN projects p ON p.id = b.project_id WHERE b.id = ?`
     )
     .get(beatId) as
@@ -49,6 +49,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
         brand_kit: string;
         style_template: string;
         continuity_lock: string;
+        set_lock: string;
+        avoid_prompt: string;
       }
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
@@ -183,6 +185,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 ${beat.style_template}` : "";
   const continuityLine = beat.continuity_lock ? `CONTINUITY
 ${beat.continuity_lock}` : "";
+  // See animate route: set drift outranks character drift in practice, so the room is
+  // pinned and expanding it is explicitly forbidden.
+  const setLine = beat.set_lock
+    ? `SET
+${beat.set_lock}
+Do not invent furniture, walls, windows, doors or layout beyond what is described or shown in the reference plate.`
+    : "";
+  const avoidLine = beat.avoid_prompt ? `AVOID
+${beat.avoid_prompt}` : "";
   // The director's shot for this beat — composition, light and continuity as
   // written in the script's DIRECTION block. Frames the image the way the
   // scene was directed instead of leaving it to the model.
@@ -193,6 +204,7 @@ ${beat.direction}` : "";
   const genPrompt = [
     styleLine,
     continuityLine,
+    setLine,
     directionLine,
     `SHOT\n${prompt}`,
     castLock,
@@ -200,7 +212,8 @@ ${beat.direction}` : "";
     propLock,
     brandLine,
     skill?.body ?? "",
-    antiGrid
+    antiGrid,
+    avoidLine
   ]
     .filter(Boolean)
     .join("\n\n");

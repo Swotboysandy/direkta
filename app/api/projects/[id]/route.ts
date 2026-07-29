@@ -48,6 +48,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     brand_kit: typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 4000) : undefined,
     style_template: typeof body.style_template === "string" ? body.style_template.slice(0, 4000) : undefined,
     continuity_lock: typeof body.continuity_lock === "string" ? body.continuity_lock.slice(0, 4000) : undefined,
+    set_lock: typeof body.set_lock === "string" ? body.set_lock.slice(0, 4000) : undefined,
+    avoid_prompt: typeof body.avoid_prompt === "string" ? body.avoid_prompt.slice(0, 2000) : undefined,
     script: typeof body.script === "string" ? body.script : undefined,
     script_submitted: typeof body.script_submitted === "boolean" ? body.script_submitted : undefined,
     script_ai_generated: typeof body.script_ai_generated === "boolean" ? body.script_ai_generated : undefined,

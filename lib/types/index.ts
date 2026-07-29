@@ -87,6 +87,13 @@ export interface Project {
    *  different kinds of constraint (Higgsfield's own reference projects split
    *  them the same way: STYLE LOCK / CONTINUITY / DIRECTION / SHOT). */
   continuity_lock: string;
+  /** Set lock — the geography of each recurring space and a hard instruction not to
+   *  invent beyond it. Reference projects report room drift as the worst offender:
+   *  the model widens rooms and adds furniture it was never shown. */
+  set_lock: string;
+  /** Avoid-instructions — explicit negatives appended to every prompt, e.g.
+   *  "not painterly, not 3D, no photobash, no CGI smoothness, no extra furniture". */
+  avoid_prompt: string;
   /* Movie Bible — title page + synopsis + production meta */
   genre: string;
   tagline: string;

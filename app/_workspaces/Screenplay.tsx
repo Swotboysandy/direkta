@@ -457,6 +457,70 @@ export function Screenplay({
                 }}
               />
             </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ ...mono10, color: "var(--mute)" }}>
+                Set lock · room geography — the biggest cause of drift between shots
+              </span>
+              <textarea
+                defaultValue={project.set_lock}
+                onBlur={(e) =>
+                  fetch(`/api/projects/${project.id}`, {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ set_lock: e.target.value })
+                  }).catch(() => {})
+                }
+                placeholder="e.g. Bedroom: bed left, window right, one desk, pink curtains — nothing else. Never widen the room or add furniture."
+                rows={2}
+                maxLength={4000}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  border: 0,
+                  borderRadius: 14,
+                  boxShadow: "inset 0 0 0 1px var(--cream-deep)",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  resize: "vertical",
+                  outline: "none"
+                }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ ...mono10, color: "var(--mute)" }}>
+                Avoid · negatives appended to every frame and clip
+              </span>
+              <textarea
+                defaultValue={project.avoid_prompt}
+                onBlur={(e) =>
+                  fetch(`/api/projects/${project.id}`, {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ avoid_prompt: e.target.value })
+                  }).catch(() => {})
+                }
+                placeholder="e.g. not painterly, not 3D, no photobash, no CGI smoothness, no extra furniture, no text, no watermark"
+                rows={2}
+                maxLength={2000}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  border: 0,
+                  borderRadius: 14,
+                  boxShadow: "inset 0 0 0 1px var(--cream-deep)",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  resize: "vertical",
+                  outline: "none"
+                }}
+              />
+            </label>
           </div>
 
           <div

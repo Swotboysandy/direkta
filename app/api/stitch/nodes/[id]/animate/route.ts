@@ -25,6 +25,8 @@ interface NodeRow {
   premise: string | null;
   style_template: string | null;
   continuity_lock: string | null;
+  set_lock: string | null;
+  avoid_prompt: string | null;
   frame_url: string | null;
 }
 
@@ -49,7 +51,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       `SELECT sn.id, sn.duration,
               b.title as beat_title, b.scene_heading as beat_scene, b.direction as beat_direction,
               sr.style as row_style,
-              p.aspect_ratio, p.premise, p.style_template, p.continuity_lock,
+              p.aspect_ratio, p.premise, p.style_template, p.continuity_lock, p.set_lock, p.avoid_prompt,
               COALESCE(a_direct.url, a_selected.url) as frame_url
        FROM stitch_nodes sn
        LEFT JOIN beats b ON b.id = sn.beat_id
@@ -178,10 +180,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const handoff = prevBeat?.direction
     ? `CONTINUES FROM — the previous shot ended here; pick the action up mid-motion rather than restarting it: ${prevBeat.direction}`
     : "";
+  // SET lock. Reference teams report the model widening rooms and adding furniture it
+  // was never shown as the worst source of drift between clips — worse than character
+  // drift — so the geography is restated and expanding it is explicitly forbidden.
+  const setLine = node.set_lock
+    ? `SET
+${node.set_lock}
+Do not invent furniture, walls, windows, doors or layout beyond what is described or shown in the source frame.`
+    : "Do not invent furniture, walls, windows, doors or layout beyond what is shown in the source frame.";
   const shotBlock = [cameraLine, base].filter(Boolean).join(" ");
+  const avoidLine = node.avoid_prompt ? `AVOID
+${node.avoid_prompt}` : "";
   const prompt = [
     styleLine,
     continuityLine,
+    setLine,
     directionLine,
     handoff,
     `SHOT\n${shotBlock}`,
