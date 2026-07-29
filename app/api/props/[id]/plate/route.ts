@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { locations, projects, vendors } from "../../../../../lib/db/repo";
+import { props, projects, vendors } from "../../../../../lib/db/repo";
 import { generateImage } from "../../../../../lib/agents/image";
 import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../lib/skills/loader";
@@ -9,17 +9,18 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Location scout — generate an establishing plate for a location (its "look").
- * Mirrors the character portrait route: keyed image vendor first, Higgsfield
- * OAuth fallback; new plates reference prior ones so the place stays the same.
+ * Props scout — generate a reference plate for a recurring prop/artifact
+ * (its "look"). Mirrors the location plate route, but for an object instead
+ * of a place: isolated on a neutral backdrop so the material/shape reads
+ * clearly, with no person or hand in frame to confuse the reference.
  */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const location = locations.get(id);
-  if (!location) return NextResponse.json({ error: "Location not found" }, { status: 404 });
+  const prop = props.get(id);
+  if (!prop) return NextResponse.json({ error: "Prop not found" }, { status: 404 });
 
-  const project = projects.get(location.project_id);
+  const project = projects.get(prop.project_id);
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const vendor = vendors.firstEnabledImage();
@@ -32,18 +33,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     });
   }
 
-  const base =
-    location.int_ext === "ABSTRACT"
-      ? `Cinematic concept-art establishing shot of ${location.name}, a non-physical, otherworldly space with no real interior or exterior — abstract, dreamlike, atmospheric. No people. Detailed production design. Context: ${project.premise}`
-      : `Cinematic establishing shot of ${location.name}, ${
-          location.int_ext === "EXT" ? "exterior" : location.int_ext === "INT" ? "interior" : "interior/exterior"
-        }${location.time_of_day ? `, ${location.time_of_day.toLowerCase()}` : ""}. No people. Atmospheric, filmic, detailed production design. Context: ${project.premise}`;
+  const base = `Cinematic reference shot of a single object: ${prop.name}${
+    prop.description ? ` — ${prop.description}` : ""
+  }. Isolated on a plain neutral backdrop, studio-quality even lighting, sharp focus on its exact shape, material and color. No people, no hands, no other objects in frame. Context: ${project.premise}`;
   const skill = skillForPart("cinematography");
-  const priorPlates = (location.refs ?? []).slice(0, 2);
+  const priorPlates = (prop.refs ?? []).slice(0, 2);
   const consistency = priorPlates.length
-    ? "This is the SAME place as in the attached reference image(s) — identical architecture, layout and dressing. "
+    ? "This is the SAME object as in the attached reference image(s) — identical shape, material, color and markings. "
     : "";
-  const prompt = [base, skill?.body ?? "", `${consistency}One single cinematic frame — no grid, collage or multiple panels. No text or watermarks.`]
+  const prompt = [base, skill?.body ?? "", `${consistency}One single object, no grid, collage or multiple panels. No text or watermarks.`]
     .filter(Boolean)
     .join("\n\n");
 
@@ -62,11 +60,11 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const image = useMcp
       ? await generateImageViaMcp({ prompt, aspectRatio: project.aspect_ratio })
       : await generateImage({ prompt, aspectRatio: project.aspect_ratio, vendor: vendor!, referenceImages: priorPlates });
-    const refs = [image.url, ...(location.refs ?? [])];
-    locations.update(id, { refs, soul_id_state: "trained", soul_id_progress: 1 });
+    const refs = [image.url, ...(prop.refs ?? [])];
+    props.update(id, { refs, soul_id_state: "trained", soul_id_progress: 1 });
     return NextResponse.json({ ok: true, url: image.url });
   } catch (error: any) {
-    locations.update(id, { soul_id_state: "failed" });
+    props.update(id, { soul_id_state: "failed" });
     return NextResponse.json({ error: error?.message ?? String(error) }, { status: 500 });
   }
 }

@@ -18,8 +18,12 @@ export interface VideoModel {
   approxCost: number;
   /** Extra params merged into generate_video (Higgsfield MCP only). */
   params: Record<string, unknown>;
-  /** BytePlus model id + resolution (BytePlus only). */
-  byteplus?: { model: string; resolution: string };
+  /** BytePlus model id + resolution (BytePlus only). durationRange is the
+   *  model's real min/max clip length in seconds per BytePlus's own ModelArk
+   *  docs (docs.byteplus.com/en/docs/ModelArk/1520757) — any integer in that
+   *  range is valid, not just 5/10; the two model families differ (1.5 Pro
+   *  tops out at 12s, the 2.0 series at 15s). */
+  byteplus?: { model: string; resolution: string; durationRange: [number, number] };
 }
 
 export interface ImageModel {
@@ -40,7 +44,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     costText: "≈245k tok · 5s",
     approxCost: 0,
     params: {},
-    byteplus: { model: "dreamina-seedance-2-0-260128", resolution: "1080p" }
+    byteplus: { model: "dreamina-seedance-2-0-260128", resolution: "1080p", durationRange: [4, 15] }
   },
   {
     id: "byteplus_dreamina_seedance_2_0_720p",
@@ -50,7 +54,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     costText: "≈109k tok · 5s",
     approxCost: 0,
     params: {},
-    byteplus: { model: "dreamina-seedance-2-0-260128", resolution: "720p" }
+    byteplus: { model: "dreamina-seedance-2-0-260128", resolution: "720p", durationRange: [4, 15] }
   },
   {
     id: "byteplus_seedance_1_5_1080p",
@@ -60,7 +64,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     costText: "≈245k tok · 5s",
     approxCost: 0,
     params: {},
-    byteplus: { model: "seedance-1-5-pro-251215", resolution: "1080p" }
+    byteplus: { model: "seedance-1-5-pro-251215", resolution: "1080p", durationRange: [4, 12] }
   },
   {
     id: "byteplus_seedance_1_5_720p",
@@ -70,7 +74,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     costText: "≈109k tok · 5s",
     approxCost: 0,
     params: {},
-    byteplus: { model: "seedance-1-5-pro-251215", resolution: "720p" }
+    byteplus: { model: "seedance-1-5-pro-251215", resolution: "720p", durationRange: [4, 12] }
   },
   {
     id: "seedance_2_0_fast",

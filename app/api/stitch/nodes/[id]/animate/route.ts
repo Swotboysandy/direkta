@@ -24,6 +24,7 @@ interface NodeRow {
   aspect_ratio: AspectRatio;
   premise: string | null;
   style_template: string | null;
+  continuity_lock: string | null;
   frame_url: string | null;
 }
 
@@ -48,7 +49,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       `SELECT sn.id, sn.duration,
               b.title as beat_title, b.scene_heading as beat_scene, b.direction as beat_direction,
               sr.style as row_style,
-              p.aspect_ratio, p.premise, p.style_template,
+              p.aspect_ratio, p.premise, p.style_template, p.continuity_lock,
               COALESCE(a_direct.url, a_selected.url) as frame_url
        FROM stitch_nodes sn
        LEFT JOIN beats b ON b.id = sn.beat_id
@@ -149,15 +150,44 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // Project-wide style template — the look/wardrobe/vehicle locks. Placed last
   // so it overrides anything earlier in the prompt: animation is where a clip
   // most often re-costumes a character or swaps a vehicle mid-shot.
-  const styleLine = node.style_template
-    ? `STYLE LOCK — these hold for every shot and must not change: ${node.style_template}`
-    : "";
+  const styleLine = node.style_template ? `STYLE LOCK\n${node.style_template}` : "";
+  // CONTINUITY is deliberately separate from STYLE — the medium and the cast
+  // are different constraints, and Higgsfield's own reference projects keep
+  // them as distinct immutable blocks (STYLE LOCK / CONTINUITY / DIRECTION /
+  // SHOT, where only SHOT varies per beat).
+  const continuityLine = node.continuity_lock ? `CONTINUITY\n${node.continuity_lock}` : "";
   // The beat's own direction — the move and sound it was written for, plus the
   // continuity it inherits from the previous shot.
-  const directionLine = node.beat_direction
-    ? `SHOT DIRECTION — play the shot exactly this way: ${node.beat_direction}`
+  const directionLine = node.beat_direction ? `DIRECTION\n${node.beat_direction}` : "";
+  // Block order matches the reference architecture: the three immutable blocks
+  // (STYLE LOCK, CONTINUITY, DIRECTION) frame the one variable block (SHOT),
+  // and sit last so they win against anything descriptive earlier.
+  // What the previous beat left on screen. Higgsfield's own Seedance workflow
+  // chains every clip off the one before it ("continue exactly from the last
+  // frame") — without that handoff each shot restarts the world and the cuts
+  // stop reading as one continuous film.
+  const prevBeat = db
+    .prepare(
+      `SELECT b.direction FROM stitch_nodes sn
+       JOIN beats b ON b.id = sn.beat_id
+       WHERE sn.project_id = (SELECT project_id FROM stitch_nodes WHERE id = ?)
+         AND b.n = (SELECT b2.n - 1 FROM stitch_nodes sn2 JOIN beats b2 ON b2.id = sn2.beat_id WHERE sn2.id = ?)
+       LIMIT 1`
+    )
+    .get(id, id) as { direction: string } | undefined;
+  const handoff = prevBeat?.direction
+    ? `CONTINUES FROM — the previous shot ended here; pick the action up mid-motion rather than restarting it: ${prevBeat.direction}`
     : "";
-  const prompt = [cameraLine, base, directionLine, skill?.body ?? "", consistency, styleLine]
+  const shotBlock = [cameraLine, base].filter(Boolean).join(" ");
+  const prompt = [
+    styleLine,
+    continuityLine,
+    directionLine,
+    handoff,
+    `SHOT\n${shotBlock}`,
+    skill?.body ?? "",
+    consistency
+  ]
     .filter(Boolean)
     .join("\n\n");
 

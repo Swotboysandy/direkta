@@ -33,6 +33,12 @@ export function Export({ project }: Props) {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => d && setScore(d))
       .catch(() => {});
+    // A final video can also arrive pre-rendered (assembled outside the
+    // Stitch pipeline) and attached directly — show it the same as a render.
+    fetch(`/api/projects/${project.id}/final-video`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.attached && setCut({ url: d.url, shots: 0, duration: d.duration ?? 0 }))
+      .catch(() => {});
   }, [project.id]);
 
   async function renderCut() {
@@ -296,7 +302,7 @@ export function Export({ project }: Props) {
                     pointerEvents: "none"
                   }}
                 >
-                  {cut.shots} SHOTS · {cut.duration}S
+                  {cut.shots > 0 ? `${cut.shots} SHOTS · ` : ""}{cut.duration}S
                 </span>
               </div>
             )}

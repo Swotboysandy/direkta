@@ -354,6 +354,7 @@ function migrate(db: DatabaseSync) {
   // Visual style template — prepended to every image AND video prompt so the
   // look (and wardrobe/vehicle locks) can't drift shot to shot.
   ensureColumn(db, "projects", "style_template", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "projects", "continuity_lock", "TEXT NOT NULL DEFAULT ''");
   // Per-beat shot direction lifted from the script's DIRECTION blocks.
   ensureColumn(db, "beats", "direction", "TEXT NOT NULL DEFAULT ''");
 

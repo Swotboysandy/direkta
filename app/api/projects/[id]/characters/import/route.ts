@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateText } from "ai";
-import { beats, projects, characters, locations, activity } from "../../../../../../lib/db/repo";
+import { beats, projects, characters, locations, props, activity } from "../../../../../../lib/db/repo";
 import { isCodexConnected } from "../../../../../../lib/codex/token";
 import { generateTextViaCodex } from "../../../../../../lib/codex/generate";
 import { activeModel } from "../../../../../../lib/vendors/resolver";
@@ -9,7 +9,11 @@ import type { Character, Location } from "../../../../../../lib/types";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const SYSTEM = `You are a casting director breaking down a screenplay. List EVERY character and EVERY location.
+const VALID_PHYSICAL_FORMS = ["human", "creature", "colossus", "abstract"];
+const VALID_INT_EXT = ["INT", "EXT", "INT/EXT", "ABSTRACT"];
+const NON_LOCATION_NAME = /^(BLACK|WHITE|BLANK)\s*(SCREEN)?$|^TITLE\s*(CARD)?$|^SUPER:?$|^CREDITS?$|^END$|^FADE\s*(IN|OUT)$|^MONTAGE$/i;
+
+const SYSTEM = `You are a casting director breaking down a screenplay. List EVERY character, EVERY location, and every recurring named prop.
 
 Return ONLY a JSON object:
 {
@@ -23,16 +27,20 @@ Return ONLY a JSON object:
         "build": <string, or "">,
         "features": <string: distinctive physical description implied by the script, or "">,
         "wardrobe": <string, or "">,
-        "personality": <string: one line, or "">
+        "personality": <string: one line, or "">,
+        "physical_form": <"human" for an ordinary person; "creature" for a non-human being with a physical body; "colossus" for a giant/massive nonhuman entity; "abstract" for a presence NEVER physically shown on screen (voice-over/narration only, no portrait is ever drawn) — default "human">
       }
     }
   ],
   "locations": [
-    { "name": <string, e.g. "WAREHOUSE">, "int_ext": <"INT" | "EXT" | "INT/EXT">, "time_of_day": <string or ""> }
+    { "name": <string, e.g. "WAREHOUSE">, "int_ext": <"INT" | "EXT" | "INT/EXT" | "ABSTRACT" — "ABSTRACT" only for a non-physical space like a dream realm or void>, "time_of_day": <string or ""> }
+  ],
+  "props": [
+    { "name": <string: a NAMED, recurring artifact/object needing a consistent visual design — not generic one-off set dressing>, "description": <string, or ""> }
   ]
 }
 
-Even a commercial/montage script with no named characters usually implies people — list them with invented working names so they can be cast. No markdown fences. Pure JSON only.`;
+Even a commercial/montage script with no named characters usually implies people — list them with invented working names so they can be cast. Do not invent a "locations" entry for non-spatial slugs like "BLACK SCREEN" or "TITLE CARD". No markdown fences. Pure JSON only.`;
 
 /** Import the cast + locations from the project's script WITHOUT touching
  *  beats — safe to run on projects that already have storyboard work. */
@@ -82,13 +90,16 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const name = String(c.name ?? "").trim();
     if (!name || hasChar(name)) continue;
     const roleRaw = String(c.role ?? "Supporting");
+    const briefRaw = c.brief;
+    const brief: Character["brief"] = typeof briefRaw === "object" && briefRaw ? { ...(briefRaw as Character["brief"]) } : {};
+    if (!VALID_PHYSICAL_FORMS.includes(brief.physical_form ?? "")) brief.physical_form = "human";
     characters.create({
       project_id: id,
       name: name.slice(0, 80),
       role: (["Lead", "Supporting", "Featured"].includes(roleRaw) ? roleRaw : "Supporting") as Character["role"],
       scene_count: sceneCountFor(name),
       dialogue: Boolean(c.dialogue ?? true),
-      brief: typeof c.brief === "object" && c.brief ? (c.brief as Character["brief"]) : {}
+      brief
     });
     charsAdded++;
     addedNames.push(name);
@@ -101,29 +112,47 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   let locsAdded = 0;
   for (const l of locData) {
     const name = String(l.name ?? "").trim();
-    if (!name || hasLoc(name)) continue;
+    if (!name || NON_LOCATION_NAME.test(name) || hasLoc(name)) continue;
     const ie = String(l.int_ext ?? "INT");
     locations.create({
       project_id: id,
       name: name.slice(0, 80),
-      int_ext: (["INT", "EXT", "INT/EXT"].includes(ie) ? ie : "INT") as Location["int_ext"],
+      int_ext: (VALID_INT_EXT.includes(ie) ? ie : "INT") as Location["int_ext"],
       time_of_day: String(l.time_of_day ?? "") || undefined,
       scene_count: projectBeats.filter((b) => b.scene_heading.toLowerCase().includes(name.toLowerCase())).length
     });
     locsAdded++;
   }
 
-  if (charsAdded || locsAdded) {
+  const existingProps = props.forProject(id);
+  const hasProp = (name: string) =>
+    existingProps.some((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+  const propData = Array.isArray(parsed.props) ? (parsed.props as Record<string, unknown>[]) : [];
+  let propsAdded = 0;
+  for (const p of propData) {
+    const name = String(p.name ?? "").trim();
+    if (!name || hasProp(name)) continue;
+    props.create({
+      project_id: id,
+      name: name.slice(0, 120),
+      description: String(p.description ?? "").slice(0, 500),
+      scene_count: projectBeats.filter((b) => b.props.some((n) => n.trim().toLowerCase().includes(name.toLowerCase()))).length
+    });
+    propsAdded++;
+  }
+
+  if (charsAdded || locsAdded || propsAdded) {
     activity.append({
       project_id: id,
       agent: "casting-dir",
       kind: "success",
-      text: `**Casting Director** imported ${charsAdded} character(s) and ${locsAdded} location(s) from the script.`
+      text: `**Casting Director** imported ${charsAdded} character(s), ${locsAdded} location(s) and ${propsAdded} prop(s) from the script.`
     });
   }
 
   return NextResponse.json({
     ok: true,
+    props_added: propsAdded,
     characters_added: charsAdded,
     locations_added: locsAdded,
     added: addedNames

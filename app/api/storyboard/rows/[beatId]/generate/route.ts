@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
 
   const beat = db
     .prepare(
-      `SELECT b.id, b.title, b.scene_heading, b.characters, b.location_id, b.props, b.direction, b.project_id, p.aspect_ratio, p.premise, p.brand_kit, p.style_template
+      `SELECT b.id, b.title, b.scene_heading, b.characters, b.location_id, b.props, b.direction, b.project_id, p.aspect_ratio, p.premise, p.brand_kit, p.style_template, p.continuity_lock
        FROM beats b JOIN projects p ON p.id = b.project_id WHERE b.id = ?`
     )
     .get(beatId) as
@@ -48,6 +48,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
         premise: string;
         brand_kit: string;
         style_template: string;
+        continuity_lock: string;
       }
     | undefined;
   if (!beat) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
@@ -178,23 +179,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   // Project-wide style template — one stored look/wardrobe/vehicle lock applied
   // to every frame, so the style doesn't have to be retyped per shot (and can't
   // silently differ between them).
-  const styleLine = beat.style_template
-    ? `STYLE LOCK — these hold for every shot and must not change: ${beat.style_template}`
-    : "";
+  const styleLine = beat.style_template ? `STYLE LOCK
+${beat.style_template}` : "";
+  const continuityLine = beat.continuity_lock ? `CONTINUITY
+${beat.continuity_lock}` : "";
   // The director's shot for this beat — composition, light and continuity as
   // written in the script's DIRECTION block. Frames the image the way the
   // scene was directed instead of leaving it to the model.
-  const directionLine = beat.direction ? `SHOT DIRECTION — compose the frame exactly this way: ${beat.direction}` : "";
+  const directionLine = beat.direction ? `DIRECTION
+${beat.direction}` : "";
+  // Immutable blocks lead, then the one block that varies per beat (SHOT),
+  // then the reference locks and house style that must survive contact with it.
   const genPrompt = [
+    styleLine,
+    continuityLine,
+    directionLine,
+    `SHOT\n${prompt}`,
     castLock,
     locationLock,
     propLock,
-    prompt,
-    directionLine,
     brandLine,
     skill?.body ?? "",
-    antiGrid,
-    styleLine
+    antiGrid
   ]
     .filter(Boolean)
     .join("\n\n");

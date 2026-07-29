@@ -30,8 +30,8 @@ export async function POST(req: Request) {
 
   // Optional creative direction, set at birth so the very first script
   // generation already follows it.
-  const creative_brief = typeof body.creative_brief === "string" ? body.creative_brief.slice(0, 2000) : "";
-  const brand_kit = typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 1000) : "";
+  const creative_brief = typeof body.creative_brief === "string" ? body.creative_brief.slice(0, 8000) : "";
+  const brand_kit = typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 4000) : "";
   if (creative_brief || brand_kit) {
     projects.update(project.id, {
       creative_brief: creative_brief || undefined,

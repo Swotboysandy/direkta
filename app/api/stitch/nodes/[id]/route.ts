@@ -9,6 +9,7 @@ interface PatchBody {
   x?: number;
   y?: number;
   duration?: number;
+  trim_start?: number;
   scene_number?: number;
 }
 
@@ -31,6 +32,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (typeof body.duration === "number") {
     fields.push("duration = ?");
     values.push(body.duration);
+  }
+  if (typeof body.trim_start === "number") {
+    fields.push("trim_start = ?");
+    values.push(Math.max(0, body.trim_start));
   }
   if (Number.isFinite(body.scene_number)) {
     // Scene number snaps the node's x position into the right column.

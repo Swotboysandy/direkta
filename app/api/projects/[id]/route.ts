@@ -47,6 +47,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     creative_brief: typeof body.creative_brief === "string" ? body.creative_brief.slice(0, 8000) : undefined,
     brand_kit: typeof body.brand_kit === "string" ? body.brand_kit.slice(0, 4000) : undefined,
     style_template: typeof body.style_template === "string" ? body.style_template.slice(0, 4000) : undefined,
+    continuity_lock: typeof body.continuity_lock === "string" ? body.continuity_lock.slice(0, 4000) : undefined,
     script: typeof body.script === "string" ? body.script : undefined,
     script_submitted: typeof body.script_submitted === "boolean" ? body.script_submitted : undefined,
     script_ai_generated: typeof body.script_ai_generated === "boolean" ? body.script_ai_generated : undefined,

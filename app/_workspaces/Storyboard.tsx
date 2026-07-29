@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { motion } from "framer-motion";
 import {
+  Aperture,
   ArrowRight,
   Check,
   ChevronDown,
@@ -55,6 +56,8 @@ interface BeatStyle {
   lens?: string;
   movement?: string;
   shot_size?: string;
+  aperture?: string;
+  camera_body?: string;
   /** Cast members explicitly placed in this frame (reference-locked). */
   cast_override?: string[];
 }
@@ -86,6 +89,15 @@ const SHOT_SIZE_OPTIONS = ["Wide", "Medium", "Close", "Extreme close", "Two-shot
 const LENS_OPTIONS = ["24mm", "35mm", "50mm", "85mm", "135mm"];
 const MOVEMENT_OPTIONS = ["Locked", "Pan", "Tilt", "Dolly", "Handheld", "Push in", "Pull out", "Whip"];
 const ANGLE_OPTIONS = ["Eye level", "Low", "High", "Dutch", "Bird's eye", "Worm's eye"];
+const APERTURE_OPTIONS = ["f/1.4 (shallow DoF)", "f/2.8", "f/4 (balanced)", "f/8", "f/11 (deep focus)"];
+const CAMERA_BODY_OPTIONS = [
+  "Digital cine 8K",
+  "Full-frame cine digital",
+  "70mm film",
+  "16mm film",
+  "Anamorphic",
+  "Vintage prime"
+];
 
 /**
  * Shot recipes — one click sets shot size + angle + lens + movement together,
@@ -97,7 +109,7 @@ interface ShotRecipe {
   id: string;
   label: string;
   hint: string;
-  style: { shot_size: string; camera_angle: string; lens: string; movement: string };
+  style: { shot_size: string; camera_angle: string; lens: string; movement: string; aperture: string; camera_body: string };
 }
 
 const SHOT_RECIPES: ShotRecipe[] = [
@@ -105,61 +117,61 @@ const SHOT_RECIPES: ShotRecipe[] = [
     id: "establishing",
     label: "Establishing wide",
     hint: "Sets the scene — wide, high angle, locked",
-    style: { shot_size: "Establishing", camera_angle: "High", lens: "24mm", movement: "Locked" }
+    style: { shot_size: "Establishing", camera_angle: "High", lens: "24mm", movement: "Locked", aperture: "f/11 (deep focus)", camera_body: "Digital cine 8K" }
   },
   {
     id: "hero-product",
     label: "Hero / product",
     hint: "Clean close-up on a face or product, eye level",
-    style: { shot_size: "Close", camera_angle: "Eye level", lens: "85mm", movement: "Locked" }
+    style: { shot_size: "Close", camera_angle: "Eye level", lens: "85mm", movement: "Locked", aperture: "f/2.8", camera_body: "Full-frame cine digital" }
   },
   {
     id: "talking-head",
     label: "Talking head",
     hint: "Dialogue coverage, natural lens, locked off",
-    style: { shot_size: "Medium", camera_angle: "Eye level", lens: "50mm", movement: "Locked" }
+    style: { shot_size: "Medium", camera_angle: "Eye level", lens: "50mm", movement: "Locked", aperture: "f/4 (balanced)", camera_body: "Full-frame cine digital" }
   },
   {
     id: "two-shot",
     label: "Two-shot dialogue",
     hint: "Two people in frame, eye level, locked",
-    style: { shot_size: "Two-shot", camera_angle: "Eye level", lens: "35mm", movement: "Locked" }
+    style: { shot_size: "Two-shot", camera_angle: "Eye level", lens: "35mm", movement: "Locked", aperture: "f/4 (balanced)", camera_body: "Full-frame cine digital" }
   },
   {
     id: "over-shoulder",
     label: "Over-the-shoulder",
     hint: "Conversation reverse angle",
-    style: { shot_size: "Over-shoulder", camera_angle: "Eye level", lens: "50mm", movement: "Locked" }
+    style: { shot_size: "Over-shoulder", camera_angle: "Eye level", lens: "50mm", movement: "Locked", aperture: "f/2.8", camera_body: "Full-frame cine digital" }
   },
   {
     id: "action",
     label: "Action / movement",
     hint: "Low angle, wide lens, handheld energy",
-    style: { shot_size: "Medium", camera_angle: "Low", lens: "24mm", movement: "Handheld" }
+    style: { shot_size: "Medium", camera_angle: "Low", lens: "24mm", movement: "Handheld", aperture: "f/8", camera_body: "16mm film" }
   },
   {
     id: "emotional-cu",
     label: "Emotional close-up",
     hint: "Extreme close, compressed lens, intimate",
-    style: { shot_size: "Extreme close", camera_angle: "Eye level", lens: "85mm", movement: "Locked" }
+    style: { shot_size: "Extreme close", camera_angle: "Eye level", lens: "85mm", movement: "Locked", aperture: "f/1.4 (shallow DoF)", camera_body: "Vintage prime" }
   },
   {
     id: "dutch-tension",
     label: "Dutch tension",
     hint: "Tilted frame, handheld, unease",
-    style: { shot_size: "Medium", camera_angle: "Dutch", lens: "35mm", movement: "Handheld" }
+    style: { shot_size: "Medium", camera_angle: "Dutch", lens: "35mm", movement: "Handheld", aperture: "f/2.8", camera_body: "16mm film" }
   },
   {
     id: "insert-detail",
     label: "Insert / detail",
     hint: "A single object or hand action, tight",
-    style: { shot_size: "Insert", camera_angle: "Eye level", lens: "85mm", movement: "Locked" }
+    style: { shot_size: "Insert", camera_angle: "Eye level", lens: "85mm", movement: "Locked", aperture: "f/2.8", camera_body: "Full-frame cine digital" }
   },
   {
     id: "sweeping-reveal",
     label: "Sweeping reveal",
     hint: "Wide shot pulling back to open up the space",
-    style: { shot_size: "Wide", camera_angle: "High", lens: "24mm", movement: "Pull out" }
+    style: { shot_size: "Wide", camera_angle: "High", lens: "24mm", movement: "Pull out", aperture: "f/11 (deep focus)", camera_body: "70mm film" }
   }
 ];
 
@@ -449,7 +461,8 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
       if (data?.ok) {
         const lockedBits = [
           data.locked_cast?.length ? `cast: ${data.locked_cast.join(", ")}` : null,
-          data.locked_location ? `location: ${data.locked_location}` : null
+          data.locked_location ? `location: ${data.locked_location}` : null,
+          data.locked_props?.length ? `props: ${data.locked_props.join(", ")}` : null
         ].filter(Boolean);
         flashToast(
           "success",
@@ -997,6 +1010,7 @@ function BeatEditor({
     beatStyle.prompt_override || defaultPromptFor(beat, beatStyle, globalStyle)
   );
   const [framingOpen, setFramingOpen] = useState(false);
+  const [lensPickerOpen, setLensPickerOpen] = useState(false);
   const [recipeOpen, setRecipeOpen] = useState(false);
   // Camera/style selects must actually reach the generator: recompose the
   // prompt whenever a setting changes, unless the director hand-edited it.
@@ -1010,6 +1024,8 @@ function BeatEditor({
     beatStyle.camera_angle,
     beatStyle.lens,
     beatStyle.movement,
+    beatStyle.aperture,
+    beatStyle.camera_body,
     beatStyle.visual,
     beatStyle.light,
     beatStyle.temp,
@@ -1211,6 +1227,12 @@ function BeatEditor({
           >
             <LayoutGrid size={11} /> 3×3 framing
           </button>
+          <button
+            className="sb-ghost-btn"
+            onClick={() => setLensPickerOpen(true)}
+          >
+            <Aperture size={11} /> Lens & camera
+          </button>
         </div>
         <div className="beat-editor-grid">
           <EditorSelect
@@ -1236,6 +1258,18 @@ function BeatEditor({
             value={beatStyle.movement ?? "Locked"}
             options={MOVEMENT_OPTIONS}
             onChange={(v) => onPatchRow({ style: { movement: v } })}
+          />
+          <EditorSelect
+            label="Aperture"
+            value={beatStyle.aperture ?? "f/4 (balanced)"}
+            options={APERTURE_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { aperture: v } })}
+          />
+          <EditorSelect
+            label="Camera / stock"
+            value={beatStyle.camera_body ?? "Full-frame cine digital"}
+            options={CAMERA_BODY_OPTIONS}
+            onChange={(v) => onPatchRow({ style: { camera_body: v } })}
           />
         </div>
       </div>
@@ -1348,6 +1382,14 @@ function BeatEditor({
           onClose={() => setFramingOpen(false)}
         />
       )}
+      {lensPickerOpen && (
+        <LensCameraPicker
+          current={{ aperture: beatStyle.aperture, camera_body: beatStyle.camera_body }}
+          onPickAperture={(aperture) => onPatchRow({ style: { aperture } })}
+          onPickCamera={(camera_body) => onPatchRow({ style: { camera_body } })}
+          onClose={() => setLensPickerOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1384,12 +1426,14 @@ function defaultPromptFor(beat: Beat, beatStyle: BeatStyle, globalStyle: GlobalS
   const angle = beatStyle.camera_angle ?? "Eye level";
   const lens = beatStyle.lens ?? "35mm";
   const movement = beatStyle.movement ?? "Locked";
+  const aperture = beatStyle.aperture ?? "f/4 (balanced)";
+  const cameraBody = beatStyle.camera_body ?? "Full-frame cine digital";
   // Script cast ∪ hand-picked cast — everyone named here gets reference-locked.
   const names = [...beat.characters];
   for (const n of beatStyle.cast_override ?? []) {
     if (!names.some((x) => x.trim().toLowerCase() === n.trim().toLowerCase())) names.push(n);
   }
-  return `${shot} shot, ${angle.toLowerCase()} angle, ${lens}, ${movement.toLowerCase()} camera. ${beat.scene_heading}. ${beat.title}. ${names.length ? `Featuring ${names.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
+  return `${shot} shot, ${angle.toLowerCase()} angle, ${lens}, ${movement.toLowerCase()} camera. Shot on ${cameraBody.toLowerCase()}, ${aperture}. ${beat.scene_heading}. ${beat.title}. ${names.length ? `Featuring ${names.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
 }
 
 /* ───────────────────────── Bottom Strip ───────────────────────── */
@@ -1644,6 +1688,8 @@ function FrameLightbox({
                 <LightboxKV k="Angle" v={row?.style.camera_angle ?? "—"} />
                 <LightboxKV k="Lens" v={row?.style.lens ?? "—"} />
                 <LightboxKV k="Movement" v={row?.style.movement ?? "—"} />
+                <LightboxKV k="Aperture" v={row?.style.aperture ?? "—"} />
+                <LightboxKV k="Camera / stock" v={row?.style.camera_body ?? "—"} />
               </div>
             </section>
 
@@ -1861,6 +1907,151 @@ function FramingGlyph({ shot, angle }: { shot: string; angle: string }) {
         <circle cx="48" cy={cy - r * 0.5} r={r * 0.5} fill="var(--accent)" />
         <rect x={48 - r} y={cy} width={r * 2} height={r * 1.1} rx={r * 0.4} fill="var(--accent)" />
       </g>
+    </svg>
+  );
+}
+
+/**
+ * Lens & camera picker — same modal/grid styling as the 3×3 framing picker,
+ * so aperture and camera-stock choices get the same "see it before you pick
+ * it" treatment instead of a blind dropdown.
+ */
+function LensCameraPicker({
+  current,
+  onPickAperture,
+  onPickCamera,
+  onClose
+}: {
+  current: { aperture?: string; camera_body?: string };
+  onPickAperture: (v: string) => void;
+  onPickCamera: (v: string) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal sb-framing" onClick={(e) => e.stopPropagation()}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <span className="t-eyebrow">CINEMATOGRAPHER</span>
+            <h2 className="t-h3" style={{ marginTop: "var(--sp-2)" }}>Pick lens & camera</h2>
+            <p className="t-mute" style={{ fontSize: 12, marginTop: 4, maxWidth: "44ch" }}>
+              See the depth-of-field and stock look before you commit this beat to it.
+            </p>
+          </div>
+          <button className="btn btn-sm btn-ghost" onClick={onClose} aria-label="Close">
+            <X size={14} />
+          </button>
+        </header>
+
+        <span className="t-eyebrow" style={{ display: "block", margin: "var(--sp-3) 0 var(--sp-2)" }}>
+          Aperture · depth of field
+        </span>
+        <div className="sb-framing-grid">
+          {APERTURE_OPTIONS.map((a) => (
+            <button
+              key={a}
+              className="sb-framing-cell"
+              data-active={current.aperture ? current.aperture === a : a === "f/4 (balanced)"}
+              onClick={() => onPickAperture(a)}
+            >
+              <ApertureGlyph value={a} />
+              <span className="sb-framing-label">{a}</span>
+            </button>
+          ))}
+        </div>
+
+        <span className="t-eyebrow" style={{ display: "block", margin: "var(--sp-4) 0 var(--sp-2)" }}>
+          Camera / stock · optical character
+        </span>
+        <div className="sb-framing-grid">
+          {CAMERA_BODY_OPTIONS.map((c) => (
+            <button
+              key={c}
+              className="sb-framing-cell"
+              data-active={current.camera_body ? current.camera_body === c : c === "Full-frame cine digital"}
+              onClick={() => onPickCamera(c)}
+            >
+              <CameraStockGlyph value={c} />
+              <span className="sb-framing-label">{c}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Sharp subject disc + a background disc blurred proportional to how
+ *  shallow the stop is — f/1.4 melts the background, f/11 keeps it crisp. */
+function ApertureGlyph({ value }: { value: string }) {
+  const blur = value.startsWith("f/1.4")
+    ? 4.5
+    : value.startsWith("f/2.8")
+      ? 2.6
+      : value.startsWith("f/4")
+        ? 1.4
+        : value.startsWith("f/8")
+          ? 0.5
+          : 0;
+  const id = `sb-ap-blur-${value.replace(/[^a-z0-9]/gi, "")}`;
+  return (
+    <svg viewBox="0 0 96 60" className="sb-framing-glyph" aria-hidden="true">
+      <defs>
+        <filter id={id}>
+          <feGaussianBlur stdDeviation={blur} />
+        </filter>
+      </defs>
+      <rect x="6" y="6" width="84" height="48" rx="4" fill="var(--bg)" stroke="var(--ink)" strokeWidth="1.5" />
+      <g filter={`url(#${id})`}>
+        <circle cx="26" cy="20" r="9" fill="var(--mute)" opacity="0.6" />
+        <circle cx="70" cy="42" r="7" fill="var(--mute)" opacity="0.6" />
+      </g>
+      <circle cx="48" cy="32" r="10" fill="var(--accent)" />
+    </svg>
+  );
+}
+
+/** Frame texture per stock — grain density for film, clean lines for
+ *  digital, a horizontal streak for anamorphic, warm vignette for vintage. */
+function CameraStockGlyph({ value }: { value: string }) {
+  const isFilm = value.includes("film");
+  const isAnamorphic = value === "Anamorphic";
+  const isVintage = value === "Vintage prime";
+  const grainCount = value === "16mm film" ? 22 : value === "70mm film" ? 10 : 0;
+  const grain = Array.from({ length: grainCount }, (_, i) => {
+    const gx = 10 + ((i * 37) % 78);
+    const gy = 10 + ((i * 19) % 42);
+    return <circle key={i} cx={gx} cy={gy} r={0.8} fill="var(--ink)" opacity="0.25" />;
+  });
+  return (
+    <svg viewBox="0 0 96 60" className="sb-framing-glyph" aria-hidden="true">
+      <rect
+        x="6"
+        y="6"
+        width="84"
+        height="48"
+        rx="4"
+        fill={isVintage ? "color-mix(in srgb, var(--mustard) 14%, var(--bg))" : "var(--bg)"}
+        stroke="var(--ink)"
+        strokeWidth="1.5"
+      />
+      {isFilm && grain}
+      {isAnamorphic && <ellipse cx="48" cy="30" rx="26" ry="6" fill="var(--accent)" opacity="0.35" />}
+      {isVintage && (
+        <>
+          <circle cx="14" cy="12" r="12" fill="var(--ink)" opacity="0.08" />
+          <circle cx="82" cy="48" r="12" fill="var(--ink)" opacity="0.08" />
+        </>
+      )}
+      <circle cx="48" cy="30" r={isAnamorphic ? 5 : 8} fill="var(--accent)" />
     </svg>
   );
 }

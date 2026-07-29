@@ -406,7 +406,39 @@ export function Screenplay({
                     body: JSON.stringify({ style_template: e.target.value })
                   }).catch(() => {})
                 }
-                placeholder="e.g. 35mm anamorphic, golden dusk light · UTKARSH always in an olive overshirt over a blue tee · the car is always a small white Maruti Swift hatchback, never an SUV"
+                placeholder="e.g. 35mm anamorphic, golden dusk light, deep greens and warm amber — photoreal, never painterly or CGI"
+                rows={2}
+                maxLength={4000}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  border: 0,
+                  borderRadius: 14,
+                  boxShadow: "inset 0 0 0 1px var(--cream-deep)",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  resize: "vertical",
+                  outline: "none"
+                }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ ...mono10, color: "var(--mute)" }}>
+                Continuity · who and what must stay identical in every shot
+              </span>
+              <textarea
+                defaultValue={project.continuity_lock}
+                onBlur={(e) =>
+                  fetch(`/api/projects/${project.id}`, {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ continuity_lock: e.target.value })
+                  }).catch(() => {})
+                }
+                placeholder="e.g. UTKARSH always in an olive overshirt over a blue tee · the car is always a small white Maruti Swift hatchback, never an SUV"
                 rows={2}
                 maxLength={4000}
                 style={{

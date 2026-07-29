@@ -20,6 +20,7 @@ import { ArrowRight, Film, Pause, Play, Trash2, X } from "../_components/icons";
 import { fadeUp, popIn } from "../_components/motion";
 import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
 import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, videoModel, CAMERA_MOTIONS } from "../../lib/higgsfield/catalog";
+import { LIPSYNC_MODELS, DEFAULT_LIPSYNC_MODEL } from "../../lib/lipsync/catalog";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
 
 interface Balance {
@@ -36,6 +37,7 @@ interface StitchNode {
   x: number;
   y: number;
   duration: number;
+  trim_start: number;
   beat: {
     n: number;
     title: string;
@@ -46,6 +48,9 @@ interface StitchNode {
   frame_url: string | null;
   clip_url: string | null;
   clip_state: string;
+  dialogue_audio_url: string | null;
+  lipsync_state: string;
+  lipsync_url: string | null;
 }
 
 interface Transition {
@@ -141,7 +146,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     return () => clearTimeout(t);
   }, [rfNodes.length]);
 
-  async function patchNode(id: string, patch: { x?: number; y?: number; duration?: number; scene_number?: number }) {
+  async function patchNode(id: string, patch: { x?: number; y?: number; duration?: number; trim_start?: number; scene_number?: number }) {
     await fetch(`/api/stitch/nodes/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
@@ -167,6 +172,11 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     await patchNode(node.id, { duration });
   }
 
+  async function setTrimStart(node: StitchNode, trim_start: number) {
+    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, trim_start } : n)));
+    await patchNode(node.id, { trim_start });
+  }
+
   async function animate(
     node: StitchNode,
     modelId?: string,
@@ -187,6 +197,55 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     }
     await reload();
     loadBalance(); // credits changed
+    return data;
+  }
+
+  async function uploadClip(node: StitchNode, file: File): Promise<{ error?: string } | null> {
+    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, clip_state: "generating" } : n)));
+    const form = new FormData();
+    form.append("file", file);
+    let data: { ok?: boolean; error?: string } | null = null;
+    try {
+      const res = await fetch(`/api/stitch/nodes/${node.id}/upload-clip`, { method: "POST", body: form });
+      data = await res.json().catch(() => null);
+    } catch {
+      /* network error surfaced via reload state */
+    }
+    await reload();
+    return data;
+  }
+
+  async function uploadDialogue(node: StitchNode, file: File): Promise<{ error?: string } | null> {
+    const form = new FormData();
+    form.append("file", file);
+    let data: { ok?: boolean; error?: string } | null = null;
+    try {
+      const res = await fetch(`/api/stitch/nodes/${node.id}/dialogue`, { method: "POST", body: form });
+      data = await res.json().catch(() => null);
+    } catch {
+      /* network error surfaced via reload state */
+    }
+    await reload();
+    return data;
+  }
+
+  async function lipsync(
+    node: StitchNode,
+    modelId?: string
+  ): Promise<{ ok?: boolean; error?: string; vendor?: string } | null> {
+    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, lipsync_state: "generating" } : n)));
+    let data: { ok?: boolean; error?: string; vendor?: string } | null = null;
+    try {
+      const res = await fetch(`/api/stitch/nodes/${node.id}/lipsync`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ model: modelId ?? DEFAULT_LIPSYNC_MODEL })
+      });
+      data = await res.json().catch(() => null);
+    } catch {
+      /* network error surfaced via reload state */
+    }
+    await reload();
     return data;
   }
 
@@ -463,8 +522,12 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             onClose={() => setSelectedId(null)}
             onSetSceneNumber={(scene) => setSceneNumber(selected, scene)}
             onSetDuration={(duration) => setDuration(selected, duration)}
+            onSetTrimStart={(trim_start) => setTrimStart(selected, trim_start)}
             balance={balance}
             onAnimate={(modelId, motion, audio) => animate(selected, modelId, motion, audio)}
+            onUploadClip={(file) => uploadClip(selected, file)}
+            onUploadDialogue={(file) => uploadDialogue(selected, file)}
+            onLipsync={(modelId) => lipsync(selected, modelId)}
             onDelete={() => {
               if (confirm("Remove this frame from Stitch? The transition clips connected to it will also be removed.")) {
                 deleteNode(selected.id);
@@ -862,8 +925,12 @@ function StitchInspector({
   onClose,
   onSetSceneNumber,
   onSetDuration,
+  onSetTrimStart,
   balance,
   onAnimate,
+  onUploadClip,
+  onUploadDialogue,
+  onLipsync,
   onDelete
 }: {
   node: StitchNode;
@@ -871,21 +938,32 @@ function StitchInspector({
   onClose: () => void;
   onSetSceneNumber: (n: number) => void;
   onSetDuration: (d: number) => void;
+  onSetTrimStart: (t: number) => void;
   balance: Balance | null;
   onAnimate: (
     modelId: string,
     motion: string,
     audio: boolean
   ) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
+  onUploadClip: (file: File) => Promise<{ error?: string } | null>;
+  onUploadDialogue: (file: File) => Promise<{ error?: string } | null>;
+  onLipsync: (modelId?: string) => Promise<{ ok?: boolean; error?: string; vendor?: string } | null>;
   onDelete: () => void;
 }) {
   const [scene, setScene] = useState<number>(node.beat?.n ?? 1);
   const [duration, setDurationLocal] = useState<number>(node.duration);
+  const [trimStart, setTrimStartLocal] = useState<number>(node.trim_start);
   const [animating, setAnimating] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string>(DEFAULT_VIDEO_MODEL);
   const [motionId, setMotionId] = useState<string>("auto");
   const [audioOn, setAudioOn] = useState<boolean>(false);
+  const [lipsyncModelId, setLipsyncModelId] = useState<string>(DEFAULT_LIPSYNC_MODEL);
+  const [uploadingClip, setUploadingClip] = useState(false);
+  const [uploadClipNote, setUploadClipNote] = useState<string | null>(null);
+  const [uploadingDialogue, setUploadingDialogue] = useState(false);
+  const [lipsyncing, setLipsyncing] = useState(false);
+  const [lipsyncNote, setLipsyncNote] = useState<string | null>(null);
   const model = videoModel(modelId);
   const isHiggs = model.provider !== "byteplus";
   const credits = balance?.credits ?? null;
@@ -894,8 +972,9 @@ function StitchInspector({
   useEffect(() => {
     setScene(node.beat?.n ?? 1);
     setDurationLocal(node.duration);
+    setTrimStartLocal(node.trim_start);
     setNote(null);
-  }, [node.id, node.beat?.n, node.duration]);
+  }, [node.id, node.beat?.n, node.duration, node.trim_start]);
 
   return (
     <motion.aside
@@ -953,7 +1032,7 @@ function StitchInspector({
         <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "#14100c", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video
-            src={node.clip_url}
+            src={node.lipsync_url ?? node.clip_url}
             poster={node.frame_url ?? undefined}
             controls
             loop
@@ -976,7 +1055,7 @@ function StitchInspector({
               pointerEvents: "none"
             }}
           >
-            ▶ Clip ready
+            {node.lipsync_url ? "▶ Lip-synced" : "▶ Clip ready"}
           </span>
         </div>
       ) : node.frame_url ? (
@@ -1080,6 +1159,24 @@ function StitchInspector({
           onMouseUp={() => onSetDuration(duration)}
           onTouchEnd={() => onSetDuration(duration)}
           style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
+        />
+      </div>
+
+      <div>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          Trim in-point · {trimStart.toFixed(1)}s into the clip
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={9.5}
+          step={0.5}
+          value={trimStart}
+          onChange={(e) => setTrimStartLocal(Number(e.target.value))}
+          onMouseUp={() => onSetTrimStart(trimStart)}
+          onTouchEnd={() => onSetTrimStart(trimStart)}
+          style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
+          title="Which second of the generated clip to start keeping from — useful for a short beat that only needs a few seconds out of a longer take"
         />
       </div>
 
@@ -1225,6 +1322,153 @@ function StitchInspector({
       {note && (
         <p style={{ fontSize: 11, marginTop: 8, lineHeight: 1.4, color: "var(--mute)" }}>{note}</p>
       )}
+
+      <label
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          padding: "8px 14px",
+          fontWeight: 600,
+          fontSize: 13,
+          color: "var(--ink)",
+          background: "var(--surface-2)",
+          borderRadius: 999,
+          cursor: uploadingClip ? "default" : "pointer",
+          opacity: uploadingClip ? 0.6 : 1
+        }}
+        title="Attach a clip you generated somewhere else (e.g. Higgsfield's own web app) instead of generating one here"
+      >
+        <input
+          type="file"
+          accept=".mp4,.mov,.webm"
+          disabled={uploadingClip}
+          style={{ display: "none" }}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            setUploadingClip(true);
+            setUploadClipNote(null);
+            try {
+              const res = await onUploadClip(file);
+              if (res?.error) setUploadClipNote(res.error);
+            } finally {
+              setUploadingClip(false);
+            }
+          }}
+        />
+        {uploadingClip ? "Uploading…" : "Upload a clip instead"}
+      </label>
+      {uploadClipNote && (
+        <p style={{ fontSize: 11, lineHeight: 1.4, color: "var(--mute)" }}>{uploadClipNote}</p>
+      )}
+
+      <div style={{ borderTop: "1px solid var(--cream-deep)", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          Lip sync {node.dialogue_audio_url ? "· dialogue attached" : "· no dialogue yet"}
+        </span>
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: "8px 14px",
+            fontWeight: 600,
+            fontSize: 13,
+            color: "var(--ink)",
+            background: "var(--surface-2)",
+            borderRadius: 999,
+            cursor: uploadingDialogue ? "default" : "pointer",
+            opacity: uploadingDialogue ? 0.6 : 1
+          }}
+        >
+          <input
+            type="file"
+            accept=".mp3,.m4a,.wav,.aac"
+            disabled={uploadingDialogue}
+            style={{ display: "none" }}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              setUploadingDialogue(true);
+              setLipsyncNote(null);
+              try {
+                const res = await onUploadDialogue(file);
+                if (res?.error) setLipsyncNote(res.error);
+              } finally {
+                setUploadingDialogue(false);
+              }
+            }}
+          />
+          {uploadingDialogue ? "Uploading…" : node.dialogue_audio_url ? "Replace dialogue track" : "Upload dialogue track"}
+        </label>
+        <select
+          value={lipsyncModelId}
+          onChange={(e) => setLipsyncModelId(e.target.value)}
+          title="Sync.so lip-sync model — billed on your own Sync.so account, separate from the BytePlus balance above"
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            background: "var(--bg)",
+            color: "var(--ink)",
+            border: "none",
+            borderRadius: 12,
+            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
+            fontFamily: "var(--font-ui)",
+            fontSize: 13
+          }}
+        >
+          {LIPSYNC_MODELS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label} · {m.costText}
+            </option>
+          ))}
+        </select>
+        <button
+          disabled={lipsyncing || !node.dialogue_audio_url || (!node.clip_url && !node.frame_url)}
+          onClick={async () => {
+            setLipsyncNote(null);
+            setLipsyncing(true);
+            try {
+              const res = await onLipsync(lipsyncModelId);
+              if (res?.error) setLipsyncNote(res.error);
+              else if (res?.ok) setLipsyncNote(`Lip-synced by ${res.vendor ?? "Sync.so"}.`);
+            } finally {
+              setLipsyncing(false);
+            }
+          }}
+          style={{
+            width: "100%",
+            justifyContent: "center",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 14px",
+            fontWeight: 600,
+            fontSize: 13,
+            color: "var(--ink)",
+            background: "var(--surface-2)",
+            border: "none",
+            borderRadius: 999,
+            cursor: "pointer",
+            opacity: lipsyncing || !node.dialogue_audio_url || (!node.clip_url && !node.frame_url) ? 0.5 : 1
+          }}
+        >
+          {lipsyncing || node.lipsync_state === "generating"
+            ? "Syncing…"
+            : node.lipsync_url
+              ? "Re-sync lips"
+              : "Sync lips to dialogue"}
+        </button>
+        {lipsyncNote && (
+          <p style={{ fontSize: 11, lineHeight: 1.4, color: "var(--mute)" }}>{lipsyncNote}</p>
+        )}
+      </div>
+
       <button
         onClick={onDelete}
         style={{

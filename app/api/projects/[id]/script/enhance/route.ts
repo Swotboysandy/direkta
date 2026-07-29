@@ -35,17 +35,28 @@ Rewrite the script you are given. Keep the writer's story, characters and intent
 - Cut anything unfilmable (interior thought, backstory told not shown) and replace it with an image that carries the same meaning.
 - Keep dialogue lean and spoken-sounding. Trim any line an actor would fight you over.
 
-Then make it shootable. After each scene's action and dialogue, append a DIRECTION block:
+Then make it shootable. After each scene's action and dialogue, append a DIRECTION block.
+
+Each scene becomes ONE clip of roughly 8–15 seconds, and that clip is directed as a
+sequence of timecoded movements — not one static description. This is what makes a
+generated shot read as directed footage instead of a drifting animation:
 
 DIRECTION
-> SHOT: the frame — size (WIDE/MEDIUM/CLOSE/INSERT), angle, and what is composed where
-> MOVE: camera motion, or LOCKED if none
+> BEATS:
+>   (0–4s): what happens, framed — shot size, what the subject does, the expression
+>   (4–9s): the next movement, and how the camera answers it
+>   (9–13s): the turn or escalation
+>   (13–15s): the button — the last image before the cut
+> MOVE: camera motion per beat — static, tilt, whip-pan, dutch, tracking, push-in, slow-mo. Never leave it ambiguous.
 > LIGHT: source, direction, time of day, quality
-> SOUND: ambience, and any specific effect the cut needs
+> SOUND: ambience plus specific impact cues placed on the beat they land on
 > CONTINUITY: exactly what carries in from the previous scene — wardrobe, vehicle, props, light level, who is where
+> HANDOFF: the last frame of this scene and the first frame of the next, written so they meet — a match cut, a continued movement, or a flash the next scene resumes from
 
 Rules for DIRECTION:
 - One block per scene. Never merge scenes.
+- Timecodes must cover the whole clip and never overlap.
+- Anchor dialogue to a physical beat (a stance, a turn, a hand on a door) so it isn't cut as a transition.
 - CONTINUITY must name concrete objects, never "as before".
 - Describe only what a camera can see.
 

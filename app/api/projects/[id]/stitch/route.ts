@@ -11,6 +11,10 @@ interface NodeRow {
   x: number;
   y: number;
   duration: number;
+  trim_start: number;
+  dialogue_audio_url: string | null;
+  lipsync_state: string | null;
+  lipsync_url: string | null;
   beat_n: number | null;
   beat_title: string | null;
   beat_scene: string | null;
@@ -42,13 +46,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
      URL is resolved via whichever variant id wins, with COALESCE. */
   const nodes = db
     .prepare(
-      `SELECT sn.id, sn.beat_id, sn.variant_id, sn.x, sn.y, sn.duration,
+      `SELECT sn.id, sn.beat_id, sn.variant_id, sn.x, sn.y, sn.duration, sn.trim_start,
+              sn.dialogue_audio_url, sn.lipsync_state,
               b.n as beat_n, b.title as beat_title, b.scene_heading as beat_scene,
               b.characters as beat_chars, b.location_id as beat_loc,
               sr.selected_variant_id,
               v.n as variant_n,
               COALESCE(a_direct.url, a_selected.url) as variant_url,
-              sn.clip_state, a_clip.url as clip_url
+              sn.clip_state, a_clip.url as clip_url, a_lipsync.url as lipsync_url
        FROM stitch_nodes sn
        LEFT JOIN beats b ON b.id = sn.beat_id
        LEFT JOIN storyboard_rows sr ON sr.beat_id = sn.beat_id
@@ -56,6 +61,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
        LEFT JOIN assets a_direct ON a_direct.target_id = sn.variant_id AND a_direct.target_kind = 'storyboard_variant'
        LEFT JOIN assets a_selected ON a_selected.target_id = sr.selected_variant_id AND a_selected.target_kind = 'storyboard_variant'
        LEFT JOIN assets a_clip ON a_clip.id = sn.clip_asset_id
+       LEFT JOIN assets a_lipsync ON a_lipsync.id = sn.lipsync_asset_id
        WHERE sn.project_id = ?
        ORDER BY sn.x ASC, sn.y ASC`
     )
@@ -80,6 +86,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       x: n.x,
       y: n.y,
       duration: n.duration,
+      trim_start: n.trim_start ?? 0,
+      dialogue_audio_url: n.dialogue_audio_url,
+      lipsync_state: n.lipsync_state ?? "none",
+      lipsync_url: n.lipsync_url,
       beat: n.beat_id
         ? {
             n: n.beat_n,

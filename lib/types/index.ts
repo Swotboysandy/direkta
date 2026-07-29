@@ -81,6 +81,12 @@ export interface Project {
    *  small white Maruti Swift hatchback". Folded into every image AND video
    *  prompt so look, wardrobe and vehicles can't drift between shots. */
   style_template: string;
+  /** Continuity lock — who and what must stay identical across every shot:
+   *  character designs, wardrobe, vehicles, palette, world rules, set geography.
+   *  Kept separate from style_template because the medium and the cast are
+   *  different kinds of constraint (Higgsfield's own reference projects split
+   *  them the same way: STYLE LOCK / CONTINUITY / DIRECTION / SHOT). */
+  continuity_lock: string;
   /* Movie Bible — title page + synopsis + production meta */
   genre: string;
   tagline: string;

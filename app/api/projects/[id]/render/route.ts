@@ -60,6 +60,7 @@ const TITLE_DUR = 2.6; // title card seconds
 interface ShotRow {
   id: string;
   duration: number;
+  trim_start: number;
   x: number;
   frame_url: string | null;
   clip_url: string | null;
@@ -119,14 +120,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const shots = getDb()
     .prepare(
-      `SELECT sn.id, sn.duration, sn.x,
+      `SELECT sn.id, sn.duration, sn.trim_start, sn.x,
               COALESCE(a_direct.url, a_selected.url) as frame_url,
-              a_clip.url as clip_url
+              COALESCE(a_lipsync.url, a_clip.url) as clip_url
        FROM stitch_nodes sn
        LEFT JOIN storyboard_rows sr ON sr.beat_id = sn.beat_id
        LEFT JOIN assets a_direct ON a_direct.target_id = sn.variant_id AND a_direct.target_kind = 'storyboard_variant'
        LEFT JOIN assets a_selected ON a_selected.target_id = sr.selected_variant_id AND a_selected.target_kind = 'storyboard_variant'
        LEFT JOIN assets a_clip ON a_clip.id = sn.clip_asset_id
+       LEFT JOIN assets a_lipsync ON a_lipsync.id = sn.lipsync_asset_id
        WHERE sn.project_id = ?
        ORDER BY sn.x ASC, sn.y ASC`
     )
@@ -143,9 +145,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
           : frame && fs.existsSync(frame)
             ? { kind: "still" as const, file: frame }
             : null;
-      return src ? { ...src, duration: Math.max(1.2, s.duration || 3) } : null;
+      return src ? { ...src, duration: Math.max(1.2, s.duration || 3), trimStart: Math.max(0, s.trim_start || 0) } : null;
     })
-    .filter(Boolean) as Array<{ kind: "clip" | "still"; file: string; duration: number }>;
+    .filter(Boolean) as Array<{ kind: "clip" | "still"; file: string; duration: number; trimStart: number }>;
 
   if (sources.length === 0) {
     return NextResponse.json(
@@ -223,7 +225,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       } else {
         const vf = `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=24,format=yuv420p`;
         const clipHasAudio = await hasAudioStream(s.file);
-        const args = ["-y", "-t", String(s.duration), "-i", s.file];
+        // -ss before -i seeks into the source first — lets a short beat (e.g.
+        // a 2s sting) keep the best few seconds of a longer generated clip
+        // instead of always starting from frame zero.
+        const args = ["-y", ...(s.trimStart > 0 ? ["-ss", String(s.trimStart)] : []), "-t", String(s.duration), "-i", s.file];
         if (!clipHasAudio) args.push(...silentAudio);
         else hasRealAudio = true;
         args.push(

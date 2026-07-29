@@ -25,6 +25,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const project = projects.get(character.project_id);
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
+  // Abstract presences (pure voice-over / narration, never physically shown)
+  // never get a portrait — there's nothing to draw, and a generated face
+  // would contradict the script. Refuse before touching any generator.
+  if (character.brief?.physical_form === "abstract") {
+    return NextResponse.json({
+      ok: false,
+      protected: true,
+      note: `${character.name} is written as a voice-only presence — no portrait is generated for characters never physically shown on screen.`
+    });
+  }
+
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
   const vendor = vendors.firstEnabledImage();
@@ -44,7 +55,11 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   // ── Real roll — generate a portrait and store it as a look ───────────────
   const base = buildPortraitPrompt(character, project.premise);
   const skill = skillForPart("casting");
-  const prompt = skill?.body ? `${base}\n\n${skill.body}` : base;
+  // The casting skill's house style assumes a human subject ("one person
+  // only, calm eyeline to camera") — appending it for a creature/colossus
+  // fights the very prompt that's trying to describe a non-human body.
+  const isHuman = (character.brief?.physical_form ?? "human") === "human";
+  const prompt = isHuman && skill?.body ? `${base}\n\n${skill.body}` : base;
   const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
 
   if (!useMcp && vendor!.provider === "byteplus-image") {
@@ -94,6 +109,17 @@ function buildPortraitPrompt(character: Character, premise: string): string {
   ]
     .filter(Boolean)
     .join(", ");
+  const form = b.physical_form ?? "human";
+  if (form === "creature") {
+    return `Cinematic creature design portrait of ${character.name}. ${
+      traits || "a distinctive non-human being"
+    }. Photographic, detailed texture and anatomy, consistent design for film continuity, dramatic motion-picture lighting, shallow depth of field, neutral backdrop. This is a creature, NOT a human in a costume. Context: ${premise}`;
+  }
+  if (form === "colossus") {
+    return `Cinematic concept-art portrait of ${character.name}, a colossal, massive nonhuman entity. ${
+      traits || "overwhelming in scale"
+    }. Wide framing to convey its scale against a neutral backdrop, photographic detail, consistent design for film continuity, dramatic motion-picture lighting. Context: ${premise}`;
+  }
   return `Cinematic character portrait of ${character.name}, the ${character.role.toLowerCase()}. ${
     traits || "distinctive screen presence"
   }. Photographic, detailed face, consistent appearance for film continuity, dramatic motion-picture lighting, shallow depth of field, neutral backdrop. Context: ${premise}`;

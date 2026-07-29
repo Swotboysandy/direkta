@@ -5,7 +5,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Plus, RefreshCcw, Sparkles, X } from "../_components/icons";
 import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
-import type { Character, Location, Project, WorkspaceId } from "../../lib/types";
+import type { Character, Location, Project, Prop, WorkspaceId } from "../../lib/types";
 
 const LOOK_GRADS = [
   "linear-gradient(150deg, var(--tomato), var(--tomato-deep))",
@@ -90,16 +90,80 @@ function HoverDiv({
   );
 }
 
+/** Attach a look/plate generated OUTSIDE Direkta (e.g. Higgsfield's web app
+ *  with Unlimited mode) instead of generating one here. Same small pill on
+ *  every card — character portrait, location plate, prop plate. */
+function UploadLookButton({
+  endpoint,
+  label,
+  onUploaded
+}: {
+  endpoint: string;
+  label: string;
+  onUploaded: () => Promise<void> | void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <label
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "7px 13px",
+          fontWeight: 600,
+          fontSize: 12,
+          fontFamily: "var(--font-ui)",
+          color: "var(--ink)",
+          background: "var(--surface-2)",
+          borderRadius: 999,
+          cursor: busy ? "default" : "pointer",
+          opacity: busy ? 0.6 : 1,
+          whiteSpace: "nowrap"
+        }}
+      >
+        <input
+          type="file"
+          accept=".png,.jpg,.jpeg,.webp"
+          disabled={busy}
+          style={{ display: "none" }}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            setBusy(true);
+            setError(null);
+            const form = new FormData();
+            form.append("file", file);
+            try {
+              const res = await fetch(endpoint, { method: "POST", body: form });
+              const data = await res.json().catch(() => null);
+              if (!res.ok) setError(data?.error || "Upload failed.");
+              else await onUploaded();
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
+        {busy ? "Uploading…" : label}
+      </label>
+      {error && <span style={{ fontSize: 11, color: "var(--tomato)" }}>{error}</span>}
+    </div>
+  );
+}
+
 interface Props {
   project: Project;
   characters: Character[];
   locations: Location[];
+  props: Prop[];
   onSwitchWorkspace: (ws: WorkspaceId) => void;
   onReload: () => Promise<void> | void;
 }
 
-export function Casting({ project, characters, locations, onSwitchWorkspace, onReload }: Props) {
-  const [adding, setAdding] = useState<"character" | "location" | null>(null);
+export function Casting({ project, characters, locations, props: propList, onSwitchWorkspace, onReload }: Props) {
+  const [adding, setAdding] = useState<"character" | "location" | "prop" | null>(null);
   const [importing, setImporting] = useState(false);
   const [importNote, setImportNote] = useState<string | null>(null);
   // Ids currently mid-generation in a batch — the card shimmers while its id is
@@ -114,8 +178,11 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
       return next;
     });
 
-  const trained = characters.filter((c) => c.soul_id_state === "trained").length;
-  const total = characters.length;
+  // Voice-only presences never get (or need) a portrait — excluded so a
+  // project with one doesn't sit at "in progress" forever.
+  const castable = characters.filter((c) => c.brief?.physical_form !== "abstract");
+  const trained = castable.filter((c) => c.soul_id_state === "trained").length;
+  const total = castable.length;
   const castTone = toneColors(trained >= total && total > 0 ? "success" : "warning");
 
   /** Wipe every character's generated looks (files stay on disk; frames
@@ -327,7 +394,7 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
       <div className="page-body">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
-            Characters · {total} cast
+            Characters · {characters.length} cast
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {characters.some((c) => (c.refs ?? []).length > 0) && (
@@ -356,7 +423,9 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
             <BatchGenerate
               label="Cast all"
               verb="portrait"
-              items={characters.map((c) => ({ id: c.id, name: c.name, hasLook: (c.refs ?? []).length > 0 }))}
+              items={characters
+                .filter((c) => c.brief?.physical_form !== "abstract")
+                .map((c) => ({ id: c.id, name: c.name, hasLook: (c.refs ?? []).length > 0 }))}
               endpoint={(cid) => `/api/characters/${cid}/portrait`}
               onProgress={(msg) => setImportNote(msg)}
               onItemStart={(id) => markGenerating(id, true)}
@@ -474,6 +543,69 @@ export function Casting({ project, characters, locations, onSwitchWorkspace, onR
             {locations.map((l) => (
               <motion.div key={l.id} variants={staggerItem}>
                 <LocationCard location={l} projectId={project.id} generating={genIds.has(l.id)} onChange={onReload} />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        <div style={{ margin: "40px 0 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+            Props &amp; artifacts · {propList.length} identified
+          </span>
+          <BatchGenerate
+            label="Scout all"
+            verb="plate"
+            items={propList.map((p) => ({ id: p.id, name: p.name, hasLook: (p.refs ?? []).length > 0 }))}
+            endpoint={(pid) => `/api/props/${pid}/plate`}
+            onProgress={(msg) => setImportNote(msg)}
+            onItemStart={(id) => markGenerating(id, true)}
+            onItemDone={(id) => markGenerating(id, false)}
+            onDone={async (n) => {
+              await onReload();
+              setImportNote(n ? `Scouted ${n} prop plate(s).` : null);
+              setTimeout(() => setImportNote(null), 6000);
+            }}
+          />
+        </div>
+
+        {propList.length === 0 ? (
+          <div style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
+            <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5, maxWidth: "56ch" }}>
+              No recurring props cast yet. Add a named object (a weapon, an artifact, a set piece) that needs to
+              stay visually identical across every shot it appears in.
+            </p>
+            <HoverButton
+              onClick={() => setAdding("prop")}
+              style={{
+                marginTop: 14,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 18px",
+                fontWeight: 600,
+                fontSize: 14,
+                color: "var(--on-accent)",
+                background: "var(--accent)",
+                border: "none",
+                borderRadius: 999,
+                boxShadow: "var(--shadow-1)",
+                cursor: "pointer"
+              }}
+              hoverStyle={{ background: "var(--accent-hover)" }}
+            >
+              <Plus size={12} /> Add prop
+            </HoverButton>
+          </div>
+        ) : (
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+          >
+            {propList.map((p) => (
+              <motion.div key={p.id} variants={staggerItem}>
+                <PropCard prop={p} projectId={project.id} generating={genIds.has(p.id)} onChange={onReload} />
               </motion.div>
             ))}
           </motion.div>
@@ -769,16 +901,22 @@ function CharacterCard({
         )}
 
         <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
-          {state === "empty" && (
-            <HoverButton
-              onClick={castLook}
-              disabled={busy}
-              style={mainActionStyle}
-              hoverStyle={dimHover}
-              title="Generates one Seedream portrait · ≈14k tokens"
-            >
-              {busy ? "Casting…" : "Begin casting · ≈14k tok"}
-            </HoverButton>
+          {state === "empty" && character.brief?.physical_form === "abstract" ? (
+            <div style={{ ...mainActionStyle, background: "transparent", boxShadow: "none", color: "var(--mute)", fontWeight: 500, cursor: "default", justifyContent: "flex-start" }}>
+              Voice-only — no portrait needed
+            </div>
+          ) : (
+            state === "empty" && (
+              <HoverButton
+                onClick={castLook}
+                disabled={busy}
+                style={mainActionStyle}
+                hoverStyle={dimHover}
+                title="Generates one Seedream portrait · ≈14k tokens"
+              >
+                {busy ? "Casting…" : "Begin casting · ≈14k tok"}
+              </HoverButton>
+            )
           )}
           {state === "training" && (
             <HoverButton disabled style={mainActionStyle}>
@@ -823,6 +961,13 @@ function CharacterCard({
             </HoverButton>
           )}
         </div>
+        {character.brief?.physical_form !== "abstract" && (
+          <UploadLookButton
+            endpoint={`/api/characters/${character.id}/upload-portrait`}
+            label={hasReal ? "Upload a new look instead" : "Upload a look instead"}
+            onUploaded={onChange}
+          />
+        )}
       </div>
 
       {editing && (
@@ -1240,6 +1385,170 @@ function LocationCard({
             )}
           </HoverButton>
         </div>
+        <UploadLookButton
+          endpoint={`/api/locations/${location.id}/upload-plate`}
+          label={ref ? "Upload a new plate instead" : "Upload a plate instead"}
+          onUploaded={onChange}
+        />
+      </div>
+    </HoverDiv>
+  );
+}
+
+function PropCard({
+  prop,
+  projectId,
+  generating = false,
+  onChange
+}: {
+  prop: Prop;
+  projectId: string;
+  generating?: boolean;
+  onChange: () => Promise<void> | void;
+}) {
+  void projectId;
+  const [scouting, setScouting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const busy = generating || scouting;
+
+  async function scoutPlate() {
+    if (scouting) return;
+    setScouting(true);
+    setLocalError(null);
+    try {
+      const res = await fetch(`/api/props/${prop.id}/plate`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setLocalError(data?.error || "Scout failed.");
+      }
+      await onChange();
+    } finally {
+      setScouting(false);
+    }
+  }
+
+  const ref = prop.refs[0];
+  const tone = toneColors(
+    busy
+      ? "warning"
+      : prop.soul_id_state === "trained"
+      ? "success"
+      : prop.soul_id_state === "training"
+      ? "warning"
+      : prop.soul_id_state === "failed"
+      ? "danger"
+      : "neutral"
+  );
+  const stateLabel = busy
+    ? "Scouting…"
+    : prop.soul_id_state === "trained"
+      ? "Trained"
+      : prop.soul_id_state === "training"
+      ? "Training"
+      : prop.soul_id_state === "failed"
+      ? "Training failed"
+      : "Not started";
+
+  return (
+    <HoverDiv
+      style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      hoverStyle={{ boxShadow: "var(--shadow-3)" }}
+    >
+      <div
+        className={busy || prop.soul_id_state === "training" ? "shimmer" : undefined}
+        style={{ position: "relative", aspectRatio: "16 / 9", background: "var(--cream-deep)", overflow: "hidden" }}
+      >
+        {ref && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={ref} alt={prop.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        )}
+        {busy && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              background: "color-mix(in srgb, var(--bg) 55%, transparent)",
+              backdropFilter: "blur(1px)",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.04em",
+              color: "var(--ink)",
+              zIndex: 1
+            }}
+          >
+            <RefreshCcw size={12} className="fx-rotate-load" /> SCOUTING…
+          </div>
+        )}
+      </div>
+      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+        <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.005em", color: "var(--ink)", lineHeight: 1.25 }}>
+          {prop.name}
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          {prop.description || `${prop.scene_count} scenes`}
+        </div>
+        {localError && (
+          <div style={{ fontSize: 12, lineHeight: 1.4, color: "var(--tomato)" }}>{localError}</div>
+        )}
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: "0.02em",
+              borderRadius: 999,
+              background: tone.bg,
+              color: tone.fg
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
+            {stateLabel}
+          </span>
+          <HoverButton
+            onClick={scoutPlate}
+            disabled={busy}
+            title="Generate a reference plate for this prop · ≈14k tokens"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 13px",
+              fontWeight: 600,
+              fontSize: 12,
+              fontFamily: "var(--font-ui)",
+              color: "var(--ink)",
+              background: "var(--surface-2)",
+              borderRadius: 999,
+              cursor: "pointer",
+              whiteSpace: "nowrap"
+            }}
+            hoverStyle={{ background: "color-mix(in srgb, var(--ink) 12%, transparent)" }}
+          >
+            {busy ? (
+              <>
+                <RefreshCcw size={11} className="fx-rotate-load" /> Scouting…
+              </>
+            ) : ref ? (
+              "New plate · ≈14k tok"
+            ) : (
+              "Scout plate · ≈14k tok"
+            )}
+          </HoverButton>
+        </div>
+        <UploadLookButton
+          endpoint={`/api/props/${prop.id}/upload-plate`}
+          label={ref ? "Upload a new plate instead" : "Upload a plate instead"}
+          onUploaded={onChange}
+        />
       </div>
     </HoverDiv>
   );
@@ -1487,7 +1796,7 @@ function AddModal({
   onClose,
   onCreated
 }: {
-  kind: "character" | "location";
+  kind: "character" | "location" | "prop";
   projectId: string;
   onClose: () => void;
   onCreated: () => Promise<void> | void;
@@ -1495,6 +1804,7 @@ function AddModal({
   const [name, setName] = useState("");
   const [intExt, setIntExt] = useState<"INT" | "EXT">("INT");
   const [role, setRole] = useState<Character["role"]>("Supporting");
+  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit(event: React.FormEvent) {
@@ -1508,11 +1818,17 @@ function AddModal({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ name: name.trim().toUpperCase(), role })
         });
-      } else {
+      } else if (kind === "location") {
         await fetch(`/api/projects/${projectId}/locations`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ name: name.trim().toUpperCase(), int_ext: intExt })
+        });
+      } else {
+        await fetch(`/api/projects/${projectId}/props`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name: name.trim(), description: description.trim() })
         });
       }
       await onCreated();
@@ -1540,7 +1856,7 @@ function AddModal({
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={kind === "character" ? "MARCUS" : "INT. WAREHOUSE"}
+              placeholder={kind === "character" ? "MARCUS" : kind === "location" ? "INT. WAREHOUSE" : "PINAKA — THE BOW"}
               required
             />
           </div>
@@ -1578,6 +1894,16 @@ function AddModal({
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          {kind === "prop" && (
+            <div>
+              <label>Description (optional)</label>
+              <input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g. a curved bow of dark wood, never metal"
+              />
             </div>
           )}
         </div>
