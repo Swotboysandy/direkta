@@ -5,6 +5,7 @@ import { vendors } from "../../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../../lib/agents/video";
 import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../../lib/higgsfield/mcp";
 import { isBrowserSessionSaved, generateVideoViaBrowser } from "../../../../../../lib/higgsfield/browser";
+import { getFlag } from "../../../../../../lib/settings";
 import { generateVideoViaByteplus } from "../../../../../../lib/agents/byteplus-video";
 import { referenceToDataUri } from "../../../../../../lib/agents/byteplus-image";
 import { videoModel, cameraMotion } from "../../../../../../lib/higgsfield/catalog";
@@ -81,7 +82,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // browser session is the ONLY zero-credit path. Prefer it over the MCP
   // whenever one is stored — the MCP spends credits for the same clip.
   // { useBrowser: false } forces the API path.
-  const useBrowser = body.useBrowser !== false && !isByteplus && isBrowserSessionSaved();
+  const useBrowser = body.useBrowser !== false && getFlag("browser_video") && !isByteplus && isBrowserSessionSaved();
   // Unlimited-only policy: once a browser session is connected, the credit-
   // spending providers (BytePlus, MCP-on-credits) are refused outright — a
   // stray model pick or a transient browser failure must never silently bill.

@@ -315,6 +315,12 @@ function migrate(db: DatabaseSync) {
     -- Higgsfield's "Unlimited mode" exists only in the signed-in web UI — it is
     -- not exposed by the MCP/API — so plan-included generation has to be driven
     -- through a real browser. Cookies are captured once and replayed headlessly.
+    -- Simple app-wide flags (key/value). Backs the Unlimited-browser toggles.
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    );
+
     CREATE TABLE IF NOT EXISTS higgsfield_browser (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       cookies TEXT NOT NULL DEFAULT '[]',

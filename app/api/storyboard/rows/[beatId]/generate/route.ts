@@ -4,6 +4,8 @@ import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateImage } from "../../../../../../lib/agents/image";
 import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../../lib/higgsfield/mcp";
+import { isBrowserSessionSaved, generateImageViaBrowser } from "../../../../../../lib/higgsfield/browser";
+import { getFlag } from "../../../../../../lib/settings";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../../lib/usage";
 import type { AspectRatio } from "../../../../../../lib/types";
@@ -26,6 +28,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const promptIn = typeof body.prompt === "string" ? body.prompt.trim() : "";
   const modelIn = typeof body.model === "string" ? body.model : undefined;
   const resolutionIn = typeof body.resolution === "string" ? body.resolution : undefined;
+  const bodyUseBrowser = (body as { useBrowser?: boolean }).useBrowser;
 
   const db = getDb();
 
@@ -220,12 +223,16 @@ ${beat.direction}` : "";
 
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
-  const vendor = vendors.firstEnabledImage();
-  const useMcp = !vendor && isHiggsfieldMcpConnected();
+  // Unlimited-only: a saved Higgsfield browser session is the ONLY zero-credit
+  // path for frames, so it wins over every vendor and the MCP. Body flag
+  // { useBrowser: false } forces the paid path.
+  const useBrowser = bodyUseBrowser !== false && getFlag("browser_images") && isBrowserSessionSaved();
+  const vendor = useBrowser ? null : vendors.firstEnabledImage();
+  const useMcp = !useBrowser && !vendor && isHiggsfieldMcpConnected();
 
   // ── No generator at all → simulation. NEVER destroy completed takes:
   //    a fresh roll only happens when a real generator will actually replace them.
-  if (!useMcp && !vendor) {
+  if (!useBrowser && !useMcp && !vendor) {
     const done = db
       .prepare("SELECT COUNT(*) as c FROM storyboard_variants WHERE beat_id = ? AND state = 'complete'")
       .get(beatId) as { c: number };
@@ -253,12 +260,12 @@ ${beat.direction}` : "";
     });
   }
 
-  const providerLabel = useMcp ? "Higgsfield (your account)" : vendor!.label;
+  const providerLabel = useBrowser ? "Higgsfield Unlimited (browser)" : useMcp ? "Higgsfield (your account)" : vendor!.label;
 
   // Hard budget stop — only for the BytePlus token ledger (Higgsfield tracks
   // its own credits separately via the balance chip). Refuses the whole
   // batch upfront rather than generating some and failing partway.
-  if (!useMcp && vendor!.provider === "byteplus-image") {
+  if (!useBrowser && !useMcp && vendor!.provider === "byteplus-image") {
     try {
       assertBudget(variantCount * TOKEN_COSTS.image);
     } catch (e) {
@@ -314,7 +321,9 @@ ${beat.direction}` : "";
 
   const results = await Promise.allSettled(
     ids.map(() =>
-      useMcp
+      useBrowser
+        ? generateImageViaBrowser({ prompt: genPrompt, referencePaths: referenceImages })
+        : useMcp
         ? generateImageViaMcp({
             prompt: genPrompt,
             aspectRatio: aspect,

@@ -27,6 +27,19 @@ import { getDb } from "../db/client";
 import { writeRemoteToOss } from "./mcp";
 
 const VIDEO_URL = "https://higgsfield.ai/ai/video";
+// Image page. These model slugs all carry Unlimited (plan-included, zero credit)
+// on this account — confirmed live from the model picker. seedream_v5_lite is
+// the default: fast, high detail, Unlimited.
+const IMAGE_URL = "https://higgsfield.ai/ai/image";
+const UNLIMITED_IMAGE_MODELS = [
+  "seedream_v5_lite",
+  "seedream_v4_5",
+  "nano-banana",
+  "kling_o1",
+  "flux_2_pro",
+  "gpt_image"
+];
+const DEFAULT_IMAGE_MODEL = "seedream_v5_lite";
 
 /** Chrome on the VPS (installed for other services) or a local dev override. */
 function chromePath(): string {
@@ -199,6 +212,123 @@ function ossPathFor(url: string): string | null {
 }
 
 /**
+ * Image page: flip Unlimited and prove it. Ground truth here is the submit
+ * button reading "Unlimited<count>" (e.g. "Unlimited1") rather than
+ * "Generate<count>" — the count is the number of images, not a credit charge.
+ * The image toggle only responds to a full PointerEvent sequence, not a plain
+ * click, and it can bounce back once before it sticks — hence the retry loop.
+ */
+async function enforceUnlimitedImage(page: Page) {
+  const hasSwitch = await page
+    .waitForSelector("[role=switch]", { timeout: 25_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!hasSwitch) {
+    const snippet: string = await page.evaluate(() => document.body.innerText.slice(0, 300).replace(/\s+/g, " "));
+    throw new Error(`Unlimited toggle never appeared on the image page (saw: "${snippet}").`);
+  }
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const ok = await page.evaluate(() => {
+      const sw = document.querySelector("[role=switch]") as HTMLElement | null;
+      const btn = [...document.querySelectorAll("button")].find((b) =>
+        /^(Generate|Unlimited)/.test((b.textContent || "").trim())
+      );
+      const label = (btn?.textContent || "").trim().replace(/\s+/g, "");
+      return !!sw && sw.getAttribute("aria-checked") === "true" && /^Unlimited/.test(label);
+    });
+    if (ok) return;
+    await page.evaluate(() => {
+      const sw = document.querySelector("[role=switch]") as HTMLElement;
+      sw.scrollIntoView({ block: "center" });
+      sw.focus();
+      for (const t of ["pointerdown", "pointerup", "click"]) {
+        sw.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true }));
+      }
+    });
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  const label = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll("button")].find((b) =>
+      /^(Generate|Unlimited)/.test((b.textContent || "").trim())
+    );
+    return (btn?.textContent || "").trim();
+  });
+  throw new Error(`Refusing to submit image — Unlimited is not on (button reads "${label}"). No credits were spent.`);
+}
+
+/**
+ * Generate a frame on the user's plan at no credit cost. Prompt-driven, with
+ * optional local reference images (character/set locks) attached through the
+ * file input. Downloads the result into OSS and returns it.
+ */
+export async function generateImageViaBrowser(input: {
+  prompt: string;
+  /** Local reference images (/oss/ paths on disk) — cast/set/prop locks. */
+  referencePaths?: string[];
+  /** One of UNLIMITED_IMAGE_MODELS; falls back to the default. */
+  model?: string;
+  timeoutMs?: number;
+}): Promise<{ url: string; relPath: string }> {
+  const model = UNLIMITED_IMAGE_MODELS.includes(input.model || "") ? input.model! : DEFAULT_IMAGE_MODEL;
+  const { browser, page } = await openSession();
+  try {
+    await page.goto(`${IMAGE_URL}?model=${model}`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+    await waitForComposer(page);
+
+    const signedOut = await page.evaluate(() => /log in|sign in/i.test(document.body.innerText.slice(0, 4000)));
+    if (signedOut) throw new Error("Higgsfield session expired — re-capture your cookies.");
+
+    const before: string[] = await page.evaluate(() =>
+      [...document.querySelectorAll("img")].map((i) => i.src).filter((s) => /cloudfront|user_/.test(s))
+    );
+
+    // Attach reference images (locks) if any are on disk.
+    const refs = (input.referencePaths || []).map((p) => ossPathFor(p)).filter((p): p is string => !!p).slice(0, 3);
+    if (refs.length) {
+      const fileInput = await page.$('input[type="file"]');
+      if (fileInput) {
+        await fileInput.uploadFile(...refs);
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    }
+
+    await setPrompt(page, input.prompt);
+    await enforceUnlimitedImage(page);
+
+    await page.evaluate(() => {
+      const btn = [...document.querySelectorAll("button")].find((b) =>
+        /^Unlimited/.test((b.textContent || "").trim())
+      ) as HTMLButtonElement;
+      btn.click();
+    });
+
+    const deadline = Date.now() + (input.timeoutMs ?? 6 * 60_000);
+    let fresh: string | null = null;
+    while (Date.now() < deadline && !fresh) {
+      await new Promise((r) => setTimeout(r, 5000));
+      const state = await page.evaluate((seen: string[]) => {
+        const urls = [...document.querySelectorAll("img")]
+          .map((i) => i.src)
+          .filter((u) => /cloudfront|user_/.test(u) && !seen.includes(u) && /user_/.test(u));
+        return { url: urls[0] ?? null, nsfw: /NSFW/.test(document.body.innerText) };
+      }, before);
+      if (state.nsfw) throw new Error("Higgsfield rejected the frame as NSFW (credits are refunded).");
+      if (state.url) fresh = state.url;
+    }
+    if (!fresh) throw new Error("Higgsfield image render timed out.");
+
+    const saved = await writeRemoteToOss(fresh, "image");
+    noteOk();
+    return saved;
+  } catch (err) {
+    noteError(err instanceof Error ? err.message : String(err));
+    throw err;
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
+/**
  * Prove the saved session actually signs in — launches headless Chrome, loads
  * the video page, and reports whether the composer rendered (signed in) or a
  * login wall did. No generation, so it costs nothing.
@@ -207,13 +337,20 @@ export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: bo
   const { browser, page } = await openSession();
   try {
     await page.goto(VIDEO_URL, { waitUntil: "domcontentloaded", timeout: 120_000 });
-    const composer = await page
+    await page
       .waitForSelector('div[contenteditable="true"]', { timeout: 45_000 })
-      .then(() => true)
-      .catch(() => false);
-    const bodyText: string = await page.evaluate(() => document.body.innerText.slice(0, 3000));
-    const loginWall = /log in|sign in/i.test(bodyText) && !composer;
-    const signedIn = composer && !loginWall;
+      .catch(() => null);
+    // The prompt box renders even when logged out, so it does NOT prove a
+    // session. The honest signal is the top-nav: logged-out shows Login / Sign
+    // up buttons; logged-in shows the account menu instead.
+    const signedIn: boolean = await page.evaluate(() => {
+      const navAuth = [...document.querySelectorAll("a,button")].some((el) => {
+        const t = (el.textContent || "").trim().toLowerCase();
+        return t === "login" || t === "log in" || t === "sign up" || t === "sign in";
+      });
+      const hasSwitch = !!document.querySelector("[role=switch]");
+      return hasSwitch && !navAuth;
+    });
     if (signedIn) noteOk();
     else noteError("session check: not signed in");
     return {

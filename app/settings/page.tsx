@@ -12,6 +12,20 @@ export default function SettingsPage() {
   const [skills, setSkills] = useState<SkillFile[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [flags, setFlags] = useState<{ browser_images: boolean; browser_video: boolean }>({ browser_images: true, browser_video: true });
+  const [session, setSession] = useState<{ connected: boolean; lastOkAt: string | null; lastError: string | null }>({ connected: false, lastOkAt: null, lastError: null });
+
+  const loadFlags = useCallback(async () => {
+    const r = await fetch("/api/settings/flags");
+    const d = await r.json();
+    setFlags(d.flags);
+    setSession(d.session);
+  }, []);
+  async function setFlag(key: "browser_images" | "browser_video", on: boolean) {
+    setFlags((f) => ({ ...f, [key]: on }));
+    await fetch("/api/settings/flags", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ [key]: on }) });
+    loadFlags();
+  }
 
   const loadVendors = useCallback(async () => {
     const response = await fetch("/api/vendors");
@@ -21,6 +35,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadVendors();
+    loadFlags();
     fetch("/api/skills")
       .then((response) => response.json())
       .then((data) => setSkills(data.skills));
@@ -47,6 +62,57 @@ export default function SettingsPage() {
         </Link>
         <h1>Settings</h1>
       </header>
+
+      <section>
+        <h2>
+          <KeyRound size={18} /> Higgsfield Unlimited (browser)
+        </h2>
+        <p className="muted">
+          Generate on your own Higgsfield plan through a real logged-in browser — the free
+          Unlimited image and video models, no credits spent. Direkta flips the Unlimited
+          toggle itself; it refuses to submit unless the render is proven free.
+        </p>
+        <p className="muted">
+          Session:{" "}
+          {session.connected ? (
+            <strong style={{ color: "var(--accent, #7dd3fc)" }}>connected</strong>
+          ) : (
+            <strong>not connected — paste cookies via POST /api/higgsfield/browser</strong>
+          )}
+          {session.lastOkAt ? ` · last ok ${session.lastOkAt}` : ""}
+          {session.lastError ? ` · last error: ${session.lastError}` : ""}
+        </p>
+        <div className="vendor-grid">
+          <div className="vendor-card">
+            <header>
+              <strong>Frames (images)</strong>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={flags.browser_images}
+                  onChange={(e) => setFlag("browser_images", e.target.checked)}
+                />
+                use Unlimited browser
+              </label>
+            </header>
+            <p className="muted">Storyboard frames render free on Seedream / Nano Banana. Off = paid API path.</p>
+          </div>
+          <div className="vendor-card">
+            <header>
+              <strong>Clips (video)</strong>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={flags.browser_video}
+                  onChange={(e) => setFlag("browser_video", e.target.checked)}
+                />
+                use Unlimited browser
+              </label>
+            </header>
+            <p className="muted">Shot animation renders free on Seedance 2.0. Off = paid API path.</p>
+          </div>
+        </div>
+      </section>
 
       <section>
         <h2>
