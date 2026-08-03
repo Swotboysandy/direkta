@@ -22,7 +22,17 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import puppeteer, { type Browser, type Page } from "puppeteer-core";
+import puppeteerCore, { type Browser, type Page } from "puppeteer-core";
+import { addExtra } from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+
+// puppeteer-extra-plugin-stealth patches the automation tells (navigator.webdriver,
+// the HeadlessChrome UA flag, missing plugins/chrome.runtime, WebGL vendor) that
+// DataDome and Clerk's Frontend API use to reject a headless browser. Our VPS IP
+// is NOT blocked (the page loads), so a rejected fingerprint is the likely reason
+// the session won't authenticate headlessly — this addresses that directly.
+const puppeteer = addExtra(puppeteerCore as never);
+puppeteer.use(StealthPlugin());
 import { getDb } from "../db/client";
 import { writeRemoteToOss } from "./mcp";
 
@@ -133,6 +143,12 @@ async function openSession(): Promise<{ browser: Browser; page: Page }> {
     defaultViewport: { width: 1600, height: 1000 }
   });
   const page = await browser.newPage();
+  // cf_clearance and datadome are bound to the capturing browser's User-Agent;
+  // match a current Windows Chrome UA so the replayed tokens are accepted.
+  await page.setUserAgent(
+    process.env.HF_UA ||
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+  );
   await browser.setCookie(
     ...cookies.map((c) => ({
       ...c,
@@ -333,9 +349,13 @@ export async function generateImageViaBrowser(input: {
  * the video page, and reports whether the composer rendered (signed in) or a
  * login wall did. No generation, so it costs nothing.
  */
-export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: boolean; detail: string }> {
+export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: boolean; detail: string; diag?: string; clerkCookiePresent?: boolean }> {
   const { browser, page } = await openSession();
   try {
+    // Warm the homepage first — Clerk's client JS mints a fresh __session from
+    // the __refresh cookie on load, which the deep app pages then rely on.
+    await page.goto("https://higgsfield.ai/", { waitUntil: "networkidle2", timeout: 120_000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 4000));
     await page.goto(VIDEO_URL, { waitUntil: "domcontentloaded", timeout: 120_000 });
     await page
       .waitForSelector('div[contenteditable="true"]', { timeout: 45_000 })
@@ -351,12 +371,26 @@ export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: bo
       const hasSwitch = !!document.querySelector("[role=switch]");
       return hasSwitch && !navAuth;
     });
+    const diag: string = await page.evaluate(() => {
+      const title = document.title;
+      const nav = [...document.querySelectorAll("a,button")]
+        .map((e) => (e.textContent || "").trim())
+        .filter((t) => /login|sign up|sign in|assets|upgrade|account/i.test(t))
+        .slice(0, 8)
+        .join(" | ");
+      return `title="${title}" nav=[${nav}]`;
+    });
+    const r = row();
+    const names = r ? (JSON.parse(r.cookies) as Array<{ name: string }>).map((c) => c.name) : [];
+    const clerkCookiePresent = names.some((n) => n.startsWith("__client") && !n.startsWith("__client_uat"));
     if (signedIn) noteOk();
-    else noteError("session check: not signed in");
+    else noteError("not signed in :: " + diag + " :: clerkCookie=" + clerkCookiePresent);
     return {
       ok: true,
       signedIn,
-      detail: signedIn ? "composer present, signed in" : "no composer / login wall"
+      detail: signedIn ? "composer present, signed in" : "no composer / login wall",
+      diag,
+      clerkCookiePresent
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
