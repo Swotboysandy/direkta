@@ -4,6 +4,7 @@ import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../../lib/agents/video";
 import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../../lib/higgsfield/mcp";
+import { isBrowserSessionSaved, generateVideoViaBrowser } from "../../../../../../lib/higgsfield/browser";
 import { generateVideoViaByteplus } from "../../../../../../lib/agents/byteplus-video";
 import { referenceToDataUri } from "../../../../../../lib/agents/byteplus-image";
 import { videoModel, cameraMotion } from "../../../../../../lib/higgsfield/catalog";
@@ -40,7 +41,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const body = await req
     .json()
-    .catch(() => ({} as { model?: string; motion?: string; audio?: boolean; endFrame?: boolean }));
+    .catch(() => ({} as { model?: string; motion?: string; audio?: boolean; endFrame?: boolean; useBrowser?: boolean }));
   const chosen = videoModel(typeof body.model === "string" ? body.model : undefined);
   const cameraMove = cameraMotion(typeof body.motion === "string" ? body.motion : undefined);
   const wantAudio = body.audio === true;
@@ -76,6 +77,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const vendor = vendors.firstEnabledVideo();
   const useMcp = isHiggsfieldMcpConnected();
   const isByteplus = chosen.provider === "byteplus";
+  // Unlimited mode only exists in Higgsfield's signed-in web UI, so a saved
+  // browser session is the ONLY zero-credit path. Prefer it over the MCP
+  // whenever one is stored — the MCP spends credits for the same clip.
+  // { useBrowser: false } forces the API path.
+  const useBrowser = body.useBrowser !== false && !isByteplus && isBrowserSessionSaved();
 
   // BytePlus path needs its own API key (separate from Higgsfield).
   const bp = isByteplus ? vendors.get("byteplus-video-default") : null;
@@ -88,7 +94,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   // No generator at all → simulation note (keeps the keyless demo working).
-  if (!isByteplus && !useMcp && !vendor) {
+  if (!isByteplus && !useBrowser && !useMcp && !vendor) {
     return NextResponse.json({
       ok: true,
       simulated: true,
@@ -234,13 +240,22 @@ ${node.avoid_prompt}` : "";
   // a wrong label hides which pool a clip actually spent from.
   const providerLabel = isByteplus
     ? chosen.label
-    : useMcp
+    : useBrowser
+      ? "Higgsfield Unlimited (browser)"
+      : useMcp
       ? "Higgsfield (your account)"
       : vendor!.label;
   db.prepare("UPDATE stitch_nodes SET clip_state = 'generating' WHERE id = ?").run(id);
 
   try {
-    const video = isByteplus
+    const video = useBrowser
+      ? await generateVideoViaBrowser({
+          prompt,
+          frameUrl: node.frame_url!,
+          endFrameUrl: nextFrame?.url ?? undefined,
+          durationSeconds: clipDuration
+        })
+      : isByteplus
       ? await generateVideoViaByteplus({
           apiKey: bp!.api_key,
           model: chosen.byteplus!.model,

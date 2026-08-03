@@ -29,6 +29,7 @@
     "lucide-react": "^0.468.0",
     "nanoid": "^5.0.7",
     "next": "^15.1.8",
+    "puppeteer-core": "^25.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "unpdf": "^1.6.2",

@@ -64,6 +64,12 @@ class McpSession {
     await this.rpc("notifications/initialized", {}, true);
   }
 
+  /** Raw tools/list — used to discover the provider's real parameter schema
+   *  (e.g. whether Unlimited mode is exposed as a request field). */
+  async listTools(): Promise<any> {
+    return this.rpc("tools/list", {});
+  }
+
   async callTool(name: string, args: Record<string, unknown>): Promise<any> {
     const result = await this.rpc("tools/call", { name, arguments: args });
     // Tool-execution failures (out of credits, NSFW, bad params) come back as a
@@ -107,7 +113,7 @@ function parseSse(text: string): any {
   return last;
 }
 
-function writeRemoteToOss(
+export function writeRemoteToOss(
   url: string,
   kind: "image" | "video" = "image"
 ): Promise<{ url: string; relPath: string }> {
@@ -243,6 +249,14 @@ export async function getBalanceViaMcp(): Promise<{ credits: number; plan: strin
   const credits = Number(res?.credits_exact ?? res?.credits ?? 0);
   const plan = res?.subscription_plan_type ?? res?.plan ?? null;
   return { credits: Math.floor(credits), plan: plan ? String(plan) : null };
+}
+
+/** Discovery helper: the provider's advertised tools and their input schemas. */
+export async function listMcpTools(): Promise<any> {
+  const token = await getValidAccessToken();
+  const s = new McpSession(token);
+  await s.connect();
+  return s.listTools();
 }
 
 export async function generateVideoViaMcp(input: {

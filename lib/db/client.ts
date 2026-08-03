@@ -311,6 +311,18 @@ function migrate(db: DatabaseSync) {
       connected_at TEXT
     );
 
+    -- Single-row store for a logged-in Higgsfield BROWSER session (cookies).
+    -- Higgsfield's "Unlimited mode" exists only in the signed-in web UI — it is
+    -- not exposed by the MCP/API — so plan-included generation has to be driven
+    -- through a real browser. Cookies are captured once and replayed headlessly.
+    CREATE TABLE IF NOT EXISTS higgsfield_browser (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      cookies TEXT NOT NULL DEFAULT '[]',
+      connected_at TEXT,
+      last_ok_at TEXT,
+      last_error TEXT
+    );
+
     -- BytePlus token-pack spend ledger. Every Seedream/Seedance generation
     -- appends a row (exact tokens when the API reports usage, an estimate
     -- otherwise) so the top bar can show what's left of the pack.
