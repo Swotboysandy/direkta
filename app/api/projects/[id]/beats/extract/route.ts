@@ -11,6 +11,21 @@ export const runtime = "nodejs";
 
 const SYSTEM = `You are a professional script breakdown supervisor. Break the screenplay down COMPLETELY: scene beats, the full cast, every location, and every recurring named prop.
 
+BREAK SCENES INTO SHOTS, NOT ONE BEAT PER SCENE.
+Each beat becomes ONE generated frame that is then animated into a clip of a few
+seconds, so a beat is a SHOT, not a scene. A scene almost always contains several.
+Cut a new beat every time any of these changes:
+  - the camera (a new size or angle — wide to medium, medium to close, a reverse)
+  - who is on screen, or where they are standing
+  - the location or the time of day
+  - the dramatic turn (a reveal, a decision, an interruption, an arrival)
+  - a significant action beat inside a continuous move
+A one-page scene typically yields 3 to 6 beats. A long or eventful scene yields more.
+Never merge two camera set-ups into a single beat, and never let one beat cover more
+than a few seconds of screen time — long beats are where generated shots drift.
+Keep beats in strict story order and number them sequentially across the whole script,
+continuing the count from scene to scene rather than restarting.
+
 Return ONLY a JSON object with this exact shape:
 {
   "beats": [
@@ -83,7 +98,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       raw = await generateTextViaCodex({ system: SYSTEM, prompt });
     } else {
       const model = activeModel();
-      const { text } = await generateText({ model, system: SYSTEM, prompt, maxTokens: 8000 });
+      const { text } = await generateText({ model, system: SYSTEM, prompt, maxTokens: 24000 });
       raw = text;
     }
   } catch (err) {

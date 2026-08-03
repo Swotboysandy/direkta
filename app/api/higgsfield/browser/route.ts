@@ -3,14 +3,37 @@ import {
   browserSessionStatus,
   clearBrowserSession,
   saveBrowserSession,
-  type HiggsfieldCookie
+  type HiggsfieldCookie,
+  checkBrowserSession,
+  isBrowserSessionSaved
 } from "../../../../lib/higgsfield/browser";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+/* The capture flow runs from a signed-in higgsfield.ai tab, so the POST is
+   cross-origin. Allow exactly that one origin — nothing else needs to reach
+   this route from a browser. */
+const CORS = {
+  "Access-Control-Allow-Origin": "https://higgsfield.ai",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "content-type"
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS });
+}
+
 /** Is a logged-in Higgsfield browser session stored, and is it still working? */
-export async function GET() {
+export async function GET(req: Request) {
+  // ?check=1 launches a headless login probe (slow, ~15s); default is instant status.
+  if (new URL(req.url).searchParams.get("check") === "1") {
+    if (!isBrowserSessionSaved()) {
+      return NextResponse.json({ ...browserSessionStatus(), check: { ok: false, signedIn: false, detail: "no session saved" } });
+    }
+    const check = await checkBrowserSession();
+    return NextResponse.json({ ...browserSessionStatus(), check });
+  }
   return NextResponse.json(browserSessionStatus());
 }
 
@@ -28,7 +51,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const raw = body?.cookies;
   if (!Array.isArray(raw) || !raw.length) {
-    return NextResponse.json({ error: "Send { cookies: [...] } from a signed-in higgsfield.ai tab." }, { status: 400 });
+    return NextResponse.json({ error: "Send { cookies: [...] } from a signed-in higgsfield.ai tab." }, { status: 400, headers: CORS });
   }
   const cookies: HiggsfieldCookie[] = [];
   for (const c of raw) {
@@ -44,10 +67,10 @@ export async function POST(req: Request) {
     });
   }
   if (!cookies.length) {
-    return NextResponse.json({ error: "No usable cookies in that payload." }, { status: 400 });
+    return NextResponse.json({ error: "No usable cookies in that payload." }, { status: 400, headers: CORS });
   }
   saveBrowserSession(cookies);
-  return NextResponse.json({ ok: true, saved: cookies.length, ...browserSessionStatus() });
+  return NextResponse.json({ ok: true, saved: cookies.length, ...browserSessionStatus() }, { headers: CORS });
 }
 
 export async function DELETE() {

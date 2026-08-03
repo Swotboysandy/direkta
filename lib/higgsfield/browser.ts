@@ -199,6 +199,38 @@ function ossPathFor(url: string): string | null {
 }
 
 /**
+ * Prove the saved session actually signs in — launches headless Chrome, loads
+ * the video page, and reports whether the composer rendered (signed in) or a
+ * login wall did. No generation, so it costs nothing.
+ */
+export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: boolean; detail: string }> {
+  const { browser, page } = await openSession();
+  try {
+    await page.goto(VIDEO_URL, { waitUntil: "domcontentloaded", timeout: 120_000 });
+    const composer = await page
+      .waitForSelector('div[contenteditable="true"]', { timeout: 45_000 })
+      .then(() => true)
+      .catch(() => false);
+    const bodyText: string = await page.evaluate(() => document.body.innerText.slice(0, 3000));
+    const loginWall = /log in|sign in/i.test(bodyText) && !composer;
+    const signedIn = composer && !loginWall;
+    if (signedIn) noteOk();
+    else noteError("session check: not signed in");
+    return {
+      ok: true,
+      signedIn,
+      detail: signedIn ? "composer present, signed in" : "no composer / login wall"
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    noteError(msg);
+    return { ok: false, signedIn: false, detail: msg };
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
+/**
  * Animate one shot on the user's own plan, at no credit cost.
  * `framePath` is a local image; the clip is downloaded into OSS and returned.
  */

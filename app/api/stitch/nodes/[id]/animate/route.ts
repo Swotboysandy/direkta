@@ -82,6 +82,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // whenever one is stored — the MCP spends credits for the same clip.
   // { useBrowser: false } forces the API path.
   const useBrowser = body.useBrowser !== false && !isByteplus && isBrowserSessionSaved();
+  // Unlimited-only policy: once a browser session is connected, the credit-
+  // spending providers (BytePlus, MCP-on-credits) are refused outright — a
+  // stray model pick or a transient browser failure must never silently bill.
+  if (isBrowserSessionSaved() && body.useBrowser !== false && isByteplus) {
+    db.prepare("UPDATE stitch_nodes SET clip_state = 'error' WHERE id = ?").run(id);
+    return NextResponse.json(
+      { error: "Unlimited-only mode is on (Higgsfield browser session connected). BytePlus would spend credits — pick a Higgsfield model, or POST { useBrowser: false } to override." },
+      { status: 400 }
+    );
+  }
 
   // BytePlus path needs its own API key (separate from Higgsfield).
   const bp = isByteplus ? vendors.get("byteplus-video-default") : null;
