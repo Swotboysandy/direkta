@@ -1,0 +1,49 @@
+# Direkta music-analysis skill — dependencies
+#
+# CORE (required). Install these and the skill always produces a valid beat map.
+# Pinned loosely: minimum versions are the APIs the script actually uses, upper
+# bounds only guard against the next major release.
+librosa>=0.10,<1.0
+soundfile>=0.12,<1.0
+numpy>=1.24,<3.0
+
+# ---------------------------------------------------------------------------
+# SYSTEM (strongly recommended, not pip-installable)
+# ---------------------------------------------------------------------------
+# ffmpeg  — the single decode-normalization path (mono / 44.1kHz / s16 WAV).
+#           Without it the script falls back to a direct librosa decode and sets
+#           "decode_normalized": false, which means beat timestamps may carry an
+#           MP3 priming/padding offset of up to ~51ms (>1 frame at 24/25/30fps).
+#           macOS:  brew install ffmpeg
+#           Debian: sudo apt-get install ffmpeg
+
+# ---------------------------------------------------------------------------
+# OPTIONAL LADDER (each one degrades gracefully with a warning in the JSON)
+# Install in this order — earlier entries buy the most accuracy per unit of pain.
+# ---------------------------------------------------------------------------
+
+# 1. Real downbeat detection (otherwise downbeats are ESTIMATED every 4th beat).
+#    Biggest single accuracy win: cuts land on bar one instead of a guessed phase.
+# pip install beat-this
+
+# 2. Labeled structural sections (otherwise sections are unlabeled Foote-novelty
+#    segments and narrative rules keyed on "chorus"/"drop" cannot fire).
+#    Heavy: pulls PyTorch + NATTEN + madmom; expect install friction off macOS.
+# pip install allin1
+
+# 3. Stem separation -> drum-class onsets + sections[].instrumentation
+#    (otherwise onsets are classified on the full mix, which is noticeably noisier).
+# pip install -U demucs
+
+# 4. Lyric hook onsets via ASR + forced alignment (otherwise omitted entirely and
+#    lyric_alignment_mode is "none"). Heaviest of the four; only worth it for
+#    vocal-led AMV work where cuts must land on a sung hook.
+# pip install whisperx
+
+# ---------------------------------------------------------------------------
+# NOT ADOPTED (recorded so nobody re-litigates these choices)
+# ---------------------------------------------------------------------------
+# madmom    — PyPI stale since Nov 2018, chronic NumPy/Cython ABI breakage.
+#             beat-this replaces its downbeat job with a clean pip install.
+# essentia  — AGPL-3.0 (a real constraint for a commercial product) and it has no
+#             downbeat algorithm either, so it buys nothing this script needs.

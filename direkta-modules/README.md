@@ -6,12 +6,27 @@ top of these docs.
 
 ```
 direkta-modules/
-└── research/
-    ├── amv-music-video.md       AMV / Music Video module research (739 lines)
-    ├── movie-anime-trailer.md   Movie / Anime Trailer module research (665 lines)
-    ├── micro-drama.md           Micro Drama (vertical duanju) module research (631 lines)
-    └── music-analysis-skill.md  Music-analysis skill: findings + build recommendation (851 lines)
+├── research/
+│   ├── amv-music-video.md       AMV / Music Video module research (739 lines)
+│   ├── movie-anime-trailer.md   Movie / Anime Trailer module research (665 lines)
+│   ├── micro-drama.md           Micro Drama (vertical duanju) module research (631 lines)
+│   └── music-analysis-skill.md  Music-analysis skill: findings + build recommendation (851 lines)
+├── agents/
+│   ├── amv-music-video-agent.md track + beat map (+ brief/Bible) → sync map → shotlist → cutlist
+│   ├── trailer-agent.md         Movie Bible + cue beat maps → A/V script → shotlist → cutlist (+ anime-PV mode)
+│   └── micro-drama-agent.md     premise brief → season bible → timestamp-skeleton episodes → shotlists
+└── skills/
+    └── music-analysis/
+        ├── SKILL.md             when to run it, install ladder, CLI usage, output contract
+        ├── music_analysis.py    the CLI: ffmpeg normalize → librosa core → beat_this/allin1/demucs upgrades
+        └── requirements.txt     core deps + optional extras
 ```
+
+The agents follow the house pattern of `direkta-scripting-test/agents/` (persona, prime
+directives, director-gated passes, exact artifact formats) and inherit the Direkta laws:
+propose-don't-commit, evidence-or-ask, strict handoffs, no credit spent unconfirmed.
+The AMV and Trailer agents STOP if `analysis/<track-id>.json` is missing and share the
+same sync constants (`cut_offset_frames` −1..−3, the accent-weight ladder).
 
 ## The three modules
 
