@@ -419,6 +419,31 @@ function migrate(db: DatabaseSync) {
 
   ensureColumn(db, "projects", "script_ai_generated", "INTEGER NOT NULL DEFAULT 0");
 
+  /* stitch_nodes: legacy seed carriers. These held the inline prompts the v1
+     scene card edited; the board now keeps prompt text in separate prompt nodes
+     (content, below). Still written at frame creation and read by quick-add as
+     the pre-fill, so a v1 board's hand-edited text is recoverable in one click. */
+  ensureColumn(db, "stitch_nodes", "video_prompt", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "stitch_nodes", "sound_prompt", "TEXT NOT NULL DEFAULT ''");
+
+  // stitch_nodes v2: the board holds frames, prompt boxes, notes and shapes.
+  // 'frame' is the default so every v1 row stays a frame with no backfill.
+  ensureColumn(db, "stitch_nodes", "node_type", "TEXT NOT NULL DEFAULT 'frame'");
+  ensureColumn(db, "stitch_nodes", "content", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "stitch_nodes", "w", "REAL NOT NULL DEFAULT 0");
+  ensureColumn(db, "stitch_nodes", "h", "REAL NOT NULL DEFAULT 0");
+  ensureColumn(db, "stitch_nodes", "tint", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "stitch_nodes", "shape_kind", "TEXT NOT NULL DEFAULT 'rect'");
+
+  /* stitch_nodes v3: paint order within a z-band. DEFAULT 0 means every existing
+     row keeps today's exact stacking with no backfill — the sort simply becomes
+     (z, y, x, id) with every z equal. REAL, not INTEGER, so a future "paste
+     directly above X" can bisect between two neighbours without a migration. */
+  ensureColumn(db, "stitch_nodes", "z", "REAL NOT NULL DEFAULT 0");
+
+  // projects: which chain head on the Stitch board defines the active cut order
+  ensureColumn(db, "projects", "stitch_active_head", "TEXT");
+
   // characters: psychology, arc, voice, wardrobe, key quote, relationships
   ensureColumn(db, "characters", "background", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "characters", "psychology_want", "TEXT NOT NULL DEFAULT ''");

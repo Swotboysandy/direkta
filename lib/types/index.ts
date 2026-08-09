@@ -1,3 +1,5 @@
+import type { StitchNodeType, StitchShapeKind, StitchTint } from "../stitch/nodeTypes";
+
 export type NodeKind =
   | "script"
   | "character"
@@ -375,6 +377,83 @@ export interface Transition {
   state: TransitionState;
   clip_asset_id: string | null;
   duration: number;
+}
+
+/* ─── Stitch board (infinite canvas) API shapes ─────────────────────
+   These are what /api/projects/[id]/stitch and /api/stitch/** return —
+   joined and denormalised, unlike the raw StitchNode/Transition rows above. */
+
+/* One flat interface on purpose — components narrow on `node_type` at the
+   render switch. A discriminated union would ripple through nodeById, sorted,
+   placedCount and every API mapper for no runtime gain. */
+export interface StitchBoardNode {
+  id: string;
+  beat_id: string | null;
+  variant_id: string | null;
+  variant_n: number | null;
+  x: number;
+  y: number;
+  duration: number;
+  /** Legacy seed carriers — see lib/db/client.ts. Read by quick-add, not by the board. */
+  video_prompt: string;
+  sound_prompt: string;
+  node_type: StitchNodeType;
+  /** Editable body text for prompt boxes and notes; '' for frames and shapes. */
+  content: string;
+  /** 0 means "use the type default" (app/_components/stitch/nodeGeometry.ts). */
+  w: number;
+  h: number;
+  /** Paint order within the node's CSS z-band. Bring-to-front / send-to-back only. */
+  z: number;
+  tint: StitchTint;
+  shape_kind: StitchShapeKind;
+  beat: {
+    n: number | null;
+    title: string | null;
+    scene_heading: string | null;
+    characters: string[];
+    location_id: string | null;
+  } | null;
+  frame_url: string | null;
+  /* ─ Generation state. Written by the /api/stitch/nodes/[id]/{animate,
+     dialogue,lipsync,upload-clip} routes; the board reads it read-only. ─ */
+  /** Seconds into the generated clip where the kept window starts. */
+  trim_start: number;
+  clip_state: StitchGenState;
+  clip_url: string | null;
+  dialogue_audio_url: string | null;
+  lipsync_state: StitchGenState;
+  lipsync_url: string | null;
+}
+
+export type StitchGenState = "none" | "generating" | "complete" | "error";
+
+export interface StitchBoardTransition {
+  id: string;
+  from_node_id: string;
+  to_node_id: string;
+  style: TransitionStyle;
+  state: TransitionState;
+  clip_asset_id: string | null;
+  duration: number;
+  clip_url: string | null;
+}
+
+export interface DrawerVariant {
+  id: string;
+  beat_id: string;
+  n: number;
+  prompt: string;
+  state: StoryboardState;
+  url: string | null;
+}
+
+export interface DrawerBeatGroup {
+  beat_id: string;
+  beat_n: number;
+  beat_title: string;
+  scene_heading: string;
+  variants: DrawerVariant[];
 }
 
 export type ProposalStatus = "pending" | "approved" | "rejected";

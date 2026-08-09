@@ -1829,118 +1829,6 @@ strong, b {
 }
 
 /* ============================================================
-   STITCH WORKSPACE (React Flow)
-   ============================================================ */
-.stitch-shell {
-  position: relative;
-  height: calc(100vh - 64px - 200px);
-  background: var(--bg);
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: inset 0 0 0 1px var(--cream-deep);
-}
-
-/* Brand-align React Flow defaults. */
-.react-flow {
-  background: transparent;
-}
-
-.react-flow__node {
-  /* Our custom .stitch-node provides all visuals; suppress default chrome. */
-  background: transparent;
-  border: 0;
-  padding: 0;
-  width: 220px;
-}
-
-.react-flow__node.selected .stitch-node {
-  box-shadow: var(--shadow-3), inset 0 0 0 2px var(--accent);
-}
-
-.react-flow__handle {
-  width: 10px;
-  height: 10px;
-  background: var(--accent);
-  border: 2px solid var(--surface);
-  opacity: 0;
-  transition: opacity var(--dur-1) var(--ease-out);
-}
-
-.react-flow__node:hover .react-flow__handle {
-  opacity: 1;
-}
-
-.react-flow__handle.connectionindicator {
-  opacity: 1;
-}
-
-.react-flow__edge-path {
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.react-flow__edge-textbg {
-  fill: var(--surface);
-}
-
-.react-flow__edge-text {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-}
-
-/* React Flow Controls (zoom +/-, fit, lock) — brand pill cluster. */
-.react-flow__controls {
-  bottom: var(--sp-4) !important;
-  left: var(--sp-4) !important;
-  background: var(--surface) !important;
-  border: 0 !important;
-  border-radius: var(--r-pill) !important;
-  box-shadow: var(--shadow-1) !important;
-  padding: 4px;
-  display: flex;
-  gap: 2px;
-}
-
-/* React Flow ships its own button styles (white fill) that load after ours —
-   force the glass treatment so the icons stay visible on the dark canvas. */
-.react-flow__controls-button {
-  width: 32px;
-  height: 32px;
-  background: transparent !important;
-  border: 0 !important;
-  color: var(--ink) !important;
-  border-radius: var(--r-pill);
-}
-
-.react-flow__controls-button svg {
-  fill: var(--ink) !important;
-  stroke: var(--ink);
-  max-width: 14px;
-  max-height: 14px;
-}
-
-.react-flow__controls-button:hover {
-  background: var(--cream-deep) !important;
-}
-
-/* MiniMap — brand panel bottom right. */
-.react-flow__minimap {
-  bottom: var(--sp-4) !important;
-  right: var(--sp-4) !important;
-  background: var(--surface) !important;
-  border: 0 !important;
-  border-radius: var(--radius) !important;
-  box-shadow: var(--shadow-1) !important;
-  overflow: hidden;
-}
-
-/* Attribution hidden via proOptions, but extra insurance. */
-.react-flow__attribution {
-  display: none !important;
-}
-
-/* ============================================================
    COMMAND PALETTE (⌘K, via cmdk)
    ============================================================ */
 .cmd-overlay {
@@ -2072,147 +1960,155 @@ strong, b {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.stitch-canvas {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(125, 104, 85, 0.12) 1px, transparent 1px);
-  background-size: 24px 24px;
-  cursor: grab;
-}
+/* ============================================================
+   STITCH WORKSPACE — infinite board
+   ============================================================ */
+.stitch-shell {
+  /* Higgsfield-style dark board, built from the Direkta palette only.
+     These three vars are scoped to the board — they are NOT global tokens. */
+  --board-bg:   var(--cocoa);
+  --board-dot:  rgba(245, 237, 220, 0.10);   /* --cream at 10% */
+  --board-edge: rgba(245, 237, 220, 0.22);
 
-.stitch-canvas.dragging {
-  cursor: grabbing;
-}
+  /* Note / shape tints — derived from the brand palette, scoped to the board. */
+  --tint-cream:    var(--cream-deep);
+  --tint-tomato:   rgba(232, 74, 53, 0.18);
+  --tint-mustard:  rgba(242, 184, 60, 0.24);
+  --tint-viridian: rgba(61, 168, 155, 0.20);
+  --tint-cocoa:    rgba(42, 26, 18, 0.10);
 
-.stitch-node {
-  /* Must be `relative`, not `absolute`: React Flow measures the node wrapper's
-     height from its children. An absolutely-positioned child contributes no
-     height, collapsing the node to 0px (invisible on the board). `relative`
-     still anchors the absolute delete button / drag cue inside it. */
   position: relative;
-  width: 220px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-2);
-  color: var(--ink);
-  display: flex;
-  flex-direction: column;
-  cursor: grab;
-  transition: box-shadow var(--dur-2) var(--ease-out);
-  user-select: none;
+  height: calc(100vh - 64px - 176px);
+  background: var(--board-bg);
+  border-radius: var(--r-lg);
   overflow: hidden;
-  touch-action: none;
-}
-
-.stitch-node:active {
-  cursor: grabbing;
-}
-
-.stitch-node-drag-cue {
-  position: absolute;
-  top: 6px;
-  left: 8px;
-  z-index: 2;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  background: rgba(245, 237, 220, 0.85);
-  color: var(--mute);
-  border-radius: var(--r-pill);
-  opacity: 0;
-  transition: opacity var(--dur-1) var(--ease-out);
-  pointer-events: none;
-}
-
-.stitch-node:hover .stitch-node-drag-cue {
-  opacity: 1;
-}
-
-.stitch-node-delete {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 3;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  color: var(--ink);
-  border-radius: var(--r-pill);
-  box-shadow: var(--shadow-1);
-  opacity: 0;
-  cursor: pointer;
-  transition: opacity var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
-}
-
-.stitch-node:hover .stitch-node-delete {
-  opacity: 1;
-}
-
-.stitch-node-delete:hover {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.stitch-node:hover {
   box-shadow: var(--shadow-3);
 }
 
-.stitch-node[data-selected="true"] {
-  box-shadow: var(--shadow-3), inset 0 0 0 3px var(--accent);
+.stitch-shell:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-3), var(--shadow-focus);
 }
 
-.stitch-node .frame {
-  aspect-ratio: 16/9;
-  background: var(--cream-deep);
-  overflow: hidden;
+.stitch-board {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--board-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+  /* Default, not grab: with the select tool a background drag is a marquee, and
+     an unconditional grab cursor is exactly the "this isn't freeform" tell —
+     it promises panning on a surface that selects. Panning is space, middle
+     drag, two-finger scroll, or the hand tool, and each says so below. */
+  cursor: default;
+  touch-action: none;
 }
 
-.stitch-node .frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* A tool is armed — the board is a placement surface, not a pan surface. */
+.stitch-board[data-tool]:not([data-tool="select"]):not([data-tool="hand"]) {
+  cursor: crosshair;
 }
 
-.stitch-node .meta {
-  padding: var(--sp-3) var(--sp-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
+.stitch-board[data-marquee="true"] {
+  cursor: crosshair;
 }
 
-.stitch-node .meta .title {
-  font-family: var(--font-ui);
-  font-weight: 600;
-  font-size: var(--t-body);
-  letter-spacing: -0.005em;
-  color: var(--ink);
-  line-height: var(--leading-snug);
+.stitch-board[data-space="true"],
+.stitch-board[data-tool="hand"] {
+  cursor: grab;
 }
 
-.stitch-node .meta .duration {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: 0.02em;
-  color: var(--accent);
+.stitch-board[data-panning="true"] {
+  cursor: grabbing;
 }
+
+/* Beats every rule above: while a node is actually moving, the whole board
+   reads as "held", wherever the pointer happens to be. */
+.stitch-board[data-drag="true"],
+.stitch-board[data-drag="true"] .stitch-node {
+  cursor: grabbing;
+}
+
+.stitch-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+/* ─── Edges ──────────────────────────────────────────────── */
 
 .stitch-edges {
   position: absolute;
   inset: 0;
-  pointer-events: none;
   overflow: visible;
+  pointer-events: none;
+  /* Between the shape backdrops (0) and the cards (2). */
+  z-index: 1;
 }
 
 .stitch-edge {
   fill: none;
   stroke-width: 2;
+  stroke: var(--board-edge);
 }
 
-.stitch-edge[data-state="complete"] {
+.stitch-edge[data-active="true"] {
   stroke: var(--accent-3);
+  stroke-width: 2.5;
+}
+
+/* Thick curve = a cut. Thin straight = an attachment or a loose connector. */
+.stitch-edge[data-kind="attach"] {
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+  opacity: 0.75;
+}
+
+.stitch-edge[data-kind="link"] {
+  stroke-width: 1.5;
+  stroke-dasharray: 1 4;
+  opacity: 0.6;
+}
+
+.stitch-shape-draft {
+  fill: none;
+  stroke: var(--board-edge);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  rx: 8;
+  pointer-events: none;
+}
+
+/* The dashed path trailing a connector drag before it lands on anything. */
+.stitch-edge-draft {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
+/* Rubber-band select. Same zero-size SVG as the edges, so it draws at any
+   world coordinate including negative ones. */
+.stitch-marquee {
+  fill: rgba(232, 74, 53, 0.10);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  rx: 4;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Alignment guides — mustard, the board's "measurement" accent. crispEdges so
+   a 1px line stays 1px rather than blurring across two device pixels. */
+.stitch-guide {
+  stroke: var(--accent-2);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  pointer-events: none;
+  shape-rendering: crispEdges;
+  vector-effect: non-scaling-stroke;
 }
 
 .stitch-edge[data-state="generating"] {
@@ -2221,17 +2117,18 @@ strong, b {
   animation: dash-march 0.8s linear infinite;
 }
 
-.stitch-edge[data-state="pending"] {
-  stroke: var(--mute);
-  stroke-dasharray: 4 4;
-}
-
 @keyframes dash-march {
   to { stroke-dashoffset: -10; }
 }
 
 .stitch-edge-label {
   position: absolute;
+  /* Above the cards (2) and a selected card (3). Without this the label sits in
+     the z-index:auto painting step and every card paints over it — and since the
+     hover-× is the only way to detach an edge, an attach edge whose midpoint
+     falls inside its own frame (every quick-added prompt box does) would be
+     permanently undeletable. */
+  z-index: 4;
   padding: 6px var(--sp-3);
   background: var(--surface);
   font-family: var(--font-mono);
@@ -2244,72 +2141,793 @@ strong, b {
   cursor: pointer;
   transform: translate(-50%, -50%);
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
 }
 
-.stitch-edge-label[data-state="complete"] {
+.stitch-edge-label[data-active="true"] {
   background: var(--accent-3);
   color: var(--on-accent-3);
 }
 
-.stitch-edge-label[data-state="generating"] {
-  background: var(--accent-2);
-  color: var(--on-accent-2);
+/* Attach and link edges carry no order pill and no style name — just a × that
+   surfaces on hover, so a thin connector stays a thin connector. */
+.stitch-edge-label[data-bare="true"] {
+  /* An empty pill would be 0×0 and unhoverable — keep a 20px invisible target
+     centred on the line, and only paint it once the pointer is on it. */
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.stitch-edge-label[data-state="pending"] {
+.stitch-edge-label[data-bare="true"]:hover {
   background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.stitch-edge-label .x {
+  display: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stitch-edge-label:hover .x {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ─── Board nodes ────────────────────────────────────────── */
+
+.stitch-node {
+  position: absolute;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-3);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  user-select: none;
+  touch-action: none;
+  z-index: 2;
+  transition: box-shadow var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+}
+
+/* Shapes are backdrops: behind the edges, and click-through everywhere except
+   their header strip, resize grip and port — so they never eat a click meant
+   for a card resting on top of them. */
+.stitch-node[data-kind="shape"] {
+  z-index: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.stitch-node[data-selected="true"] {
+  box-shadow: var(--shadow-3), inset 0 0 0 3px var(--accent);
+  z-index: 3;
+}
+
+/* Selecting a backdrop must not lift it over the cards it sits behind — but it
+   still has to *look* selected, so keep the ring and drop only the drop shadow.
+   `box-shadow: none` here would also erase the shape's own inset border, since
+   this selector outranks .stitch-node.stitch-shape. */
+.stitch-node[data-kind="shape"][data-selected="true"] {
+  z-index: 0;
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.stitch-node[data-dim="true"] {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+
+.stitch-node[data-dim="true"]:hover {
+  opacity: 1;
+  filter: none;
+}
+
+/* Live drop-target verdict during a connector drag. Viridian = the same edge
+   this would create; tomato + not-allowed = the server would refuse it, and the
+   pre-check that decides this is the very function the drop calls. */
+.stitch-node[data-drop="ok"] {
+  box-shadow: var(--shadow-3), inset 0 0 0 3px var(--accent-3);
+}
+
+.stitch-node[data-drop="no"] {
+  box-shadow: var(--shadow-3), inset 0 0 0 3px var(--accent);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* .stitch-node sets user-select:none so a drag never paints a text selection
+   across the board; edit mode is the one place that has to opt back in. */
+.stitch-node[data-editing="true"] textarea {
+  user-select: text;
+  cursor: text;
+}
+
+/* Outside edit mode the text is inert, so a press on it reaches the board
+   router and drags the card instead of dropping a caret. */
+.stitch-node textarea[data-part="text"] {
+  pointer-events: none;
+}
+
+.stitch-node[data-editing="true"] textarea[data-part="text"] {
+  pointer-events: auto;
+}
+
+.stitch-node-grab {
+  height: 34px;
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: grab;
+  background: var(--cream-deep);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.stitch-node-grab:active {
+  cursor: grabbing;
+}
+
+/* 30px header + a 260-wide 16:9 image (146px) + a 36px foot = FRAME_H (212),
+   and the port line at 103 lands on the image's midline. Keep these in step
+   with app/_components/stitch/nodeGeometry.ts. */
+.stitch-node[data-kind="frame"] .stitch-node-grab {
+  height: 30px;
+}
+
+/* The three prompt kinds read apart on a 3px rail, no extra chrome, no new colour. */
+.stitch-prompt .stitch-node-grab {
+  box-shadow: inset 3px 0 0 var(--prompt-accent);
+}
+
+.stitch-node[data-kind="video_prompt"]    { --prompt-accent: var(--accent);   }
+.stitch-node[data-kind="sound_prompt"]    { --prompt-accent: var(--accent-2); }
+.stitch-node[data-kind="dialogue_prompt"] { --prompt-accent: var(--accent-3); }
+
+.stitch-node-order {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  display: grid;
+  place-items: center;
+}
+
+.stitch-node-tools {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+
+.stitch-node:hover .stitch-node-tools,
+.stitch-node[data-selected="true"] .stitch-node-tools {
+  opacity: 1;
+}
+
+.stitch-node-tools button {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink);
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+/* Danger === tomato in this system, so delete uses the same accent fill. */
+.stitch-node-tools button:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.stitch-node-frame {
+  aspect-ratio: 16/9;
+  background: var(--cream-deep);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.stitch-node-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.stitch-node-field {
+  flex: 1;
+  padding: var(--sp-2);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 34px header + 8+8 padding + 98 = PROMPT_H (148) in nodeGeometry.ts — but the
+   height now comes from the shell, which is resizable, so the floor has to be 0
+   or a shrunk box springs back to 148 and "it won't get smaller" is the bug. */
+.stitch-node-field textarea {
+  flex: 1;
+  min-height: 0;
+}
+
+.stitch-node-foot {
+  margin-top: auto;
+  height: 36px;
+  padding: 0 var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border-top: 1px solid var(--cream-deep);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
   color: var(--mute);
 }
 
-.stitch-inspector {
+.stitch-node-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stitch-node-foot button {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  background: var(--cream-deep);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+.stitch-node-foot button:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.stitch-node-foot .stitch-make-active {
+  width: auto;
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--cream-deep);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+/* ─── Notes and shapes ───────────────────────────────────── */
+
+.stitch-note {
+  background: var(--tint, var(--tint-mustard));
+  border-radius: var(--r-sm);
+}
+
+.stitch-note .stitch-node-grab {
+  background: transparent;
+  border-bottom: 1px solid rgba(42, 26, 18, 0.10);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+
+/* 34px header + 166 = NOTE_H (200) in nodeGeometry.ts. Same as the prompt field:
+   height flows from the resizable shell, so the floor must be 0. */
+.stitch-note-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--sp-2) var(--sp-3);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  line-height: var(--leading-normal);
+}
+
+.stitch-note-tints {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: var(--sp-1);
+}
+
+.stitch-note-tints button {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(42, 26, 18, 0.25);
+  cursor: pointer;
+}
+
+.stitch-note-tints button[data-active="true"] {
+  box-shadow: inset 0 0 0 1px rgba(42, 26, 18, 0.25), 0 0 0 2px var(--accent);
+}
+
+/* .stitch-node beats .stitch-shape on specificity ([data-kind="shape"] is an
+   attribute selector), so the fill/border here must match that specificity or
+   the shape renders as a fully transparent, borderless box. */
+.stitch-node.stitch-shape {
+  background: var(--tint, var(--tint-cocoa));
+  box-shadow: inset 0 0 0 2px var(--board-edge);
+  border-radius: var(--r-md);
+  /* Click-through body; the live parts opt back in below. */
+  pointer-events: none;
+}
+
+.stitch-shape .stitch-node-grab,
+.stitch-shape .stitch-conn,
+.stitch-shape .stitch-handle,
+.stitch-shape-ring {
+  pointer-events: auto;
+}
+
+.stitch-shape .stitch-node-grab {
+  background: transparent;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+}
+
+/* "Drag anywhere on the body" cannot apply to a click-through backdrop without
+   breaking the reason it is click-through. The compromise: a 10px live border
+   band, so a shape is grabbable along its own outline while its interior stays
+   transparent to clicks meant for the cards resting on it. */
+.stitch-shape-ring {
   position: absolute;
-  top: var(--sp-4);
-  right: var(--sp-4);
-  bottom: var(--sp-4);
-  width: 320px;
+  inset: 0;
+  /* A transparent border would NOT do this: an element is hit-tested over its
+     whole border box whatever it paints. clip-path removes the interior from
+     hit-testing outright — outer ring clockwise, inner rectangle
+     counter-clockwise, so the nonzero winding cancels inside. */
+  clip-path: polygon(
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    10px 10px, 10px calc(100% - 10px), calc(100% - 10px) calc(100% - 10px),
+    calc(100% - 10px) 10px, 10px 10px
+  );
+}
+
+/* Same specificity trap as above, plus source order: both of these have to
+   outrank the .stitch-node.stitch-shape / .stitch-shape .stitch-node-grab
+   radii, so they carry the extra class and sit after them. */
+.stitch-node.stitch-shape-ellipse {
+  border-radius: 50%;
+}
+
+.stitch-node.stitch-shape-ellipse .stitch-node-grab {
+  border-radius: 50% 50% 0 0;
+}
+
+/* ─── Connect handles ────────────────────────────────────── */
+
+/* Four side dots, revealed on hover or single selection, replacing v2's three
+   fixed role-bearing ports. The role never mattered — both the client and the
+   server classify an edge from its endpoint *types* — so geometry is all a
+   connector handle ever needed to carry. */
+.stitch-conn {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-2);
-  padding: var(--sp-4);
+  box-shadow: 0 0 0 2px var(--accent-3), var(--shadow-1);
+  cursor: crosshair;
+  z-index: 3;
+}
+
+/* Transparent hit padding so a 10px dot is grabbable at 26px. */
+.stitch-conn::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.stitch-conn[data-side="n"] { top: 0;    left: 50%; transform: translate(-50%, -50%); }
+.stitch-conn[data-side="s"] { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+.stitch-conn[data-side="w"] { left: 0;   top: 50%;  transform: translate(-50%, -50%); }
+.stitch-conn[data-side="e"] { right: 0;  top: 50%;  transform: translate(50%, -50%); }
+
+/* ─── Resize handles ─────────────────────────────────────── */
+
+.stitch-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1), 0 0 0 1.5px var(--accent);
+  z-index: 3;
+}
+
+.stitch-handle::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.stitch-handle[data-handle="nw"] { left: 0;   top: 0;    transform: translate(-50%, -50%); cursor: nwse-resize; }
+.stitch-handle[data-handle="n"]  { left: 50%; top: 0;    transform: translate(-50%, -50%); cursor: ns-resize; }
+.stitch-handle[data-handle="ne"] { right: 0;  top: 0;    transform: translate(50%, -50%);  cursor: nesw-resize; }
+.stitch-handle[data-handle="e"]  { right: 0;  top: 50%;  transform: translate(50%, -50%);  cursor: ew-resize; }
+.stitch-handle[data-handle="se"] { right: 0;  bottom: 0; transform: translate(50%, 50%);   cursor: nwse-resize; }
+.stitch-handle[data-handle="s"]  { left: 50%; bottom: 0; transform: translate(-50%, 50%);  cursor: ns-resize; }
+.stitch-handle[data-handle="sw"] { left: 0;   bottom: 0; transform: translate(-50%, 50%);  cursor: nesw-resize; }
+.stitch-handle[data-handle="w"]  { left: 0;   top: 50%;  transform: translate(-50%, -50%); cursor: ew-resize; }
+
+/* ─── Context menu ───────────────────────────────────────── */
+
+/* Above the edge labels (4) and the board chrome (30) — a menu that a dock
+   button could overlap is worse than no menu. */
+.stitch-menu {
+  position: absolute;
+  z-index: 40;
+  min-width: 184px;
+  padding: var(--sp-1);
+  background: var(--surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-3);
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
-  overflow: auto;
 }
 
-.stitch-inspector header {
+.stitch-menu button {
+  width: 100%;
+  padding: 7px var(--sp-2);
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  padding-bottom: var(--sp-3);
-  border-bottom: 1px solid var(--cream-deep);
+  align-items: center;
+  gap: var(--sp-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  text-align: left;
+  cursor: pointer;
 }
 
-.stitch-hud {
+.stitch-menu button:hover:not(:disabled) {
+  background: var(--cream-deep);
+}
+
+/* Danger === tomato in this system, same as the node tool cluster. */
+.stitch-menu button[data-danger="true"]:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.stitch-menu button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stitch-menu .sep {
+  height: 1px;
+  margin: var(--sp-1) 0;
+  background: var(--cream-deep);
+}
+
+/* ─── Drawer ─────────────────────────────────────────────── */
+
+/* A floating panel over the board, positioned from React state (left/top), not
+   a docked column — the board is visible all the way around it. */
+.stitch-drawer {
   position: absolute;
-  bottom: var(--sp-4);
-  left: var(--sp-4);
+  max-height: calc(100% - 140px);
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  border-radius: var(--r-lg);
   display: flex;
-  gap: var(--sp-1);
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.stitch-drawer[data-open="false"] {
+  display: none;
+}
+
+.stitch-drawer-head {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--cream-deep);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  touch-action: none;
+}
+
+.stitch-drawer-head:active {
+  cursor: grabbing;
+}
+
+.stitch-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3) var(--sp-4) var(--sp-5);
+}
+
+.stitch-drawer-group {
+  margin-bottom: var(--sp-4);
+}
+
+.stitch-drawer-group > button {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  padding: var(--sp-2) 0;
+  background: var(--surface);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: left;
+  color: var(--ink);
+}
+
+.stitch-drawer-group > button .title {
+  font-family: var(--font-display);
+  font-size: var(--t-body);
+  line-height: var(--leading-snug);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stitch-drawer-group > button .chev {
+  margin-left: auto;
+  color: var(--mute);
+}
+
+.stitch-drawer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--cream-deep);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.stitch-drawer-thumb {
+  position: relative;
+  aspect-ratio: 16/9;
+  background: var(--surface);
+  cursor: grab;
+  touch-action: none;
+  border: none;
+  padding: 0;
+}
+
+.stitch-drawer-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.stitch-drawer-thumb:active {
+  cursor: grabbing;
+}
+
+.stitch-drawer-thumb[data-empty="true"] {
+  background: var(--cream-deep);
+  color: var(--mute);
+  display: grid;
+  place-items: center;
+  cursor: default;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+}
+
+.stitch-drawer-badge {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  background: rgba(42, 26, 18, 0.72);
+  color: var(--cream);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-eyebrow);
+}
+
+.stitch-drawer-count {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent-3);
+  color: var(--on-accent-3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-eyebrow);
+}
+
+.stitch-drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 160px;
+  aspect-ratio: 16/9;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-3);
+  opacity: 0.92;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.stitch-drag-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ─── Board chrome ───────────────────────────────────────── */
+
+/* Top-centre, so it never collides with the drawer's default home in the
+   top-left. Board chrome sits at 30 — above the drawer (20), so the tools stay
+   reachable even with the panel dragged over them. */
+.stitch-chain-bar {
+  position: absolute;
+  left: 50%;
+  top: var(--sp-4);
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.stitch-chain-bar button {
+  border: none;
+  cursor: pointer;
+}
+
+.stitch-chain-bar button[data-active="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.stitch-zoom {
+  position: absolute;
+  left: var(--sp-4);
+  bottom: var(--sp-4);
+  z-index: 30;
   background: var(--surface);
   border-radius: var(--r-pill);
   box-shadow: var(--shadow-1);
   padding: var(--sp-1);
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
-.stitch-hud button {
+.stitch-zoom button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink);
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+.stitch-zoom button:hover {
+  background: var(--cream-deep);
+}
+
+.stitch-zoom .readout {
+  min-width: 44px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+}
+
+.stitch-dock {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-4);
+  transform: translateX(-50%);
+  z-index: 30;
+  background: var(--surface);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-1);
+  padding: var(--sp-1);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.stitch-dock .sep {
+  width: 1px;
+  height: 20px;
+  background: var(--cream-deep);
+  margin: 0 var(--sp-1);
+}
+
+.stitch-dock button {
   width: 32px;
   height: 32px;
   display: grid;
   place-items: center;
   background: transparent;
   color: var(--ink);
+  border: none;
   border-radius: var(--r-pill);
+  cursor: pointer;
 }
 
-.stitch-hud button:hover {
+.stitch-dock button:hover:not(:disabled) {
   background: var(--cream-deep);
+}
+
+/* Undo/redo grey out rather than vanish — a moving dock is worse than a dim one. */
+.stitch-dock button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stitch-dock button[data-active="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Armed tools are viridian so "a tool is live" never reads as "the library is
+   open" — that stays tomato. */
+.stitch-dock button[data-armed="true"] {
+  background: var(--accent-3);
+  color: var(--on-accent-3);
+}
+
+.stitch-empty {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: rgba(245, 237, 220, 0.55);
+  pointer-events: none;
 }
 
 /* ============================================================

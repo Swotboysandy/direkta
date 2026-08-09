@@ -330,14 +330,33 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   }
 
   async function removeVariantFromStitch(variant: StoryboardVariant) {
+    /* The Stitch board can hold several copies of one variant, each with its own
+       prompts and connections. The server refuses a multi-copy delete with a 409
+       rather than wiping them silently — confirm, then opt in explicitly. No
+       optimistic un-flag until it actually succeeds. */
+    const base = `/api/stitch/nodes?variant_id=${encodeURIComponent(variant.id)}&project_id=${encodeURIComponent(project.id)}`;
+    let res = await fetch(base, { method: "DELETE" }).catch(() => null);
+
+    if (res && res.status === 409) {
+      const data = (await res.json().catch(() => ({}))) as { count?: number };
+      const count = data.count ?? 2;
+      const ok = confirm(
+        `This frame is on the Stitch board ${count} times, each with its own prompts and connections. Remove all ${count}?`
+      );
+      if (!ok) return;
+      res = await fetch(`${base}&all=1`, { method: "DELETE" }).catch(() => null);
+    }
+
+    if (!res || !res.ok) {
+      flashToast("error", "Failed to remove from Stitch.");
+      return;
+    }
+
     setStitchedVariantIds((prev) => {
       const next = new Set(prev);
       next.delete(variant.id);
       return next;
     });
-    await fetch(`/api/stitch/nodes?variant_id=${encodeURIComponent(variant.id)}`, {
-      method: "DELETE"
-    }).catch(() => {});
     flashToast("info", `Removed V${String(variant.n).padStart(2, "0")} from Stitch`);
   }
 

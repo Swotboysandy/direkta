@@ -1,1495 +1,1241 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  applyNodeChanges,
-  type Node as RFNode,
-  type Edge as RFEdge,
-  type NodeChange,
-  type EdgeChange,
-  type NodeTypes,
-  type ReactFlowInstance
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-import { motion } from "framer-motion";
-import { ArrowRight, Film, Pause, Play, Trash2, X } from "../_components/icons";
-import { fadeUp, popIn } from "../_components/motion";
-import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
-import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, videoModel, CAMERA_MOTIONS } from "../../lib/higgsfield/catalog";
-import { LIPSYNC_MODELS, DEFAULT_LIPSYNC_MODEL } from "../../lib/lipsync/catalog";
-import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
-
-interface Balance {
-  connected: boolean;
-  credits: number | null;
-  plan: string | null;
-}
-
-interface StitchNode {
-  id: string;
-  beat_id: string | null;
-  variant_id: string | null;
-  variant_n: number | null;
-  x: number;
-  y: number;
-  duration: number;
-  trim_start: number;
-  beat: {
-    n: number;
-    title: string;
-    scene_heading: string;
-    characters: string[];
-    location_id: string | null;
-  } | null;
-  frame_url: string | null;
-  clip_url: string | null;
-  clip_state: string;
-  dialogue_audio_url: string | null;
-  lipsync_state: string;
-  lipsync_url: string | null;
-}
-
-interface Transition {
-  id: string;
-  from_node_id: string;
-  to_node_id: string;
-  style: TransitionStyle;
-  state: "pending" | "generating" | "complete" | "error";
-  clip_asset_id: string | null;
-  duration: number;
-  clip_url: string | null;
-}
+  ArrowRight,
+  ChevronsDown,
+  ChevronsUp,
+  Clapperboard,
+  Clipboard,
+  Copy,
+  Hand,
+  Home,
+  Layers,
+  Maximize2,
+  MessageSquare,
+  Minus,
+  MousePointer2,
+  Music,
+  Pencil,
+  Plus,
+  Redo2,
+  Sparkles,
+  Square,
+  StickyNote,
+  Trash2,
+  Undo2,
+  X
+} from "lucide-react";
+import type {
+  DrawerBeatGroup,
+  DrawerVariant,
+  Project,
+  StitchBoardNode,
+  StitchBoardTransition,
+  WorkspaceId
+} from "../../lib/types";
+import { deriveChains, orderIndexMap, resolveActiveChain } from "../../lib/stitch/chains";
+import { connectVerdict } from "../../lib/stitch/connectRules";
+import {
+  edgeKind,
+  type EdgeKind,
+  type StitchNodeType,
+  type StitchShapeKind,
+  type StitchTint
+} from "../../lib/stitch/nodeTypes";
+import { BoardMenu, type MenuItem } from "../_components/stitch/BoardMenu";
+import { FrameDrawer } from "../_components/stitch/FrameDrawer";
+import { FrameNode } from "../_components/stitch/FrameNode";
+import { NoteNode } from "../_components/stitch/NoteNode";
+import { PromptNode } from "../_components/stitch/PromptNode";
+import { ShapeNode } from "../_components/stitch/ShapeNode";
+import { draftPath, edgePath, sideAnchor } from "../_components/stitch/edgeGeometry";
+import { FRAME_H, FRAME_W, boxOf, type Box } from "../_components/stitch/nodeGeometry";
+import { useBoardInput } from "../_components/stitch/useBoardInput";
+import { useBoardViewport } from "../_components/stitch/useBoardViewport";
+import { useOpStack, type FieldKey } from "../_components/stitch/useOpStack";
 
 interface Props {
   project: Project;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
-const NODE_TYPES: NodeTypes = { stitch: StitchNodeCard };
+type Toast = { kind: "success" | "info" | "error"; text: string };
 
-/* Semantic colours pulled live from tokens.css via var() — stays in sync with
-   the current theme instead of freezing a hex snapshot (edges/labels are set
-   via inline `style`, which resolves CSS custom properties normally). */
-const EDGE_COLOR: Record<Transition["state"], string> = {
-  complete: "var(--viridian)",
-  generating: "var(--mustard)",
-  pending: "var(--mute)",
-  error: "var(--tomato)"
-};
-
-const TRANSITION_PILL_COLOR: Record<Transition["state"], { bg: string; fg: string }> = {
-  complete: { bg: "color-mix(in srgb, var(--viridian) 18%, transparent)", fg: "var(--viridian-deep)" },
-  generating: { bg: "color-mix(in srgb, var(--mustard) 20%, transparent)", fg: "var(--mustard-deep)" },
-  pending: { bg: "var(--surface)", fg: "var(--mute)" },
-  error: { bg: "color-mix(in srgb, var(--tomato) 16%, transparent)", fg: "var(--tomato-deep)" }
-};
-
-function transitionLabel(t: Transition): string {
-  if (t.state === "complete" && t.duration > 0) return `${t.style} · ${t.duration.toFixed(1)}s`;
-  if (t.state === "generating") return "Generating…";
-  if (t.state === "pending") return `+ ${t.style}`;
-  return t.style;
+/** One stable set per node id — see `handlersFor`. */
+interface NodeHandlers {
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onCommit: (content: string) => void;
+  onSetTint: (t: StitchTint) => void;
+  onSetShapeKind: (k: StitchShapeKind) => void;
+  onSetDuration: (d: number) => void;
+  onQuickAdd: () => void;
+  onMakeActive: () => void;
 }
 
-function formatTC(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
+const GHOST_W = 160;
+const GHOST_H = 90;
+const PASTE_OFFSET = 24;
+
+const PLACERS: { tool: StitchNodeType; icon: typeof Clapperboard; title: string }[] = [
+  { tool: "video_prompt", icon: Clapperboard, title: "Video prompt box" },
+  { tool: "sound_prompt", icon: Music, title: "Sound prompt box" },
+  { tool: "dialogue_prompt", icon: MessageSquare, title: "Dialogue prompt box" },
+  { tool: "note", icon: StickyNote, title: "Note" },
+  { tool: "shape", icon: Square, title: "Shape — click, or drag to size" }
+];
+
+const byYXId = (a: StitchBoardNode, b: StitchBoardNode) =>
+  a.y - b.y || a.x - b.x || a.id.localeCompare(b.id);
+const byZYXId = (a: StitchBoardNode, b: StitchBoardNode) => a.z - b.z || byYXId(a, b);
 
 export function Stitch({ project, onSwitchWorkspace }: Props) {
-  const [stitchNodes, setStitchNodes] = useState<StitchNode[]>([]);
-  const [transitions, setTransitions] = useState<Transition[]>([]);
-  const [rfNodes, setRfNodes] = useState<RFNode[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [view, setView] = useState<"board" | "timeline">("timeline");
-  const rfInstance = useRef<ReactFlowInstance | null>(null);
-  const didFit = useRef(false);
-  const [balance, setBalance] = useState<Balance | null>(null);
+  const [nodes, setNodes] = useState<StitchBoardNode[]>([]);
+  const [transitions, setTransitions] = useState<StitchBoardTransition[]>([]);
+  const [drawer, setDrawer] = useState<DrawerBeatGroup[]>([]);
+  const [activeHead, setActiveHead] = useState<string | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [ghost, setGhost] = useState<{
+    variantId: string;
+    url: string | null;
+    label: string;
+    cx: number;
+    cy: number;
+  } | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
 
-  const loadBalance = useCallback(() => {
-    fetch("/api/higgsfield/balance")
-      .then((r) => r.json())
-      .then(setBalance)
-      .catch(() => {});
+  const shellRef = useRef<HTMLDivElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const drawerDrag = useRef<{
+    variantId: string;
+    url: string;
+    label: string;
+    startX: number;
+    startY: number;
+    armed: boolean;
+  } | null>(null);
+  /* Internal clipboard only — no OS clipboard integration, deliberately: the
+     board's copy is a node graph, not text, and reading the system clipboard
+     would need a permission prompt to deliver nothing extra. */
+  const clipboard = useRef<{ nodes: StitchBoardNode[]; edges: StitchBoardTransition[] }>({
+    nodes: [],
+    edges: []
+  });
+
+  /* Latest board state, readable from window-level pointer and key handlers
+     without making them re-subscribe on every mutation. */
+  const nodesRef = useRef<StitchBoardNode[]>([]);
+  nodesRef.current = nodes;
+  const transitionsRef = useRef<StitchBoardTransition[]>([]);
+  transitionsRef.current = transitions;
+
+  const flashToast = useCallback((kind: Toast["kind"], text: string) => {
+    setToast({ kind, text });
+    setTimeout(() => setToast((t) => (t?.text === text ? null : t)), 2800);
   }, []);
 
-  useEffect(() => {
-    loadBalance();
-  }, [loadBalance]);
+  /* ─── Board viewport ─────────────────────────────────────── */
+
+  const { viewport, toWorld, worldRect, panBy, panning, setPanning, frameTo, reset, zoomBy } =
+    useBoardViewport(boardRef);
+  const zoomRef = useRef(viewport.zoom);
+  zoomRef.current = viewport.zoom;
+  // Window-level drawer drag needs the latest conversion without re-registering.
+  const toWorldRef = useRef(toWorld);
+  toWorldRef.current = toWorld;
+
+  /* ─── Undo stack ─────────────────────────────────────────── */
+
+  const ops = useOpStack({
+    onRestore(restoredNodes, restoredEdges) {
+      setNodes((prev) => {
+        const seen = new Set(prev.map((n) => n.id));
+        return [...prev, ...restoredNodes.filter((n) => !seen.has(n.id))];
+      });
+      setTransitions((prev) => {
+        const seen = new Set(prev.map((t) => t.id));
+        return [...prev, ...restoredEdges.filter((t) => !seen.has(t.id))];
+      });
+    },
+    onRemove(nodeIds, edgeIds) {
+      const ns = new Set(nodeIds);
+      const es = new Set(edgeIds);
+      setNodes((prev) => prev.filter((n) => !ns.has(n.id)));
+      setTransitions((prev) =>
+        prev.filter((t) => !es.has(t.id) && !ns.has(t.from_node_id) && !ns.has(t.to_node_id))
+      );
+    },
+    onMove(items) {
+      const m = new Map(items.map((i) => [i.id, i]));
+      setNodes((prev) => prev.map((n) => (m.has(n.id) ? { ...n, x: m.get(n.id)!.x, y: m.get(n.id)!.y } : n)));
+    },
+    onResize(items) {
+      const m = new Map(items.map((i) => [i.id, i.box]));
+      setNodes((prev) =>
+        prev.map((n) => {
+          const b = m.get(n.id);
+          return b ? { ...n, x: b.x, y: b.y, w: b.w, h: b.h } : n;
+        })
+      );
+    },
+    onField(id, key, value) {
+      setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, [key]: value } : n)));
+    },
+    onRemap(map) {
+      // Every live reference to a recreated id has to follow it, or the board
+      // keeps a selection / active head pointing at a node that no longer exists.
+      const pick = (id: string | null) => (id && map.has(id) ? map.get(id)! : id);
+      setActiveHead((h) => pick(h));
+      setFocusId((f) => pick(f));
+      input.setSelectedIds((prev) => new Set([...prev].map((id) => map.get(id) ?? id)));
+      input.setEditingId((e) => pick(e));
+      clipboard.current = {
+        nodes: clipboard.current.nodes.map((n) => (map.has(n.id) ? { ...n, id: map.get(n.id)! } : n)),
+        edges: clipboard.current.edges.map((t) => ({
+          ...t,
+          id: map.get(t.id) ?? t.id,
+          from_node_id: map.get(t.from_node_id) ?? t.from_node_id,
+          to_node_id: map.get(t.to_node_id) ?? t.to_node_id
+        }))
+      };
+    },
+    onError: (message) => flashToast("error", message)
+  });
+
+  /* ─── Input layer ────────────────────────────────────────── */
+
+  const input = useBoardInput({
+    boardRef,
+    shellRef,
+    nodesRef,
+    transitionsRef,
+    zoomRef,
+    toWorld,
+    worldRect,
+    panBy,
+    zoomBy,
+    setPanning,
+    onCommitMove: commitMove,
+    onCommitResize: commitResize,
+    onDuplicateDrag: duplicateDrag,
+    onPlace: placeNode,
+    onConnect: finishConnect,
+    onDeleteSelection: deleteSelection,
+    onDuplicateSelection: duplicateSelection,
+    onQuickAdd: quickAdd,
+    onCopy: copySelection,
+    onPaste: pasteClipboard,
+    onUndo: () => ops.undo(project.id),
+    onRedo: () => ops.redo(project.id),
+    onFitAll: fitAll
+  });
+
+  const { selectedIds, editingId, hoverId, tool, drag, resizeDraft, marquee, connect, guides, shapeDraft } =
+    input;
+
+  /* ─── Load ───────────────────────────────────────────────── */
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/projects/${project.id}/stitch`);
     if (!res.ok) return;
-    const data = await res.json();
-    setStitchNodes(data.nodes);
+    const data = (await res.json()) as {
+      nodes: StitchBoardNode[];
+      transitions: StitchBoardTransition[];
+      drawer: DrawerBeatGroup[];
+      active_chain_head: string | null;
+    };
+    setNodes(data.nodes);
     setTransitions(data.transitions);
+    setDrawer(data.drawer);
+    setActiveHead(data.active_chain_head);
   }, [project.id]);
 
   useEffect(() => {
     reload();
   }, [reload]);
 
-  // Frame the board once the first batch of nodes has mounted and been measured.
-  // `fitView` as a prop only runs on init (when nodes are still loading async),
-  // so it can miss; this guarantees the board is framed on first open.
-  useEffect(() => {
-    if (didFit.current || rfNodes.length === 0) return;
-    const t = setTimeout(() => {
-      rfInstance.current?.fitView({ padding: 0.25, maxZoom: 1, duration: 300 });
-      didFit.current = true;
-    }, 80);
-    return () => clearTimeout(t);
-  }, [rfNodes.length]);
+  /* ─── Derived ────────────────────────────────────────────── */
 
-  async function patchNode(id: string, patch: { x?: number; y?: number; duration?: number; trim_start?: number; scene_number?: number }) {
-    await fetch(`/api/stitch/nodes/${id}`, {
+  const nodeById = useMemo(() => {
+    const m = new Map<string, StitchBoardNode>();
+    for (const n of nodes) m.set(n.id, n);
+    return m;
+  }, [nodes]);
+
+  /* Two sorts, deliberately. deriveChains labels the topmost chain "Chain A"
+     from a (y, x, id) order, so folding `z` into that would relabel every chain
+     the moment the director restacked a card. `z` is a painting concern only. */
+  const chainOrder = useMemo(() => [...nodes].sort(byYXId), [nodes]);
+  const paintOrder = useMemo(() => [...nodes].sort(byZYXId), [nodes]);
+
+  /* Chains are frame→frame only. deriveChains already drops any transition whose
+     endpoints aren't in the id set it's given, so feeding it frames alone
+     discards every attach and link edge for free. */
+  const frames = useMemo(() => chainOrder.filter((n) => n.node_type === "frame"), [chainOrder]);
+  const chains = useMemo(() => deriveChains(frames.map((n) => n.id), transitions), [frames, transitions]);
+  const activeChain = useMemo(() => resolveActiveChain(chains, activeHead), [chains, activeHead]);
+  const orderIndex = useMemo(() => orderIndexMap(activeChain), [activeChain]);
+
+  /* Wiring a shot into the front of the active chain demotes the stored head to
+     an ordinary member. resolveActiveChain keeps the right chain active, but the
+     column would stay stale forever — so write the new head back once. Guarded on
+     containment so the "head was deleted" fallback to the topmost chain is never
+     persisted as a deliberate choice. */
+  useEffect(() => {
+    if (!activeHead || !activeChain) return;
+    if (activeChain.headId === activeHead) return;
+    if (!activeChain.nodeIds.includes(activeHead)) return;
+    const repaired = activeChain.headId;
+    setActiveHead(repaired);
+    fetch(`/api/projects/${project.id}/stitch`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ active_chain_head: repaired })
+    }).catch(() => {});
+  }, [activeHead, activeChain, project.id]);
+
+  const placedCount = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const n of nodes) if (n.variant_id) m.set(n.variant_id, (m.get(n.variant_id) ?? 0) + 1);
+    return m;
+  }, [nodes]);
+
+  /** transition id → derived kind. Endpoints decide; nothing is stored. */
+  const kindOf = useMemo(() => {
+    const m = new Map<string, EdgeKind>();
+    for (const t of transitions) {
+      const a = nodeById.get(t.from_node_id);
+      const b = nodeById.get(t.to_node_id);
+      if (!a || !b) continue;
+      m.set(t.id, edgeKind(a.node_type, b.node_type));
+    }
+    return m;
+  }, [transitions, nodeById]);
+
+  const chainedIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of chains) for (const id of c.nodeIds) s.add(id);
+    return s;
+  }, [chains]);
+  const headIds = useMemo(() => new Set(chains.map((c) => c.headId)), [chains]);
+
+  const activeLetter = activeChain
+    ? String.fromCharCode(65 + chains.findIndex((c) => c.headId === activeChain.headId))
+    : null;
+  const activeDuration = activeChain
+    ? activeChain.nodeIds.reduce((sum, id) => sum + (nodeById.get(id)?.duration ?? 0), 0)
+    : 0;
+
+  /** The node's box as it looks *right now*, mid-drag or mid-resize included. */
+  const liveBox = useCallback(
+    (n: StitchBoardNode): Box => {
+      if (resizeDraft && resizeDraft.id === n.id) return resizeDraft.box;
+      const b = boxOf(n);
+      if (drag?.ids.has(n.id)) return { ...b, x: b.x + drag.dx, y: b.y + drag.dy };
+      return b;
+    },
+    [drag, resizeDraft]
+  );
+
+  /* One memo for every edge path. During a drag only `drag` changes, so this is
+     the only thing that recomputes — the untouched cards bail out on memo. */
+  const edges = useMemo(() => {
+    return transitions.flatMap((t) => {
+      const a = nodeById.get(t.from_node_id);
+      const b = nodeById.get(t.to_node_id);
+      if (!a || !b) return [];
+      const kind = kindOf.get(t.id) ?? "link";
+      const path = edgePath(liveBox(a), liveBox(b), kind);
+      const from = orderIndex.get(t.from_node_id);
+      const to = orderIndex.get(t.to_node_id);
+      return [{ t, kind, path, from, to, isActive: kind === "chain" && from !== undefined && to !== undefined }];
+    });
+  }, [transitions, nodeById, kindOf, orderIndex, liveBox]);
+
+  /* ─── Persistence helpers ────────────────────────────────── */
+
+  /* Record, not a per-field shape: the whitelist that actually matters lives in
+     PATCH /api/stitch/nodes/[id], and setField writes a computed key. */
+  async function patchNode(id: string, patch: object) {
+    const res = await fetch(`/api/stitch/nodes/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(patch)
+    }).catch(() => null);
+    // Swallowing this leaves the board permanently ahead of the DB, silently.
+    if (!res?.ok) flashToast("error", "That change did not save.");
+  }
+
+  /**
+   * Everything a delete of `ids` takes with it, computed exactly once and used
+   * for both the optimistic removal and the undo snapshot — so the two can never
+   * disagree about what "remove" meant.
+   *
+   * Mirrors `deleteStitchNode` in lib/db/stitch.ts: a frame drops its attached
+   * prompt boxes plus every transition touching any of them.
+   */
+  function cascadeOf(ids: string[]) {
+    const del = new Set(ids);
+    for (const id of ids) {
+      if (nodeById.get(id)?.node_type !== "frame") continue;
+      for (const t of transitions) {
+        if (t.from_node_id === id && kindOf.get(t.id) === "attach") del.add(t.to_node_id);
+      }
+    }
+    return {
+      ids: del,
+      nodes: nodes.filter((n) => del.has(n.id)),
+      edges: transitions.filter((t) => del.has(t.from_node_id) || del.has(t.to_node_id))
+    };
+  }
+
+  function commitMove(items: { id: string; from: { x: number; y: number }; to: { x: number; y: number } }[]) {
+    const m = new Map(items.map((i) => [i.id, i.to]));
+    setNodes((prev) => prev.map((n) => (m.has(n.id) ? { ...n, ...m.get(n.id)! } : n)));
+    const changed = items.filter((i) => i.from.x !== i.to.x || i.from.y !== i.to.y);
+    if (changed.length === 0) return;
+    // One PATCH per node, on drop — never one per pointermove.
+    for (const i of changed) patchNode(i.id, i.to);
+    ops.push({ t: "move", items: changed });
+  }
+
+  function commitResize(id: string, from: Box, to: Box) {
+    setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, x: to.x, y: to.y, w: to.w, h: to.h } : n)));
+    if (from.x === to.x && from.y === to.y && from.w === to.w && from.h === to.h) return;
+    patchNode(id, to);
+    ops.push({ t: "resize", items: [{ id, from, to }] });
+  }
+
+  async function deleteSelection(ids: string[]) {
+    if (ids.length === 0) return;
+    /* No confirm(): undo covers it. A modal *and* an undo stack is double
+       friction, and the confirm was only ever standing in for the undo that
+       didn't exist yet. */
+    const snap = cascadeOf(ids);
+    if (snap.nodes.length === 0) return;
+    setNodes((prev) => prev.filter((n) => !snap.ids.has(n.id)));
+    setTransitions((prev) =>
+      prev.filter((t) => !snap.ids.has(t.from_node_id) && !snap.ids.has(t.to_node_id))
+    );
+    input.setSelectedIds(new Set());
+    if (editingId && snap.ids.has(editingId)) input.setEditingId(null);
+    // The server clears projects.stitch_active_head for a deleted node; mirror it.
+    if (activeHead && snap.ids.has(activeHead)) setActiveHead(null);
+    /* The op is pushed only once the server has agreed. Pushing first and
+       swallowing the result meant a failed DELETE left the rows in SQLite while
+       undo POSTed fresh copies — one card on the board, two in the DB. */
+    let ok = true;
+    for (const id of ids) {
+      const res = await fetch(`/api/stitch/nodes/${id}`, { method: "DELETE" }).catch(() => null);
+      if (!res?.ok) ok = false;
+    }
+    if (!ok) {
+      // Put back exactly what the snapshot took, and record nothing to undo.
+      setNodes((prev) => [...prev, ...snap.nodes.filter((n) => !prev.some((p) => p.id === n.id))]);
+      setTransitions((prev) => [...prev, ...snap.edges.filter((e) => !prev.some((p) => p.id === e.id))]);
+      flashToast("error", "Could not delete that.");
+      return;
+    }
+    ops.push({ t: "delete", nodes: snap.nodes, edges: snap.edges });
+  }
+
+  async function duplicateSelection(ids: string[]) {
+    if (ids.length === 0) return;
+    const made: StitchBoardNode[] = [];
+    for (const id of ids) {
+      const res = await fetch(`/api/stitch/nodes/${id}/duplicate`, { method: "POST" }).catch(() => null);
+      const data = (await res?.json().catch(() => ({}))) as { node?: StitchBoardNode };
+      if (res?.ok && data.node) made.push(data.node);
+    }
+    if (made.length === 0) return flashToast("error", "Could not duplicate that.");
+    setNodes((prev) => [...prev, ...made]);
+    input.selectMany(made.map((n) => n.id));
+    ops.push({ t: "create", nodes: made, edges: [] });
+    flashToast("info", made.length > 1 ? `Duplicated ${made.length}` : "Duplicated — alternate ready.");
+  }
+
+  /**
+   * Alt-drag: the originals never moved (the drag was a preview of where the
+   * copies land), so there is nothing to snap back — they simply re-render at
+   * their stored position once `drag` clears — and one duplicate call per node
+   * places the copies at the drop delta. One round trip, no invented ids.
+   */
+  async function duplicateDrag(ids: string[], dx: number, dy: number) {
+    const made: StitchBoardNode[] = [];
+    for (const id of ids) {
+      const res = await fetch(`/api/stitch/nodes/${id}/duplicate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dx, dy })
+      }).catch(() => null);
+      const data = (await res?.json().catch(() => ({}))) as { node?: StitchBoardNode };
+      if (res?.ok && data.node) made.push(data.node);
+    }
+    if (made.length === 0) return flashToast("error", "Could not duplicate that.");
+    setNodes((prev) => [...prev, ...made]);
+    input.selectMany(made.map((n) => n.id));
+    ops.push({ t: "create", nodes: made, edges: [] });
+  }
+
+  function copySelection(ids: string[]) {
+    if (ids.length === 0) return;
+    const set = new Set(ids);
+    clipboard.current = {
+      nodes: nodes.filter((n) => set.has(n.id)),
+      // Only edges wholly inside the copied set — a half-edge has nowhere to land.
+      edges: transitions.filter((t) => set.has(t.from_node_id) && set.has(t.to_node_id))
+    };
+    flashToast("info", ids.length > 1 ? `Copied ${ids.length}` : "Copied");
+  }
+
+  async function pasteClipboard(world: { x: number; y: number } | null) {
+    const clip = clipboard.current;
+    if (clip.nodes.length === 0) return;
+    let dx = PASTE_OFFSET;
+    let dy = PASTE_OFFSET;
+    if (world) {
+      // "Paste here" lands the cluster under the cursor with its layout intact.
+      dx = Math.round(world.x - Math.min(...clip.nodes.map((n) => n.x)));
+      dy = Math.round(world.y - Math.min(...clip.nodes.map((n) => n.y)));
+    }
+    const map = new Map<string, string>();
+    const made: StitchBoardNode[] = [];
+    for (const n of clip.nodes) {
+      const res = await fetch(`/api/stitch/nodes/${ops.resolve(n.id)}/duplicate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dx, dy })
+      }).catch(() => null);
+      const data = (await res?.json().catch(() => ({}))) as { node?: StitchBoardNode };
+      if (!res?.ok || !data.node) continue;
+      map.set(n.id, data.node.id);
+      made.push(data.node);
+    }
+    if (made.length === 0) return flashToast("error", "Could not paste that.");
+
+    // Duplicate deliberately copies no edges, so the internal ones are re-made
+    // here — through the same verdict the server enforces, so a paste that would
+    // double-attach a prompt box quietly lands unattached instead of 409ing.
+    const lookup = new Map(made.map((n) => [n.id, n]));
+    const madeEdges: StitchBoardTransition[] = [];
+    for (const e of clip.edges) {
+      const from = map.get(e.from_node_id);
+      const to = map.get(e.to_node_id);
+      if (!from || !to) continue;
+      const a = lookup.get(from);
+      const b = lookup.get(to);
+      if (!a || !b) continue;
+      if (!connectVerdict(a, b, lookup, madeEdges).ok) continue;
+      const res = await fetch("/api/transitions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ from_node_id: from, to_node_id: to, style: e.style })
+      }).catch(() => null);
+      const data = (await res?.json().catch(() => ({}))) as { transition?: StitchBoardTransition };
+      if (res?.ok && data.transition) madeEdges.push(data.transition);
+    }
+
+    setNodes((prev) => [...prev, ...made]);
+    if (madeEdges.length) setTransitions((prev) => [...prev, ...madeEdges]);
+    input.selectMany(made.map((n) => n.id));
+    ops.push({ t: "create", nodes: made, edges: madeEdges });
+  }
+
+  async function makeActive(headId: string) {
+    setActiveHead(headId);
+    await fetch(`/api/projects/${project.id}/stitch`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ active_chain_head: headId })
     }).catch(() => {});
   }
 
-  async function deleteNode(id: string) {
-    setStitchNodes((prev) => prev.filter((n) => n.id !== id));
-    setTransitions((prev) => prev.filter((t) => t.from_node_id !== id && t.to_node_id !== id));
-    if (selectedId === id) setSelectedId(null);
-    await fetch(`/api/stitch/nodes/${id}`, { method: "DELETE" }).catch(() => {});
+  /** One field write + one undo step. Text arrives here once per blur. */
+  function setField(id: string, key: FieldKey, value: string | number) {
+    const node = nodeById.get(id);
+    if (!node) return;
+    const from = (node as unknown as Record<string, string | number>)[key];
+    if (from === value) return;
+    setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, [key]: value } : n)));
+    patchNode(id, { [key]: value });
+    ops.push({ t: "field", id, key, from, to: value });
   }
 
-  async function setSceneNumber(node: StitchNode, scene: number) {
-    const newX = Math.max(1, scene) * 280 - 200;
-    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, x: newX } : n)));
-    await patchNode(node.id, { scene_number: scene });
+  function bringToFront(ids: string[]) {
+    const top = nodes.reduce((m, n) => Math.max(m, n.z), 0);
+    ops.begin();
+    ids.forEach((id, i) => setField(id, "z", top + 1 + i));
+    ops.end();
   }
 
-  async function setDuration(node: StitchNode, duration: number) {
-    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, duration } : n)));
-    await patchNode(node.id, { duration });
+  function sendToBack(ids: string[]) {
+    const bottom = nodes.reduce((m, n) => Math.min(m, n.z), 0);
+    ops.begin();
+    ids.forEach((id, i) => setField(id, "z", bottom - 1 - i));
+    ops.end();
   }
 
-  async function setTrimStart(node: StitchNode, trim_start: number) {
-    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, trim_start } : n)));
-    await patchNode(node.id, { trim_start });
+  function fitAll() {
+    frameTo(nodes.map(boxOf), 160);
   }
 
-  async function animate(
-    node: StitchNode,
-    modelId?: string,
-    motion?: string,
-    audio?: boolean
-  ): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null> {
-    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, clip_state: "generating" } : n)));
-    let data: { ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null = null;
-    try {
-      const res = await fetch(`/api/stitch/nodes/${node.id}/animate`, {
+  /* ─── Quick-add ──────────────────────────────────────────── */
+
+  async function quickAdd(frameId: string) {
+    /* One call, not six: three creates plus three connects done separately would
+       half-render on a failure and strand prompt boxes with no frame. The route
+       is idempotent, so pressing this twice re-selects rather than doubles. */
+    const res = await fetch(`/api/stitch/nodes/${frameId}/prompts`, { method: "POST" });
+    if (!res.ok) {
+      flashToast("error", "Could not add the prompt boxes.");
+      return;
+    }
+    const data = (await res.json()) as {
+      nodes: StitchBoardNode[];
+      transitions: StitchBoardTransition[];
+    };
+    const fresh = data.nodes.filter((n) => !nodes.some((p) => p.id === n.id));
+    setNodes((prev) => {
+      const incoming = new Map(data.nodes.map((n) => [n.id, n]));
+      const merged = prev.map((n) => incoming.get(n.id) ?? n);
+      for (const n of data.nodes) if (!prev.some((p) => p.id === n.id)) merged.push(n);
+      return merged;
+    });
+    setTransitions((prev) => [...prev, ...data.transitions]);
+    if (fresh.length || data.transitions.length) {
+      ops.push({ t: "create", nodes: fresh, edges: data.transitions });
+    }
+    const video = data.nodes.find((n) => n.node_type === "video_prompt");
+    if (video) input.selectOnly(video.id);
+  }
+
+  /* ─── Connect ────────────────────────────────────────────── */
+
+  async function finishConnect(sourceId: string, targetId: string) {
+    const source = nodeById.get(sourceId);
+    const target = nodeById.get(targetId);
+    if (!source || !target) return;
+
+    /* The same call the hover highlight made, so a target that lit up green can
+       never then be refused — and the reason string is the server's verbatim. */
+    const verdict = connectVerdict(source, target, nodeById, transitions);
+    if (!verdict.ok) return flashToast("error", verdict.reason);
+
+    const res = await fetch("/api/transitions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ from_node_id: sourceId, to_node_id: targetId })
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      transition?: StitchBoardTransition;
+      error?: string;
+    };
+    if (!res.ok || !data.transition) {
+      flashToast("error", data.error ?? "Could not connect those.");
+      return;
+    }
+    setTransitions((prev) => [...prev, data.transition!]);
+    ops.push({ t: "connect", edge: data.transition });
+  }
+
+  async function deleteTransition(id: string) {
+    const edge = transitions.find((t) => t.id === id);
+    if (!edge) return;
+    setTransitions((prev) => prev.filter((t) => t.id !== id));
+    ops.push({ t: "delete", nodes: [], edges: [edge] });
+    await fetch(`/api/transitions/${id}`, { method: "DELETE" }).catch(() => {});
+  }
+
+  /* ─── Tool placement ─────────────────────────────────────── */
+
+  async function placeNode(type: StitchNodeType, x: number, y: number, size?: { w: number; h: number }) {
+    const res = await fetch("/api/stitch/nodes", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        node_type: type,
+        project_id: project.id,
+        x: Math.round(x),
+        y: Math.round(y),
+        w: size ? Math.round(size.w) : 0,
+        h: size ? Math.round(size.h) : 0
+      })
+    });
+    // No optimistic insert — same rule as a drawer drop: the server owns the id.
+    const data = (await res.json().catch(() => ({}))) as { node?: StitchBoardNode };
+    if (!res.ok || !data.node) {
+      flashToast("error", "Could not place that.");
+      return;
+    }
+    setNodes((prev) => [...prev, data.node!]);
+    input.selectOnly(data.node.id);
+    ops.push({ t: "create", nodes: [data.node], edges: [] });
+    if (type !== "shape" && type !== "frame") {
+      setFocusId(data.node.id);
+      input.setEditingId(data.node.id);
+    }
+  }
+
+  /* ─── Drawer → board (pointer-based DnD) ─────────────────── */
+
+  /* placeVariant is bound into window listeners that must not re-subscribe on
+     every board mutation, so it reaches the two hooks through refs. */
+  const inputRef = useRef(input);
+  inputRef.current = input;
+  const opsRef = useRef(ops);
+  opsRef.current = ops;
+
+  const placeVariant = useCallback(
+    async (variantId: string, label: string, worldX: number, worldY: number) => {
+      const res = await fetch("/api/stitch/nodes", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: modelId ?? DEFAULT_VIDEO_MODEL, motion: motion ?? "auto", audio: audio ?? false })
+        body: JSON.stringify({
+          variant_id: variantId,
+          x: Math.round(worldX - FRAME_W / 2),
+          y: Math.round(worldY - FRAME_H / 2),
+          allow_duplicate: true
+        })
       });
-      data = await res.json().catch(() => null);
-    } catch {
-      /* network error surfaced via reload state */
-    }
-    await reload();
-    loadBalance(); // credits changed
-    return data;
-  }
-
-  async function uploadClip(node: StitchNode, file: File): Promise<{ error?: string } | null> {
-    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, clip_state: "generating" } : n)));
-    const form = new FormData();
-    form.append("file", file);
-    let data: { ok?: boolean; error?: string } | null = null;
-    try {
-      const res = await fetch(`/api/stitch/nodes/${node.id}/upload-clip`, { method: "POST", body: form });
-      data = await res.json().catch(() => null);
-    } catch {
-      /* network error surfaced via reload state */
-    }
-    await reload();
-    return data;
-  }
-
-  async function uploadDialogue(node: StitchNode, file: File): Promise<{ error?: string } | null> {
-    const form = new FormData();
-    form.append("file", file);
-    let data: { ok?: boolean; error?: string } | null = null;
-    try {
-      const res = await fetch(`/api/stitch/nodes/${node.id}/dialogue`, { method: "POST", body: form });
-      data = await res.json().catch(() => null);
-    } catch {
-      /* network error surfaced via reload state */
-    }
-    await reload();
-    return data;
-  }
-
-  async function lipsync(
-    node: StitchNode,
-    modelId?: string
-  ): Promise<{ ok?: boolean; error?: string; vendor?: string } | null> {
-    setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, lipsync_state: "generating" } : n)));
-    let data: { ok?: boolean; error?: string; vendor?: string } | null = null;
-    try {
-      const res = await fetch(`/api/stitch/nodes/${node.id}/lipsync`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: modelId ?? DEFAULT_LIPSYNC_MODEL })
-      });
-      data = await res.json().catch(() => null);
-    } catch {
-      /* network error surfaced via reload state */
-    }
-    await reload();
-    return data;
-  }
-
-  // Sync our data into React Flow's nodes whenever the underlying list changes.
-  useEffect(() => {
-    setRfNodes(
-      stitchNodes.map<RFNode>((n) => ({
-        id: n.id,
-        type: "stitch",
-        position: { x: n.x, y: n.y },
-        data: {
-          frame_url: n.frame_url,
-          clip_state: n.clip_state,
-          duration: n.duration,
-          beat_n: n.beat?.n ?? null,
-          beat_title: n.beat?.title ?? null,
-          variant_n: n.variant_n,
-          onDelete: () => deleteNode(n.id)
-        } satisfies StitchNodeData,
-        selected: n.id === selectedId
-      }))
-    );
-    // The `deleteNode` closure changes every render, but we want a stable sync —
-    // selectedId in deps is enough to refresh the selected flag.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stitchNodes, selectedId]);
-
-  const rfEdges: RFEdge[] = useMemo(
-    () =>
-      transitions.map((t) => ({
-        id: t.id,
-        source: t.from_node_id,
-        target: t.to_node_id,
-        type: "smoothstep",
-        animated: t.state === "generating",
-        style: {
-          stroke: EDGE_COLOR[t.state],
-          strokeWidth: 2,
-          strokeDasharray: t.state === "pending" ? "4 4" : t.state === "generating" ? "6 4" : undefined
-        },
-        label: transitionLabel(t),
-        labelStyle: {
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          letterSpacing: "0.16em",
-          textTransform: "uppercase",
-          fill: EDGE_COLOR[t.state]
-        },
-        labelBgStyle: {
-          fill: "var(--surface)",
-          stroke: EDGE_COLOR[t.state],
-          strokeWidth: 1
-        },
-        labelBgPadding: [6, 10],
-        labelBgBorderRadius: 999
-      })),
-    [transitions]
-  );
-
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    setRfNodes((prev) => applyNodeChanges(changes, prev));
-  }, []);
-
-  const onEdgesChange = useCallback((_changes: EdgeChange[]) => {
-    // Transitions are managed server-side; ignore React Flow's local edge edits.
-  }, []);
-
-  const onNodeDragStop = useCallback(
-    (_evt: unknown, node: RFNode) => {
-      patchNode(node.id, { x: Math.round(node.position.x), y: Math.round(node.position.y) });
-      setStitchNodes((prev) =>
-        prev.map((n) => (n.id === node.id ? { ...n, x: node.position.x, y: node.position.y } : n))
-      );
+      if (!res.ok) {
+        flashToast("error", "Could not place that frame.");
+        return;
+      }
+      // No optimistic insert — the server owns the id and the seeded video prompt.
+      const data = (await res.json()) as { node: StitchBoardNode | null };
+      if (!data.node) {
+        flashToast("error", "Could not place that frame.");
+        return;
+      }
+      setNodes((prev) => [...prev, data.node!]);
+      inputRef.current.selectOnly(data.node.id);
+      opsRef.current.push({ t: "create", nodes: [data.node], edges: [] });
+      flashToast("success", `Placed · ${label}`);
     },
-    []
+    [flashToast]
   );
 
-  const onNodeClick = useCallback((_evt: unknown, node: RFNode) => {
-    setSelectedId(node.id);
-  }, []);
+  function onThumbPointerDown(e: React.PointerEvent, v: DrawerVariant, g: DrawerBeatGroup) {
+    if (!v.url) return;
+    e.preventDefault();
+    try {
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+    drawerDrag.current = {
+      variantId: v.id,
+      url: v.url,
+      label: `Scene ${String(g.beat_n).padStart(2, "0")} V${String(v.n).padStart(2, "0")}`,
+      startX: e.clientX,
+      startY: e.clientY,
+      armed: false
+    };
+  }
 
-  const onPaneClick = useCallback(() => setSelectedId(null), []);
+  // Pointer capture sits on the drawer thumb, so the board's router never sees
+  // the drag; window listeners are what still see the move/up.
+  useEffect(() => {
+    function move(e: PointerEvent) {
+      const d = drawerDrag.current;
+      if (!d) return;
+      if (!d.armed && Math.hypot(e.clientX - d.startX, e.clientY - d.startY) <= 4) return;
+      d.armed = true;
+      setGhost({ variantId: d.variantId, url: d.url, label: d.label, cx: e.clientX, cy: e.clientY });
+    }
+    function up(e: PointerEvent) {
+      const d = drawerDrag.current;
+      drawerDrag.current = null;
+      setGhost(null);
+      if (!d) return;
+      const board = boardRef.current;
+      const rect = board?.getBoundingClientRect();
+      if (!board || !rect) return;
+      if (!d.armed) {
+        // A click, not a drag → drop at the board's visual centre.
+        const w = toWorldRef.current(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        placeVariant(d.variantId, d.label, w.x, w.y);
+        return;
+      }
+      /* .stitch-board is inset:0 on the shell, so its bounding rect also covers
+         the drawer and the floating chrome drawn over it — a rect test would
+         turn "drop it back on the library" into "create a node hidden behind the
+         library". Hit-test the element actually under the pointer instead. */
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      if (!under || !board.contains(under)) return;
+      const w = toWorldRef.current(e.clientX, e.clientY);
+      placeVariant(d.variantId, d.label, w.x, w.y);
+    }
+    function cancel() {
+      drawerDrag.current = null;
+      setGhost(null);
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", cancel);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
+    };
+  }, [placeVariant]);
 
-  const selected = stitchNodes.find((n) => n.id === selectedId) ?? null;
-  const totalDuration = stitchNodes.reduce((sum, n) => sum + n.duration, 0);
-  // Motion-clip progress: how many SHOTS have a rendered clip.
-  const clipsDone = stitchNodes.filter((n) => n.clip_url).length;
-  const allClipsDone = clipsDone === stitchNodes.length && stitchNodes.length > 0;
-  const balanceLabel =
-    balance?.connected === false ? "Higgsfield off" : balance?.credits != null ? `${balance.credits} credits` : "—";
+  /* ─── Context menu items ─────────────────────────────────── */
+
+  const menuItems = useMemo((): (MenuItem | "sep")[] => {
+    const m = input.menu;
+    if (!m) return [];
+    if (m.edgeId) {
+      return [
+        {
+          key: "unlink",
+          label: "Remove connection",
+          icon: <X size={13} />,
+          danger: true,
+          onPick: () => deleteTransition(m.edgeId!)
+        }
+      ];
+    }
+    if (m.nodeId) {
+      const ids = selectedIds.has(m.nodeId) ? [...selectedIds] : [m.nodeId];
+      const n = ids.length;
+      const suffix = n > 1 ? ` ${n}` : "";
+      const node = nodeById.get(m.nodeId);
+      const textual = !!node && node.node_type !== "frame" && node.node_type !== "shape";
+      const items: (MenuItem | "sep")[] = [];
+      if (textual && n === 1) {
+        items.push({
+          key: "edit",
+          label: "Edit",
+          icon: <Pencil size={13} />,
+          onPick: () => input.setEditingId(m.nodeId)
+        });
+      }
+      if (node?.node_type === "frame" && n === 1) {
+        items.push({
+          key: "prompts",
+          label: "Add prompt boxes",
+          icon: <Sparkles size={13} />,
+          onPick: () => quickAdd(m.nodeId!)
+        });
+      }
+      items.push(
+        { key: "dup", label: `Duplicate${suffix}`, icon: <Copy size={13} />, onPick: () => duplicateSelection(ids) },
+        { key: "front", label: "Bring to front", icon: <ChevronsUp size={13} />, onPick: () => bringToFront(ids) },
+        { key: "back", label: "Send to back", icon: <ChevronsDown size={13} />, onPick: () => sendToBack(ids) },
+        "sep",
+        {
+          key: "del",
+          label: `Delete${suffix}`,
+          icon: <Trash2 size={13} />,
+          danger: true,
+          onPick: () => deleteSelection(ids)
+        }
+      );
+      return items;
+    }
+    const world = toWorld(m.x, m.y);
+    const onlyFrame =
+      selectedIds.size === 1 && nodeById.get([...selectedIds][0])?.node_type === "frame"
+        ? [...selectedIds][0]
+        : null;
+    const items: (MenuItem | "sep")[] = [
+      {
+        key: "note",
+        label: "Add note",
+        icon: <StickyNote size={13} />,
+        onPick: () => placeNode("note", world.x - 100, world.y - 100)
+      },
+      {
+        key: "shape",
+        label: "Add shape",
+        icon: <Square size={13} />,
+        onPick: () => placeNode("shape", world.x - 140, world.y - 100)
+      }
+    ];
+    if (onlyFrame) {
+      items.push({
+        key: "prompts",
+        label: "Add prompt boxes",
+        icon: <Sparkles size={13} />,
+        onPick: () => quickAdd(onlyFrame)
+      });
+    }
+    items.push("sep", {
+      key: "paste",
+      label: "Paste here",
+      icon: <Clipboard size={13} />,
+      disabled: clipboard.current.nodes.length === 0,
+      onPick: () => pasteClipboard(world)
+    });
+    items.push({ key: "fit", label: "Fit all", icon: <Maximize2 size={13} />, onPick: fitAll });
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [input.menu, selectedIds, nodeById, toWorld]);
+
+  /* ─── Render ─────────────────────────────────────────────── */
+
+  /* Stable callback identities, one set per node id, created on first render of
+     that node and never replaced. Without this every node component would get
+     six fresh closures per frame and React.memo could never bail — which is the
+     whole point of it during a drag, when the board re-renders 60×/second. The
+     closures reach the current mutators through a ref, so they never go stale. */
+  const calls = useRef({
+    setField,
+    quickAdd,
+    makeActive,
+    duplicateSelection,
+    deleteSelection
+  });
+  calls.current = { setField, quickAdd, makeActive, duplicateSelection, deleteSelection };
+
+  const handlerCache = useRef(new Map<string, NodeHandlers>());
+  function handlersFor(id: string): NodeHandlers {
+    const hit = handlerCache.current.get(id);
+    if (hit) return hit;
+    const made: NodeHandlers = {
+      onDuplicate: () => calls.current.duplicateSelection([id]),
+      onDelete: () => calls.current.deleteSelection([id]),
+      onCommit: (content: string) => calls.current.setField(id, "content", content),
+      onSetTint: (t: StitchTint) => calls.current.setField(id, "tint", t),
+      onSetShapeKind: (k: StitchShapeKind) => calls.current.setField(id, "shape_kind", k),
+      onSetDuration: (d: number) => calls.current.setField(id, "duration", d),
+      onQuickAdd: () => calls.current.quickAdd(id),
+      onMakeActive: () => calls.current.makeActive(id)
+    };
+    handlerCache.current.set(id, made);
+    return made;
+  }
+
+  const draftSource = connect ? nodeById.get(connect.sourceId) : null;
+  const shapes = paintOrder.filter((n) => n.node_type === "shape");
+  const cards = paintOrder.filter((n) => n.node_type !== "shape");
+  const soleId = selectedIds.size === 1 ? [...selectedIds][0] : null;
+
+  function renderNode(node: StitchBoardNode) {
+    const dropTarget =
+      connect && connect.targetId === node.id && connect.sourceId !== node.id
+        ? connect.ok
+          ? ("ok" as const)
+          : ("no" as const)
+        : undefined;
+    const h = handlersFor(node.id);
+    const shared = {
+      selected: selectedIds.has(node.id),
+      dimmed: chainedIds.has(node.id) && !orderIndex.has(node.id),
+      // Side dots would be noise on a card that is already moving.
+      hovered: hoverId === node.id && tool === "select" && !drag,
+      soleSelection: soleId === node.id,
+      drop: dropTarget,
+      override: drag?.ids.has(node.id) || resizeDraft?.id === node.id ? liveBox(node) : undefined,
+      onDuplicate: h.onDuplicate,
+      onDelete: h.onDelete
+    };
+
+    if (node.node_type === "frame") {
+      return (
+        <FrameNode
+          key={node.id}
+          node={node}
+          {...shared}
+          orderNo={orderIndex.get(node.id) ?? null}
+          isChainHead={headIds.has(node.id)}
+          onSetDuration={h.onSetDuration}
+          onQuickAdd={h.onQuickAdd}
+          onMakeActive={h.onMakeActive}
+        />
+      );
+    }
+    if (node.node_type === "note") {
+      return (
+        <NoteNode
+          key={node.id}
+          node={node}
+          {...shared}
+          editing={editingId === node.id}
+          autoFocus={focusId === node.id}
+          onCommit={h.onCommit}
+          onSetTint={h.onSetTint}
+        />
+      );
+    }
+    if (node.node_type === "shape") {
+      return (
+        <ShapeNode
+          key={node.id}
+          node={node}
+          {...shared}
+          onSetTint={h.onSetTint}
+          onSetShapeKind={h.onSetShapeKind}
+        />
+      );
+    }
+    return (
+      <PromptNode
+        key={node.id}
+        node={node}
+        {...shared}
+        editing={editingId === node.id}
+        autoFocus={focusId === node.id}
+        onCommit={h.onCommit}
+      />
+    );
+  }
 
   return (
     <div className="main-inner" style={{ paddingBottom: 0 }}>
-      <motion.header className="page-head" {...fadeUp}>
+      <header className="page-head">
         <div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--accent)" }}>
-            05 / Workspace · Stitch
-          </span>
-          <h1
-            style={{
-              margin: "8px 0 0",
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(24px, 2.4vw, 32px)",
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "var(--ink)"
-            }}
-          >
-            Stitch
-          </h1>
-          <p className="lead" style={{ marginTop: 12, maxWidth: "60ch" }}>
-            The assembly. Scrub the timeline, play the cut in the monitor, and click a shot to set duration, pick a
-            video model, and roll a motion clip.
-          </p>
+          <div className="crumb">05 / WORKSPACE · STITCH</div>
+          <h1>Stitch</h1>
+          <div className="sub">
+            Drag frames out of the library onto the board, wire them output → input, and the connected chain
+            becomes your cut order. Attach prompt boxes to a shot, and group anything with notes and shapes.
+          </div>
         </div>
         <div className="actions">
-          {stitchNodes.length > 0 && (
-            <div
-              role="tablist"
-              aria-label="Stitch view"
-              style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: 999 }}
-            >
-              <button
-                role="tab"
-                aria-selected={view === "timeline"}
-                onClick={() => setView("timeline")}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  letterSpacing: "0.02em",
-                  padding: "6px 14px",
-                  border: "none",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  color: view === "timeline" ? "var(--ink)" : "var(--mute)",
-                  background: view === "timeline" ? "var(--surface)" : "transparent",
-                  boxShadow: view === "timeline" ? "var(--shadow-1)" : "none"
-                }}
-              >
-                Timeline
-              </button>
-              <button
-                role="tab"
-                aria-selected={view === "board"}
-                onClick={() => setView("board")}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  letterSpacing: "0.02em",
-                  padding: "6px 14px",
-                  border: "none",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  color: view === "board" ? "var(--ink)" : "var(--mute)",
-                  background: view === "board" ? "var(--surface)" : "transparent",
-                  boxShadow: view === "board" ? "var(--shadow-1)" : "none"
-                }}
-              >
-                Graph
-              </button>
-            </div>
-          )}
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 10px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              borderRadius: 999,
-              background: allClipsDone
-                ? "color-mix(in srgb, var(--viridian) 18%, transparent)"
-                : "color-mix(in srgb, var(--mustard) 20%, transparent)",
-              color: allClipsDone ? "var(--viridian-deep)" : "var(--mustard-deep)"
-            }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
-            {clipsDone} / {stitchNodes.length || "—"} clips · {totalDuration.toFixed(1)}s
-          </span>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 10px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              borderRadius: 999,
-              background: "var(--cream-deep)",
-              color: "var(--ink-soft)"
-            }}
-          >
-            {balanceLabel}
+          <span className="pip-state" data-status={activeChain ? "done" : "draft"}>
+            {activeChain
+              ? `CHAIN ${activeLetter} · ${activeChain.nodeIds.length} SHOTS · ${activeDuration.toFixed(1)}s`
+              : "NO CHAIN CONNECTED"}
           </span>
           <button className="btn btn-primary" onClick={() => onSwitchWorkspace("export")}>
             Continue to Export <ArrowRight size={14} />
           </button>
         </div>
-      </motion.header>
-
-      <div className="stitch-shell" style={{ height: "calc(100vh - 64px - 230px)", borderRadius: 18 }}>
-        {view === "board" ? (
-          <div style={{ position: "absolute", inset: 0, background: "#0B0B0D" }}>
-            <ReactFlow
-              nodes={rfNodes}
-              edges={rfEdges}
-              nodeTypes={NODE_TYPES}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onNodeDragStop={onNodeDragStop}
-              onNodeClick={onNodeClick}
-              onPaneClick={onPaneClick}
-              onInit={(inst) => { rfInstance.current = inst; }}
-              proOptions={{ hideAttribution: true }}
-              fitView
-              fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
-              minZoom={0.25}
-              maxZoom={2}
-              defaultEdgeOptions={{ type: "smoothstep" }}
-            >
-              <Background gap={22} size={1} color="rgba(237,232,220,0.07)" />
-              <Controls
-                showInteractive={false}
-                style={{ background: "var(--surface)", border: "none", boxShadow: "var(--shadow-1)", borderRadius: "var(--radius)" }}
-              />
-              <MiniMap
-                nodeStrokeWidth={0}
-                nodeColor={(n) => (n.selected ? "var(--tomato)" : "var(--viridian)")}
-                nodeBorderRadius={6}
-                maskColor="rgba(11, 12, 16, 0.55)"
-                style={{
-                  background: "var(--surface)",
-                  border: "none",
-                  boxShadow: "var(--shadow-1)",
-                  borderRadius: "var(--radius)"
-                }}
-              />
-            </ReactFlow>
-            <div
-              style={{
-                position: "absolute",
-                top: 16,
-                left: 16,
-                zIndex: 10,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "6px 12px",
-                background: "rgba(23,23,27,0.85)",
-                borderRadius: 999,
-                boxShadow: "var(--shadow-1)",
-                pointerEvents: "none"
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--mute)" }}>
-                Node graph · drag a node to move · drag the canvas to pan · click a node to edit
-              </span>
-            </div>
-          </div>
-        ) : (
-          <StitchTimeline nodes={stitchNodes} transitions={transitions} selectedId={selectedId} onSelect={setSelectedId} />
-        )}
-
-        {selected && (
-          <StitchInspector
-            node={selected}
-            view={view}
-            onClose={() => setSelectedId(null)}
-            onSetSceneNumber={(scene) => setSceneNumber(selected, scene)}
-            onSetDuration={(duration) => setDuration(selected, duration)}
-            onSetTrimStart={(trim_start) => setTrimStart(selected, trim_start)}
-            balance={balance}
-            onAnimate={(modelId, motion, audio) => animate(selected, modelId, motion, audio)}
-            onUploadClip={(file) => uploadClip(selected, file)}
-            onUploadDialogue={(file) => uploadDialogue(selected, file)}
-            onLipsync={(modelId) => lipsync(selected, modelId)}
-            onDelete={() => {
-              if (confirm("Remove this frame from Stitch? The transition clips connected to it will also be removed.")) {
-                deleteNode(selected.id);
-              }
-            }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ───────────────────────── Timeline view ───────────────────────── */
-/* An NLE-style assembly: a monitor (plays the cut in real time), a
-   scrubbable ruler, and a filmstrip of shots with transition pills between
-   them. Replaces the plain filmstrip the app used to show in this slot. */
-
-const PX_PER_SEC = 46;
-
-function StitchTimeline({
-  nodes,
-  transitions,
-  selectedId,
-  onSelect
-}: {
-  nodes: StitchNode[];
-  transitions: Transition[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-}) {
-  const ordered = useMemo(
-    () => [...nodes].sort((a, b) => (a.beat?.n ?? 999) - (b.beat?.n ?? 999) || a.x - b.x),
-    [nodes]
-  );
-
-  const offsets = useMemo(() => {
-    let t = 0;
-    return ordered.map((n) => {
-      const start = t;
-      t += n.duration;
-      return { node: n, start, end: t };
-    });
-  }, [ordered]);
-
-  const total = offsets.length ? offsets[offsets.length - 1].end : 0;
-
-  const [playing, setPlaying] = useState(false);
-  const [playheadSec, setPlayheadSec] = useState(0);
-
-  // Keep the playhead in range if the assembly's total runtime shrinks
-  // (a shot's duration drops, or a shot is removed) while it's parked past the end.
-  useEffect(() => {
-    setPlayheadSec((t) => Math.min(t, total));
-  }, [total]);
-
-  useEffect(() => {
-    if (!playing || total <= 0) return;
-    let raf = 0;
-    let last = performance.now();
-    const step = (now: number) => {
-      const dt = (now - last) / 1000;
-      last = now;
-      setPlayheadSec((prev) => {
-        const next = prev + dt;
-        if (next >= total) {
-          setPlaying(false);
-          return total;
-        }
-        return next;
-      });
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [playing, total]);
-
-  // Monitor video sync — when the current shot has a rendered clip, the
-  // <video> plays it in the monitor, kept loosely in sync with the playhead.
-  const monitorVideoRef = useRef<HTMLVideoElement | null>(null);
-  const currentEntry =
-    offsets.find((e) => playheadSec >= e.start && playheadSec < e.end) ?? offsets[offsets.length - 1] ?? null;
-  useEffect(() => {
-    const v = monitorVideoRef.current;
-    if (!v || !currentEntry) return;
-    const local = Math.max(0, playheadSec - currentEntry.start);
-    // Re-seek only when meaningfully off (scrub or shot change) — the video's
-    // own clock carries playback between corrections.
-    if (Math.abs(v.currentTime - local) > 0.35) {
-      try {
-        v.currentTime = local;
-      } catch {
-        /* metadata not ready yet */
-      }
-    }
-    if (playing && v.paused) v.play().catch(() => {});
-    if (!playing && !v.paused) v.pause();
-  }, [playing, playheadSec, currentEntry]);
-
-  if (ordered.length === 0) {
-    return (
-      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-        <span className="t-eyebrow" style={{ color: "var(--mute)" }}>
-          No shots yet · push frames from Storyboard
-        </span>
-      </div>
-    );
-  }
-
-  const current = offsets.find((e) => playheadSec >= e.start && playheadSec < e.end) ?? offsets[offsets.length - 1];
-  const pct = total > 0 ? (playheadSec / total) * 100 : 0;
-
-  function togglePlay() {
-    setPlaying((p) => {
-      if (!p && playheadSec >= total) setPlayheadSec(0);
-      return !p;
-    });
-  }
-
-  function onRulerClick(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    setPlayheadSec(Math.max(0, Math.min(total, x / PX_PER_SEC)));
-  }
-
-  // Coarser tick spacing on longer assemblies so the ruler doesn't render
-  // thousands of DOM nodes for a long timeline.
-  const tickStep = total > 240 ? 10 : total > 90 ? 5 : 1;
-  const ticks: { sec: number; x: number; major: boolean }[] = [];
-  for (let s = 0; s <= total; s += tickStep) {
-    ticks.push({ sec: s, x: s * PX_PER_SEC, major: tickStep >= 5 || s % 5 === 0 });
-  }
-
-  // Include the filmstrip's flex `gap` so the declared width always contains
-  // the clip row exactly — otherwise the fixed-width clip buttons (plus their
-  // gaps) can exceed this box and overflow the scrollable ancestor.
-  const tlWidth = total * PX_PER_SEC + Math.max(0, offsets.length - 1) * 2;
-
-  return (
-    <div style={{ position: "absolute", inset: 0, display: "grid", gridTemplateRows: "minmax(0, 1fr) 190px", background: "var(--bg)", overflow: "hidden" }}>
-      {/* Monitor */}
-      <div style={{ position: "relative", display: "grid", placeItems: "center", background: "#060607", overflow: "hidden", borderBottom: "1px solid var(--cream-deep)", padding: 20 }}>
-        <div style={{ position: "relative", height: "100%", maxHeight: "100%", aspectRatio: "16/9", maxWidth: "100%", background: "#000", borderRadius: 12, overflow: "hidden", boxShadow: "var(--shadow-2)" }}>
-          {current.node.clip_url ? (
-            /* eslint-disable-next-line jsx-a11y/media-has-caption */
-            <video
-              key={current.node.id}
-              ref={monitorVideoRef}
-              src={current.node.clip_url}
-              poster={current.node.frame_url ?? undefined}
-              muted
-              playsInline
-              preload="auto"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : current.node.frame_url ? (
-            <div
-              role="img"
-              aria-label={current.node.beat?.title ?? ""}
-              style={{ position: "absolute", inset: 0, backgroundImage: `url(${current.node.frame_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-            />
-          ) : (
-            <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
-                Frame pending · S{current.node.beat?.n ? String(current.node.beat.n).padStart(2, "0") : "—"}
-              </span>
-            </div>
-          )}
-          <span
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 14,
-              maxWidth: "calc(100% - 150px)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              color: "rgba(237,232,220,0.85)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.7)"
-            }}
-          >
-            {current.node.beat?.scene_heading ?? "—"}
-          </span>
-          <span
-            style={{
-              position: "absolute",
-              top: 10,
-              right: 14,
-              fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              letterSpacing: "0.08em",
-              color: "rgba(237,232,220,0.85)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.7)"
-            }}
-          >
-            {formatTC(playheadSec)} / {formatTC(total)}
-          </span>
-          <button
-            onClick={togglePlay}
-            aria-label="Play / pause assembly"
-            style={{
-              position: "absolute",
-              bottom: 12,
-              left: 14,
-              width: 34,
-              height: 34,
-              display: "grid",
-              placeItems: "center",
-              background: "rgba(10,10,12,0.72)",
-              color: "#EDE8DC",
-              border: "1px solid rgba(237,232,220,0.25)",
-              borderRadius: 999,
-              cursor: "pointer"
-            }}
-          >
-            {playing ? <Pause size={14} /> : <Play size={14} />}
-          </button>
-          <span
-            style={{
-              position: "absolute",
-              bottom: 20,
-              right: 14,
-              fontSize: 12,
-              fontWeight: 500,
-              color: "rgba(237,232,220,0.9)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.7)"
-            }}
-          >
-            {current.node.beat?.title ?? "Untitled"}
-          </span>
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, background: "rgba(237,232,220,0.15)" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent)" }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Filmstrip */}
-      <div style={{ display: "flex", flexDirection: "column", background: "var(--surface)", minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--cream-deep)" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
-            {ordered.length} shots · {total.toFixed(1)}s runtime
-          </span>
-          <span style={{ fontSize: 11, color: "var(--mute)" }}>Click the ruler to scrub · click a shot to edit · ▶ plays the assembly</span>
-        </div>
-        <div style={{ flex: 1, overflowX: "auto", overflowY: "hidden", padding: "0 20px 12px" }}>
-          <div style={{ position: "relative", width: tlWidth, minWidth: "100%", height: "100%" }}>
-            <div onClick={onRulerClick} style={{ position: "relative", height: 26, cursor: "pointer", borderBottom: "1px solid var(--cream-deep)" }}>
-              {ticks.map((tk) => (
-                <Fragment key={tk.sec}>
-                  <span style={{ position: "absolute", left: tk.x, bottom: 0, width: 1, height: tk.major ? 16 : 8, background: "var(--cream-deep)", pointerEvents: "none" }} />
-                  {tk.major && (
-                    <span style={{ position: "absolute", left: tk.x, top: 1, transform: "translateX(4px)", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--mute)", pointerEvents: "none" }}>
-                      {formatTC(tk.sec)}
-                    </span>
-                  )}
-                </Fragment>
-              ))}
-            </div>
-            <div style={{ position: "absolute", top: 36, left: 0, right: 0, bottom: 0, display: "flex", gap: 2 }}>
-              {offsets.map(({ node: n }, i) => (
-                <button
-                  key={n.id}
-                  onClick={() => onSelect(n.id)}
-                  title={`${n.beat?.title ?? "Untitled"} · ${n.duration.toFixed(1)}s`}
-                  style={{
-                    position: "relative",
-                    flex: "0 0 auto",
-                    height: "100%",
-                    width: n.duration * PX_PER_SEC,
-                    border: "none",
-                    borderRadius: 12,
-                    overflow: "hidden",
-                    background: "var(--cream-deep)",
-                    boxShadow: n.id === selectedId ? "inset 0 0 0 2px var(--accent), var(--shadow-2)" : "var(--shadow-1)",
-                    cursor: "pointer",
-                    padding: 0
-                  }}
-                >
-                  {n.frame_url ? (
-                    <span
-                      role="img"
-                      aria-label={n.beat?.title ?? ""}
-                      style={{ position: "absolute", inset: 0, backgroundImage: `url(${n.frame_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-                    />
-                  ) : (
-                    <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--mute)" }}>
-                      Pending
-                    </span>
-                  )}
-                  <span style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,6,7,0.75), transparent 45%)" }} />
-                  <span style={{ position: "absolute", bottom: 6, left: 8, fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "#EDE8DC" }}>
-                    S{String(n.beat?.n ?? i + 1).padStart(2, "0")}
-                  </span>
-                  <span style={{ position: "absolute", bottom: 6, right: 8, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.06em", color: "var(--accent)" }}>
-                    {n.duration.toFixed(1)}s
-                  </span>
-                  {n.clip_url && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: 6,
-                        left: 8,
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 8.5,
-                        letterSpacing: "0.02em",
-                        padding: "2px 6px",
-                        borderRadius: 999,
-                        background: "var(--viridian)",
-                        color: "var(--on-accent-3)"
-                      }}
-                    >
-                      ▶ Clip
-                    </span>
-                  )}
-                  {n.clip_state === "generating" && (
-                    <>
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: 6,
-                          left: 8,
-                          fontFamily: "var(--font-mono)",
-                          fontSize: 8.5,
-                          letterSpacing: "0.02em",
-                          padding: "2px 6px",
-                          borderRadius: 999,
-                          background: "var(--mustard)",
-                          color: "#14100C"
-                        }}
-                      >
-                        Rendering…
-                      </span>
-                      <span
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          background: "linear-gradient(100deg, transparent 35%, rgba(255,251,241,0.35) 50%, transparent 65%)",
-                          transform: "translateX(-100%)",
-                          animation: "fx-shimmer 1.6s ease-out infinite"
-                        }}
-                      />
-                    </>
-                  )}
-                </button>
-              ))}
-            </div>
-            {transitions.map((t) => {
-              const from = offsets.find((e) => e.node.id === t.from_node_id);
-              if (!from) return null;
-              const colors = TRANSITION_PILL_COLOR[t.state];
-              return (
-                <span
-                  key={t.id}
-                  style={{
-                    position: "absolute",
-                    top: 26,
-                    left: from.end * PX_PER_SEC,
-                    transform: "translate(-50%, -50%)",
-                    zIndex: 5,
-                    display: "inline-flex",
-                    padding: "2px 8px",
-                    background: colors.bg,
-                    color: colors.fg,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 8.5,
-                    letterSpacing: "0.02em",
-                    borderRadius: 999,
-                    boxShadow: "var(--shadow-1)",
-                    whiteSpace: "nowrap",
-                    pointerEvents: "none"
-                  }}
-                >
-                  {transitionLabel(t)}
-                </span>
-              );
-            })}
-            <div style={{ position: "absolute", top: 0, bottom: 0, left: playheadSec * PX_PER_SEC, width: 2, background: "var(--accent)", zIndex: 6, pointerEvents: "none" }}>
-              <span style={{ position: "absolute", top: 0, left: -4, width: 10, height: 9, background: "var(--accent)", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ───────────────────────── Inspector ───────────────────────── */
-
-function StitchInspector({
-  node,
-  view,
-  onClose,
-  onSetSceneNumber,
-  onSetDuration,
-  onSetTrimStart,
-  balance,
-  onAnimate,
-  onUploadClip,
-  onUploadDialogue,
-  onLipsync,
-  onDelete
-}: {
-  node: StitchNode;
-  view: "board" | "timeline";
-  onClose: () => void;
-  onSetSceneNumber: (n: number) => void;
-  onSetDuration: (d: number) => void;
-  onSetTrimStart: (t: number) => void;
-  balance: Balance | null;
-  onAnimate: (
-    modelId: string,
-    motion: string,
-    audio: boolean
-  ) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
-  onUploadClip: (file: File) => Promise<{ error?: string } | null>;
-  onUploadDialogue: (file: File) => Promise<{ error?: string } | null>;
-  onLipsync: (modelId?: string) => Promise<{ ok?: boolean; error?: string; vendor?: string } | null>;
-  onDelete: () => void;
-}) {
-  const [scene, setScene] = useState<number>(node.beat?.n ?? 1);
-  const [duration, setDurationLocal] = useState<number>(node.duration);
-  const [trimStart, setTrimStartLocal] = useState<number>(node.trim_start);
-  const [animating, setAnimating] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
-  const [modelId, setModelId] = useState<string>(DEFAULT_VIDEO_MODEL);
-  const [motionId, setMotionId] = useState<string>("auto");
-  const [audioOn, setAudioOn] = useState<boolean>(false);
-  const [lipsyncModelId, setLipsyncModelId] = useState<string>(DEFAULT_LIPSYNC_MODEL);
-  const [uploadingClip, setUploadingClip] = useState(false);
-  const [uploadClipNote, setUploadClipNote] = useState<string | null>(null);
-  const [uploadingDialogue, setUploadingDialogue] = useState(false);
-  const [lipsyncing, setLipsyncing] = useState(false);
-  const [lipsyncNote, setLipsyncNote] = useState<string | null>(null);
-  const model = videoModel(modelId);
-  const isHiggs = model.provider !== "byteplus";
-  const credits = balance?.credits ?? null;
-  const tooPoor = isHiggs && credits != null && credits < model.approxCost;
-
-  useEffect(() => {
-    setScene(node.beat?.n ?? 1);
-    setDurationLocal(node.duration);
-    setTrimStartLocal(node.trim_start);
-    setNote(null);
-  }, [node.id, node.beat?.n, node.duration, node.trim_start]);
-
-  return (
-    <motion.aside
-      {...popIn}
-      style={{
-        position: "absolute",
-        top: 16,
-        right: 16,
-        // The timeline view reserves its 190px filmstrip along the bottom; the
-        // graph view has no bottom chrome to clear.
-        bottom: view === "timeline" ? 206 : 16,
-        width: 320,
-        backdropFilter: "blur(20px)",
-        background: "var(--surface)",
-        borderRadius: 18,
-        boxShadow: "var(--shadow-2)",
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        overflow: "auto"
-      }}
-    >
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, paddingBottom: 12, borderBottom: "1px solid var(--cream-deep)" }}>
-        <div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
-            SCENE {String(scene).padStart(2, "0")}
-            {node.variant_n ? ` · V${String(node.variant_n).padStart(2, "0")}` : ""}
-          </span>
-          <h3 style={{ margin: "4px 0 0", fontWeight: 600, fontSize: 18, letterSpacing: "-0.005em", color: "var(--ink)" }}>
-            {node.beat?.title ?? "Untitled"}
-          </h3>
-        </div>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: 6,
-            color: "var(--ink)",
-            backdropFilter: "blur(10px)",
-            background: "color-mix(in srgb, var(--ink) 5%, transparent)",
-            border: 0,
-            boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-            borderRadius: 999,
-            cursor: "pointer"
-          }}
-        >
-          <X size={14} />
-        </button>
       </header>
 
-      {node.clip_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "#14100c", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video
-            src={node.lipsync_url ?? node.clip_url}
-            poster={node.frame_url ?? undefined}
-            controls
-            loop
-            muted
-            playsInline
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          />
-          <span
-            style={{
-              position: "absolute",
-              top: 8,
-              left: 8,
-              fontFamily: "var(--font-mono)",
-              fontSize: 9,
-              letterSpacing: "0.02em",
-              padding: "2px 6px",
-              borderRadius: 999,
-              background: "var(--viridian)",
-              color: "var(--on-accent-3)",
-              pointerEvents: "none"
-            }}
-          >
-            {node.lipsync_url ? "▶ Lip-synced" : "▶ Clip ready"}
-          </span>
-        </div>
-      ) : node.frame_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "var(--cream-deep)", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
+      <div ref={shellRef} className="stitch-shell" tabIndex={0}>
+        <div
+          ref={boardRef}
+          className="stitch-board"
+          data-panning={panning}
+          data-tool={tool}
+          data-space={input.spaceHeld}
+          data-drag={!!drag}
+          data-marquee={!!marquee}
+          onPointerDown={input.onBoardPointerDown}
+          onPointerMove={input.onBoardPointerMove}
+          onPointerLeave={input.onBoardPointerLeave}
+          onDoubleClick={input.onBoardDoubleClick}
+          onContextMenu={input.onBoardContextMenu}
+        >
           <div
-            role="img"
-            aria-label={node.beat?.title ?? ""}
-            style={{ width: "100%", height: "100%", backgroundImage: `url(${node.frame_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-          />
-          {(animating || node.clip_state === "generating") && (
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.62)" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "#FFFBF1" }}>Rendering clip…</span>
+            className="stitch-world"
+            style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
+          >
+            {/* Three passes: shapes are backdrops, then the edges, then the cards.
+                The z-index ladder in globals.css keeps that order at any DOM depth. */}
+            {shapes.map(renderNode)}
+
+            {/* Zero-size viewport + overflow:visible — paths draw at any world
+                coordinate, including negative ones. */}
+            <svg className="stitch-edges" width={1} height={1}>
+              {edges.map(({ t, kind, path, isActive }) => (
+                /* No invisible hit-stroke: a 16px transparent stroke swallowed
+                   ordinary clicks near a curve (blocking deselect and marquee)
+                   and popped a delete confirm. The label's × below is the delete. */
+                <path
+                  key={t.id}
+                  className="stitch-edge"
+                  data-kind={kind}
+                  data-state={kind === "chain" ? t.state : undefined}
+                  data-active={isActive}
+                  d={path.d}
+                />
+              ))}
+
+              {draftSource && connect && (
+                <path
+                  className="stitch-edge-draft"
+                  d={draftPath(sideAnchor(liveBox(draftSource), connect.side), connect.side, connect.to)}
+                />
+              )}
+
+              {guides.map((g, i) => (
+                <line
+                  key={`guide-${i}`}
+                  className="stitch-guide"
+                  x1={g.axis === "x" ? g.at : g.from}
+                  x2={g.axis === "x" ? g.at : g.to}
+                  y1={g.axis === "x" ? g.from : g.at}
+                  y2={g.axis === "x" ? g.to : g.at}
+                />
+              ))}
+
+              {marquee && (
+                <rect
+                  className="stitch-marquee"
+                  x={marquee.x}
+                  y={marquee.y}
+                  width={marquee.w}
+                  height={marquee.h}
+                />
+              )}
+
+              {shapeDraft && (
+                <rect
+                  className="stitch-shape-draft"
+                  x={shapeDraft.x}
+                  y={shapeDraft.y}
+                  width={shapeDraft.w}
+                  height={shapeDraft.h}
+                />
+              )}
+            </svg>
+
+            {edges.map(({ t, kind, path, from, to, isActive }) => (
+              <div
+                key={`label-${t.id}`}
+                className="stitch-edge-label"
+                data-edge-id={t.id}
+                data-part="chrome"
+                /* Attach and link edges get no nn → nn pill and no style name —
+                   only a × that appears on hover. */
+                data-bare={kind !== "chain"}
+                data-active={isActive}
+                style={{ left: path.label.x, top: path.label.y }}
+                title={kind === "chain" ? `${t.style} · ${t.state}` : "Connection"}
+              >
+                {kind === "chain" &&
+                  (isActive
+                    ? `${String(from).padStart(2, "0")} → ${String(to).padStart(2, "0")} · ${t.style}`
+                    : t.style)}
+                <button type="button" className="x" title="Remove connection" onClick={() => deleteTransition(t.id)}>
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+
+            {cards.map(renderNode)}
+          </div>
+
+          {nodes.length === 0 && (
+            <div className="stitch-empty">
+              <span className="t-eyebrow">EMPTY BOARD</span>
+              <p style={{ marginTop: "var(--sp-2)", fontSize: "var(--t-body-s)" }}>
+                Drag a frame out of the library, or pick a tool below to drop a prompt, a note or a shape.
+              </p>
             </div>
           )}
         </div>
-      ) : null}
 
-      <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Scene number</span>
-        <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
-          <input
-            type="number"
-            min={1}
-            value={scene}
-            onChange={(e) => setScene(Math.max(1, Number(e.target.value) || 1))}
-            onBlur={() => {
-              if (scene !== (node.beat?.n ?? 1)) onSetSceneNumber(scene);
-            }}
-            style={{
-              width: 80,
-              padding: "8px 10px",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              border: "none",
-              borderRadius: 12,
-              boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-              fontFamily: "var(--font-mono)",
-              fontSize: 13,
-              textAlign: "center",
-              outline: "none"
-            }}
-          />
-          <span style={{ fontSize: 11, color: "var(--mute)", lineHeight: 1.35 }}>Sets the horizontal column on the board.</span>
-        </div>
-      </div>
+        <FrameDrawer
+          open={drawerOpen}
+          groups={drawer}
+          placedCount={placedCount}
+          shellRef={shellRef}
+          onToggle={() => setDrawerOpen((v) => !v)}
+          onThumbPointerDown={onThumbPointerDown}
+        />
 
-      <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Scene heading</span>
-        <div
-          style={{
-            marginTop: 8,
-            padding: "8px 12px",
-            background: "var(--bg)",
-            borderRadius: 18,
-            fontFamily: "var(--font-mono)",
-            fontSize: 13,
-            color: "var(--ink-soft)"
-          }}
-        >
-          {node.beat?.scene_heading ?? "—"}
-        </div>
-      </div>
-
-      {(node.beat?.characters?.length ?? 0) > 0 && (
-        <div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Cast in frame</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-            {(node.beat?.characters ?? []).map((c) => (
-              <span
-                key={c}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "5px 12px",
-                  fontWeight: 500,
-                  fontSize: 13,
-                  borderRadius: 999,
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  boxShadow: "var(--shadow-1)"
-                }}
-              >
-                {c}
-              </span>
-            ))}
+        {chains.length > 1 && (
+          <div className="stitch-chain-bar">
+            {chains.map((c, i) => {
+              const secs = c.nodeIds.reduce((sum, id) => sum + (nodeById.get(id)?.duration ?? 0), 0);
+              return (
+                <button
+                  key={c.headId}
+                  className="pip-state"
+                  data-active={activeChain?.headId === c.headId}
+                  onClick={() => makeActive(c.headId)}
+                >
+                  {`CHAIN ${String.fromCharCode(65 + i)} · ${c.nodeIds.length} SHOTS · ${secs.toFixed(1)}s`}
+                </button>
+              );
+            })}
           </div>
-        </div>
-      )}
-
-      <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
-          Duration · {duration.toFixed(1)}s
-        </span>
-        <input
-          type="range"
-          min={0.5}
-          max={20}
-          step={0.5}
-          value={duration}
-          onChange={(e) => setDurationLocal(Number(e.target.value))}
-          onMouseUp={() => onSetDuration(duration)}
-          onTouchEnd={() => onSetDuration(duration)}
-          style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
-        />
-      </div>
-
-      <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
-          Trim in-point · {trimStart.toFixed(1)}s into the clip
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={9.5}
-          step={0.5}
-          value={trimStart}
-          onChange={(e) => setTrimStartLocal(Number(e.target.value))}
-          onMouseUp={() => onSetTrimStart(trimStart)}
-          onTouchEnd={() => onSetTrimStart(trimStart)}
-          style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
-          title="Which second of the generated clip to start keeping from — useful for a short beat that only needs a few seconds out of a longer take"
-        />
-      </div>
-
-      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Camera motion</span>
-        <select
-          value={motionId}
-          onChange={(e) => setMotionId(e.target.value)}
-          title="How Seedance moves the camera for this shot"
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            border: "none",
-            borderRadius: 18,
-            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13,
-            fontWeight: 500,
-            outline: "none",
-            cursor: "pointer"
-          }}
-        >
-          {CAMERA_MOTIONS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            marginTop: 2,
-            cursor: "pointer",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13,
-            color: "var(--ink)"
-          }}
-          title="Let Seedance generate a native audio track for this clip (off = silent, scored later in Export)"
-        >
-          <span>Native audio</span>
-          <input
-            type="checkbox"
-            checked={audioOn}
-            onChange={(e) => setAudioOn(e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: "var(--accent)", cursor: "pointer" }}
-          />
-        </label>
-
-        <span style={{ marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Video model</span>
-        <select
-          value={modelId}
-          onChange={(e) => setModelId(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            border: "none",
-            borderRadius: 18,
-            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13,
-            fontWeight: 500,
-            outline: "none",
-            cursor: "pointer"
-          }}
-        >
-          {VIDEO_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label} · {m.costText}
-            </option>
-          ))}
-        </select>
-        <p style={{ margin: 0, color: "var(--mute)", fontSize: 11, lineHeight: 1.35 }}>{model.description}</p>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            color: tooPoor ? "var(--accent)" : "var(--mute)"
-          }}
-        >
-          <span>
-            {model.costText}
-            {isHiggs ? " credits" : " / clip"}
-          </span>
-          <span>
-            {!isHiggs
-              ? "BytePlus · free tokens"
-              : credits != null
-              ? `Balance ${credits}`
-              : balance?.connected === false
-              ? "Higgsfield off"
-              : "—"}
-          </span>
-        </div>
-        <button
-          disabled={animating || !node.frame_url}
-          onClick={async () => {
-            setNote(null);
-            setAnimating(true);
-            try {
-              const res = await onAnimate(modelId, motionId, audioOn);
-              if (res?.simulated) setNote(res.note ?? "Simulated — connect Higgsfield or add a video key to render real motion.");
-              else if (res?.error) setNote(res.error);
-              else if (res?.ok) setNote(`Clip rendered by ${res.vendor ?? "the video model"}.`);
-            } finally {
-              setAnimating(false);
-            }
-          }}
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "var(--on-accent)",
-            background: "var(--accent)",
-            border: "none",
-            borderRadius: 999,
-            boxShadow: "var(--shadow-1)",
-            cursor: "pointer"
-          }}
-        >
-          <Film size={12} /> {animating ? "Rendering…" : node.clip_url ? "Re-roll clip" : "Generate clip"}
-        </button>
-        {tooPoor && (
-          <span style={{ fontSize: 11, color: "var(--accent)", lineHeight: 1.35 }}>
-            Balance is below ≈{model.approxCost} cr — top up Higgsfield or pick a cheaper model.
-          </span>
         )}
-      </div>
-      {note && (
-        <p style={{ fontSize: 11, marginTop: 8, lineHeight: 1.4, color: "var(--mute)" }}>{note}</p>
-      )}
 
-      <label
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          padding: "8px 14px",
-          fontWeight: 600,
-          fontSize: 13,
-          color: "var(--ink)",
-          background: "var(--surface-2)",
-          borderRadius: 999,
-          cursor: uploadingClip ? "default" : "pointer",
-          opacity: uploadingClip ? 0.6 : 1
-        }}
-        title="Attach a clip you generated somewhere else (e.g. Higgsfield's own web app) instead of generating one here"
-      >
-        <input
-          type="file"
-          accept=".mp4,.mov,.webm"
-          disabled={uploadingClip}
-          style={{ display: "none" }}
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (!file) return;
-            setUploadingClip(true);
-            setUploadClipNote(null);
-            try {
-              const res = await onUploadClip(file);
-              if (res?.error) setUploadClipNote(res.error);
-            } finally {
-              setUploadingClip(false);
-            }
-          }}
-        />
-        {uploadingClip ? "Uploading…" : "Upload a clip instead"}
-      </label>
-      {uploadClipNote && (
-        <p style={{ fontSize: 11, lineHeight: 1.4, color: "var(--mute)" }}>{uploadClipNote}</p>
-      )}
+        <div className="stitch-zoom">
+          <button onClick={() => zoomBy(0.85)} title="Zoom out">
+            <Minus size={14} />
+          </button>
+          <span className="readout">{Math.round(viewport.zoom * 100)}%</span>
+          <button onClick={() => zoomBy(1.15)} title="Zoom in">
+            <Plus size={14} />
+          </button>
+        </div>
 
-      <div style={{ borderTop: "1px solid var(--cream-deep)", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
-          Lip sync {node.dialogue_audio_url ? "· dialogue attached" : "· no dialogue yet"}
-        </span>
-        <label
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            padding: "8px 14px",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "var(--ink)",
-            background: "var(--surface-2)",
-            borderRadius: 999,
-            cursor: uploadingDialogue ? "default" : "pointer",
-            opacity: uploadingDialogue ? 0.6 : 1
-          }}
-        >
-          <input
-            type="file"
-            accept=".mp3,.m4a,.wav,.aac"
-            disabled={uploadingDialogue}
-            style={{ display: "none" }}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              setUploadingDialogue(true);
-              setLipsyncNote(null);
-              try {
-                const res = await onUploadDialogue(file);
-                if (res?.error) setLipsyncNote(res.error);
-              } finally {
-                setUploadingDialogue(false);
-              }
+        <div className="stitch-dock">
+          <button
+            data-armed={tool === "select"}
+            onClick={() => {
+              input.setTool("select");
+              input.setSticky(false);
             }}
-          />
-          {uploadingDialogue ? "Uploading…" : node.dialogue_audio_url ? "Replace dialogue track" : "Upload dialogue track"}
-        </label>
-        <select
-          value={lipsyncModelId}
-          onChange={(e) => setLipsyncModelId(e.target.value)}
-          title="Sync.so lip-sync model — billed on your own Sync.so account, separate from the BytePlus balance above"
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            border: "none",
-            borderRadius: 12,
-            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13
-          }}
-        >
-          {LIPSYNC_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label} · {m.costText}
-            </option>
+            title="Select — drag the board for a marquee"
+          >
+            <MousePointer2 size={15} />
+          </button>
+          <button
+            data-armed={tool === "hand"}
+            onClick={() => {
+              input.setTool("hand");
+              input.setSticky(false);
+            }}
+            title="Hand — drag to pan (or hold space)"
+          >
+            <Hand size={15} />
+          </button>
+          <span className="sep" />
+          <button data-active={drawerOpen} onClick={() => setDrawerOpen((v) => !v)} title="Frame library">
+            <Layers size={15} />
+          </button>
+          <span className="sep" />
+          {PLACERS.map(({ tool: t, icon: Icon, title }) => (
+            <button key={t} data-armed={tool === t} onClick={(e) => input.armTool(t, e.shiftKey)} title={title}>
+              <Icon size={15} />
+            </button>
           ))}
-        </select>
-        <button
-          disabled={lipsyncing || !node.dialogue_audio_url || (!node.clip_url && !node.frame_url)}
-          onClick={async () => {
-            setLipsyncNote(null);
-            setLipsyncing(true);
-            try {
-              const res = await onLipsync(lipsyncModelId);
-              if (res?.error) setLipsyncNote(res.error);
-              else if (res?.ok) setLipsyncNote(`Lip-synced by ${res.vendor ?? "Sync.so"}.`);
-            } finally {
-              setLipsyncing(false);
-            }
-          }}
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "var(--ink)",
-            background: "var(--surface-2)",
-            border: "none",
-            borderRadius: 999,
-            cursor: "pointer",
-            opacity: lipsyncing || !node.dialogue_audio_url || (!node.clip_url && !node.frame_url) ? 0.5 : 1
-          }}
-        >
-          {lipsyncing || node.lipsync_state === "generating"
-            ? "Syncing…"
-            : node.lipsync_url
-              ? "Re-sync lips"
-              : "Sync lips to dialogue"}
-        </button>
-        {lipsyncNote && (
-          <p style={{ fontSize: 11, lineHeight: 1.4, color: "var(--mute)" }}>{lipsyncNote}</p>
+          <span className="sep" />
+          <button onClick={() => ops.undo(project.id)} disabled={!ops.canUndo} title="Undo">
+            <Undo2 size={15} />
+          </button>
+          <button onClick={() => ops.redo(project.id)} disabled={!ops.canRedo} title="Redo">
+            <Redo2 size={15} />
+          </button>
+          <span className="sep" />
+          <button onClick={fitAll} title="Frame all">
+            <Maximize2 size={15} />
+          </button>
+          <button onClick={reset} title="Reset view">
+            <Home size={15} />
+          </button>
+        </div>
+
+        {input.menu && (
+          <BoardMenu
+            x={input.menu.x}
+            y={input.menu.y}
+            shellRef={shellRef}
+            items={menuItems}
+            onClose={() => input.setMenu(null)}
+          />
+        )}
+
+        {ghost && (
+          <div
+            className="stitch-drag-ghost"
+            style={{
+              transform: `translate(${ghost.cx - GHOST_W / 2}px, ${ghost.cy - GHOST_H / 2}px)`
+            }}
+          >
+            {ghost.url && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={ghost.url} alt={ghost.label} draggable={false} />
+            )}
+          </div>
         )}
       </div>
 
-      <button
-        onClick={onDelete}
-        style={{
-          width: "100%",
-          justifyContent: "center",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "8px 14px",
-          fontWeight: 600,
-          fontSize: 13,
-          color: "var(--on-accent)",
-          background: "var(--tomato-deep)",
-          border: "none",
-          borderRadius: 999,
-          boxShadow: "var(--shadow-1)",
-          cursor: "pointer"
-        }}
-      >
-        <Trash2 size={12} /> Remove from Stitch
-      </button>
-    </motion.aside>
+      {toast && (
+        <div className="storyboard-toast" data-kind={toast.kind}>
+          {toast.text}
+        </div>
+      )}
+    </div>
   );
 }
