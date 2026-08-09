@@ -28,3 +28,9 @@ tsconfig.tsbuildinfo
 
 # Cloned reference repo — research only, not part of the app
 Research/dramaclaw/
+
+.vercel
+.playwright-mcp/
+direkta-modules/test/*.m4a
+direkta-modules/test/*.mp3
+direkta-modules/test/*.wav

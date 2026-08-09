@@ -1,0 +1,1506 @@
+{
+  "track_id": "dracula-reel-31s",
+  "source_file": "/Users/nishkarsh/Direkta_git/direkta-modules/test/dracula-reel-31s.m4a",
+  "sample_rate": 44100,
+  "duration_sec": 31.324,
+  "global_bpm": 114.84,
+  "bpm_confidence": 1.0,
+  "tempo_stability": "stable",
+  "time_signature": [
+    4,
+    4
+  ],
+  "beats": [
+    {
+      "t": 0.511,
+      "index": 1,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.391
+    },
+    {
+      "t": 1.045,
+      "index": 2,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.188
+    },
+    {
+      "t": 1.567,
+      "index": 3,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.405
+    },
+    {
+      "t": 2.09,
+      "index": 4,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.295
+    },
+    {
+      "t": 2.601,
+      "index": 5,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.257
+    },
+    {
+      "t": 3.135,
+      "index": 6,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.324
+    },
+    {
+      "t": 3.657,
+      "index": 7,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.363
+    },
+    {
+      "t": 4.168,
+      "index": 8,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.482
+    },
+    {
+      "t": 4.69,
+      "index": 9,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.219
+    },
+    {
+      "t": 5.213,
+      "index": 10,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.136
+    },
+    {
+      "t": 5.735,
+      "index": 11,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.431
+    },
+    {
+      "t": 6.258,
+      "index": 12,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.155
+    },
+    {
+      "t": 6.78,
+      "index": 13,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.209
+    },
+    {
+      "t": 7.303,
+      "index": 14,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.269
+    },
+    {
+      "t": 7.814,
+      "index": 15,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.208
+    },
+    {
+      "t": 8.336,
+      "index": 16,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.186
+    },
+    {
+      "t": 8.87,
+      "index": 17,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.23
+    },
+    {
+      "t": 9.392,
+      "index": 18,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.243
+    },
+    {
+      "t": 9.915,
+      "index": 19,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.186
+    },
+    {
+      "t": 10.426,
+      "index": 20,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.18
+    },
+    {
+      "t": 10.948,
+      "index": 21,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.074
+    },
+    {
+      "t": 11.471,
+      "index": 22,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.269
+    },
+    {
+      "t": 12.005,
+      "index": 23,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.446
+    },
+    {
+      "t": 12.539,
+      "index": 24,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.106
+    },
+    {
+      "t": 13.05,
+      "index": 25,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.176
+    },
+    {
+      "t": 13.56,
+      "index": 26,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.156
+    },
+    {
+      "t": 14.095,
+      "index": 27,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.373
+    },
+    {
+      "t": 14.605,
+      "index": 28,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 1.0
+    },
+    {
+      "t": 15.116,
+      "index": 29,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.35
+    },
+    {
+      "t": 15.65,
+      "index": 30,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.141
+    },
+    {
+      "t": 16.173,
+      "index": 31,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.327
+    },
+    {
+      "t": 16.695,
+      "index": 32,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.39
+    },
+    {
+      "t": 17.218,
+      "index": 33,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.349
+    },
+    {
+      "t": 17.74,
+      "index": 34,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.241
+    },
+    {
+      "t": 18.251,
+      "index": 35,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.297
+    },
+    {
+      "t": 18.773,
+      "index": 36,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.257
+    },
+    {
+      "t": 19.284,
+      "index": 37,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.127
+    },
+    {
+      "t": 19.818,
+      "index": 38,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.051
+    },
+    {
+      "t": 20.341,
+      "index": 39,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.309
+    },
+    {
+      "t": 20.863,
+      "index": 40,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.431
+    },
+    {
+      "t": 21.386,
+      "index": 41,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.232
+    },
+    {
+      "t": 21.908,
+      "index": 42,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.093
+    },
+    {
+      "t": 22.43,
+      "index": 43,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.287
+    },
+    {
+      "t": 22.953,
+      "index": 44,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.468
+    },
+    {
+      "t": 23.475,
+      "index": 45,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.247
+    },
+    {
+      "t": 23.998,
+      "index": 46,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.161
+    },
+    {
+      "t": 24.509,
+      "index": 47,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.35
+    },
+    {
+      "t": 25.043,
+      "index": 48,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.485
+    },
+    {
+      "t": 25.565,
+      "index": 49,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.169
+    },
+    {
+      "t": 26.088,
+      "index": 50,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.21
+    },
+    {
+      "t": 26.61,
+      "index": 51,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.195
+    },
+    {
+      "t": 27.133,
+      "index": 52,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.225
+    },
+    {
+      "t": 27.643,
+      "index": 53,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.127
+    },
+    {
+      "t": 28.166,
+      "index": 54,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.073
+    },
+    {
+      "t": 28.7,
+      "index": 55,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.206
+    },
+    {
+      "t": 29.222,
+      "index": 56,
+      "position_in_bar": 1,
+      "is_downbeat": true,
+      "confidence": 0.229
+    },
+    {
+      "t": 29.745,
+      "index": 57,
+      "position_in_bar": 2,
+      "is_downbeat": false,
+      "confidence": 0.279
+    },
+    {
+      "t": 30.279,
+      "index": 58,
+      "position_in_bar": 3,
+      "is_downbeat": false,
+      "confidence": 0.277
+    },
+    {
+      "t": 30.79,
+      "index": 59,
+      "position_in_bar": 4,
+      "is_downbeat": false,
+      "confidence": 0.26
+    }
+  ],
+  "downbeats": [
+    2.09,
+    4.168,
+    6.258,
+    8.336,
+    10.426,
+    12.539,
+    14.605,
+    16.695,
+    18.773,
+    20.863,
+    22.953,
+    25.043,
+    27.133,
+    29.222
+  ],
+  "sections": [
+    {
+      "label": "segment_1",
+      "start": 0.0,
+      "end": 4.168,
+      "bars": 2,
+      "energy": 0.755,
+      "rms_mean": 0.3628,
+      "instrumentation": [],
+      "target_avg_shot_sec": [
+        1.35,
+        2.59
+      ]
+    },
+    {
+      "label": "segment_2",
+      "start": 4.168,
+      "end": 31.324,
+      "bars": 12,
+      "energy": 0.704,
+      "rms_mean": 0.3547,
+      "instrumentation": [],
+      "target_avg_shot_sec": [
+        1.65,
+        2.97
+      ]
+    }
+  ],
+  "section_labels": "unlabeled",
+  "onsets": [
+    {
+      "t": 0.244,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 0.464,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 0.836,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 0.906,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 1.033,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 1.289,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 1.533,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 1.8,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 2.043,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 2.09,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 2.31,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 2.543,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 2.821,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 2.972,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 3.088,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 3.39,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 3.634,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 3.866,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 4.156,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 4.168,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 4.389,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 4.621,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 4.923,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 5.074,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 5.201,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 5.689,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 6.084,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 6.258,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 6.293,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 6.467,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 6.769,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 7.036,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 7.152,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 7.21,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 7.268,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 7.535,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 7.755,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 7.872,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 8.29,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 8.336,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 8.847,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 9.091,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 9.218,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 9.369,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 9.416,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 9.903,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 10.391,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 10.426,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 10.67,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 10.948,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 11.204,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 11.436,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 11.726,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 11.773,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 11.97,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 12.539,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 13.026,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 13.537,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 13.932,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 14.06,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 14.327,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 14.571,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 14.605,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 14.838,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 15.023,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 15.105,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 15.36,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 15.871,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 16.149,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 16.405,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 16.509,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 16.649,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 16.695,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 17.194,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 17.45,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 17.717,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 17.995,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 18.216,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 18.634,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 18.715,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 18.773,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 19.017,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 19.226,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 19.284,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 19.516,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 19.795,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 20.306,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 20.596,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 20.817,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 20.863,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 21.107,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 21.362,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 21.873,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 22.384,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 22.918,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 22.953,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 23.441,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 23.684,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 23.87,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 23.986,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 24.207,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 24.474,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 25.031,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 25.043,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 25.252,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 25.53,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 26.076,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 26.564,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 26.831,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 27.121,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 27.133,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 27.632,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 28.166,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 28.677,
+      "type": "kick",
+      "weight": 1.0
+    },
+    {
+      "t": 29.187,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 29.222,
+      "type": "downbeat",
+      "weight": 1.0
+    },
+    {
+      "t": 29.675,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 29.722,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 30.256,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 30.72,
+      "type": "drum_other",
+      "weight": 0.2
+    },
+    {
+      "t": 31.138,
+      "type": "snare",
+      "weight": 0.6
+    },
+    {
+      "t": 31.289,
+      "type": "kick",
+      "weight": 1.0
+    }
+  ],
+  "onset_detection_mode": "full",
+  "lyric_alignment_mode": "none",
+  "cut_offset_frames": 0,
+  "fps": 30,
+  "schema_version": "1.0.0",
+  "decode_normalized": true,
+  "resolved_bpm": 114.84,
+  "rejected_bpm": null,
+  "frames_per_beat": 15.674,
+  "frame_accuracy": {
+    "frame_duration_ms": 33.333,
+    "detector_tolerance_ms": 70.0,
+    "detector_tolerance_frames": 3,
+    "median_beat_confidence": 0.243,
+    "cut_offset_frames_recommended": 0,
+    "cut_offset_basis": "detector_error_dominant",
+    "rationale": "confidence or stability is below the gate (bpm_confidence=1.0, median beat confidence=0.243, tempo_stability='stable'). Detector error (+/-70ms = 3 frames at 30fps) dominates the perceptual offset \u2014 recommend 0 and widen cut-timing tolerance (\u00a77 confidence-gating) rather than trusting a fixed frame offset."
+  },
+  "energy_curve": [
+    {
+      "t": 0.0,
+      "energy": 0.15,
+      "rms": 0.2664
+    },
+    {
+      "t": 0.5,
+      "energy": 0.839,
+      "rms": 0.3762
+    },
+    {
+      "t": 1.0,
+      "energy": 0.775,
+      "rms": 0.366
+    },
+    {
+      "t": 1.5,
+      "energy": 0.8,
+      "rms": 0.3701
+    },
+    {
+      "t": 2.0,
+      "energy": 0.906,
+      "rms": 0.3868
+    },
+    {
+      "t": 2.5,
+      "energy": 0.896,
+      "rms": 0.3854
+    },
+    {
+      "t": 3.0,
+      "energy": 0.861,
+      "rms": 0.3798
+    },
+    {
+      "t": 3.5,
+      "energy": 0.776,
+      "rms": 0.3662
+    },
+    {
+      "t": 4.0,
+      "energy": 0.789,
+      "rms": 0.3683
+    },
+    {
+      "t": 4.5,
+      "energy": 0.853,
+      "rms": 0.3784
+    },
+    {
+      "t": 5.0,
+      "energy": 0.85,
+      "rms": 0.378
+    },
+    {
+      "t": 5.5,
+      "energy": 0.808,
+      "rms": 0.3714
+    },
+    {
+      "t": 6.0,
+      "energy": 0.814,
+      "rms": 0.3723
+    },
+    {
+      "t": 6.5,
+      "energy": 0.858,
+      "rms": 0.3792
+    },
+    {
+      "t": 7.0,
+      "energy": 0.819,
+      "rms": 0.373
+    },
+    {
+      "t": 7.5,
+      "energy": 0.874,
+      "rms": 0.3818
+    },
+    {
+      "t": 8.0,
+      "energy": 0.799,
+      "rms": 0.3699
+    },
+    {
+      "t": 8.5,
+      "energy": 0.777,
+      "rms": 0.3664
+    },
+    {
+      "t": 9.0,
+      "energy": 0.879,
+      "rms": 0.3826
+    },
+    {
+      "t": 9.5,
+      "energy": 0.876,
+      "rms": 0.3821
+    },
+    {
+      "t": 10.0,
+      "energy": 0.853,
+      "rms": 0.3784
+    },
+    {
+      "t": 10.5,
+      "energy": 0.769,
+      "rms": 0.3651
+    },
+    {
+      "t": 11.0,
+      "energy": 0.739,
+      "rms": 0.3603
+    },
+    {
+      "t": 11.5,
+      "energy": 0.789,
+      "rms": 0.3683
+    },
+    {
+      "t": 12.0,
+      "energy": 0.719,
+      "rms": 0.3571
+    },
+    {
+      "t": 12.5,
+      "energy": 0.547,
+      "rms": 0.3298
+    },
+    {
+      "t": 13.0,
+      "energy": 0.374,
+      "rms": 0.3022
+    },
+    {
+      "t": 13.5,
+      "energy": 0.092,
+      "rms": 0.2572
+    },
+    {
+      "t": 14.0,
+      "energy": 0.0,
+      "rms": 0.2426
+    },
+    {
+      "t": 14.5,
+      "energy": 0.622,
+      "rms": 0.3417
+    },
+    {
+      "t": 15.0,
+      "energy": 0.905,
+      "rms": 0.3867
+    },
+    {
+      "t": 15.5,
+      "energy": 0.867,
+      "rms": 0.3808
+    },
+    {
+      "t": 16.0,
+      "energy": 0.855,
+      "rms": 0.3787
+    },
+    {
+      "t": 16.5,
+      "energy": 0.822,
+      "rms": 0.3735
+    },
+    {
+      "t": 17.0,
+      "energy": 0.863,
+      "rms": 0.38
+    },
+    {
+      "t": 17.5,
+      "energy": 0.858,
+      "rms": 0.3792
+    },
+    {
+      "t": 18.0,
+      "energy": 0.81,
+      "rms": 0.3716
+    },
+    {
+      "t": 18.5,
+      "energy": 0.703,
+      "rms": 0.3546
+    },
+    {
+      "t": 19.0,
+      "energy": 0.644,
+      "rms": 0.3452
+    },
+    {
+      "t": 19.5,
+      "energy": 0.779,
+      "rms": 0.3667
+    },
+    {
+      "t": 20.0,
+      "energy": 0.757,
+      "rms": 0.3632
+    },
+    {
+      "t": 20.5,
+      "energy": 0.661,
+      "rms": 0.348
+    },
+    {
+      "t": 21.0,
+      "energy": 0.732,
+      "rms": 0.3592
+    },
+    {
+      "t": 21.5,
+      "energy": 0.811,
+      "rms": 0.3718
+    },
+    {
+      "t": 22.0,
+      "energy": 0.859,
+      "rms": 0.3794
+    },
+    {
+      "t": 22.5,
+      "energy": 0.737,
+      "rms": 0.3601
+    },
+    {
+      "t": 23.0,
+      "energy": 0.633,
+      "rms": 0.3434
+    },
+    {
+      "t": 23.5,
+      "energy": 0.631,
+      "rms": 0.3431
+    },
+    {
+      "t": 24.0,
+      "energy": 0.7,
+      "rms": 0.3542
+    },
+    {
+      "t": 24.5,
+      "energy": 0.721,
+      "rms": 0.3574
+    },
+    {
+      "t": 25.0,
+      "energy": 0.831,
+      "rms": 0.375
+    },
+    {
+      "t": 25.5,
+      "energy": 0.949,
+      "rms": 0.3938
+    },
+    {
+      "t": 26.0,
+      "energy": 1.0,
+      "rms": 0.4019
+    },
+    {
+      "t": 26.5,
+      "energy": 0.925,
+      "rms": 0.3899
+    },
+    {
+      "t": 27.0,
+      "energy": 0.841,
+      "rms": 0.3765
+    },
+    {
+      "t": 27.5,
+      "energy": 0.783,
+      "rms": 0.3674
+    },
+    {
+      "t": 28.0,
+      "energy": 0.744,
+      "rms": 0.3612
+    },
+    {
+      "t": 28.5,
+      "energy": 0.634,
+      "rms": 0.3435
+    },
+    {
+      "t": 29.0,
+      "energy": 0.343,
+      "rms": 0.2973
+    },
+    {
+      "t": 29.5,
+      "energy": 0.299,
+      "rms": 0.2903
+    },
+    {
+      "t": 30.0,
+      "energy": 0.222,
+      "rms": 0.2779
+    },
+    {
+      "t": 30.5,
+      "energy": 0.215,
+      "rms": 0.2769
+    },
+    {
+      "t": 31.0,
+      "energy": 0.151,
+      "rms": 0.2667
+    }
+  ],
+  "troughs": [
+    {
+      "t": 13.5,
+      "energy": 0.155,
+      "prominence": 0.714
+    },
+    {
+      "t": 19.0,
+      "energy": 0.709,
+      "prominence": 0.094
+    },
+    {
+      "t": 23.5,
+      "energy": 0.655,
+      "prominence": 0.148
+    }
+  ],
+  "downbeat_source": "estimated",
+  "section_source": "foote_novelty",
+  "onset_source": "full_mix",
+  "provenance": {
+    "decode": {
+      "method": "ffmpeg",
+      "normalized": true,
+      "target": "mono / 44100Hz / s16 wav"
+    },
+    "beats": {
+      "source": "librosa.beat.beat_track",
+      "confidence_source": "onset_strength_proxy",
+      "checkpoint": null
+    },
+    "downbeats": {
+      "source": "estimated",
+      "rule": "every 4th beat, phase-anchored on the strongest onset among the first 16 beats"
+    },
+    "tempo": {
+      "source": "median inter-beat interval",
+      "cross_check_bpm_librosa": 114.84,
+      "stability_iqr_ratio": 0.0,
+      "octave_resolution": {
+        "test": "backbeat_period",
+        "action": "kept",
+        "off_on_ratio": 0.304,
+        "alternate_ratio": 0.992,
+        "beats_per_bar_raw": 4,
+        "preferred_window_bpm": [
+          70.0,
+          180.0
+        ],
+        "reason": "no_octave_error_detected"
+      }
+    },
+    "sections": {
+      "source": "foote_novelty",
+      "labels": "unlabeled"
+    },
+    "onsets": {
+      "source": "full_mix",
+      "mode": "full",
+      "classifier": "band-energy heuristic (kick/snare/hihat/drum_other)"
+    },
+    "energy": {
+      "source": "librosa.feature.rms",
+      "hop_sec": 0.5,
+      "normalization": "track-relative min-max"
+    },
+    "troughs": {
+      "source": "rms_local_minima",
+      "min_prominence": 0.08,
+      "min_spacing_sec": 4.0
+    },
+    "instrumentation": {
+      "source": "unavailable"
+    },
+    "lyrics": {
+      "source": "none",
+      "mode": "none",
+      "lyrics_file": null
+    }
+  },
+  "warnings": [
+    "beat-this not installed \u2014 beats from librosa.beat.beat_track and downbeats ESTIMATED (every 4th beat). Install with `pip install beat-this` for real downbeat detection.",
+    "demucs not installed \u2014 onsets are detected on the FULL MIX instead of an isolated drum stem, so kick/snare/hihat labels are less reliable and sections[].instrumentation is empty. Install with `pip install -U demucs`.",
+    "allin1 not installed \u2014 sections come from Foote-novelty segmentation and are UNLABELED. Narrative rules keyed on a specific label (e.g. 'wow-shot on Chorus 1') do not apply. Install with `pip install allin1` for labeled sections.",
+    "whisperx not installed and no forced aligner available \u2014 lyric_hook_onset entries are omitted (lyric_alignment_mode='none'). \u00a77 step 4 must reassign dialogue/action slots to downbeats."
+  ]
+}
