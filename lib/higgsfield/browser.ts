@@ -22,7 +22,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import puppeteerCore, { type Browser, type Page } from "puppeteer-core";
+import puppeteerCore, { type Browser, type Page, type HTTPRequest } from "puppeteer-core";
 import { addExtra } from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
@@ -125,12 +125,35 @@ function noteError(msg: string) {
   getDb().prepare("UPDATE higgsfield_browser SET last_error = ? WHERE id = 1").run(msg.slice(0, 400));
 }
 
-async function openSession(): Promise<{ browser: Browser; page: Page }> {
+/**
+ * When HIGGS_CDP_URL is set, drive the real, already-logged-in Chrome window
+ * on the VPS (the one reachable over VNC) via Chrome DevTools Protocol instead
+ * of launching a throwaway headless browser. Real, headed, human-authenticated
+ * — nothing to fingerprint or replay. We open a NEW TAB per call and close only
+ * that tab afterward; the shared browser process (and the user's visible
+ * session) is never touched by `browser.close()`.
+ */
+async function openLiveSession(cdpUrl: string): Promise<{ browser: Browser; page: Page; live: true }> {
+  const browser = await puppeteerCore.connect({ browserURL: cdpUrl, defaultViewport: null });
+  const page = await browser.newPage();
+  return { browser, page, live: true };
+}
+
+async function openSession(): Promise<{ browser: Browser; page: Page; live: boolean }> {
+  const cdpUrl = (process.env.HIGGS_CDP_URL || "").trim();
+  if (cdpUrl) return openLiveSession(cdpUrl);
+
   const r = row();
   if (!r) throw new Error("No Higgsfield browser session saved — add your cookies in the Key Vault.");
   const cookies: HiggsfieldCookie[] = JSON.parse(r.cookies);
   if (!cookies.length) throw new Error("Saved Higgsfield session is empty — re-capture your cookies.");
 
+  // Residential proxy defeats the DataDome datacenter-IP bot-wall. HIGGS_PROXY =
+  // "host:port"; optional HIGGS_PROXY_USER / HIGGS_PROXY_PASS for authenticated
+  // (e.g. IPRoyal) endpoints. Absent → direct (will hit the CAPTCHA on a VPS IP).
+  const proxy = (process.env.HIGGS_PROXY || "").trim();
+  const proxyUser = process.env.HIGGS_PROXY_USER;
+  const proxyPass = process.env.HIGGS_PROXY_PASS;
   const browser = await puppeteer.launch({
     executablePath: chromePath(),
     headless: true,
@@ -138,25 +161,62 @@ async function openSession(): Promise<{ browser: Browser; page: Page }> {
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "--disable-blink-features=AutomationControlled",
-      "--window-size=1600,1000"
+      "--window-size=1600,1000",
+      ...(proxy ? [`--proxy-server=${proxy}`] : [])
     ],
     defaultViewport: { width: 1600, height: 1000 }
   });
   const page = await browser.newPage();
+  if (proxy && proxyUser) {
+    await page.authenticate({ username: proxyUser, password: proxyPass || "" });
+  }
+  // Conserve proxy bandwidth: block heavy byte payloads (images/media/fonts).
+  // Result detection only reads img.src (the DOM attribute is set even when the
+  // byte-load is aborted), and the winning frame is downloaded server-side
+  // straight from CloudFront — not through the proxy. So this costs us nothing.
+  if (process.env.HIGGS_LEAN !== "0") {
+    await page.setRequestInterception(true);
+    page.on("request", (req: HTTPRequest) => {
+      const t = req.resourceType();
+      if (t === "image" || t === "media" || t === "font") req.abort().catch(() => {});
+      else req.continue().catch(() => {});
+    });
+  }
   // cf_clearance and datadome are bound to the capturing browser's User-Agent;
   // match a current Windows Chrome UA so the replayed tokens are accepted.
   await page.setUserAgent(
     process.env.HF_UA ||
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
   );
+  // datadome & cf_clearance are bound to the IP (and UA) that earned them. When
+  // we egress through a residential proxy, replaying VPS-IP tokens is a mismatch
+  // that trips an "Oops"/challenge — so drop them and let the clean residential
+  // IP mint fresh ones. Clerk auth cookies (__client/__session/__refresh) are
+  // not IP-bound, so they stay.
+  const usable = proxy
+    ? cookies.filter((c) => !/^(datadome|cf_clearance)$/i.test(c.name))
+    : cookies;
   await browser.setCookie(
-    ...cookies.map((c) => ({
+    ...usable.map((c) => ({
       ...c,
       domain: c.domain ?? ".higgsfield.ai",
       path: c.path ?? "/"
     }))
   );
-  return { browser, page };
+  return { browser, page, live: false };
+}
+
+/** Close a session opened by openSession(). A live (CDP-connected) session
+ * only closes the tab we opened and disconnects — the shared, visible Chrome
+ * process (and the user's own tabs) must survive. A launched session closes
+ * the whole throwaway browser as before. */
+async function closeSession(session: { browser: Browser; page: Page; live: boolean }) {
+  if (session.live) {
+    await session.page.close().catch(() => {});
+    await session.browser.disconnect().catch(() => {});
+  } else {
+    await session.browser.close().catch(() => {});
+  }
 }
 
 /** True once the composer has rendered (the prompt box exists). */
@@ -164,18 +224,62 @@ async function waitForComposer(page: Page) {
   await page.waitForSelector('div[contenteditable="true"]', { timeout: 90_000 });
 }
 
-/** Replace the contenteditable prompt. ctrl+A does not work here. */
-async function setPrompt(page: Page, prompt: string) {
+/** Higgsfield periodically runs a dismissible promo banner (e.g. "Seedance 2.5
+ * announcement") above the composer. Its CTA button text also starts with
+ * "Unlimited", which can be mistaken for the real submit button — dismiss it
+ * so it's out of the DOM entirely rather than trying to out-regex it. */
+async function dismissPromoBanners(page: Page) {
   await page.evaluate(() => {
-    const el = document.querySelector('div[contenteditable="true"]') as HTMLElement;
-    el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
+    document
+      .querySelectorAll('button[aria-label^="Dismiss"]')
+      .forEach((b) => (b as HTMLElement).click());
   });
-  await page.keyboard.type(prompt, { delay: 0 });
+}
+
+/**
+ * Replace the contenteditable prompt. ctrl+A does not work here. Higgsfield
+ * autosaves an unsent draft (persists even across a fresh tab), so a naive
+ * select-all+delete can leave old text behind — the previous version only
+ * checked that the NEW text was present, not that the OLD text was gone,
+ * which let a stale draft silently concatenate onto every new prompt
+ * (verified live: a leopard prompt rendered as an apple because 3+ prior
+ * prompts were still sitting in the field). Verify an EXACT match, and fall
+ * back to a hard DOM clear if the soft clear didn't fully take.
+ */
+async function setPrompt(page: Page, prompt: string) {
+  const exact = await page.evaluate((text: string) => {
+    const el = document.querySelector('div[contenteditable="true"]') as HTMLElement;
+    if (!el) return false;
+    const clearAndInsert = () => {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand("delete", false);
+    };
+    clearAndInsert();
+    if ((el.textContent || "").trim().length > 0) {
+      // Soft clear left residue (stale autosaved draft) — force it.
+      el.textContent = "";
+      el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    }
+    document.execCommand("insertText", false, text);
+    return (el.textContent || "").trim() === text.trim();
+  }, prompt);
+  if (!exact) {
+    // Fallback: real keystrokes, after one more forced clear.
+    await page.evaluate(() => {
+      const el = document.querySelector('div[contenteditable="true"]') as HTMLElement;
+      if (el) {
+        el.textContent = "";
+        el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        el.focus();
+      }
+    });
+    await page.keyboard.type(prompt, { delay: 0 });
+  }
 }
 
 /**
@@ -231,8 +335,11 @@ function ossPathFor(url: string): string | null {
  * Image page: flip Unlimited and prove it. Ground truth here is the submit
  * button reading "Unlimited<count>" (e.g. "Unlimited1") rather than
  * "Generate<count>" — the count is the number of images, not a credit charge.
- * The image toggle only responds to a full PointerEvent sequence, not a plain
- * click, and it can bounce back once before it sticks — hence the retry loop.
+ * Synthetic PointerEvents flip the DOM attribute but React's controlled switch
+ * reverts within ~1s (verified live), so submit fires on a paid "Generate" —
+ * exactly the intermittent VPS failure. A TRUSTED gesture sticks: focus the
+ * switch and press Space (it's a role=switch button). Retry loop guards the
+ * occasional bounce.
  */
 async function enforceUnlimitedImage(page: Page) {
   const hasSwitch = await page
@@ -247,29 +354,40 @@ async function enforceUnlimitedImage(page: Page) {
     const ok = await page.evaluate(() => {
       const sw = document.querySelector("[role=switch]") as HTMLElement | null;
       const btn = [...document.querySelectorAll("button")].find((b) =>
-        /^(Generate|Unlimited)/.test((b.textContent || "").trim())
+        /^(Generate|Unlimited)\d*$/.test((b.textContent || "").trim())
       );
       const label = (btn?.textContent || "").trim().replace(/\s+/g, "");
-      return !!sw && sw.getAttribute("aria-checked") === "true" && /^Unlimited/.test(label);
+      return !!sw && sw.getAttribute("aria-checked") === "true" && /^Unlimited\d*$/.test(label);
     });
     if (ok) return;
+    // Scroll into view + focus in-page, then send a TRUSTED Space via CDP.
     await page.evaluate(() => {
       const sw = document.querySelector("[role=switch]") as HTMLElement;
       sw.scrollIntoView({ block: "center" });
       sw.focus();
-      for (const t of ["pointerdown", "pointerup", "click"]) {
-        sw.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true }));
-      }
     });
+    await page.focus("[role=switch]").catch(() => {});
+    await page.keyboard.press("Space");
     await new Promise((r) => setTimeout(r, 800));
   }
   const label = await page.evaluate(() => {
     const btn = [...document.querySelectorAll("button")].find((b) =>
-      /^(Generate|Unlimited)/.test((b.textContent || "").trim())
+      /^(Generate|Unlimited)\d*$/.test((b.textContent || "").trim())
     );
     return (btn?.textContent || "").trim();
   });
-  throw new Error(`Refusing to submit image — Unlimited is not on (button reads "${label}"). No credits were spent.`);
+  // Snapshot + surface why the composer button was missing (CAPTCHA wall vs slow
+  // load), so the enforce-refuse path is as diagnosable as the timeout path.
+  await page.screenshot({ path: "/tmp/higgs-fail.png", fullPage: false }).catch(() => {});
+  const wall = await page.evaluate(() => {
+    const t = document.body.innerText;
+    const hits = ["verification required", "unusual activity", "captcha", "robot", "retry", "sign in", "log in"]
+      .filter((w) => new RegExp(w, "i").test(t));
+    return hits.join(",");
+  });
+  throw new Error(
+    `Refusing to submit image — Unlimited is not on (button reads "${label}"). No credits were spent. wall=${wall}`
+  );
 }
 
 /**
@@ -286,17 +404,53 @@ export async function generateImageViaBrowser(input: {
   timeoutMs?: number;
 }): Promise<{ url: string; relPath: string }> {
   const model = UNLIMITED_IMAGE_MODELS.includes(input.model || "") ? input.model! : DEFAULT_IMAGE_MODEL;
-  const { browser, page } = await openSession();
+  const session = await openSession();
+  const { browser, page } = session;
   try {
     await page.goto(`${IMAGE_URL}?model=${model}`, { waitUntil: "domcontentloaded", timeout: 120_000 });
     await waitForComposer(page);
+    await dismissPromoBanners(page);
 
     const signedOut = await page.evaluate(() => /log in|sign in/i.test(document.body.innerText.slice(0, 4000)));
     if (signedOut) throw new Error("Higgsfield session expired — re-capture your cookies.");
 
-    const before: string[] = await page.evaluate(() =>
-      [...document.querySelectorAll("img")].map((i) => i.src).filter((s) => /cloudfront|user_/.test(s))
-    );
+    // The account's History gallery hydrates AFTER load; if we snapshot too
+    // early, a pre-existing image counts as "new" and we grab the wrong one.
+    // Let the network settle so every existing image is captured in `before`.
+    await page.waitForNetworkIdle({ idleTime: 1500, timeout: 30_000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 3000));
+    // Higgsfield serves generated images through Cloudflare's resizer:
+    //   higgsfield.ai/cdn-cgi/image/<opts>/https://…cloudfront…/user_…
+    //   images.higgs.ai/?…&url=<url-encoded cloudfront>
+    // Unwrap to the underlying cloudfront object — that's the stable identity
+    // AND the full-quality source to download. `canonImg` is injected into the
+    // page context for both the before-snapshot and the poll.
+    // Stable identity across EVERY Cloudflare wrapper form. The generated
+    // object's filename token `hf_<date>_<time>_<idx>` appears literally in the
+    // cdn-cgi path, in the images.higgs.ai url-encoded param, and in the raw
+    // cloudfront URL alike (it has no URL-special chars), so it survives the
+    // wrapper-token rotation that made plain URL-diffing see every thumbnail as
+    // "new". KEYOF extracts it; DLOF unwraps to the full-quality cloudfront URL
+    // for download. Both are injected into the page context.
+    const KEYOF =
+      "(src)=>{try{" +
+      "var h=src.match(/hf_[0-9]{6,}_[0-9]{4,}(?:_[0-9]+)?/i);if(h)return h[0];" +
+      "var u=src.match(/[?&]url=([^&]+)/);if(u)return decodeURIComponent(u[1]).split('?')[0];" +
+      "var c=src.match(/cdn-cgi\\/image\\/.*?\\/(https?:\\/\\/.+)$/);if(c)return c[1].split('?')[0];" +
+      "return src.split('?')[0];}catch(e){return src.split('?')[0];}}";
+    const DLOF =
+      "(src)=>{try{" +
+      "var u=src.match(/[?&]url=([^&]+)/);if(u)return decodeURIComponent(u[1]);" +
+      "var c=src.match(/cdn-cgi\\/image\\/.*?\\/(https?:\\/\\/.+)$/);if(c)return c[1];" +
+      "return src;}catch(e){return src;}}";
+    const GEN = "/hf_|cloudfront|d8j0n|user_/";
+    const before: string[] = await page.evaluate((keySrc: string, genSrc: string) => {
+      const keyOf = eval(keySrc) as (s: string) => string;
+      const gen = eval(genSrc) as RegExp;
+      return [...document.querySelectorAll("img")]
+        .map((i) => keyOf(i.src))
+        .filter((s) => gen.test(s));
+    }, KEYOF, GEN);
 
     // Attach reference images (locks) if any are on disk.
     const refs = (input.referencePaths || []).map((p) => ossPathFor(p)).filter((p): p is string => !!p).slice(0, 3);
@@ -311,27 +465,103 @@ export async function generateImageViaBrowser(input: {
     await setPrompt(page, input.prompt);
     await enforceUnlimitedImage(page);
 
-    await page.evaluate(() => {
+    // Submit and capture the exact composer state at click time — proves the
+    // prompt actually took and the button was the Unlimited one (not a paid
+    // Generate). Logged so a "nothing generated" run is diagnosable.
+    const preClick = await page.evaluate(() => {
+      const el = document.querySelector('div[contenteditable="true"]') as HTMLElement | null;
       const btn = [...document.querySelectorAll("button")].find((b) =>
-        /^Unlimited/.test((b.textContent || "").trim())
-      ) as HTMLButtonElement;
-      btn.click();
+        /^Unlimited\d*$/.test((b.textContent || "").trim())
+      ) as HTMLButtonElement | undefined;
+      return { promptLen: (el?.textContent || "").length, label: (btn?.textContent || "").trim(), disabled: btn ? btn.disabled : null };
     });
+    // A real Puppeteer click (via CDP mouse events) is a TRUSTED gesture — a
+    // synthetic el.click() from inside page.evaluate() is not, and (like the
+    // Unlimited toggle above) the submit handler silently no-ops on it.
+    let clicked = false;
+    if (!preClick.disabled) {
+      const handle = await page.evaluateHandle(() =>
+        [...document.querySelectorAll("button")].find((b) => /^Unlimited\d*$/.test((b.textContent || "").trim())) ?? null
+      );
+      const el = handle.asElement() as import("puppeteer-core").ElementHandle<Element> | null;
+      if (el) {
+        await el.click();
+        clicked = true;
+      }
+      await handle.dispose();
+    }
+    console.log(`[browser.image] submit promptLen=${preClick.promptLen} btn="${preClick.label}" disabled=${preClick.disabled} clicked=${clicked}`);
+    // Probe for a "generation started" signal in the first ~12s. NOTE: a bare
+    // "%" match is unreliable — the nav shows "30% OFF" — so look for explicit
+    // progress words only. Also snapshot the post-submit composer so we can SEE
+    // whether a render actually began, a CAPTCHA appeared, or nothing happened —
+    // without waiting the full timeout.
+    await new Promise((r) => setTimeout(r, 8000));
+    const started = await page.evaluate(() => {
+      const t = document.body.innerText;
+      const progress = /generating|processing|queued|in progress|in queue|rendering/i.test(t);
+      const captcha = /verification required|unusual activity|captcha|are you a robot/i.test(t);
+      return { progress, captcha };
+    });
+    await page.screenshot({ path: "/tmp/higgs-submit.png", fullPage: false }).catch(() => {});
+    console.log(`[browser.image] post-submit progress=${started.progress} captcha=${started.captcha}`);
 
     const deadline = Date.now() + (input.timeoutMs ?? 6 * 60_000);
     let fresh: string | null = null;
+    let candidate: string | null = null;
     while (Date.now() < deadline && !fresh) {
       await new Promise((r) => setTimeout(r, 5000));
-      const state = await page.evaluate((seen: string[]) => {
-        const urls = [...document.querySelectorAll("img")]
-          .map((i) => i.src)
-          .filter((u) => /cloudfront|user_/.test(u) && !seen.includes(u) && /user_/.test(u));
-        return { url: urls[0] ?? null, nsfw: /NSFW/.test(document.body.innerText) };
-      }, before);
+      // Returns the full src (with query, needed to download) plus its stable
+      // path used for the not-in-`before` and confirm-twice checks.
+      const state = await page.evaluate(
+        (seen: string[], keySrc: string, dlSrc: string, genSrc: string) => {
+          const keyOf = eval(keySrc) as (s: string) => string;
+          const dlOf = eval(dlSrc) as (s: string) => string;
+          const gen = eval(genSrc) as RegExp;
+          const img = [...document.querySelectorAll("img")].find((i) => {
+            const k = keyOf(i.src);
+            return gen.test(k) && !seen.includes(k);
+          }) as HTMLImageElement | undefined;
+          return {
+            path: img ? keyOf(img.src) : null, // stable identity for confirm-twice
+            src: img ? dlOf(img.src) : null, // full-quality URL to download
+            nsfw: /NSFW/.test(document.body.innerText)
+          };
+        },
+        before,
+        KEYOF,
+        DLOF,
+        GEN
+      );
       if (state.nsfw) throw new Error("Higgsfield rejected the frame as NSFW (credits are refunded).");
-      if (state.url) fresh = state.url;
+      // Confirm the same new image path twice running — a generating tile shows
+      // a placeholder before the final image settles.
+      if (state.path && state.path === candidate) fresh = state.src;
+      else candidate = state.path;
     }
-    if (!fresh) throw new Error("Higgsfield image render timed out.");
+    if (!fresh) {
+      // Diagnose: dump what images the page actually shows so the src pattern
+      // can be corrected instead of guessed.
+      const diag = await page.evaluate((seen: string[], keySrc: string, genSrc: string) => {
+        const keyOf = eval(keySrc) as (s: string) => string;
+        const gen = eval(genSrc) as RegExp;
+        const all = [...document.querySelectorAll("img")].map((i) => i.src);
+        const keys = all.map(keyOf).filter((k) => gen.test(k));
+        const freshKeys = keys.filter((k) => !seen.includes(k));
+        return `imgs=${all.length} genKeys=${keys.length} freshKeys=${freshKeys.length} sampleKeys=${[...new Set(freshKeys)].slice(0, 4).join(",")} seen=${seen.slice(0, 2).join(",")}`;
+      }, before, KEYOF, GEN);
+      // Save a screenshot + surface any error/limit/login/captcha text so we can
+      // SEE why headless produced no frame (bot-wall, toast, disabled button…).
+      await page.screenshot({ path: "/tmp/higgs-fail.png", fullPage: false }).catch(() => {});
+      const wall = await page.evaluate(() => {
+        const t = document.body.innerText;
+        const hits = ["error", "failed", "limit", "sign in", "log in", "verify", "captcha", "robot", "try again", "too many"]
+          .filter((w) => new RegExp(w, "i").test(t));
+        return { hits, snippet: t.replace(/\s+/g, " ").slice(0, 400) };
+      });
+      console.log(`[browser.image] timeout wall=${wall.hits.join(",")} snippet="${wall.snippet}"`);
+      throw new Error("Higgsfield image render timed out. " + diag + " wall=" + wall.hits.join(","));
+    }
 
     const saved = await writeRemoteToOss(fresh, "image");
     noteOk();
@@ -340,7 +570,7 @@ export async function generateImageViaBrowser(input: {
     noteError(err instanceof Error ? err.message : String(err));
     throw err;
   } finally {
-    await browser.close().catch(() => {});
+    await closeSession(session);
   }
 }
 
@@ -350,7 +580,8 @@ export async function generateImageViaBrowser(input: {
  * login wall did. No generation, so it costs nothing.
  */
 export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: boolean; detail: string; diag?: string; clerkCookiePresent?: boolean }> {
-  const { browser, page } = await openSession();
+  const session = await openSession();
+  const { browser, page } = session;
   try {
     // Warm the homepage first — Clerk's client JS mints a fresh __session from
     // the __refresh cookie on load, which the deep app pages then rely on.
@@ -364,12 +595,19 @@ export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: bo
     // session. The honest signal is the top-nav: logged-out shows Login / Sign
     // up buttons; logged-in shows the account menu instead.
     const signedIn: boolean = await page.evaluate(() => {
-      const navAuth = [...document.querySelectorAll("a,button")].some((el) => {
+      const els = [...document.querySelectorAll("a,button")];
+      const loggedOut = els.some((el) => {
         const t = (el.textContent || "").trim().toLowerCase();
         return t === "login" || t === "log in" || t === "sign up" || t === "sign in";
       });
-      const hasSwitch = !!document.querySelector("[role=switch]");
-      return hasSwitch && !navAuth;
+      // Signed-in nav shows Assets + an account/avatar control (and Upgrade for
+      // non-premium). The Unlimited toggle differs by page, so the nav is the
+      // reliable signal — not the toggle element.
+      const loggedIn = els.some((el) => {
+        const t = (el.textContent || "").trim().toLowerCase();
+        return t === "assets" || t.startsWith("upgrade");
+      });
+      return loggedIn && !loggedOut;
     });
     const diag: string = await page.evaluate(() => {
       const title = document.title;
@@ -397,7 +635,7 @@ export async function checkBrowserSession(): Promise<{ ok: boolean; signedIn: bo
     noteError(msg);
     return { ok: false, signedIn: false, detail: msg };
   } finally {
-    await browser.close().catch(() => {});
+    await closeSession(session);
   }
 }
 
@@ -418,10 +656,12 @@ export async function generateVideoViaBrowser(input: {
   if (!framePath) throw new Error("Browser path needs a local frame file (an /oss/ image).");
   const endPath = input.endFrameUrl ? ossPathFor(input.endFrameUrl) : null;
 
-  const { browser, page } = await openSession();
+  const session = await openSession();
+  const { browser, page } = session;
   try {
     await page.goto(VIDEO_URL, { waitUntil: "domcontentloaded", timeout: 120_000 });
     await waitForComposer(page);
+    await dismissPromoBanners(page);
 
     // Signed out → the composer never appears with a usable account state.
     const signedOut = await page.evaluate(() =>
@@ -445,13 +685,15 @@ export async function generateVideoViaBrowser(input: {
     await setPrompt(page, input.prompt);
     await enforceUnlimited(page);
 
-    // Submit only after the button has proven it is the free path.
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll("button")].find((b) =>
-        (b.textContent || "").trim().startsWith("Generate")
-      ) as HTMLButtonElement;
-      btn.click();
-    });
+    // Submit only after the button has proven it is the free path. A real
+    // Puppeteer click (trusted, via CDP mouse events) is required — see the
+    // matching comment in generateImageViaBrowser.
+    const submitHandle = await page.evaluateHandle(() =>
+      [...document.querySelectorAll("button")].find((b) => (b.textContent || "").trim().replace(/\s+/g, "") === "GenerateUnlimited") ?? null
+    );
+    const submitEl = submitHandle.asElement() as import("puppeteer-core").ElementHandle<Element> | null;
+    if (submitEl) await submitEl.click();
+    await submitHandle.dispose();
 
     // Poll for a video element that wasn't there before.
     const deadline = Date.now() + (input.timeoutMs ?? 20 * 60_000);
@@ -477,6 +719,6 @@ export async function generateVideoViaBrowser(input: {
     noteError(err instanceof Error ? err.message : String(err));
     throw err;
   } finally {
-    await browser.close().catch(() => {});
+    await closeSession(session);
   }
 }

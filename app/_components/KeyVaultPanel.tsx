@@ -22,10 +22,11 @@ interface HiggsfieldBalance {
 const KIND_LABEL: Record<string, string> = {
   text: "Text",
   image: "Image",
-  video: "Video"
+  video: "Video",
+  lipsync: "Lip Sync"
 };
 
-const KIND_ORDER: VendorConfig["kind"][] = ["text", "image", "video"];
+const KIND_ORDER: VendorConfig["kind"][] = ["text", "image", "video", "lipsync"];
 
 const eyebrowStyle: CSSProperties = {
   fontFamily: "var(--font-mono)",

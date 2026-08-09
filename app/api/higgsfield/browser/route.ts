@@ -28,7 +28,9 @@ export async function OPTIONS() {
 export async function GET(req: Request) {
   // ?check=1 launches a headless login probe (slow, ~15s); default is instant status.
   if (new URL(req.url).searchParams.get("check") === "1") {
-    if (!isBrowserSessionSaved()) {
+    // HIGGS_CDP_URL drives the real, already-logged-in browser directly — no
+    // cookie row needed, so skip the "no session saved" gate in that mode.
+    if (!process.env.HIGGS_CDP_URL && !isBrowserSessionSaved()) {
       return NextResponse.json({ ...browserSessionStatus(), check: { ok: false, signedIn: false, detail: "no session saved" } });
     }
     const check = await checkBrowserSession();

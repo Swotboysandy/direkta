@@ -225,6 +225,7 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
               onChange={(e) => setBrief(e.target.value)}
               placeholder="What is this? Tone, audience, story you want — e.g. 'funny 20s meme about Monday mornings' or 'warm cinematic ad, family feeling, golden light'"
               rows={3}
+              maxLength={8000}
               style={{ ...fieldInputStyle, resize: "vertical" }}
             />
           </label>
@@ -235,6 +236,7 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
               placeholder="e.g. Kindle Coffee — red-logo cups, barista aprons, storefront sign"
+              maxLength={4000}
               style={fieldInputStyle}
             />
           </label>

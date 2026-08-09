@@ -31,6 +31,7 @@ import type {
   Location,
   Project,
   ProjectFormat,
+  Prop,
   WorkspaceId,
   WorkspaceMeta
 } from "../lib/types";
@@ -41,6 +42,7 @@ interface ProjectBundle {
   beats: Beat[];
   characters: Character[];
   locations: Location[];
+  props: Prop[];
   activity: ActivityItem[];
 }
 
@@ -65,9 +67,10 @@ export default function Home() {
   const [bundle, setBundle] = useState<ProjectBundle | null>(null);
   const [agents, setAgents] = useState<AgentStatus[]>(DEFAULT_AGENTS);
   // Pipeline gate data — how far production has actually progressed.
-  const [gate, setGate] = useState<{ frames: number; stitchNodes: number }>({
+  const [gate, setGate] = useState<{ frames: number; stitchNodes: number; hasFinalVideo: boolean }>({
     frames: 0,
-    stitchNodes: 0
+    stitchNodes: 0,
+    hasFinalVideo: false
   });
   const [gateLoaded, setGateLoaded] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>("dashboard");
@@ -122,15 +125,18 @@ export default function Home() {
   const refreshGate = useCallback(async () => {
     if (!projectId) return;
     try {
-      const [sbRes, stRes] = await Promise.all([
+      const [sbRes, stRes, fvRes] = await Promise.all([
         fetch(`/api/projects/${projectId}/storyboard`),
-        fetch(`/api/projects/${projectId}/stitch`)
+        fetch(`/api/projects/${projectId}/stitch`),
+        fetch(`/api/projects/${projectId}/final-video`)
       ]);
       const sb = sbRes.ok ? await sbRes.json() : { variants: [] };
       const st = stRes.ok ? await stRes.json() : { nodes: [] };
+      const fv = fvRes.ok ? await fvRes.json() : { attached: false };
       setGate({
         frames: (sb.variants ?? []).filter((v: { asset_url: string | null }) => v.asset_url).length,
-        stitchNodes: (st.nodes ?? []).length
+        stitchNodes: (st.nodes ?? []).length,
+        hasFinalVideo: Boolean(fv.attached)
       });
       setGateLoaded(true);
     } catch {
@@ -191,13 +197,15 @@ export default function Home() {
     const submitted = bundle.project.script_submitted;
     const beatsDone = bundle.beats.length > 0;
     const hasCast = bundle.characters.length > 0;
-    const anyTrained = bundle.characters.some((c) => c.soul_id_state === "trained");
-    const trainedCount = bundle.characters.filter((c) => c.soul_id_state === "trained").length;
+    // Voice-only presences never get a portrait, so they're excluded from the
+    // "trained" denominator — otherwise a project with one never reaches 100%.
+    const castableChars = bundle.characters.filter((c) => c.brief?.physical_form !== "abstract");
+    const trainedCount = castableChars.filter((c) => c.soul_id_state === "trained").length;
 
     const castingUnlocked = Boolean(submitted);
     const storyboardUnlocked = castingUnlocked && hasCast;
     const stitchUnlocked = storyboardUnlocked && gate.frames > 0;
-    const exportUnlocked = stitchUnlocked && gate.stitchNodes > 0;
+    const exportUnlocked = (stitchUnlocked && gate.stitchNodes > 0) || gate.hasFinalVideo;
 
     return [
       { id: "dashboard", label: "Dashboard", status: "idle", unlocked: true },
@@ -214,14 +222,14 @@ export default function Home() {
         status:
           bundle.characters.length === 0
             ? "idle"
-            : anyTrained && trainedCount === bundle.characters.length
+            : trainedCount === castableChars.length
             ? "complete"
             : "in-progress",
         unlocked: castingUnlocked,
         lockReason: castingUnlocked ? undefined : "Submit a script in Screenplay first",
         note:
           bundle.characters.length > 0
-            ? `${trainedCount} / ${bundle.characters.length} soul ids`
+            ? `${trainedCount} / ${castableChars.length} soul ids`
             : undefined
       },
       {
@@ -439,6 +447,7 @@ export default function Home() {
                   project={bundle.project}
                   characters={bundle.characters}
                   locations={bundle.locations}
+                  props={bundle.props}
                   onSwitchWorkspace={switchWorkspace}
                   onReload={reload}
                 />
