@@ -114,10 +114,33 @@ export default function Home() {
   }, [projectId, activeWorkspace]);
 
   useEffect(() => {
+    // Don't persist a collapse the viewport forced — otherwise visiting on a
+    // narrow screen silently rewrites the user's real preference, and the
+    // sidebar stays collapsed when they return to a wide one.
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1100px)").matches) return;
     if (typeof localStorage !== "undefined") {
       localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? "1" : "0");
     }
   }, [sidebarCollapsed]);
+
+  // Below 1100px the sidebar only has room for its icon rail. The collapsed
+  // styling is driven by data-collapsed on .app-body (and by inline styles in
+  // Sidebar itself), so narrowing the track in CSS alone left full-width
+  // labels being clipped by the main column — the state has to change, not
+  // just the width. Restores the user's own preference on the way back up.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1100px)");
+    const apply = () => {
+      if (mq.matches) {
+        setSidebarCollapsed(true);
+      } else if (typeof localStorage !== "undefined") {
+        setSidebarCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
+      }
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   // Lightweight gate refresh — only the counts that unlock later stages.
   // Kept separate from the full bundle reload so it can poll without

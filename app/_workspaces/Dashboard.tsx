@@ -189,20 +189,12 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
     <motion.div className="main-inner" {...pageIn}>
       {/* HERO */}
       <section
+        className="dash-hero"
         style={{
-          position: "relative",
-          display: "grid",
-          gridTemplateColumns: "minmax(0,1.15fr) minmax(300px,0.85fr)",
-          gap: 36,
-          alignItems: "center",
           background:
             "linear-gradient(115deg, color-mix(in srgb, var(--accent) 18%, transparent), rgba(64,170,182,0.10) 55%, rgba(255,255,255,0.02)), var(--surface)",
           backdropFilter: "blur(20px)",
-          borderRadius: 24,
-          boxShadow: "var(--shadow-2)",
-          padding: "36px 40px",
-          marginTop: 28,
-          overflow: "hidden"
+          boxShadow: "var(--shadow-2)"
         }}
       >
         <span
@@ -219,8 +211,8 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
             pointerEvents: "none"
           }}
         />
-        <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", color: "var(--accent)" }}>
+        <div className="dash-hero-copy">
+          <span className="dash-hero-eyebrow" style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", color: "var(--accent)" }}>
             Dashboard · {project.format} · {project.aspect_ratio}
           </span>
           <h1
@@ -241,14 +233,14 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
               {project.logline}
             </p>
           )}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <div className="dash-hero-tags">
             <span style={TAG_STYLE}>{project.genre || project.format}</span>
             <span style={TAG_STYLE}>{project.length_estimate}</span>
             <span style={TAG_STYLE}>
               {stats.beats} beats · {stats.characters} characters · {stats.locations} locations
             </span>
           </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <div className="dash-hero-actions">
             <motion.button
               {...tap}
               onClick={() => onSwitchWorkspace(hasScript ? "casting" : "screenplay")}

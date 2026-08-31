@@ -126,7 +126,7 @@ function UsageChip() {
         >
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: color }} />
           {fmtTokens(usage.remaining)} left
-          <span style={{ color: "var(--mute)", fontWeight: 500 }}>
+          <span className="usage-chip-detail" style={{ color: "var(--mute)", fontWeight: 500 }}>
             ≈{usage.estimates.frames} frames · {usage.estimates.clips_1080p} clips
           </span>
         </button>
@@ -235,7 +235,7 @@ export function TopNav({
   return (
     <header
       className="topnav"
-      style={{ padding: "0 28px", backdropFilter: "blur(18px)", position: "relative", zIndex: 60 }}
+      style={{ backdropFilter: "blur(18px)", position: "relative", zIndex: 60 }}
     >
       <div
         className="topnav-brand"
@@ -257,6 +257,7 @@ export function TopNav({
           <circle cx="100" cy="104" r="10" fill="currentColor" />
         </svg>
         <span
+          className="topnav-wordmark"
           style={{
             fontFamily: "var(--font-display)",
             fontWeight: 800,
@@ -272,6 +273,7 @@ export function TopNav({
       <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
         <Popover.Trigger asChild>
           <button
+            className="topnav-project-switch"
             style={{
               display: "flex",
               gap: 8,
@@ -286,11 +288,12 @@ export function TopNav({
             }}
             aria-label="Switch project"
           >
-            <span style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.005em" }}>
+            <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <span className="topnav-project-title" style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.005em" }}>
                 {project?.title ?? "No project"}
               </span>
               <span
+                className="topnav-project-meta"
                 style={{
                   fontFamily: "var(--font-mono)",
                   fontSize: 9,
@@ -301,7 +304,7 @@ export function TopNav({
                 {project ? `${project.format} · ${project.length_estimate}` : "Start a project"}
               </span>
             </span>
-            <ChevronDown size={14} />
+            <ChevronDown size={14} style={{ flex: "0 0 auto" }} />
           </button>
         </Popover.Trigger>
         <Popover.Portal>
@@ -391,9 +394,9 @@ export function TopNav({
       </Popover.Root>
 
       <div
+        className="topnav-agent-status"
         aria-label="Agent status"
         style={{
-          display: "flex",
           alignItems: "center",
           gap: 8,
           marginLeft: 16,
@@ -422,10 +425,11 @@ export function TopNav({
         })}
       </div>
 
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+      <div className="topnav-right" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
         <UsageChip />
         {project && (
           <span
+            className="topnav-saved-stamp"
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: 10,

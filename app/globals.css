@@ -68,7 +68,6 @@
    ============================================================ */
 body {
   min-height: 100vh;
-  min-width: 1280px;
 }
 
 a {
@@ -92,9 +91,13 @@ strong, b {
 
 .workbench {
   display: grid;
-  grid-template-rows: 64px 1fr;
+  grid-template-rows: var(--topnav-h) 1fr;
+  /* Without an explicit column the implicit track sizes to max-content, so the
+     top nav's intrinsic width (~970px) set the width of the whole shell and
+     overflow-x:hidden then clipped it. minmax(0, 1fr) pins the track to the
+     container so children resolve against the real viewport width instead. */
+  grid-template-columns: minmax(0, 1fr);
   height: 100vh;
-  min-width: 1280px;
   /* v3 mockup: ambient studio glow — purple top-right, teal bottom-left. */
   background:
     radial-gradient(1100px 540px at 82% -12%, rgba(139, 123, 247, 0.16), transparent 62%),
@@ -2801,4 +2804,301 @@ textarea {
 }
 ::view-transition-new(root) {
   z-index: 1;
+}
+
+/* ============================================================
+   TOP NAV
+   ------------------------------------------------------------
+   The bar is a flex row whose children all defaulted to
+   min-width:auto, so the project title's intrinsic width set the
+   bar's width — it could not shrink, wrapped to two lines, and
+   overflowed the fixed --topnav-h row.
+
+   Fix is the standard flex triad: the ends hold their size, the
+   middle is the only flexible track, and its label truncates.
+   ============================================================ */
+.topnav {
+  flex-wrap: nowrap;
+  min-width: 0;
+  /* Horizontal padding lives here, not inline on the element, so the
+     mobile step below can reclaim it. The vertical value stays 0 —
+     the bar's height comes from the --topnav-h grid row. */
+  padding-block: 0;
+  padding-inline: var(--sp-5);
+}
+
+/* Brand and the right-hand controls are fixed-size anchors. */
+.topnav-brand,
+.topnav-right {
+  flex: 0 0 auto;
+}
+
+/* The project switcher is the single element allowed to absorb or
+   give up space as the viewport changes. */
+.topnav-project-switch {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.topnav-project-switch > span {
+  min-width: 0;
+}
+
+/* Truncate rather than wrap — the bar's height is fixed, so a second
+   line has nowhere to go. */
+.topnav-project-title,
+.topnav-project-meta {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The floor belongs on the button, not the label inside it: constrain
+   the child and it simply outgrows its own background, which is how
+   the title ended up painted outside its pill. */
+.topnav-project-switch {
+  min-width: 9ch;
+}
+
+/* display lives here rather than inline on the element so the media
+   query below can actually override it — an inline display:flex wins
+   against any stylesheet rule. */
+.topnav-agent-status {
+  display: flex;
+}
+
+/* "2k left" is a two-word status, not prose — under pressure it broke
+   across two lines and pushed the bar past the fixed row height. */
+.usage-chip-detail,
+.topnav-right > button:first-child {
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  /* Ambient status glyphs are the lowest-value pixels on the bar, so
+     they yield first when width gets scarce. */
+  .topnav-agent-status {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .topnav {
+    padding-inline: var(--sp-4);
+    gap: var(--sp-3);
+  }
+
+  /* The mark alone identifies the app at this width; dropping the
+     wordmark returns ~90px to the project title. */
+  .topnav-wordmark {
+    display: none;
+  }
+
+  /* Format · length is reference detail, not navigation — the title
+     is what the user needs to see. */
+  .topnav-project-meta {
+    display: none;
+  }
+
+  /* Autosave state is reassurance, not an action; the Key Vault and
+     Skills buttons remain reachable and matter more per pixel. */
+  .topnav-saved-stamp {
+    display: none;
+  }
+
+  /* The remaining-credits number is the part that governs a decision;
+     the frames/clips estimate behind it is detail the popover already
+     shows in full. Dropping it takes the chip from 165px to ~72px. */
+  .usage-chip-detail {
+    display: none;
+  }
+
+  /* Single-user local app — the avatar identifies nobody here, and it
+     is the last thing worth 32px on a 375px bar. */
+  .topnav-avatar {
+    display: none;
+  }
+
+  /* Theme is a set-once preference, unlike Skills and the Key Vault
+     which are used mid-session. It yields its 44px first. */
+  .topnav-right .theme-toggle {
+    display: none;
+  }
+
+  /* Once the row genuinely cannot fit, the ends must still be able to
+     give ground rather than push the bar wider than the screen. */
+  .topnav-right {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+}
+
+/* ============================================================
+   DASHBOARD HERO
+   ------------------------------------------------------------
+   Was authored as inline style={{}} objects in Dashboard.tsx, which
+   media queries cannot reach — so the hero kept its desktop geometry
+   at every width. Its second column was minmax(300px, 0.85fr), which
+   cannot fit beside the first inside a 375px viewport, so the two
+   tracks overlapped and the CTA label clipped.
+
+   Layout lives here now; the component keeps only its paint/animation
+   styles. Spacing uses the --sp-* scale rather than the previous
+   one-off 36 / 40 / 28 / 14 / 10 values.
+   ============================================================ */
+.dash-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: var(--sp-6);
+  align-items: center;
+  padding: var(--sp-6) var(--sp-7);
+  margin-top: var(--sp-5);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.dash-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* "Dashboard · Short Film · 16:9" is a single compact label; letting it
+   wrap on the middot broke it across five lines on mobile. */
+.dash-hero-eyebrow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Headline was set in vw units, which ignore the container — it stayed
+   large while its column shrank, forcing the two-line break seen at
+   375px. Clamp against the container instead. */
+.dash-hero-copy h1 {
+  text-wrap: balance;
+}
+
+.dash-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+@media (max-width: 1100px) {
+  /* The preview panel loses its meaning once it is narrower than the
+     frame thumbnails it holds — stack instead of shrinking it. */
+  .dash-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--sp-5) var(--sp-5);
+  }
+}
+
+@media (max-width: 720px) {
+  .dash-hero {
+    padding: var(--sp-4);
+    margin-top: var(--sp-4);
+  }
+
+  /* Full-width stacked buttons: at this width they otherwise sit on
+     their own lines anyway, at ragged widths. */
+  .dash-hero-actions > * {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE LAYER
+   ------------------------------------------------------------
+   The app was previously desktop-only: `body { min-width: 1280px }`
+   with no media queries anywhere, so narrower viewports overflowed
+   horizontally instead of adapting. That min-width is gone; this
+   block defines what actually happens at each width.
+
+   Breakpoints reuse the two already present in the brand kit
+   (1100px / 720px in _brand/components.css) so the whole app shares
+   one set, rather than introducing a competing scale.
+
+   Per breakpoint, explicitly:
+     ≤1100px  sidebar → icon rail (existing 72px collapsed width);
+              4-up grids → 2-up; storyboard beat rows stack;
+              the style strip scrolls horizontally instead of
+              crushing its 5 fixed columns.
+     ≤720px   sidebar hides entirely (the top nav owns navigation);
+              everything goes single-column; frame strips → 2-up.
+   ============================================================ */
+
+/* Text inside a grid/flex child cannot shrink below its longest word
+   unless the child is allowed to go below min-content. Without this,
+   long titles force the whole track wider and the page scrolls
+   sideways — the usual cause of "it overflows on mobile". */
+.app-body > *,
+.storyboard-beat-row > *,
+.beat-editor-grid > *,
+.sb-framing-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  /* The rail's width is NOT set here: page.tsx flips data-collapsed at this
+     same breakpoint, and the existing [data-collapsed="true"] rules already
+     own that geometry. Setting it in both places would let the track narrow
+     while the labels stayed expanded — which is exactly how they ended up
+     clipped mid-word. */
+
+  .beat-editor-grid,
+  .storyboard-frames {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* 260px + 1fr leaves the content track too narrow here; stack so the
+     frame strip gets the full width instead of being squeezed. */
+  .storyboard-beat-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Five equal columns + auto cannot fit; let it scroll rather than
+     shrink each item below a usable size. */
+  .storyboard-style-strip {
+    grid-template-columns: max-content;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(140px, max-content);
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  /* The rail's labels are already hidden at this size and the top nav
+     carries navigation, so the rail is redundant width — drop it. */
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .beat-editor-grid,
+  .sb-framing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .storyboard-frames {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* --page-pad is 48px, which eats most of a 360px viewport. */
+  :root {
+    --page-pad: var(--sp-4);
+  }
 }
