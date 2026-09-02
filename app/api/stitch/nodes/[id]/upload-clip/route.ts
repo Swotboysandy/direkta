@@ -15,7 +15,7 @@ const EXTS = ["mp4", "mov", "webm"];
 const MAX_BYTES = 100 * 1024 * 1024; // 100MB — a few minutes of compressed 1080p
 
 /**
- * Attach a clip generated OUTSIDE Direkta (e.g. Higgsfield's own web app,
+ * Attach a clip generated OUTSIDE Fylmer (e.g. Higgsfield's own web app,
  * where perks like "Unlimited mode" only apply through their UI, not the
  * public API) straight onto a shot — same clip_asset_id/clip_state slot the
  * real animate route writes to, so the rest of the pipeline (render,

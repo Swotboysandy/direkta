@@ -1,17 +1,13 @@
 /* ============================================================
-   DIREKTA — Motion
-   Depends on: ../tokens/tokens.css
+   FYLMER — Motion
+   Depends on: tokens.css
+   ------------------------------------------------------------
+   Pulse and glow colours read from tokens rather than literals,
+   so a palette or theme change carries into the animations
+   instead of leaving the old brand's colour in the keyframes.
    ============================================================ */
 
 @media (prefers-reduced-motion: no-preference) {
-
-  /* Sheen sweep — a soft diagonal light pass over glass hero panels / primary
-     buttons. Duration varies per use (inline `animation: fxSheen <dur> …`);
-     the keyframe itself is shared so every screen's sweep looks identical. */
-  @keyframes fxSheen {
-    0%       { transform: translateX(-140%) skewX(-18deg); }
-    55%, 100% { transform: translateX(260%) skewX(-18deg); }
-  }
 
   /* Entry — fade + soft lift. Children can stagger via --fx-delay. */
   .fx-enter-up {
@@ -28,8 +24,8 @@
     animation: fx-pulse-pip 1.4s var(--ease-out) infinite;
   }
   @keyframes fx-pulse-pip {
-    0%, 100% { box-shadow: 0 0 0 0   rgba(242,184,60,0.30); }
-    50%      { box-shadow: 0 0 0 6px rgba(242,184,60,0.00); }
+    0%, 100% { box-shadow: 0 0 0 0   color-mix(in srgb, var(--signal-warning) 34%, transparent); }
+    50%      { box-shadow: 0 0 0 6px transparent; }
   }
 
   /* Loading spinner */
@@ -78,17 +74,17 @@
   }
 
   @keyframes fx-agent-bob {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-2px); }
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
   }
   @keyframes fx-agent-wiggle {
     0%, 100% { transform: rotate(0deg); }
-    25%      { transform: rotate(-8deg); }
-    75%      { transform: rotate(8deg); }
+    25%      { transform: rotate(-5deg); }
+    75%      { transform: rotate(5deg); }
   }
   @keyframes fx-pulse-alert {
-    0%, 100% { box-shadow: 0 0 0 0   rgba(232,74,53,0.30); }
-    50%      { box-shadow: 0 0 0 6px rgba(232,74,53,0.00); }
+    0%, 100% { box-shadow: 0 0 0 0   color-mix(in srgb, var(--signal-danger) 34%, transparent); }
+    50%      { box-shadow: 0 0 0 6px transparent; }
   }
   @keyframes fx-check-pop {
     0%   { transform: scale(0)    rotate(-25deg); opacity: 0; }
@@ -115,9 +111,9 @@
   }
 
   @keyframes fx-unlock-ring {
-    0%   { box-shadow: 0 0 0 0   rgba(61,168,155,0.40); }
-    70%  { box-shadow: 0 0 0 7px rgba(61,168,155,0.00); }
-    100% { box-shadow: 0 0 0 0   rgba(61,168,155,0.00); }
+    0%   { box-shadow: 0 0 0 0   color-mix(in srgb, var(--signal-success) 42%, transparent); }
+    70%  { box-shadow: 0 0 0 7px transparent; }
+    100% { box-shadow: 0 0 0 0   transparent; }
   }
   @keyframes fx-unlock-icon {
     0%   { transform: scale(0.7)  rotate(-12deg); opacity: 0.4; }
@@ -130,7 +126,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(100deg, transparent 35%, rgba(255, 251, 241, 0.45) 50%, transparent 65%);
+    background: linear-gradient(100deg, transparent 35%, color-mix(in srgb, var(--ink) 22%, transparent) 50%, transparent 65%);
     transform: translateX(-100%);
     animation: fx-shimmer 1.8s var(--ease-out) infinite;
     pointer-events: none;
@@ -139,7 +135,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(100deg, transparent 35%, rgba(255, 251, 241, 0.5) 50%, transparent 65%);
+    background: linear-gradient(100deg, transparent 35%, color-mix(in srgb, var(--ink) 22%, transparent) 50%, transparent 65%);
     transform: translateX(-100%);
     animation: fx-shimmer 1.6s var(--ease-out) infinite;
     pointer-events: none;

@@ -21,7 +21,7 @@ All six are 6 shots × 5s = **30 seconds each**. No dialogue anywhere — music 
 2. **One continuous take per shot.** Never ask for cuts inside a single generation — it produces
    scene-breaks and character drift.
 3. **Continuity is chained, not described.** Shot 1's last frame becomes shot 2's reference image.
-   Direkta does this automatically (`lastFrameUrl` → next shot's `referenceImageUrl`).
+   Fylmer does this automatically (`lastFrameUrl` → next shot's `referenceImageUrl`).
    **Anti-drift:** you can now also pin a shot's *end* frame via `lastFrameImageUrl` — our
    checkpoint is fl2va (first/last to video+audio), so H3 interpolates between two known frames
    instead of free-running from one. Use this on the last shot of a section, pinning back to the

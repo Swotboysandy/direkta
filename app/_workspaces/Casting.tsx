@@ -90,7 +90,7 @@ function HoverDiv({
   );
 }
 
-/** Attach a look/plate generated OUTSIDE Direkta (e.g. Higgsfield's web app
+/** Attach a look/plate generated OUTSIDE Fylmer (e.g. Higgsfield's web app
  *  with Unlimited mode) instead of generating one here. Same small pill on
  *  every card — character portrait, location plate, prop plate. */
 function UploadLookButton({

@@ -69,7 +69,7 @@ export default function SettingsPage() {
         </h2>
         <p className="muted">
           Generate on your own Higgsfield plan through a real logged-in browser — the free
-          Unlimited image and video models, no credits spent. Direkta flips the Unlimited
+          Unlimited image and video models, no credits spent. Fylmer flips the Unlimited
           toggle itself; it refuses to submit unless the render is proven free.
         </p>
         <p className="muted">

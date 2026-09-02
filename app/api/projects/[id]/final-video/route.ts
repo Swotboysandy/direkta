@@ -50,7 +50,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 /**
  * Attach a pre-rendered final video directly to a project, bypassing the
- * Stitch-nodes render pipeline (for videos assembled outside Direkta, e.g.
+ * Stitch-nodes render pipeline (for videos assembled outside Fylmer, e.g.
  * via an external ffmpeg pass). One file per project — a new upload replaces
  * the previous one.
  */

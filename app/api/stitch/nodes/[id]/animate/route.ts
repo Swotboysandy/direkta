@@ -163,7 +163,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Hard budget stop — verified live that BytePlus's free packs silently
   // fall through to pay-as-you-go once exhausted rather than erroring, so
-  // Direkta now refuses the call itself instead of letting that happen again.
+  // Fylmer now refuses the call itself instead of letting that happen again.
   if (isByteplus) {
     const perClip = chosen.byteplus!.resolution === "1080p" ? TOKEN_COSTS.clip1080 : TOKEN_COSTS.clip720;
     const estimate = perClip * (clipDuration / 5);

@@ -1,6 +1,6 @@
 /**
  * Catalog of Higgsfield generation models available via the consumer MCP, with
- * the params Direkta sends and an approximate credit cost so the UI can show a
+ * the params Fylmer sends and an approximate credit cost so the UI can show a
  * preflight ("≈ N credits") before spending. Costs are measured ballparks from
  * the MCP get_cost preflight for the default settings below — they vary a little
  * with duration/resolution, hence "approx".

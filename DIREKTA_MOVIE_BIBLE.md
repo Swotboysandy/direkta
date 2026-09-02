@@ -1,4 +1,4 @@
-# DIREKTA — Movie Bible
+# FYLMER — Movie Bible
 ### Format & Structure Reference
 
 ---
@@ -7,7 +7,7 @@
 
 A Movie Bible is the **definitive reference document for a single film**. It captures everything a director, producer, cinematographer, or investor needs to understand the project — story, characters, world, tone, and visual language — in one place.
 
-It is created once per project and lives at the top of the Direkta workspace. Every other document (shot list, storyboard, casting breakdown) is downstream from it.
+It is created once per project and lives at the top of the Fylmer workspace. Every other document (shot list, storyboard, casting breakdown) is downstream from it.
 
 ---
 
@@ -41,7 +41,7 @@ No dialogue. Written in present tense. Narrative tone matching the film.
 ### 4. TONE & THEMES
 - **Tone** — 2-3 sentences describing emotional register. Is it bleak? Hopeful? Tense? Darkly comic?
 - **Core themes** — 3-5 thematic ideas explored (identity, power, grief, etc.)
-- **Comparable films** — 2-3 reference titles with brief notes on what Direkta shares and doesn't share with each
+- **Comparable films** — 2-3 reference titles with brief notes on what Fylmer shares and doesn't share with each
 - **What makes this different** — one paragraph on the unique angle
 
 ---
@@ -114,7 +114,7 @@ A compressed overview of every scene in the script:
 
 ---
 
-## Direkta-Specific Rules
+## Fylmer-Specific Rules
 
 - The Bible is **generated from the script** — the user doesn't fill it in manually
 - Every image reference is **AI-generated or user-uploaded**, never pulled from the web

@@ -4,7 +4,7 @@ import { activeModel } from "../vendors/resolver";
 /**
  * Expands a short beat direction into the structured, timeline-shaped prompt
  * MiniMax H3 responds best to — the same job lightx2v's Prompt-Rewriter LoRA
- * does, but using the LLM Direkta already has configured instead of standing up
+ * does, but using the LLM Fylmer already has configured instead of standing up
  * a separate 27B model next to H3 on the GPU.
  *
  * The rules below are the accumulated fixes from real generations: garbled

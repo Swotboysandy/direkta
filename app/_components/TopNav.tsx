@@ -241,70 +241,39 @@ export function TopNav({
         className="topnav-brand"
         onClick={() => onSwitchWorkspace("dashboard")}
         role="button"
-        title="Direkta — Dashboard"
-        style={{ gap: 10, color: "var(--ink)" }}
+        title="Fylmer — Dashboard"
+        style={{ gap: 9, color: "var(--ink)" }}
       >
-        <svg width="30" height="30" viewBox="0 0 200 200" fill="none" aria-hidden="true">
-          <circle cx="100" cy="100" r="92" stroke="currentColor" strokeWidth={7} />
-          <g stroke="currentColor" strokeWidth={7} fill="none">
-            <path d="M 100 28 L 100 60 L 138 82" />
-            <path d="M 162.4 64 L 138 82 L 138 126" />
-            <path d="M 162.4 136 L 138 126 L 100 148" />
-            <path d="M 100 172 L 100 148 L 62 126" />
-            <path d="M 37.6 136 L 62 126 L 62 82" />
-            <path d="M 37.6 64 L 62 82 L 100 60" />
-          </g>
-          <circle cx="100" cy="104" r="10" fill="currentColor" />
+        {/* Aperture: one ring, one iris opening. The previous mark drew six
+            blades plus a pupil at 30px, where the strokes collapsed into a
+            smudge. Two shapes survive at favicon size. */}
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9.25" stroke="currentColor" strokeWidth="1.6" />
+          <path
+            d="M12 6.4 L17.2 15.1 L6.8 15.1 Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+            fill="none"
+            transform="rotate(-18 12 12)"
+          />
         </svg>
-        <span
-          className="topnav-wordmark"
-          style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 800,
-            fontSize: 19,
-            letterSpacing: "-0.01em",
-            lineHeight: 1
-          }}
-        >
-          Direkta
-        </span>
+        <span className="topnav-wordmark">Fylmer</span>
       </div>
 
       <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
         <Popover.Trigger asChild>
           <button
             className="topnav-project-switch"
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              padding: "6px 12px",
-              background: "var(--accent-2)",
-              color: "var(--on-accent-2)",
-              border: "none",
-              borderRadius: 18,
-              cursor: "pointer",
-              textAlign: "left"
-            }}
             aria-label="Switch project"
           >
-            <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-              <span className="topnav-project-title" style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.005em" }}>
-                {project?.title ?? "No project"}
-              </span>
-              <span
-                className="topnav-project-meta"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 9,
-                  letterSpacing: "0.02em",
-                  opacity: 0.75
-                }}
-              >
+            <span className="topnav-project-copy">
+              <span className="topnav-project-title">{project?.title ?? "No project"}</span>
+              <span className="topnav-project-meta">
                 {project ? `${project.format} · ${project.length_estimate}` : "Start a project"}
               </span>
             </span>
-            <ChevronDown size={14} style={{ flex: "0 0 auto" }} />
+            <ChevronDown size={13} style={{ flex: "0 0 auto", color: "var(--mute)" }} />
           </button>
         </Popover.Trigger>
         <Popover.Portal>

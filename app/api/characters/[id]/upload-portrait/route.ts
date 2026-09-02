@@ -15,7 +15,7 @@ const EXTS = ["png", "jpg", "jpeg", "webp"];
 const MAX_BYTES = 20 * 1024 * 1024;
 
 /**
- * Attach a portrait generated OUTSIDE Direkta (e.g. Higgsfield's own web app
+ * Attach a portrait generated OUTSIDE Fylmer (e.g. Higgsfield's own web app
  * with Unlimited mode) straight onto a character — same refs/soul_id_state
  * slot the real portrait route writes to.
  */

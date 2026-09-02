@@ -46,8 +46,8 @@ interface ProjectBundle {
   activity: ActivityItem[];
 }
 
-const LAST_PROJECT_KEY = "direkta:last-project";
-const SIDEBAR_KEY = "direkta:sidebar-collapsed";
+const LAST_PROJECT_KEY = "fylmer:last-project";
+const SIDEBAR_KEY = "fylmer:sidebar-collapsed";
 
 const DEFAULT_AGENTS: AgentStatus[] = [
   { id: "script-reader", name: "Script Reader", state: "idle" },

@@ -72,23 +72,11 @@ export function Sidebar({
   }, [workspaces]);
 
   return (
-    <aside className="sidebar" style={{ backdropFilter: "blur(18px)" }}>
-      <div className="sb-head" style={{ justifyContent: collapsed ? "center" : "space-between" }}>
-        {!collapsed && (
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              letterSpacing: "0.02em",
-              color: "var(--mute)"
-            }}
-          >
-            Workspaces
-          </span>
-        )}
+    <aside className="sidebar">
+      <div className="sb-head">
+        {!collapsed && <span className="sb-title">Workspaces</span>}
         <button
           className="sb-collapse"
-          style={{ borderRadius: 12 }}
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -97,108 +85,49 @@ export function Sidebar({
       </div>
 
       <div className="sb-ws">
-        {!collapsed && (
-          <div
-            style={{
-              padding: "8px 12px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              letterSpacing: "0.02em",
-              color: "var(--mute)"
-            }}
-          >
-            Production
-          </div>
-        )}
+        {!collapsed && <div className="head">Production</div>}
         {workspaces.map((w) => {
           const Icn = ICONS[w.id] ?? FILMSTRIP;
           const active = w.id === activeWorkspace;
-          // On the active pill --ink flips per theme (near-white in dark, near-
-          // black in light), so a raw status colour fails contrast one way or
-          // the other. Derive the note from --on-ink (always contrast-safe on
-          // the pill) with a 30% hue hint; the pip still carries the full colour.
-          const statusHue =
-            w.status === "complete"
-              ? "var(--viridian)"
-              : w.status === "in-progress"
-              ? "var(--mustard)"
-              : null;
-          const noteColor = active
-            ? statusHue
-              ? `color-mix(in srgb, var(--on-ink) 70%, ${statusHue})`
-              : "color-mix(in srgb, var(--on-ink) 62%, transparent)"
-            : w.status === "complete"
-            ? "var(--viridian-deep)"
-            : w.status === "in-progress"
-            ? "var(--mustard-deep)"
-            : "var(--mute)";
           return (
             <motion.div
               key={w.id}
               className="sidebar-item"
-              whileTap={w.unlocked ? { scale: 0.98 } : undefined}
+              whileTap={w.unlocked ? { scale: 0.985 } : undefined}
               transition={SPRING_SMOOTH}
-              style={{
-                position: "relative",
-                borderRadius: "var(--r-pill)",
-                gridTemplateColumns: collapsed ? "1fr" : "22px 1fr auto",
-                justifyItems: collapsed ? "center" : undefined,
-                padding: collapsed ? "10px" : undefined
-              }}
+              style={{ position: "relative" }}
               data-active={active}
               data-locked={!w.unlocked}
               data-just-unlocked={justUnlocked[w.id] ? "true" : undefined}
               title={collapsed ? `${w.label}${w.note ? ` · ${w.note}` : ""}` : undefined}
               onClick={() => w.unlocked && onSwitchWorkspace(w.id)}
             >
+              {/* Two shared layoutIds so the faint fill and the accent rule glide
+                  together between items instead of cross-fading in place. */}
               {active && (
-                <motion.span
-                  layoutId="sb-active-pill"
-                  transition={SPRING_SMOOTH}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "var(--ink)",
-                    borderRadius: "var(--r-pill)",
-                    zIndex: 0
-                  }}
-                />
+                <>
+                  <motion.span layoutId="sb-active-bg" transition={SPRING_SMOOTH} className="sb-active-bg" />
+                  <motion.span layoutId="sb-active-rule" transition={SPRING_SMOOTH} className="sb-active-rule" />
+                </>
               )}
               <span className="si-icon" style={{ position: "relative", zIndex: 1 }}>
-                <Icn size={18} />
+                <Icn size={17} />
               </span>
               {!collapsed && (
                 <>
-                  <span
-                    style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, lineHeight: 1.25, position: "relative", zIndex: 1 }}
-                  >
-                    <span style={{ fontWeight: 500 }}>{w.label}</span>
-                    {w.note && (
-                      <span
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: 9,
-                          letterSpacing: "0.02em",
-                          color: noteColor
-                        }}
-                      >
-                        {w.note}
-                      </span>
-                    )}
+                  <span className="si-label" style={{ position: "relative", zIndex: 1 }}>
+                    <span>{w.label}</span>
+                    {w.note && <span className="si-meta">{w.note}</span>}
                   </span>
                   {!w.unlocked ? (
                     <Lock size={12} className="si-status" style={{ position: "relative", zIndex: 1 }} />
                   ) : (
                     <span
                       className="si-status pip"
-                      style={{
-                        position: "relative",
-                        zIndex: 1,
-                        // Faint halo in the pill's text colour so the dot stays
-                        // visible whether the pill is near-white or near-black.
-                        boxShadow: active ? "0 0 0 2px color-mix(in srgb, var(--on-ink) 22%, transparent)" : undefined
-                      }}
-                      data-status={w.status === "complete" ? "done" : w.status === "in-progress" ? "working" : "draft"}
+                      style={{ position: "relative", zIndex: 1 }}
+                      data-status={
+                        w.status === "complete" ? "done" : w.status === "in-progress" ? "working" : "draft"
+                      }
                     />
                   )}
                 </>

@@ -66,7 +66,7 @@ export function CommandPalette({
         className="cmd-root"
         onClick={(e) => e.stopPropagation()}
         loop
-        label="Direkta command palette"
+        label="Fylmer command palette"
       >
         <div className="cmd-search-wrap">
           <Sparkles size={16} style={{ color: "var(--accent)" }} />

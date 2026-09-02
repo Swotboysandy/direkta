@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { listTools, callTool } from "../../../lib/mcp/server";
 
 /**
- * Direkta MCP endpoint — Streamable HTTP (JSON-RPC 2.0).
+ * Fylmer MCP endpoint — Streamable HTTP (JSON-RPC 2.0).
  * Any MCP client connects to  {PUBLIC_BASE}/api/mcp  with a Bearer token
  * (env DIREKTA_MCP_TOKEN; open if unset). Implements initialize / tools/list /
  * tools/call / ping. Hand-rolled so it needs no extra deps.
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
               capabilities: { tools: { listChanged: false } },
               serverInfo: { name: "direkta-mcp", version: "1.0.0" },
               instructions:
-                "Direkta film pipeline. Use create_project, then generate_image (with reference_image_urls to lock a character), generate_video (image->video with baked-in camera + dialogue), and stitch_film to assemble. Assets return public URLs.",
+                "Fylmer film pipeline. Use create_project, then generate_image (with reference_image_urls to lock a character), generate_video (image->video with baked-in camera + dialogue), and stitch_film to assemble. Assets return public URLs.",
             },
           };
         case "ping":

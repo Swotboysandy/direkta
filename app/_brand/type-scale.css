@@ -1,6 +1,14 @@
 /* ============================================================
-   DIREKTA — Type scale
-   Depends on: ../tokens/tokens.css
+   FYLMER — Type scale
+   Depends on: tokens.css
+   ------------------------------------------------------------
+   Three voices, deliberately few:
+     display  Inter Tight, tight negative tracking — headings only
+     ui       Inter — everything the user reads as prose or label
+     mono     JetBrains Mono — anything countable: timecodes,
+              durations, counts, IDs, status metadata
+   If a thing is a number that changes, it is mono. That single
+   rule is what stops the interface flickering as values update.
    ============================================================ */
 
 /* Display ─────────────────────────────────────────────────── */
@@ -9,16 +17,18 @@
   font-weight: 600;
   font-size: var(--t-display-l);
   line-height: var(--leading-tight);
-  letter-spacing: -0.015em;
+  letter-spacing: var(--tracking-display);
   color: var(--ink);
+  text-wrap: balance;
 }
 .t-display-m {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--t-display-m);
   line-height: var(--leading-tight);
-  letter-spacing: -0.015em;
+  letter-spacing: var(--tracking-display);
   color: var(--ink);
+  text-wrap: balance;
 }
 
 /* Headings ────────────────────────────────────────────────── */
@@ -27,16 +37,16 @@
   font-weight: 600;
   font-size: var(--t-h1);
   line-height: var(--leading-snug);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.018em;
   color: var(--ink);
   margin: 0;
 }
 .t-h2, h2 {
-  font-family: var(--font-ui);
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--t-h2);
   line-height: var(--leading-snug);
-  letter-spacing: -0.005em;
+  letter-spacing: -0.015em;
   color: var(--ink);
   margin: 0;
 }
@@ -45,7 +55,7 @@
   font-weight: 600;
   font-size: var(--t-h3);
   line-height: var(--leading-snug);
-  letter-spacing: -0.005em;
+  letter-spacing: -0.008em;
   color: var(--ink);
   margin: 0;
 }
@@ -54,6 +64,7 @@
   font-weight: 600;
   font-size: var(--t-h4);
   line-height: var(--leading-snug);
+  letter-spacing: -0.005em;
   color: var(--ink);
   margin: 0;
 }
@@ -61,30 +72,30 @@
 /* Body ────────────────────────────────────────────────────── */
 .t-body-l, p.lead {
   font-family: var(--font-ui);
-  font-weight: 500;
+  font-weight: 400;
   font-size: var(--t-body-l);
   line-height: var(--leading-body);
-  color: var(--ink);
+  color: var(--ink-soft);
 }
 .t-body, p {
   font-family: var(--font-ui);
   font-weight: 400;
   font-size: var(--t-body);
   line-height: var(--leading-body);
-  color: var(--ink);
+  color: var(--ink-soft);
 }
 .t-body-s {
   font-family: var(--font-ui);
-  font-weight: 500;
+  font-weight: 400;
   font-size: var(--t-body-s);
   line-height: var(--leading-body);
-  color: var(--ink);
+  color: var(--ink-soft);
 }
 
 /* Captions, mono ─────────────────────────────────────────── */
 .t-cap {
   font-family: var(--font-ui);
-  font-weight: 500;
+  font-weight: 400;
   font-size: var(--t-cap);
   color: var(--mute);
 }
@@ -93,21 +104,29 @@
   font-size: var(--t-body-s);
   letter-spacing: var(--tracking-mono);
   color: var(--ink);
+  /* Digits keep their column as values change, so counters and
+     timecodes do not jitter while a render is running. */
+  font-variant-numeric: tabular-nums;
 }
-/* v3: small mono meta label — mixed case, tight tracking (mockup spec). */
+/* Small uppercase label above a section or field. */
 .t-eyebrow {
   font-family: var(--font-mono);
   font-weight: 500;
   font-size: var(--t-eyebrow);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
   color: var(--mute);
 }
+
+/* Any element showing a changing number. */
+.t-num { font-variant-numeric: tabular-nums; }
 
 /* Colour helpers ─────────────────────────────────────────── */
 .t-on-accent   { color: var(--on-accent); }
 .t-on-accent-2 { color: var(--on-accent-2); }
 .t-on-accent-3 { color: var(--on-accent-3); }
 .t-mute        { color: var(--mute); }
+.t-ink         { color: var(--ink); }
 .t-accent      { color: var(--accent); }
 .t-success     { color: var(--signal-success); }
 .t-warning     { color: var(--signal-warning); }

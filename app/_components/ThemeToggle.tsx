@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Sun, Moon } from "./icons";
 import { SPRING_POP } from "./motion";
 
-const KEY = "direkta:theme:v3";
+const KEY = "fylmer:theme:v4";
 type Theme = "light" | "dark";
 
 /** Chrome/Edge/Safari-TP expose this; typed loosely so we can feature-detect. */

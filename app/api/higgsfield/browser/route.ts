@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 /**
  * Save the cookies for a signed-in higgsfield.ai session. Unlimited mode is a
  * web-UI-only feature, so plan-included (zero-credit) generation has to run
- * through a real browser — this is what lets Direkta do that itself instead of
+ * through a real browser — this is what lets Fylmer do that itself instead of
  * a human clicking the toggle for every shot.
  *
  * Body: { cookies: [{ name, value, domain?, path?, ... }] }

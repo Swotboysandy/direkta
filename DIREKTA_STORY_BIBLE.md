@@ -1,11 +1,11 @@
-# DIREKTA — Story Bible (The Storybook)
+# FYLMER — Story Bible (The Storybook)
 ### Format & Structure Reference
 
 ---
 
 ## What Is the Storybook?
 
-The Storybook is **Direkta's signature deliverable** — a new format that doesn't exist in traditional filmmaking. It is not a document. It is not a folder of files. It is a **designed, visual, living artifact** that tells the story of the project in the same way the film will tell its story — through image, atmosphere, and emotion.
+The Storybook is **Fylmer's signature deliverable** — a new format that doesn't exist in traditional filmmaking. It is not a document. It is not a folder of files. It is a **designed, visual, living artifact** that tells the story of the project in the same way the film will tell its story — through image, atmosphere, and emotion.
 
 Where the Movie Bible is a reference tool for crew and investors, the Storybook is a **creative object** — something a director would keep, show, and feel proud of. Every spread combines text and image. Every section breathes.
 
@@ -17,7 +17,7 @@ Think: *a coffee table book about a film that doesn't exist yet.*
 
 Traditional film documents are **functional**. The Storybook is **expressive**.
 
-It takes everything Direkta generates — logline, outline, characters, scenes, storyboards, mood boards — and assembles them into a single visual narrative. The reader experiences the project emotionally before a single frame is shot.
+It takes everything Fylmer generates — logline, outline, characters, scenes, storyboards, mood boards — and assembles them into a single visual narrative. The reader experiences the project emotionally before a single frame is shot.
 
 **Primary uses:**
 - Pitching to producers, investors, distributors
@@ -143,9 +143,9 @@ One sub-spread per act (or per major sequence):
 
 ---
 
-## Direkta-Specific Rules
+## Fylmer-Specific Rules
 
-- The Storybook is **assembled automatically** from everything Direkta generates — the user doesn't lay it out manually
+- The Storybook is **assembled automatically** from everything Fylmer generates — the user doesn't lay it out manually
 - Every image is **AI-generated within the project's consistent visual context** — characters look the same across every spread
 - The Storybook is **exportable as PDF** for pitching and **shareable as a link** for online viewing
 - Individual spreads are **exportable as images** for social/marketing use
@@ -165,5 +165,5 @@ One sub-spread per act (or per major sequence):
 | **Images** | Reference images | Full visual spreads |
 | **Export** | PDF / structured data | PDF / shareable link / social images |
 | **Updates** | When script changes | When script changes |
-| **Uniqueness** | Industry standard format | Direkta original format |
+| **Uniqueness** | Industry standard format | Fylmer original format |
 

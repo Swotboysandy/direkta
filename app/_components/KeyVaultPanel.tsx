@@ -369,7 +369,7 @@ export function KeyVaultPanel({ open, onClose }: Props) {
                   <span style={{ fontSize: 11, color: "var(--mute)", lineHeight: 1.5 }}>
                     1. SSH into the VPS and run <code>codex login</code> (tunnel port 1455 first).
                     <br />
-                    2. Click <strong>Import from VPS</strong> — Direkta reads <code>~/.codex/auth.json</code> and stores the token.
+                    2. Click <strong>Import from VPS</strong> — Fylmer reads <code>~/.codex/auth.json</code> and stores the token.
                   </span>
                   {codex?.error && <span style={{ fontSize: 11, color: "var(--accent)" }}>{codex.error}</span>}
                   <motion.button
@@ -413,9 +413,9 @@ export function KeyVaultPanel({ open, onClose }: Props) {
                     Generate on your own Higgsfield plan
                   </div>
                   <span style={{ fontSize: 11, color: "var(--mute)", lineHeight: 1.5 }}>
-                    Connect your Higgsfield account once. Then every Generate button in Direkta rolls real
+                    Connect your Higgsfield account once. Then every Generate button in Fylmer rolls real
                     frames on your plan — no keys to paste, nothing billed separately. You log in on
-                    Higgsfield; Direkta never sees your password.
+                    Higgsfield; Fylmer never sees your password.
                   </span>
                   <motion.a
                     {...tap}

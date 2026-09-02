@@ -86,62 +86,20 @@ const KIND_COLOR: Record<ActivityItem["kind"], string> = {
   warning: "var(--signal-warning)"
 };
 
-const CREW_STATE_COLOR: Record<AgentState, { bg: string; fg: string }> = {
-  idle: { bg: "var(--surface-2)", fg: "var(--mute)" },
-  working: { bg: "color-mix(in srgb, var(--mustard-deep) 18%, transparent)", fg: "var(--mustard-deep)" },
-  done: { bg: "color-mix(in srgb, var(--accent-3) 18%, transparent)", fg: "var(--accent-3)" },
-  attention: { bg: "color-mix(in srgb, var(--tomato) 16%, transparent)", fg: "var(--tomato)" }
+/** Crew state reads as a colour on the label alone. A filled chip per agent put
+ *  ten coloured blocks on a screen whose whole point is that only footage is
+ *  saturated. */
+const CREW_STATE_COLOR: Record<AgentState, string> = {
+  idle: "var(--mute)",
+  working: "var(--signal-warning)",
+  done: "var(--signal-success)",
+  attention: "var(--signal-danger)"
 };
 
-const TAG_STYLE: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "5px 12px",
-  fontWeight: 500,
-  fontSize: 13,
-  borderRadius: 999,
-  background: "var(--cream-deep)",
-  color: "var(--ink)"
+const STATUS_COLOR: Record<string, string> = {
+  complete: "var(--signal-success)",
+  "in-progress": "var(--signal-warning)"
 };
-
-const EYEBROW_STYLE: React.CSSProperties = {
-  fontFamily: "var(--font-mono)",
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: "0.02em",
-  color: "var(--mute)"
-};
-
-/** Mirrors the mockup's `style-hover="..."` — a plain DOM mutation on enter/leave
-    is simpler and safer here than animating raw CSS strings through framer-motion. */
-function hoverFx(prop: "background" | "filter", hoverValue: string, restValue = "") {
-  return {
-    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
-      e.currentTarget.style[prop] = hoverValue;
-    },
-    onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
-      e.currentTarget.style[prop] = restValue;
-    }
-  };
-}
-
-function ghostPillStyle(padding: string, fontSize: number, gap: number): React.CSSProperties {
-  return {
-    display: "inline-flex",
-    alignItems: "center",
-    gap,
-    padding,
-    fontWeight: 600,
-    fontSize,
-    color: "var(--ink)",
-    backdropFilter: "blur(10px)",
-    background: "color-mix(in srgb, var(--ink) 5%, transparent)",
-    border: 0,
-    boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-    borderRadius: 999,
-    cursor: "pointer"
-  };
-}
 
 function frameLabel(f: LibraryFrame): string {
   return f.beat_n ? `Beat ${String(f.beat_n).padStart(2, "0")}` : "Frame";
@@ -186,212 +144,102 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
   }, [board]);
 
   return (
-    <motion.div className="main-inner" {...pageIn}>
-      {/* HERO */}
-      <section
-        className="dash-hero"
-        style={{
-          background:
-            "linear-gradient(115deg, color-mix(in srgb, var(--accent) 18%, transparent), rgba(64,170,182,0.10) 55%, rgba(255,255,255,0.02)), var(--surface)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "var(--shadow-2)"
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: 0,
-            width: "38%",
-            background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.055), transparent)",
-            transform: "translateX(-140%) skewX(-18deg)",
-            animation: "fxSheen 6s ease-in-out infinite",
-            pointerEvents: "none"
-          }}
-        />
-        <div className="dash-hero-copy">
-          <span className="dash-hero-eyebrow" style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", color: "var(--accent)" }}>
-            Dashboard · {project.format} · {project.aspect_ratio}
+    <motion.div className="main-inner dash" {...pageIn}>
+      {/* TITLE BLOCK — the project stated once, at full size. */}
+      <header className="dash-head">
+        <div className="dash-head-copy">
+          <span className="dash-eyebrow">
+            {project.format} · {project.aspect_ratio}
           </span>
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(30px,3.2vw,42px)",
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
-              color: "var(--ink)"
-            }}
+          <h1 className="dash-title">{project.title}</h1>
+          {project.logline && <p className="dash-logline">{project.logline}</p>}
+          <div className="dash-meta">
+            <span>{project.genre || project.format}</span>
+            <span className="dash-meta-sep">/</span>
+            <span>{project.length_estimate}</span>
+            <span className="dash-meta-sep">/</span>
+            <span>{stats.beats} beats</span>
+            <span className="dash-meta-sep">/</span>
+            <span>{stats.characters} characters</span>
+            <span className="dash-meta-sep">/</span>
+            <span>{stats.locations} locations</span>
+          </div>
+        </div>
+        <div className="dash-actions">
+          <motion.button
+            {...tap}
+            className="btn btn-primary"
+            onClick={() => onSwitchWorkspace(hasScript ? "casting" : "screenplay")}
           >
-            {project.title}
-          </h1>
-          {project.logline && (
-            <p style={{ margin: 0, fontWeight: 500, fontSize: 16, lineHeight: 1.55, color: "var(--ink-soft)", maxWidth: "52ch" }}>
-              {project.logline}
-            </p>
-          )}
-          <div className="dash-hero-tags">
-            <span style={TAG_STYLE}>{project.genre || project.format}</span>
-            <span style={TAG_STYLE}>{project.length_estimate}</span>
-            <span style={TAG_STYLE}>
-              {stats.beats} beats · {stats.characters} characters · {stats.locations} locations
-            </span>
-          </div>
-          <div className="dash-hero-actions">
-            <motion.button
-              {...tap}
-              onClick={() => onSwitchWorkspace(hasScript ? "casting" : "screenplay")}
-              {...hoverFx("background", "var(--accent-hover)", "var(--accent)")}
-              style={{
-                position: "relative",
-                overflow: "hidden",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "11px 20px",
-                fontWeight: 600,
-                fontSize: 14,
-                color: "var(--on-accent)",
-                background: "var(--accent)",
-                border: "none",
-                borderRadius: 999,
-                boxShadow: "var(--shadow-1)",
-                cursor: "pointer",
-                whiteSpace: "nowrap"
-              }}
-            >
-              <span
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  width: "55%",
-                  background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.28), transparent)",
-                  transform: "translateX(-140%) skewX(-18deg)",
-                  animation: "fxSheen 3.6s ease-in-out infinite",
-                  pointerEvents: "none"
-                }}
-              />
-              {hasScript ? "Continue working" : "Start with the script"}
-              <ArrowRight size={14} />
-            </motion.button>
-            <motion.button
-              {...tap}
-              onClick={onOpenBible}
-              {...hoverFx("background", "color-mix(in srgb, var(--ink) 14%, transparent)", "color-mix(in srgb, var(--ink) 5%, transparent)")}
-              style={ghostPillStyle("11px 20px", 14, 8)}
-            >
-              Open Movie Bible
-            </motion.button>
-          </div>
+            {hasScript ? "Continue working" : "Start with the script"}
+            <ArrowRight size={14} />
+          </motion.button>
+          <motion.button {...tap} className="btn btn-secondary" onClick={onOpenBible}>
+            Movie Bible
+          </motion.button>
         </div>
-        <div style={{ position: "relative", aspectRatio: "16/9", borderRadius: 16, overflow: "hidden", boxShadow: "var(--shadow-2)", background: "var(--cream-deep)" }}>
-          {heroFrame ? (
-            <>
-              <span
-                role="img"
-                aria-label="Latest approved frame"
-                style={{ position: "absolute", inset: 0, backgroundImage: `url("${heroFrame.url}")`, backgroundSize: "cover", backgroundPosition: "center" }}
-              />
-              <span style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,6,10,0.55), transparent 45%)" }} />
-              <span
-                style={{
-                  position: "absolute",
-                  bottom: 12,
-                  left: 14,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: "0.02em",
-                  color: "color-mix(in srgb, var(--ink) 90%, transparent)"
-                }}
-              >
-                Beat {String(heroFrame.beatN).padStart(2, "0")} · latest approved frame
-              </span>
-              <span
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "4px 10px",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  fontWeight: 600,
-                  borderRadius: 999,
-                  background: "color-mix(in srgb, var(--accent-3) 90%, transparent)",
-                  color: "var(--on-accent-3)"
-                }}
-              >
-                Approved
-              </span>
-            </>
-          ) : (
-            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <ImageIcon size={22} style={{ color: "var(--mute)" }} />
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--mute)" }}>No approved frames yet</span>
-            </div>
-          )}
-        </div>
-      </section>
+      </header>
 
-      {/* PIPELINE STRIP — one unified card, 5 columns */}
-      <section style={{ marginTop: 16, background: "var(--surface)", backdropFilter: "blur(18px)", borderRadius: 18, boxShadow: "var(--shadow-1)", overflow: "hidden" }}>
-        <motion.div variants={staggerContainer} initial="hidden" animate="show" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)" }}>
+      {/* HERO FRAME — the largest thing on the page, and the only saturated one. */}
+      <motion.section className="dash-frame" {...fadeUp}>
+        {heroFrame ? (
+          <>
+            <span
+              role="img"
+              aria-label="Latest approved frame"
+              className="dash-frame-img"
+              style={{ backgroundImage: `url("${heroFrame.url}")` }}
+            />
+            <span className="dash-frame-scrim" />
+            <span className="dash-frame-cap">
+              Beat {String(heroFrame.beatN).padStart(2, "0")} · latest approved frame
+            </span>
+            <span className="dash-frame-flag">Approved</span>
+          </>
+        ) : (
+          <div className="dash-frame-empty">
+            <ImageIcon size={20} />
+            <span>No approved frames yet</span>
+          </div>
+        )}
+      </motion.section>
+
+      {/* PIPELINE — five stages divided by hairlines, progress as a measured rule. */}
+      <section className="dash-section">
+        <div className="dash-section-head">
+          <span className="dash-eyebrow">Pipeline</span>
+        </div>
+        <motion.div className="dash-pipeline" variants={staggerContainer} initial="hidden" animate="show">
           {PIPELINE.map((wsId, i) => {
             const w = wsMap[wsId];
             const status = w?.status ?? "idle";
-            const isDone = status === "complete";
-            const isWorking = status === "in-progress";
-            const progressPct = isDone ? 100 : isWorking ? 55 : 0;
-            const dotColor = isDone ? "var(--accent-3)" : isWorking ? "var(--mustard-deep)" : "var(--mute)";
             const locked = w?.unlocked === false;
+            const tone = STATUS_COLOR[status] ?? "var(--mute)";
+            const pct = status === "complete" ? 100 : status === "in-progress" ? 55 : 0;
             return (
               <motion.button
                 key={wsId}
                 variants={staggerItem}
+                className="dash-stage"
+                data-locked={locked ? "true" : undefined}
+                disabled={locked}
                 onClick={() => w?.unlocked && onSwitchWorkspace(wsId)}
-                {...hoverFx("background", "color-mix(in srgb, var(--ink) 6%, transparent)")}
-                style={{
-                  textAlign: "left",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  padding: "18px 20px",
-                  background: "transparent",
-                  border: 0,
-                  borderRight: "1px solid var(--cream-deep)",
-                  cursor: locked ? "not-allowed" : "pointer",
-                  opacity: locked ? 0.5 : 1,
-                  fontFamily: "var(--font-ui)"
-                }}
               >
-                <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", color: "var(--mute)" }}>
-                    0{i + 1} / 05
+                <span className="dash-stage-no">
+                  <span>
+                    {String(i + 1).padStart(2, "0")} / {String(PIPELINE.length).padStart(2, "0")}
                   </span>
                   <span
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: dotColor,
-                      animation: isWorking ? "fx-pulse-pip 1.6s var(--ease-out) infinite" : undefined
-                    }}
+                    className="pip"
+                    data-status={
+                      status === "complete" ? "done" : status === "in-progress" ? "working" : "draft"
+                    }
                   />
                 </span>
-                <span style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{w?.label ?? wsId}</span>
-                <span style={{ fontSize: 12, color: "var(--mute)" }}>{w?.note ?? "—"}</span>
-                <span style={{ display: "block", height: 4, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden", marginTop: 2 }}>
-                  <span style={{ display: "block", height: "100%", width: `${progressPct}%`, background: dotColor, borderRadius: 999 }} />
+                <span className="dash-stage-name">{w?.label ?? wsId}</span>
+                <span className="dash-stage-note">{w?.note ?? "—"}</span>
+                <span className="dash-stage-rule">
+                  <span style={{ width: `${pct}%`, background: tone }} />
                 </span>
               </motion.button>
             );
@@ -399,130 +247,87 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
         </motion.div>
       </section>
 
-      {/* LATEST FRAMES STRIP */}
-      <section style={{ marginTop: 28 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <span style={EYEBROW_STYLE}>Latest frames · storyboard</span>
-          <motion.button
-            {...tap}
-            onClick={() => onSwitchWorkspace("storyboard")}
-            {...hoverFx("background", "color-mix(in srgb, var(--ink) 14%, transparent)", "color-mix(in srgb, var(--ink) 5%, transparent)")}
-            style={ghostPillStyle("7px 14px", 12, 6)}
-          >
-            Open storyboard
-          </motion.button>
+      {/* LATEST FRAMES */}
+      <section className="dash-section">
+        <div className="dash-section-head">
+          <span className="dash-eyebrow">Latest frames</span>
+          <button className="dash-link" onClick={() => onSwitchWorkspace("storyboard")}>
+            Open storyboard →
+          </button>
         </div>
         {frames === null ? null : frames.length === 0 ? (
-          <p style={{ marginTop: 12, fontSize: 13, color: "var(--mute)" }}>
-            No frames generated yet. Open Storyboard to start generating.
-          </p>
+          <p className="dash-empty">No frames generated yet. Open Storyboard to start generating.</p>
         ) : (
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginTop: 12 }}
-          >
+          <motion.div className="dash-frames" variants={staggerContainer} initial="hidden" animate="show">
             {frames.slice(0, 5).map((f) => (
               <motion.button
                 key={f.id}
                 variants={staggerItem}
+                className="dash-thumb"
                 title={frameTitle(f)}
                 onClick={() => onSwitchWorkspace("storyboard")}
-                {...hoverFx("filter", "brightness(1.12)")}
-                style={{ position: "relative", aspectRatio: "16/9", border: 0, borderRadius: 14, overflow: "hidden", background: "var(--cream-deep)", boxShadow: "var(--shadow-1)", cursor: "pointer", padding: 0 }}
               >
                 <span
                   role="img"
                   aria-label={frameTitle(f)}
-                  style={{ position: "absolute", inset: 0, backgroundImage: `url("${f.url}")`, backgroundSize: "cover", backgroundPosition: "center" }}
+                  className="dash-frame-img"
+                  style={{ backgroundImage: `url("${f.url}")` }}
                 />
-                <span style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,6,10,0.6), transparent 40%)" }} />
-                <span
-                  style={{
-                    position: "absolute",
-                    bottom: 8,
-                    left: 10,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: "color-mix(in srgb, var(--ink) 90%, transparent)"
-                  }}
-                >
-                  {frameLabel(f)}
-                </span>
+                <span className="dash-frame-scrim" />
+                <span className="dash-thumb-cap">{frameLabel(f)}</span>
               </motion.button>
             ))}
           </motion.div>
         )}
       </section>
 
-      {/* ACTIVITY + CREW STATUS */}
-      <section style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 16, marginTop: 28, alignItems: "start" }}>
-        <div>
-          <span style={EYEBROW_STYLE}>Activity · crew log</span>
-          <motion.div
-            {...fadeUp}
-            style={{ background: "var(--surface)", backdropFilter: "blur(18px)", borderRadius: 18, boxShadow: "var(--shadow-1)", overflow: "hidden", marginTop: 12 }}
-          >
+      {/* ACTIVITY + CREW */}
+      <div className="dash-lower">
+        <section className="dash-section">
+          <div className="dash-section-head">
+            <span className="dash-eyebrow">Activity</span>
+          </div>
+          <motion.div {...fadeUp}>
             {activity.length === 0 && (
-              <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-                <Wand2 size={16} style={{ color: "var(--mute)" }} />
-                <span style={{ color: "var(--mute)" }}>No activity yet. Submit your script in Screenplay to wake the crew.</span>
-              </div>
+              <p className="dash-empty">No activity yet. Submit your script in Screenplay to wake the crew.</p>
             )}
-            {activity.map((item, idx) => {
+            {activity.map((item) => {
               const Icn = AGENT_ICON[item.agent] ?? Wand2;
               return (
-                <div
-                  key={item.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "28px 1fr auto",
-                    gap: 12,
-                    alignItems: "start",
-                    padding: "12px 24px",
-                    borderTop: idx === 0 ? "none" : "1px solid var(--cream-deep)"
-                  }}
-                >
-                  <Icn size={14} style={{ color: KIND_COLOR[item.kind], marginTop: 3 }} />
-                  <span style={{ fontSize: 13, color: "var(--ink)" }} dangerouslySetInnerHTML={{ __html: formatActivity(item.text) }} />
-                  <time style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, color: "var(--mute)", whiteSpace: "nowrap" }}>
-                    {relativeTime(item.created_at)}
-                  </time>
+                <div key={item.id} className="dash-log-row">
+                  <Icn size={14} style={{ color: KIND_COLOR[item.kind], marginTop: 2 }} />
+                  <span
+                    className="dash-log-text"
+                    dangerouslySetInnerHTML={{ __html: formatActivity(item.text) }}
+                  />
+                  <time className="dash-log-time">{relativeTime(item.created_at)}</time>
                 </div>
               );
             })}
           </motion.div>
-        </div>
-        <div>
-          <span style={EYEBROW_STYLE}>Crew status</span>
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            style={{ background: "var(--surface)", backdropFilter: "blur(18px)", borderRadius: 18, boxShadow: "var(--shadow-1)", padding: 8, marginTop: 12, display: "flex", flexDirection: "column", gap: 2 }}
-          >
+        </section>
+
+        <section className="dash-section">
+          <div className="dash-section-head">
+            <span className="dash-eyebrow">Crew</span>
+          </div>
+          <motion.div variants={staggerContainer} initial="hidden" animate="show">
             {agents.map((a) => {
               const Icn = AGENT_ICON[a.id] ?? Wand2;
-              const c = CREW_STATE_COLOR[a.state];
+              const tone = CREW_STATE_COLOR[a.state];
               return (
-                <motion.div
-                  key={a.id}
-                  variants={staggerItem}
-                  style={{ display: "grid", gridTemplateColumns: "26px 1fr auto", gap: 10, alignItems: "center", padding: "9px 12px", borderRadius: 12 }}
-                >
-                  <span style={{ width: 26, height: 26, display: "grid", placeItems: "center", borderRadius: 999, background: c.bg, color: c.fg }}>
-                    <Icn size={13} />
+                <motion.div key={a.id} variants={staggerItem} className="dash-crew-row">
+                  <Icn size={14} style={{ color: tone }} />
+                  <span className="dash-crew-name">{a.name}</span>
+                  <span className="dash-crew-state" style={{ color: tone }}>
+                    {a.state}
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>{a.name}</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: c.fg }}>{a.state.toUpperCase()}</span>
                 </motion.div>
               );
             })}
           </motion.div>
-        </div>
-      </section>
+        </section>
+      </div>
     </motion.div>
   );
 }

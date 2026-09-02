@@ -1,8 +1,8 @@
-# Direkta
+# Fylmer
 
 > **You direct. AI delivers.**
 
-A browser-based film production platform with a full crew of specialised AI agents. Direkta turns scripts into animated short dramas through five purpose-built workspaces — Screenplay, Casting, Storyboard, Stitch, and Export — each driven by named agents that propose options for the director to commit.
+A browser-based film production platform with a full crew of specialised AI agents. Fylmer turns scripts into animated short dramas through five purpose-built workspaces — Screenplay, Casting, Storyboard, Stitch, and Export — each driven by named agents that propose options for the director to commit.
 
 This branch is the merge of two upstream repos:
 - **`Swotboysandy/direkta`** — Node.js / Next.js architecture (the engine: SQLite, vendor abstraction, agent runtime, route handlers)
@@ -10,10 +10,10 @@ This branch is the merge of two upstream repos:
 
 ## V1 — Part 1 (what's landed in this commit)
 
-- **Direkta design tokens + brand fonts** ported from `buzz/main:project/assets/tokens.css` — film-negative ink scale, bone, tungsten accent, Anton / Geist / Geist Mono via `next/font/google`.
+- **Fylmer design tokens + brand fonts** ported from `buzz/main:project/assets/tokens.css` — film-negative ink scale, bone, tungsten accent, Anton / Geist / Geist Mono via `next/font/google`.
 - **App shell**: 56px topnav with project picker, **9-agent dot row** with live state, Key Vault icon, save indicator, avatar. 260px collapsible sidebar with workspace list, sequential locks, status indicators.
 - **Workspace router** at `/?p=<project>&ws=<workspace>` — single Next.js route, internal state switches workspaces.
-- **Sequential locks** per Direkta spec: Casting unlocks after script submission; Storyboard after first Soul ID; Stitch after first selected frame; Export after first Stitch node.
+- **Sequential locks** per Fylmer spec: Casting unlocks after script submission; Storyboard after first Soul ID; Stitch after first selected frame; Export after first Stitch node.
 - **Dashboard workspace**: project header with logline + format tags, 5-stage horizontal pipeline tracker, 6-card quick access grid, activity feed with agent icons.
 - **Screenplay workspace**: empty-state script paste (Final Draft / Fountain friendly), submit-to-crew flow that writes activity, post-submit split panel (read-only script left, beat breakdown right with Bible summary card and per-beat expandable cards).
 - **Casting workspace**: character grid (4 Soul ID states — empty / training / trained / failed), locations grid (INT/EXT), manual add modal. Soul ID training stubbed for V1, ready to wire to Fal Flux LoRA.
@@ -81,7 +81,7 @@ app/
 │   └── WorkspaceStub.tsx             Stub component for Storyboard / Stitch / Library / Export
 ├── oss/[file]                        Static-serve generated images and videos
 ├── settings/                         Legacy settings page (Key Vault is the new home)
-├── globals.css                       All Direkta tokens + components
+├── globals.css                       All Fylmer tokens + components
 ├── layout.tsx                        Fonts + metadata
 └── page.tsx                          Workspace shell
 lib/

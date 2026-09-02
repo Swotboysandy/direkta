@@ -1,173 +1,202 @@
 /* ============================================================
-   DIREKTA — Design Tokens
-   v3.0 · Film-negative studio (dark-first, glass surfaces)
+   FYLMER — Design Tokens
+   v4.0 · Cinema black (dark-first, flat surfaces, one accent)
    ------------------------------------------------------------
    Single source of truth. Every component reads from these
    custom properties — DO NOT hard-code values elsewhere.
+
+   v4 direction: Higgsfield's gravity, Google Flow's restraint.
+   The interface is near-black and almost colourless so that
+   footage and frames are the only saturated things on screen.
+   Surfaces are flat with a hairline, not glass: blur and heavy
+   translucency read as decoration at this density, and cost a
+   compositing layer on every card.
    ============================================================ */
 
 
 :root {
   color-scheme: dark;
 
-  /* ─── Core palette — dark-first ground ─────────────────── */
-  --cream:        #0B0C10;   /* page background — near-black */
-  --cream-warm:   rgba(26,27,35,0.78);   /* card surface — translucent glass */
-  --cream-deep:   rgba(255,255,255,0.09); /* track / scrub background, dividers */
+  /* ─── Core palette — cinema black ──────────────────────── */
+  --cream:        #08090C;   /* page ground — near-black, slightly blue */
+  --cream-warm:   rgba(255,255,255,0.035); /* card surface — a lift, not a pane */
+  --cream-deep:   rgba(255,255,255,0.07);  /* hairlines, dividers, tracks */
 
-  --cocoa:        #F3F3F8;   /* primary ink — text, hairlines */
-  --cocoa-soft:   #C9C9D6;
-  --cocoa-mute:   #8F90A0;   /* secondary text, captions */
+  --cocoa:        #F4F4F7;   /* primary ink */
+  --cocoa-soft:   #B9BAC6;   /* secondary ink */
+  --cocoa-mute:   #7C7E8A;   /* captions, metadata — AA on --cream */
 
-  --tomato:       #F0655A;   /* signal — error/danger */
-  --tomato-deep:  #FF8578;
+  /* Signals stay desaturated: on a near-black ground a pure hue
+     shouts louder than anything in the actual footage. */
+  --tomato:       #E8695C;   /* danger */
+  --tomato-deep:  #FF8577;
 
-  --mustard:      #F0B24A;   /* signal — in-progress, highlights */
-  --mustard-deep: #FFC75A;
+  --mustard:      #D9A441;   /* in-progress */
+  --mustard-deep: #F0BC5C;
 
-  --viridian:     #57C793;   /* signal — success, complete */
-  --viridian-deep:#7EDCB0;
+  --viridian:     #4FBF8B;   /* complete */
+  --viridian-deep:#6FD8A6;
 
   /* ─── Semantic aliases (USE THESE in components) ────────── */
   --bg:           var(--cream);
   --surface:      var(--cream-warm);
-  --surface-2:    rgba(255,255,255,0.08);
+  --surface-2:    rgba(255,255,255,0.06);
+  --surface-3:    rgba(255,255,255,0.09);
   --ink:          var(--cocoa);
   --ink-soft:     var(--cocoa-soft);
   --mute:         var(--cocoa-mute);
 
-  --accent:       #8B7BF7;   /* primary accent — CTAs, active state */
-  --accent-hover: #A296FF;
-  --accent-2:     rgba(255,255,255,0.09);
+  /* One accent, used sparingly — active state and primary action only. */
+  --accent:       #6E5BFF;
+  --accent-hover: #8574FF;
+  --accent-quiet: rgba(110, 91, 255, 0.14);
+  --accent-2:     rgba(255,255,255,0.06);
   --accent-3:     var(--viridian);
 
   --on-accent:    #FFFFFF;
   --on-accent-2:  var(--cocoa);
-  --on-accent-3:  #06130C;
-  --on-ink:       #101118;
+  --on-accent-3:  #04120A;
+  --on-ink:       #08090C;
 
   --signal-success: var(--viridian);
   --signal-warning: var(--mustard);
   --signal-danger:  var(--tomato);
 
   /* ─── Type ─────────────────────────────────────────────── */
-  /* --font-*-loaded vars are set by next/font/google in app/layout.tsx; fallbacks follow. */
+  /* --font-*-loaded vars are set by next/font/google in app/layout.tsx. */
   --font-ui:      var(--font-ui-loaded), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: var(--font-display-loaded), "Manrope", var(--font-ui);
-  --font-mono:    var(--font-display-loaded), "Manrope", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: var(--font-display-loaded), "Inter Tight", var(--font-ui);
+  /* A real monospace. This previously fell back to Manrope, which is
+     proportional — so timecodes, durations and counters did not align. */
+  --font-mono:    var(--font-mono-loaded), "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  /* Type scale — restrained: clean dashboard, not oversized hero type */
-  --t-display-l: clamp(26px, 2.8vw, 34px);
-  --t-display-m: clamp(21px, 2.2vw, 27px);
-  --t-h1:        clamp(19px, 2vw, 23px);
-  --t-h2:        22px;
-  --t-h3:        18px;
-  --t-h4:        15px;
-  --t-body-l:    16px;
-  --t-body:      15px;
+  /* Type scale — one clear jump from display to body, nothing in
+     between competing. Minimalism needs fewer sizes, not smaller ones. */
+  --t-display-l: clamp(30px, 3.4vw, 44px);
+  --t-display-m: clamp(24px, 2.6vw, 32px);
+  --t-h1:        clamp(20px, 2vw, 24px);
+  --t-h2:        20px;
+  --t-h3:        16px;
+  --t-h4:        14px;
+  --t-body-l:    15px;
+  --t-body:      14px;
   --t-body-s:    13px;
-  --t-cap:       11px;
+  --t-cap:       12px;
   --t-eyebrow:   10px;   /* mono uppercase eyebrows */
 
-  --leading-tight: 1.05;
-  --leading-snug:  1.25;
-  --leading-body:  1.5;
+  --leading-tight: 1.02;
+  --leading-snug:  1.22;
+  --leading-body:  1.55;
 
-  --tracking-display: 0.01em;
-  --tracking-eyebrow: 0.22em;
-  --tracking-mono:    0.06em;
+  --tracking-display: -0.022em;  /* tight display type reads as designed, not default */
+  --tracking-eyebrow: 0.16em;
+  --tracking-mono:    0.02em;
 
   /* ─── Shape ────────────────────────────────────────────── */
-  --r-sm:    8px;
-  --r-md:    16px;   /* DEFAULT — cards, buttons */
-  --r-lg:    24px;
+  /* Smaller radii than v3. Large corner rounding reads friendly and
+     consumer; this is a production tool and wants precision. */
+  --r-sm:    6px;
+  --r-md:    10px;   /* DEFAULT — cards, buttons */
+  --r-lg:    16px;
   --r-pill:  999px;
 
   --radius:  var(--r-md);  /* alias for default */
 
-  /* Outline weight — Live tweak set this to 0; keep a hairline available */
   --hairline: 1px;
 
   /* ─── Spacing scale ────────────────────────────────────── */
+  /* Strict 4px base with no half-steps, so rhythm is enforced rather
+     than negotiated per component. */
   --sp-1:  4px;
   --sp-2:  8px;
   --sp-3:  12px;
   --sp-4:  16px;
-  --sp-5:  28px;   /* "comfortable" step — card padding + section gaps (roomier) */
+  --sp-5:  24px;
   --sp-6:  32px;
   --sp-7:  48px;
-  --sp-8:  64px;
-  --sp-9:  96px;
+  --sp-8:  72px;
+  --sp-9:  112px;
 
   /* ─── Elevation ────────────────────────────────────────── */
-  /* Glass cards — inset hairline + soft drop, no offset block. Three depths. */
-  --shadow-1: inset 0 0 0 1px rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.35);
-  --shadow-2: inset 0 0 0 1px rgba(255,255,255,0.10), 0 14px 32px rgba(0,0,0,0.45);
-  --shadow-3: inset 0 0 0 1px rgba(255,255,255,0.14), 0 28px 64px rgba(0,0,0,0.6);
-  --shadow-focus: 0 0 0 3px rgba(139, 123, 247, 0.35);
+  /* Flat surfaces separated by a hairline. Depth comes from the
+     hairline getting brighter, not from bigger shadows. */
+  --shadow-1: inset 0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-2: inset 0 0 0 1px rgba(255,255,255,0.09), 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-3: inset 0 0 0 1px rgba(255,255,255,0.12), 0 24px 64px rgba(0,0,0,0.7);
+  --shadow-focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 
   /* ─── Motion ───────────────────────────────────────────── */
-  --dur-1:  120ms;
-  --dur-2:  220ms;
-  --dur-3:  360ms;
+  --dur-1:  110ms;
+  --dur-2:  200ms;
+  --dur-3:  320ms;
   --dur-4:  520ms;
   --ease-out:  cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-in:   cubic-bezier(0.55, 0.06, 0.68, 0.19);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 
-  /* ─── Tilt — the brand's signature card rotation ───────── */
-  --tilt-card-a: -0.6deg;
-  --tilt-card-b:  0.5deg;
-  --tilt-card-c: -0.3deg;
+  /* ─── Tilt ─────────────────────────────────────────────── */
+  /* v3's signature card rotation is retired: rotated cards fight a
+     strict grid and are the first thing that reads as decoration.
+     Kept at 0 so existing `rotate(var(--tilt-card-a))` usages flatten
+     instead of breaking. */
+  --tilt-card-a: 0deg;
+  --tilt-card-b: 0deg;
+  --tilt-card-c: 0deg;
 
   /* ─── Layout ───────────────────────────────────────────── */
-  --gutter:   28px;
+  --gutter:   24px;
   --page-pad: 40px;
-  --max-w:    1440px;
+  --max-w:    1400px;
+
+  --topnav-h:            60px;
+  --sidebar-w:           232px;
+  --sidebar-w-collapsed: 64px;
 }
 
 /* ============================================================
-   LIGHT THEME — clean, cool paper. Only the core palette + a few
+   LIGHT THEME — cool paper. Only the core palette and a few
    contrast-sensitive aliases are overridden; every semantic and
    legacy token derives from these, so the whole app follows.
    ============================================================ */
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --cream:        #F3F3F7;   /* page background */
-  --cream-warm:   rgba(255,255,255,0.85);   /* card surface */
-  --cream-deep:   rgba(16,17,24,0.08);      /* dividers, tracks, hairlines */
+  --cream:        #FAFAFB;
+  --cream-warm:   #FFFFFF;
+  --cream-deep:   rgba(8,9,12,0.09);
 
-  --cocoa:        #17181F;   /* primary text */
-  --cocoa-soft:   #3E3F4C;
-  --cocoa-mute:   #666778;   /* secondary text, captions — AA (was #7A7B8A ≈3.8:1) */
+  --cocoa:        #0E0F14;
+  --cocoa-soft:   #3A3B45;
+  --cocoa-mute:   #63646F;
 
-  --tomato:       #D8402E;
-  --tomato-deep:  #B32F1F;
-  --mustard:      #D9930F;
-  --mustard-deep: #B87A08;
-  --viridian:     #1F9E68;
-  --viridian-deep:#177A4F;
+  --tomato:       #CE3B2A;
+  --tomato-deep:  #A82B1C;
+  --mustard:      #B07C08;
+  --mustard-deep: #8F6406;
+  --viridian:     #128554;
+  --viridian-deep:#0C6440;
 
-  --surface-2:    rgba(16,17,24,0.07);
+  --surface-2:    rgba(8,9,12,0.05);
+  --surface-3:    rgba(8,9,12,0.08);
 
-  --accent:       #6B59E8;
-  --accent-hover: #5847CC;
-  --accent-2:     rgba(16,17,24,0.06);
+  --accent:       #5341E0;
+  --accent-hover: #4433C4;
+  --accent-quiet: rgba(83, 65, 224, 0.10);
+  --accent-2:     rgba(8,9,12,0.05);
 
   --on-accent:    #FFFFFF;
   --on-accent-2:  var(--cocoa);
   --on-accent-3:  #FFFFFF;
-  --on-ink:       #F3F3F7;
+  --on-ink:       #FAFAFB;
 
-  --shadow-1: inset 0 0 0 1px rgba(16,17,24,0.07), 0 2px 6px rgba(16,17,24,0.06);
-  --shadow-2: inset 0 0 0 1px rgba(16,17,24,0.07), 0 12px 28px rgba(16,17,24,0.10);
-  --shadow-3: inset 0 0 0 1px rgba(16,17,24,0.09), 0 24px 56px rgba(16,17,24,0.16);
-  --shadow-focus: 0 0 0 3px rgba(107, 89, 232, 0.30);
+  --shadow-1: inset 0 0 0 1px rgba(8,9,12,0.08);
+  --shadow-2: inset 0 0 0 1px rgba(8,9,12,0.08), 0 6px 20px rgba(8,9,12,0.07);
+  --shadow-3: inset 0 0 0 1px rgba(8,9,12,0.10), 0 20px 48px rgba(8,9,12,0.12);
+  --shadow-focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
 /* ============================================================
-   BASE RESET (opt-in — include only if you don't have your own)
+   BASE RESET
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -181,3 +210,21 @@ body {
   text-rendering: optimizeLegibility;
 }
 ::selection { background: var(--accent); color: #FFFFFF; }
+
+/* Keyboard focus only — a visible ring on every mouse click reads as noise,
+   but removing it entirely strands keyboard users. */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Honour the OS setting: springs and transitions collapse to near-instant
+   rather than being removed, so state changes are still legible. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

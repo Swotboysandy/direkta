@@ -402,7 +402,7 @@ export const vendors = {
   }
 };
 
-/* === Direkta repos === */
+/* === Fylmer repos === */
 
 function rowToBeat(row: Row): Beat {
   return {

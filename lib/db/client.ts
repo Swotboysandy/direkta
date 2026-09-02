@@ -111,7 +111,7 @@ function migrate(db: DatabaseSync) {
 
     CREATE INDEX IF NOT EXISTS idx_assets_node ON assets(node_id, created_at DESC);
 
-    /* === DIREKTA V1 === */
+    /* === FYLMER V1 === */
 
     CREATE TABLE IF NOT EXISTS beats (
       id TEXT PRIMARY KEY,
@@ -287,7 +287,7 @@ function migrate(db: DatabaseSync) {
     );
 
     -- Single-row store for Codex CLI token (imported from ~/.codex/auth.json).
-    -- Lets Direkta call chatgpt.com/backend-api/wham on the user's ChatGPT subscription.
+    -- Lets Fylmer call chatgpt.com/backend-api/wham on the user's ChatGPT subscription.
     CREATE TABLE IF NOT EXISTS codex_connection (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       access_token TEXT,
@@ -298,7 +298,7 @@ function migrate(db: DatabaseSync) {
     );
 
     -- Single-row store for the user's Higgsfield OAuth/MCP connection.
-    -- Lets Direkta generate on the user's own Higgsfield plan via mcp.higgsfield.ai.
+    -- Lets Fylmer generate on the user's own Higgsfield plan via mcp.higgsfield.ai.
     CREATE TABLE IF NOT EXISTS higgsfield_connection (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       client_id TEXT,

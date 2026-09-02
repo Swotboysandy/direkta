@@ -9,8 +9,8 @@ import { generateVideoViaByteplus } from "../agents/byteplus-video";
 import { stitchClips, resolveOssFile } from "./stitch";
 
 /**
- * Direkta MCP server — hand-rolled tool registry exposed over Streamable HTTP
- * (see app/api/mcp/route.ts). Wraps Direkta's own BytePlus pipeline so any MCP
+ * Fylmer MCP server — hand-rolled tool registry exposed over Streamable HTTP
+ * (see app/api/mcp/route.ts). Wraps Fylmer's own BytePlus pipeline so any MCP
  * client can create projects, generate reference-locked stills, animate them,
  * and stitch a film — all writing into the same SQLite + OSS store as the app.
  */
@@ -71,7 +71,7 @@ function toDataUri(ref: string): string {
 const TOOLS: Tool[] = [
   {
     name: "health",
-    description: "Check Direkta MCP status: whether a BytePlus key is configured, the image/video models in use, and the public asset base URL.",
+    description: "Check Fylmer MCP status: whether a BytePlus key is configured, the image/video models in use, and the public asset base URL.",
     inputSchema: { type: "object", properties: {} },
     handler: async () => {
       let key = false;
@@ -81,7 +81,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: "list_projects",
-    description: "List Direkta projects (id, title, format, aspect ratio).",
+    description: "List Fylmer projects (id, title, format, aspect ratio).",
     inputSchema: { type: "object", properties: {} },
     handler: async () => {
       const rows = getDb().prepare("SELECT id, title, format, aspect_ratio, created_at FROM projects ORDER BY updated_at DESC LIMIT 100").all();
@@ -90,7 +90,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: "create_project",
-    description: "Create a new Direkta project. Returns the project id (use it as project_id in other tools to file assets under it).",
+    description: "Create a new Fylmer project. Returns the project id (use it as project_id in other tools to file assets under it).",
     inputSchema: {
       type: "object",
       properties: {
@@ -120,7 +120,7 @@ const TOOLS: Tool[] = [
         prompt: { type: "string", description: "Full scene description. Bake in explicit constraints for consistency." },
         reference_image_urls: { type: "array", items: { type: "string" }, description: "Up to ~5 reference images to lock character/style" },
         size: { type: "string", description: "Explicit WxH, default 2560x1440 (16:9)" },
-        project_id: { type: "string", description: "Optional: file the asset under this Direkta project" },
+        project_id: { type: "string", description: "Optional: file the asset under this Fylmer project" },
       },
       required: ["prompt"],
     },
@@ -143,7 +143,7 @@ const TOOLS: Tool[] = [
         resolution: { type: "string", enum: ["720p", "1080p"], description: "Default 720p" },
         duration: { type: "number", description: "Seconds, 4–15 (default 5)" },
         audio: { type: "boolean", description: "Seedance native audio (default true). Set false if the audio filter trips." },
-        project_id: { type: "string", description: "Optional: file the clip under this Direkta project" },
+        project_id: { type: "string", description: "Optional: file the clip under this Fylmer project" },
       },
       required: ["prompt", "reference_image"],
     },

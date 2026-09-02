@@ -4,7 +4,7 @@ import { getDb } from "../db/client";
 /**
  * Higgsfield OAuth (the consumer MCP at mcp.higgsfield.ai).
  *
- * This connects Direkta to the user's OWN Higgsfield account so the app can
+ * This connects Fylmer to the user's OWN Higgsfield account so the app can
  * generate on their plan/credits — the same account the Claude MCP uses, NOT
  * the separately-billed platform.higgsfield.ai Cloud API.
  *
@@ -56,7 +56,7 @@ function b64url(buf: Buffer): string {
   return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-/** Register Direkta as an OAuth client (DCR) if we haven't yet. */
+/** Register Fylmer as an OAuth client (DCR) if we haven't yet. */
 async function ensureClient(): Promise<{ clientId: string; clientSecret: string | null }> {
   const conn = loadConn();
   if (conn.client_id) return { clientId: conn.client_id, clientSecret: conn.client_secret };

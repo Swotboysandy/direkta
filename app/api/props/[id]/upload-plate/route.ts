@@ -14,7 +14,7 @@ const OSS_DIR =
 const EXTS = ["png", "jpg", "jpeg", "webp"];
 const MAX_BYTES = 20 * 1024 * 1024;
 
-/** Attach a prop reference plate generated outside Direkta straight onto a
+/** Attach a prop reference plate generated outside Fylmer straight onto a
  *  prop — same refs/soul_id_state slot the real plate route writes to. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

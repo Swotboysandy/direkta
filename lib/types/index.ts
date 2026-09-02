@@ -11,7 +11,7 @@ export type NodeKind =
 export type AgentLayer = "decision" | "execution" | "supervision";
 
 /**
- * The nine Direkta agents. The 3-layer engine still runs underneath — every named agent
+ * The nine Fylmer agents. The 3-layer engine still runs underneath — every named agent
  * is a configured pipeline through Decision / Execution / (optional) Supervision.
  */
 export type AgentId =
@@ -200,7 +200,7 @@ export interface SkillFile {
   source: string;
 }
 
-/* === Direkta entities === */
+/* === Fylmer entities === */
 
 export interface Beat {
   id: string;

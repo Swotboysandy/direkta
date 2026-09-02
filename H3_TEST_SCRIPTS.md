@@ -106,8 +106,8 @@ If any of those fail → stay music-only for all real client work.
 
 ## How to run
 
-Each is one Stitch node in Direkta with `model: minimax_h3`.
+Each is one Stitch node in Fylmer with `model: minimax_h3`.
 For a full multi-shot ad, chain them: shot 1's last frame becomes shot 2's reference image
-(Direkta does this automatically via `lastFrameUrl`).
+(Fylmer does this automatically via `lastFrameUrl`).
 
 Titles, logos and pricing must be added in post with ffmpeg — never ask H3 to render them.

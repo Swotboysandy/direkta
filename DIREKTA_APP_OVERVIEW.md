@@ -1,16 +1,16 @@
-# Direkta — Full Application Overview
+# Fylmer — Full Application Overview
 
 > **You direct. AI delivers.**
 
-This is the complete, current-state reference for Direkta: what it does, how every piece works, what infrastructure it runs on, and what's still stubbed. It supersedes the older `README.md` (which describes an early "V1 Part 1" snapshot) as the accurate picture of the app as it stands today.
+This is the complete, current-state reference for Fylmer: what it does, how every piece works, what infrastructure it runs on, and what's still stubbed. It supersedes the older `README.md` (which describes an early "V1 Part 1" snapshot) as the accurate picture of the app as it stands today.
 
 Repo: `Swotboysandy/direkta`. Branch `nishkarsh` is the source of truth for the UI and pipeline; `main` is kept as a mirror of it (force-pushed to match after the two branches diverged).
 
 ---
 
-## 1. What Direkta Is
+## 1. What Fylmer Is
 
-Direkta is a browser-based **AI film/ad production studio**. A user goes from a raw idea or script to a finished, scored video entirely inside one app, moving through a fixed pipeline of workspaces:
+Fylmer is a browser-based **AI film/ad production studio**. A user goes from a raw idea or script to a finished, scored video entirely inside one app, moving through a fixed pipeline of workspaces:
 
 ```
 Screenplay → Casting → Storyboard → Stitch → Library → Export
@@ -18,7 +18,7 @@ Screenplay → Casting → Storyboard → Stitch → Library → Export
 
 Each stage **unlocks only after the previous one has real output** — you cannot open Casting on a brand-new project until a script is submitted, cannot open Storyboard until at least one character is cast, cannot open Stitch until a storyboard frame exists, and cannot open Export until something is on the Stitch board. This sequential gating is enforced in `app/page.tsx` and mirrored in the sidebar (`app/_components/Sidebar.tsx`), which shows a lock icon and a reason string on any workspace that isn't unlocked yet.
 
-The unique thing Direkta does versus a generic "AI video" tool: **cast identity survives across every shot.** A character's face, wardrobe, and skin tone are generated once in Casting, then locked into every subsequent Seedream frame and Seedance clip via reference images and a forceful identity-lock prompt — so a 6-shot ad doesn't quietly swap in a different-looking actor halfway through.
+The unique thing Fylmer does versus a generic "AI video" tool: **cast identity survives across every shot.** A character's face, wardrobe, and skin tone are generated once in Casting, then locked into every subsequent Seedream frame and Seedance clip via reference images and a forceful identity-lock prompt — so a 6-shot ad doesn't quietly swap in a different-looking actor halfway through.
 
 ---
 
@@ -136,7 +136,7 @@ The whole thing degrades gracefully at every optional step (no font → no title
 
 ## 6. External Access — the MCP Server
 
-`app/api/mcp/route.ts` exposes Direkta's pipeline over the **Model Context Protocol** (Streamable HTTP transport, Bearer-token auth) so any external AI agent (Claude, another Claude Code session, a third-party MCP client) can drive the app programmatically. Live at:
+`app/api/mcp/route.ts` exposes Fylmer's pipeline over the **Model Context Protocol** (Streamable HTTP transport, Bearer-token auth) so any external AI agent (Claude, another Claude Code session, a third-party MCP client) can drive the app programmatically. Live at:
 
 ```
 https://direkta.147.93.168.21.nip.io/api/mcp
@@ -144,7 +144,7 @@ https://direkta.147.93.168.21.nip.io/api/mcp
 
 Seven tools (`lib/mcp/server.ts`): `health`, `list_projects`, `create_project`, `generate_image`, `generate_video`, `stitch_film`, `list_library`.
 
-Separately, `lib/higgsfield/oauth.ts` + `lib/higgsfield/mcp.ts` implement the *other* direction — Direkta acting as an MCP **client** against Higgsfield's consumer MCP server, so a user can connect their own Higgsfield Pro-plan account (via OAuth Dynamic Client Registration + PKCE) and generate on their own credits instead of a metered Cloud API key. When connected, Storyboard/Casting/Stitch generation routes all prefer MCP → Cloud vendor key → simulation, in that order.
+Separately, `lib/higgsfield/oauth.ts` + `lib/higgsfield/mcp.ts` implement the *other* direction — Fylmer acting as an MCP **client** against Higgsfield's consumer MCP server, so a user can connect their own Higgsfield Pro-plan account (via OAuth Dynamic Client Registration + PKCE) and generate on their own credits instead of a metered Cloud API key. When connected, Storyboard/Casting/Stitch generation routes all prefer MCP → Cloud vendor key → simulation, in that order.
 
 ---
 
@@ -153,7 +153,7 @@ Separately, `lib/higgsfield/oauth.ts` + `lib/higgsfield/mcp.ts` implement the *o
 - **Tokens** (`app/_brand/tokens.css`) — dark-first "film-negative studio" palette: near-black background (`#0B0C10`), translucent glass card surfaces, a purple accent (`#8B7BF7` dark / `#6B59E8` light), signal colours for success/warning/danger (viridian/mustard/tomato), a full light-theme override block. Typography is **Inter** (UI) + **Manrope** (display/mono) only — no other fonts anywhere in the app.
 - **Theme toggle** — a real **View Transitions API** circular reveal: the incoming theme expands out of the toggle button as a `clip-path: circle()` on the browser's native view-transition pseudo-elements, with an instant-swap fallback for browsers that don't support it or for reduced-motion users.
 - **Buttons** — a Watermelon-UI-inspired treatment: primary/secondary buttons get a top-lit gradient + inner highlight + tonal border (reads as a slightly domed physical key); semantic actions (delete/warn/success/info) use a `.btn-tinted` class family — 12%-opacity fill + full-strength border + full-strength text, rather than a flat solid fill.
-- **Motion** (`app/_components/motion.ts`) — shared framer-motion (motion.dev) presets: `SPRING_SMOOTH`/`SPRING_SNAPPY`/`SPRING_POP` springs, `fadeUp`/`pageIn`/`staggerContainer`/`staggerItem` for entrances, `tap` for press feedback. **Entrances are transform-only, never opacity-gated** — framer's animations run on `requestAnimationFrame`, which browsers pause in a backgrounded tab, and Direkta's generation batches run for minutes so users routinely tab away; an opacity 0→1 entrance that never gets a frame leaves content permanently invisible, whereas a stranded few-pixel offset is imperceptible. The sidebar's active-workspace highlight and the Screenplay Split/Board toggle both use a `layoutId`-based sliding pill that physically glides between positions.
+- **Motion** (`app/_components/motion.ts`) — shared framer-motion (motion.dev) presets: `SPRING_SMOOTH`/`SPRING_SNAPPY`/`SPRING_POP` springs, `fadeUp`/`pageIn`/`staggerContainer`/`staggerItem` for entrances, `tap` for press feedback. **Entrances are transform-only, never opacity-gated** — framer's animations run on `requestAnimationFrame`, which browsers pause in a backgrounded tab, and Fylmer's generation batches run for minutes so users routinely tab away; an opacity 0→1 entrance that never gets a frame leaves content permanently invisible, whereas a stranded few-pixel offset is imperceptible. The sidebar's active-workspace highlight and the Screenplay Split/Board toggle both use a `layoutId`-based sliding pill that physically glides between positions.
 - **Icons** — HugeIcons under a lucide-compatible wrapper (`app/_components/icons.tsx`), so the whole app calls icons the same way regardless of the underlying set.
 - **Contrast** — light-theme `--mute` was darkened (`#7A7B8A` → `#666778`) after measuring it failed WCAG AA (3.8:1); several places that used a translucent *fill* token (`--tungsten`/`--accent-2`, effectively 6%-opacity) as *text/icon/border* colour — making the content nearly invisible — were found and fixed (Casting role chips, disabled-button labels, Export/empty-state icons).
 
@@ -191,7 +191,7 @@ Documented here rather than left implicit, since a gap that isn't written down t
 - **Storyboard PDF, Shot list, and Production Bible exports** are UI-only placeholders in Export (§2.7) — no generation logic behind them yet.
 - **No in-app AI music generation or AI-generated title-card art** — the Export music score is a user-supplied upload; a fully hand-built trailer (`quiet-star`) used Higgsfield MCP's `sonilo_music` (score) and `nano_banana_pro` (title-card image, good in-frame text) tools from the CLI, but those are not wired as server-side, in-app generation options.
 - **No in-app video upscaling** — the hand-built trailers used Higgsfield MCP's `upscale_video` (0-credit 720p→1080p bump) from the CLI; the in-app master render instead renders natively at 1080p rather than generating low and upscaling.
-- **Consistency lock is BytePlus-only** — if a project were switched to a pure-Higgsfield-MCP image path, reference-image identity lock would not apply (that path uses pre-registered Soul Elements instead, which aren't wired into Direkta's own character model).
+- **Consistency lock is BytePlus-only** — if a project were switched to a pure-Higgsfield-MCP image path, reference-image identity lock would not apply (that path uses pre-registered Soul Elements instead, which aren't wired into Fylmer's own character model).
 - **Seedance 2.5** (announced, native ~30s single clips, up to 50 references, region-edit) is not yet integrated — ModelArk/Volcano API access for it wasn't available at time of writing.
 
 ---

@@ -1,7 +1,7 @@
 /**
  * Lip-sync model catalog — Sync.so (api.sync.so/v2), the only wired vendor.
  * Pricing is Sync.so's own published per-second rate, billed to the user's
- * own Sync.so account — NOT part of Direkta's BytePlus token ledger.
+ * own Sync.so account — NOT part of Fylmer's BytePlus token ledger.
  */
 
 export interface LipsyncModel {

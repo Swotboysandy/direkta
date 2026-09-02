@@ -1,6 +1,6 @@
-# Direkta — Video Generation Engineering Handoff
+# Fylmer — Video Generation Engineering Handoff
 
-**For the developer taking over / extending Direkta's MiniMax H3 pipeline.**
+**For the developer taking over / extending Fylmer's MiniMax H3 pipeline.**
 Written 2026-08-30 after a full production day. Everything here was found by actually running
 the pipeline and paying for the failures — treat the "must not happen" rules as hard-won, not
 theoretical.
@@ -246,14 +246,14 @@ Avoid: clichés to refuse + the hard no-text constraint.
   what.
 
 ### The expander
-`h3-prompt-expander.ts` turns a short beat direction into the above, using Direkta's configured
+`h3-prompt-expander.ts` turns a short beat direction into the above, using Fylmer's configured
 LLM. **Currently inert — no LLM API key is set in the Key Vault**, so it silently falls back to the
 raw prompt (`.catch(() => prompt)`). Add an Anthropic/OpenAI key to activate. Note the silent
 fallback is deliberate but easy to miss — consider surfacing a warning.
 
 ---
 
-## 7. What to build next in Direkta
+## 7. What to build next in Fylmer
 
 Ordered by value:
 
@@ -305,7 +305,7 @@ machine is ~₹7 lakh — roughly a 24-year break-even against cloud at this usa
 | LLM key | **Missing** — must be added in the Key Vault for the expander to work |
 
 ### Security — please read before granting access
-Direkta's Key Vault holds live API keys, and `.env` holds the RunPod key. Anyone with this access
+Fylmer's Key Vault holds live API keys, and `.env` holds the RunPod key. Anyone with this access
 **can spend GPU money and read every stored credential.**
 
 Recommended before handing it over:
