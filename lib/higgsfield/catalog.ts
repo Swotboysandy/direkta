@@ -10,8 +10,9 @@ export interface VideoModel {
   id: string;
   label: string;
   description: string;
-  /** Which backend runs it: Higgsfield (your MCP plan) or BytePlus (API key). */
-  provider: "higgsfield" | "byteplus";
+  /** Which backend runs it: Higgsfield (your MCP plan), BytePlus (API key), or
+   *  MiniMax H3 (your own on-demand RunPod GPU). */
+  provider: "higgsfield" | "byteplus" | "minimax_h3";
   /** Human cost shown in the picker (credits for Higgsfield, $ for BytePlus). */
   costText: string;
   /** Approx Higgsfield credits for one ~5s clip — used for the balance check. */
@@ -102,6 +103,15 @@ export const VIDEO_MODELS: VideoModel[] = [
     costText: "≈14 cr",
     approxCost: 14,
     params: { model: "kling3_0_turbo", resolution: "720p" }
+  },
+  {
+    id: "minimax_h3",
+    label: "MiniMax H3 · Your GPU",
+    description: "Self-hosted H3 fl2va with first/last-frame conditioning and joint audio. Uses 20 base steps. GPU time is billed while the pod runs, including startup and idle time; stored volumes bill separately.",
+    provider: "minimax_h3",
+    costText: "your GPU-hour",
+    approxCost: 0,
+    params: {}
   }
 ];
 

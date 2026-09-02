@@ -46,7 +46,12 @@ async function rp(pathSuffix: string, init?: RequestInit): Promise<any> {
   return res.status === 204 ? null : res.json();
 }
 
-function proxyBase(): string {
+/** ComfyUI addresses progress and preview events to the client_id that
+ *  submitted the job, so submission and the live monitor must share one id;
+ *  a per-submission random id makes progress unobservable. */
+export const H3_CLIENT_ID = "direkta-h3";
+
+export function proxyBase(): string {
   return `https://${podId()}-8188.proxy.runpod.net`;
 }
 
@@ -277,7 +282,7 @@ async function submitAndWait(workflow: Record<string, any>): Promise<PromptResul
   const submitRes = await fetch(`${proxyBase()}/prompt`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ prompt: workflow, client_id: nanoid(10) }),
+    body: JSON.stringify({ prompt: workflow, client_id: H3_CLIENT_ID }),
     signal: AbortSignal.timeout(30_000)
   });
   if (!submitRes.ok) throw new Error(`ComfyUI submit failed (${submitRes.status}): ${(await submitRes.text()).slice(0, 300)}`);

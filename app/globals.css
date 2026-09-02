@@ -3102,3 +3102,34 @@ textarea {
     --page-pad: var(--sp-4);
   }
 }
+
+/* --- H3 live generation monitor ------------------------------------------ */
+.h3-live {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.h3-live-head { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.h3-live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex: none;
+}
+.h3-live-dot.is-on { background: var(--ok, #3fb950); }
+.h3-live-meta { color: var(--muted); font-size: 12px; }
+.h3-live-bar {
+  height: 6px; border-radius: 3px; overflow: hidden;
+  background: var(--surface-3, rgba(255,255,255,.08));
+}
+.h3-live-bar > span {
+  display: block; height: 100%;
+  background: var(--accent);
+  transition: width .3s ease;
+}
+.h3-live-preview {
+  width: 100%; height: auto; display: block;
+  border-radius: var(--radius-sm); border: 1px solid var(--line);
+}

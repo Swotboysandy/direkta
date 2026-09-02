@@ -9,6 +9,7 @@
     "build": "next build",
     "lint": "next lint",
     "typecheck": "tsc --noEmit --incremental false",
+    "test:h3": "node --test scripts/h3.test.cjs",
     "db:reset": "node -e \"require('fs').rmSync('data/zinema.sqlite',{force:true});require('fs').rmSync('data/zinema.sqlite-journal',{force:true});console.log('db reset')\""
   },
   "dependencies": {

@@ -20,6 +20,9 @@ import { ArrowRight, Film, Pause, Play, Trash2, X } from "../_components/icons";
 import { fadeUp, popIn } from "../_components/motion";
 import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
 import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, videoModel, CAMERA_MOTIONS } from "../../lib/higgsfield/catalog";
+import { H3Controls, type H3ShotOptions } from "../_components/H3Controls";
+import { H3LiveMonitor } from "../_components/H3LiveMonitor";
+import { ClipFrameTools } from "../_components/ClipFrameTools";
 import { LIPSYNC_MODELS, DEFAULT_LIPSYNC_MODEL } from "../../lib/lipsync/catalog";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
 
@@ -181,15 +184,16 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     node: StitchNode,
     modelId?: string,
     motion?: string,
-    audio?: boolean
-  ): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null> {
+    audio?: boolean,
+    h3?: H3ShotOptions
+  ): Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string; warnings?: string[] } | null> {
     setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, clip_state: "generating" } : n)));
-    let data: { ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null = null;
+    let data: { ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string; warnings?: string[] } | null = null;
     try {
       const res = await fetch(`/api/stitch/nodes/${node.id}/animate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: modelId ?? DEFAULT_VIDEO_MODEL, motion: motion ?? "auto", audio: audio ?? false })
+        body: JSON.stringify({ model: modelId ?? DEFAULT_VIDEO_MODEL, motion: motion ?? "auto", audio: audio ?? false, ...h3 })
       });
       data = await res.json().catch(() => null);
     } catch {
@@ -524,7 +528,8 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             onSetDuration={(duration) => setDuration(selected, duration)}
             onSetTrimStart={(trim_start) => setTrimStart(selected, trim_start)}
             balance={balance}
-            onAnimate={(modelId, motion, audio) => animate(selected, modelId, motion, audio)}
+            aspectRatio={project.aspect_ratio}
+            onAnimate={(modelId, motion, audio, h3) => animate(selected, modelId, motion, audio, h3)}
             onUploadClip={(file) => uploadClip(selected, file)}
             onUploadDialogue={(file) => uploadDialogue(selected, file)}
             onLipsync={(modelId) => lipsync(selected, modelId)}
@@ -921,6 +926,7 @@ function StitchTimeline({
 
 function StitchInspector({
   node,
+  aspectRatio,
   view,
   onClose,
   onSetSceneNumber,
@@ -934,6 +940,7 @@ function StitchInspector({
   onDelete
 }: {
   node: StitchNode;
+  aspectRatio: string;
   view: "board" | "timeline";
   onClose: () => void;
   onSetSceneNumber: (n: number) => void;
@@ -943,8 +950,9 @@ function StitchInspector({
   onAnimate: (
     modelId: string,
     motion: string,
-    audio: boolean
-  ) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string } | null>;
+    audio: boolean,
+    h3?: H3ShotOptions
+  ) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string; warnings?: string[] } | null>;
   onUploadClip: (file: File) => Promise<{ error?: string } | null>;
   onUploadDialogue: (file: File) => Promise<{ error?: string } | null>;
   onLipsync: (modelId?: string) => Promise<{ ok?: boolean; error?: string; vendor?: string } | null>;
@@ -958,6 +966,8 @@ function StitchInspector({
   const [modelId, setModelId] = useState<string>(DEFAULT_VIDEO_MODEL);
   const [motionId, setMotionId] = useState<string>("auto");
   const [audioOn, setAudioOn] = useState<boolean>(false);
+  const [h3Options, setH3Options] = useState<H3ShotOptions>({ continuityMode: "cut", endFrame: false });
+  const [h3Ready, setH3Ready] = useState(false);
   const [lipsyncModelId, setLipsyncModelId] = useState<string>(DEFAULT_LIPSYNC_MODEL);
   const [uploadingClip, setUploadingClip] = useState(false);
   const [uploadClipNote, setUploadClipNote] = useState<string | null>(null);
@@ -965,7 +975,8 @@ function StitchInspector({
   const [lipsyncing, setLipsyncing] = useState(false);
   const [lipsyncNote, setLipsyncNote] = useState<string | null>(null);
   const model = videoModel(modelId);
-  const isHiggs = model.provider !== "byteplus";
+  const isH3 = model.provider === "minimax_h3";
+  const isHiggs = model.provider !== "byteplus" && !isH3;
   const credits = balance?.credits ?? null;
   const tooPoor = isHiggs && credits != null && credits < model.approxCost;
 
@@ -975,6 +986,7 @@ function StitchInspector({
     setTrimStartLocal(node.trim_start);
     setNote(null);
   }, [node.id, node.beat?.n, node.duration, node.trim_start]);
+  useEffect(() => { setH3Options({ continuityMode: "cut", endFrame: false }); }, [node.id]);
 
   return (
     <motion.aside
@@ -1147,38 +1159,42 @@ function StitchInspector({
 
       <div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
-          Duration · {duration.toFixed(1)}s
+          Duration · {duration.toFixed(3)}s
         </span>
         <input
           type="range"
           min={0.5}
           max={20}
-          step={0.5}
+          step={1 / 24}
           value={duration}
           onChange={(e) => setDurationLocal(Number(e.target.value))}
           onMouseUp={() => onSetDuration(duration)}
           onTouchEnd={() => onSetDuration(duration)}
+          onKeyUp={() => onSetDuration(duration)}
           style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
         />
       </div>
 
       <div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
-          Trim in-point · {trimStart.toFixed(1)}s into the clip
+          Trim in-point · {trimStart.toFixed(3)}s into the clip
         </span>
         <input
           type="range"
           min={0}
-          max={9.5}
-          step={0.5}
+          max={15}
+          step={1 / 24}
           value={trimStart}
           onChange={(e) => setTrimStartLocal(Number(e.target.value))}
           onMouseUp={() => onSetTrimStart(trimStart)}
           onTouchEnd={() => onSetTrimStart(trimStart)}
+          onKeyUp={() => onSetTrimStart(trimStart)}
           style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
           title="Which second of the generated clip to start keeping from — useful for a short beat that only needs a few seconds out of a longer take"
         />
       </div>
+
+      {(node.lipsync_url || node.clip_url) && <ClipFrameTools nodeId={node.id} clipUrl={(node.lipsync_url || node.clip_url)!} />}
 
       <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Camera motion</span>
@@ -1220,12 +1236,13 @@ function StitchInspector({
             fontSize: 13,
             color: "var(--ink)"
           }}
-          title="Let Seedance generate a native audio track for this clip (off = silent, scored later in Export)"
+          title={isH3 ? "H3 generates audio jointly with picture; this is not a mute switch." : "Let Seedance generate a native audio track for this clip (off = silent, scored later in Export)"}
         >
-          <span>Native audio</span>
+          <span>{isH3 ? "Joint H3 audio (always generated)" : "Native audio"}</span>
           <input
             type="checkbox"
-            checked={audioOn}
+            checked={isH3 || audioOn}
+            disabled={isH3}
             onChange={(e) => setAudioOn(e.target.checked)}
             style={{ width: 16, height: 16, accentColor: "var(--accent)", cursor: "pointer" }}
           />
@@ -1257,6 +1274,8 @@ function StitchInspector({
           ))}
         </select>
         <p style={{ margin: 0, color: "var(--mute)", fontSize: 11, lineHeight: 1.35 }}>{model.description}</p>
+        {isH3 && <H3Controls duration={node.duration} aspectRatio={aspectRatio} value={h3Options} onChange={setH3Options} onReady={setH3Ready} />}
+        {isH3 && <H3LiveMonitor />}
         <div
           style={{
             display: "flex",
@@ -1267,11 +1286,11 @@ function StitchInspector({
           }}
         >
           <span>
-            {model.costText}
-            {isHiggs ? " credits" : " / clip"}
+            {isH3 ? "RunPod · metered GPU time" : model.costText}
+            {isH3 ? "" : isHiggs ? " credits" : " / clip"}
           </span>
           <span>
-            {!isHiggs
+            {isH3 ? "20-step base" : !isHiggs
               ? "BytePlus · free tokens"
               : credits != null
               ? `Balance ${credits}`
@@ -1281,15 +1300,15 @@ function StitchInspector({
           </span>
         </div>
         <button
-          disabled={animating || !node.frame_url}
+          disabled={animating || (!isH3 && !node.frame_url) || (isH3 && !h3Ready)}
           onClick={async () => {
             setNote(null);
             setAnimating(true);
             try {
-              const res = await onAnimate(modelId, motionId, audioOn);
+              const res = await onAnimate(modelId, motionId, audioOn, isH3 ? h3Options : undefined);
               if (res?.simulated) setNote(res.note ?? "Simulated — connect Higgsfield or add a video key to render real motion.");
               else if (res?.error) setNote(res.error);
-              else if (res?.ok) setNote(`Clip rendered by ${res.vendor ?? "the video model"}.`);
+              else if (res?.ok) setNote([`Clip rendered by ${res.vendor ?? "the video model"}.`, ...(res.warnings ?? [])].join(" "));
             } finally {
               setAnimating(false);
             }

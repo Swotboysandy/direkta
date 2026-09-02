@@ -173,6 +173,7 @@ const TOOLS: Tool[] = [
         clips: { type: "array", items: { type: "string" }, description: "Ordered clip URLs/filenames" },
         transition: { type: "string", enum: ["cut", "dissolve"], description: "Default cut" },
         dissolve_seconds: { type: "number", description: "Dissolve length (default 0.5)" },
+        trims: { type: "array", description: "Optional reviewed trims: one entry per clip, in 24fps assembly frames. Defaults to no trimming.", items: { type: "object", properties: { startFrames: { type: "integer", minimum: 0 }, endFrames: { type: "integer", minimum: 0 } } } },
         project_id: { type: "string", description: "Optional: register the film in this project's Library" },
       },
       required: ["clips"],
@@ -181,6 +182,7 @@ const TOOLS: Tool[] = [
       const { url } = stitchClips(a.clips as string[], {
         transition: a.transition === "dissolve" ? "dissolve" : "cut",
         dissolveSeconds: Number(a.dissolve_seconds) || 0.5,
+        trims: a.trims as Array<{ startFrames?: number; endFrames?: number }> | undefined,
       });
       if (a.project_id) {
         getDb().prepare("DELETE FROM assets WHERE target_kind='sequence' AND target_id=?").run(String(a.project_id));
