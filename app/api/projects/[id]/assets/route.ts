@@ -63,8 +63,11 @@ function media(projectId: string): AssetItem[] {
   }>;
 
   return rows.map((r) => {
-    // A sequence is the rendered cut; everything else is judged by its own kind.
-    const isVideo = r.target_kind === "sequence" || r.kind === "video" || r.kind === "clip";
+    // The row's own kind decides. target_kind says where an asset is filed, not
+    // what it is — treating everything filed as a sequence as video mislabels a
+    // still that lives on the project rather than on a storyboard variant, and
+    // puts a play badge on a photograph.
+    const isVideo = r.kind === "video" || r.kind === "clip";
     return {
       id: r.id,
       kind: isVideo ? "video" : "image",
