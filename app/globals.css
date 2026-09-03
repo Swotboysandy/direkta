@@ -47,7 +47,6 @@
 
 /* Hairlines brighten rather than shadows blooming. */
 .canvas-card,
-.dash-frame,
 .agent-card { transition: box-shadow var(--dur-2) var(--ease-out); }
 
 /* The composer lifts when it has focus, so the thing being typed into is
@@ -1090,12 +1089,13 @@
   --cut: var(--accent);
   --green: var(--accent-3);
 
-  /* Old structure tokens */
+  /* Old structure tokens.
+     --topnav-h and the sidebar widths used to be redeclared here, which
+     silently overrode tokens.css: the bar was set to 60px there and rendered
+     at 64px because this block loads later. The sidebar widths describe a
+     component that no longer exists. */
   --line: var(--cream-deep);
   --shadow: var(--shadow-2);
-  --topnav-h: 64px;
-  --sidebar-w: 240px;
-  --sidebar-w-collapsed: 72px;
 
   /* Old font tokens → brand fonts */
   --f-display: var(--font-display);
@@ -1241,82 +1241,6 @@ strong, b {
   color: var(--accent);
 }
 
-/* The .topnav class from brand sets card-like surface + shadow.
-   Project-specific layout overrides for the AT-A-GLANCE row only. */
-.topnav .topnav-agents {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-left: var(--sp-4);
-  padding-left: var(--sp-4);
-  border-left: 1px solid var(--cream-deep);
-}
-
-.tn-agent {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: var(--r-pill);
-  color: var(--cocoa-mute);
-  cursor: pointer;
-  transition: color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
-}
-
-.tn-agent-glyph {
-  display: block;
-}
-
-.tn-agent[data-state="working"] {
-  color: var(--mustard-deep);
-  background: rgba(242, 184, 60, 0.16);
-}
-
-.tn-agent[data-state="done"] {
-  color: var(--viridian-deep);
-  background: rgba(61, 168, 155, 0.16);
-}
-
-.tn-agent[data-state="attention"] {
-  color: var(--tomato);
-  background: rgba(232, 74, 53, 0.14);
-}
-
-.tn-agent-check {
-  position: absolute;
-  right: -3px;
-  bottom: -3px;
-  padding: 1px;
-  color: var(--on-accent-3);
-  background: var(--viridian);
-  border-radius: var(--r-pill);
-  box-shadow: 0 0 0 2px var(--surface);
-}
-
-.tn-icon-btn {
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface);
-  color: var(--ink);
-  border-radius: var(--r-pill);
-  box-shadow: var(--shadow-1);
-  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
-}
-
-.tn-icon-btn:hover {
-  box-shadow: var(--shadow-2);
-}
-
-.tn-icon-btn[data-active="true"] {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
 /* ============================================================
    APP BODY — sidebar + main
    ============================================================ */
@@ -1324,103 +1248,16 @@ strong, b {
    work area takes the space rather than the panel leaving a gap behind it. */
 .app-body {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) var(--agent-w, 0px);
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--agent-w, 0px);
   min-height: 0;
   transition: grid-template-columns var(--dur-3) var(--ease-out);
 }
 .app-body[data-agent="true"] { --agent-w: 380px; }
 
 
-.app-body[data-collapsed="true"] {
-  --sb-w: 72px;
-}
 
-.sidebar {
-  /* Sits on the page ground with a single hairline rather than as a floating
-     translucent panel: one less surface competing with the canvas. */
-  background: transparent;
-  border-right: 1px solid var(--cream-deep);
-  box-shadow: none;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: var(--sp-4) var(--sp-3);
-  gap: var(--sp-5);
-}
 
-/* The sliding active marker — a thin accent rule at the leading edge. */
-.sb-active-rule {
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  border-radius: 2px;
-  background: var(--accent);
-}
 
-.sb-active-bg {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-}
-
-.app-body[data-collapsed="true"] .sb-active-rule { display: none; }
-
-.sb-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-}
-
-.sb-title {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: 0.02em;
-  color: var(--mute);
-}
-
-.sb-collapse {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  color: var(--mute);
-  background: transparent;
-  border: 0;
-  border-radius: var(--r-sm);
-}
-
-.sb-collapse:hover {
-  background: var(--cream-deep);
-  color: var(--ink);
-}
-
-.sb-collapse {
-  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out),
-    transform var(--dur-1) var(--ease-out);
-}
-
-.sb-collapse:active {
-  transform: scale(0.88);
-}
-
-.app-body[data-collapsed="true"] .sb-title {
-  display: none;
-}
-
-.app-body[data-collapsed="true"] .sb-head {
-  justify-content: center;
-}
-
-.sb-ws {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
 
 .sb-ws .head {
   padding: var(--sp-2) var(--sp-3);
@@ -1430,47 +1267,8 @@ strong, b {
   color: var(--mute);
 }
 
-.app-body[data-collapsed="true"] .sb-ws .head {
-  display: none;
-}
 
-.sidebar .sidebar-item {
-  display: grid;
-  grid-template-columns: 22px 1fr auto;
-  align-items: center;
-  gap: var(--sp-3);
-}
 
-.sidebar-item .si-meta {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.02em;
-  color: var(--mute);
-}
-
-.sidebar-item[data-active="true"] .si-meta {
-  color: var(--mute);
-}
-
-.app-body[data-collapsed="true"] .sidebar-item {
-  grid-template-columns: 1fr;
-  justify-items: center;
-  padding: var(--sp-2);
-}
-
-.app-body[data-collapsed="true"] .sidebar-item .si-label,
-.app-body[data-collapsed="true"] .sidebar-item .si-meta,
-.app-body[data-collapsed="true"] .sidebar-item .si-status {
-  display: none;
-}
-
-.si-label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  line-height: var(--leading-snug);
-}
 
 /* ============================================================
    MAIN AREA
@@ -1770,153 +1568,6 @@ strong, b {
   gap: var(--sp-2);
   margin-top: auto;
 }
-/* ============================================================
-   STORYBOARD — grid contact sheet + 3×3 framing picker
-   ============================================================ */
-.sb-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--sp-5);
-  padding-top: var(--sp-4);
-}
-.sb-card {
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border-radius: 18px;
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
-  transition: box-shadow var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
-}
-.sb-card:hover {
-  box-shadow: var(--shadow-2);
-}
-.sb-card-frame {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  background: var(--cream-deep);
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--mute);
-  overflow: hidden;
-}
-.sb-card-frame[data-empty="true"] {
-  background: var(--cream-deep);
-  cursor: default;
-}
-.sb-card-frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.sb-card-no {
-  position: absolute;
-  top: var(--sp-2);
-  left: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: 0.02em;
-  color: #FFFBF1;
-  background: rgba(8, 8, 10, 0.62);
-  padding: 2px 6px;
-  border-radius: var(--r-pill);
-}
-.sb-card-stitch {
-  position: absolute;
-  top: var(--sp-2);
-  right: var(--sp-2);
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: 0.02em;
-  color: var(--on-accent-3);
-  background: var(--viridian);
-  padding: 2px 6px;
-  border-radius: var(--r-pill);
-}
-.sb-card-flag {
-  position: absolute;
-  bottom: var(--sp-2);
-  right: var(--sp-2);
-  display: inline-flex;
-  align-items: center;
-  color: #FFF7F2;
-  background: var(--tomato);
-  padding: 3px;
-  border-radius: var(--r-sm);
-}
-.sb-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  padding: var(--sp-4);
-}
-.sb-card-title {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: var(--t-h4);
-  color: var(--ink);
-  line-height: var(--leading-snug);
-}
-.sb-card-scene {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: 0.02em;
-  color: var(--mute);
-}
-.sb-card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1);
-  margin-top: var(--sp-1);
-}
-
-.sb-framing {
-  max-width: 560px;
-  width: calc(100% - var(--sp-7));
-}
-.sb-framing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
-}
-.sb-framing-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3);
-  background: var(--bg);
-  border: 2px solid transparent;
-  border-radius: var(--r-md);
-  cursor: pointer;
-  transition: border-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
-}
-.sb-framing-cell:hover {
-  box-shadow: var(--shadow-2);
-}
-.sb-framing-cell[data-active="true"] {
-  border-color: var(--accent);
-}
-.sb-framing-glyph {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-.sb-framing-label {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: 0.02em;
-  color: var(--ink-soft);
-}
 
 /* ============================================================
    STITCH — per-shot motion clip badge + render overlay
@@ -2047,21 +1698,6 @@ strong, b {
   box-shadow: 0 2px 4px rgba(42, 26, 18, 0.25);
 }
 .frame-approval[data-a="needs"] {
-  color: #FFF7F2;
-  background: var(--tomato);
-}
-.sb-card-approval {
-  position: absolute;
-  bottom: var(--sp-2);
-  left: var(--sp-2);
-  display: inline-flex;
-  align-items: center;
-  color: var(--on-accent-3);
-  background: var(--viridian);
-  padding: 3px;
-  border-radius: var(--r-sm);
-}
-.sb-card-approval[data-a="needs"] {
   color: #FFF7F2;
   background: var(--tomato);
 }
@@ -2340,83 +1976,6 @@ strong, b {
 .kv-vendor-status[data-state="disabled"]  { color: var(--mute); }
 .kv-vendor-status[data-state="empty"]     { color: var(--accent); }
 
-/* ============================================================
-   PROJECT PICKER POPOVER (Radix)
-   ============================================================ */
-.project-picker-menu {
-  width: 300px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-3);
-  padding: var(--sp-2);
-  z-index: 70;
-  outline: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  animation: picker-pop var(--dur-2) var(--ease-spring);
-}
-
-.project-picker-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--ink);
-  border: 0;
-  cursor: pointer;
-  transition: background var(--dur-1) var(--ease-out);
-}
-
-.project-picker-item:hover {
-  background: var(--bg);
-}
-
-.project-picker-item[data-active="true"] {
-  background: var(--accent-2);
-  color: var(--on-accent-2);
-}
-
-.project-picker-title {
-  font-weight: 600;
-  font-size: var(--t-body-s);
-  letter-spacing: -0.005em;
-}
-
-.project-picker-meta {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.02em;
-  opacity: 0.7;
-}
-
-.project-picker-new {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 10px 12px;
-  margin-top: 4px;
-  border-radius: var(--r-sm);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.02em;
-  font-weight: 500;
-  border: 0;
-  cursor: pointer;
-  justify-content: flex-start;
-}
-
-.project-picker-new:hover {
-  background: var(--accent-hover);
-}
-
 @keyframes picker-pop {
   from { opacity: 0; transform: translateY(-4px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -2534,9 +2093,6 @@ strong, b {
   border-radius: var(--r-pill);
   cursor: pointer;
   transition: background var(--dur-1) var(--ease-out);
-}
-.sb-ghost-btn:hover {
-  background: color-mix(in srgb, var(--ink) 14%, transparent);
 }
 
 .storyboard-beat-row {
@@ -2845,9 +2401,6 @@ strong, b {
   transition: left 220ms var(--ease-out);
 }
 
-.app-body[data-collapsed="true"] .storyboard-bottom-strip {
-  left: 72px;
-}
 
 .storyboard-strip-row {
   display: flex;
@@ -3772,17 +3325,6 @@ textarea {
 }
 
 /* Picker overlay used by ProjectPicker (legacy component, may still be referenced). */
-.project-picker .picker-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-3);
-  background: var(--accent-2);
-  color: var(--on-accent-2);
-  border-radius: var(--radius);
-  font-weight: 600;
-  cursor: pointer;
-}
 
 /* Asset history card footer button alignment. */
 .asset-card footer button {
@@ -3855,179 +3397,19 @@ textarea {
   z-index: 1;
 }
 
-/* ============================================================
-   TOP NAV
-   ------------------------------------------------------------
-   The bar is a flex row whose children all defaulted to
-   min-width:auto, so the project title's intrinsic width set the
-   bar's width — it could not shrink, wrapped to two lines, and
-   overflowed the fixed --topnav-h row.
-
-   Fix is the standard flex triad: the ends hold their size, the
-   middle is the only flexible track, and its label truncates.
-   ============================================================ */
-.topnav {
-  flex-wrap: nowrap;
-  min-width: 0;
-  /* Horizontal padding lives here, not inline on the element, so the
-     mobile step below can reclaim it. The vertical value stays 0 —
-     the bar's height comes from the --topnav-h grid row. */
-  padding-block: 0;
-  padding-inline: var(--sp-5);
-}
-
-/* Brand and the right-hand controls are fixed-size anchors. */
-.topnav-brand,
-.topnav-right {
-  flex: 0 0 auto;
-}
-
-/* The project switcher is the single element allowed to absorb or
-   give up space as the viewport changes. */
-.topnav-project-switch {
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.topnav-project-switch > span {
-  min-width: 0;
-}
-
-/* Truncate rather than wrap — the bar's height is fixed, so a second
-   line has nowhere to go. */
-.topnav-project-title,
-.topnav-project-meta {
-  display: block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/* The floor belongs on the button, not the label inside it: constrain
-   the child and it simply outgrows its own background, which is how
-   the title ended up painted outside its pill. */
-.topnav-project-switch {
-  min-width: 9ch;
-}
-
-/* ── Brand + project switcher paint ──────────────────────────
-   These properties were inline on the elements, which put them out of
-   reach of both the media queries below and the theme. */
-.topnav-wordmark {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.topnav-project-switch {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 5px var(--sp-3) 5px var(--sp-3);
-  background: transparent;
-  color: var(--ink);
-  border: 0;
-  border-radius: var(--r-md);
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--dur-1) var(--ease-out);
-}
-.topnav-project-switch:hover { background: var(--surface-2); }
-
-.topnav-project-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.topnav-project-title {
-  font-weight: 600;
-  font-size: var(--t-body);
-  letter-spacing: -0.008em;
-  color: var(--ink);
-}
-
-.topnav-project-meta {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-}
-
-/* display lives here rather than inline on the element so the media
-   query below can actually override it — an inline display:flex wins
-   against any stylesheet rule. */
-.topnav-agent-status {
-  display: flex;
-}
-
-/* "2k left" is a two-word status, not prose — under pressure it broke
-   across two lines and pushed the bar past the fixed row height. */
-.usage-chip-detail,
-.topnav-right > button:first-child {
-  white-space: nowrap;
-}
-
 @media (max-width: 1100px) {
-  /* Ambient status glyphs are the lowest-value pixels on the bar, so
-     they yield first when width gets scarce. */
-  .topnav-agent-status {
-    display: none;
-  }
 }
 
 @media (max-width: 720px) {
-  .topnav {
-    padding-inline: var(--sp-4);
-    gap: var(--sp-3);
-  }
 
-  /* The mark alone identifies the app at this width; dropping the
-     wordmark returns ~90px to the project title. */
-  .topnav-wordmark {
-    display: none;
-  }
+  /* The mark alone identifies the app at this width;
 
-  /* Format · length is reference detail, not navigation — the title
-     is what the user needs to see. */
-  .topnav-project-meta {
-    display: none;
-  }
-
-  /* Autosave state is reassurance, not an action; the Key Vault and
-     Skills buttons remain reachable and matter more per pixel. */
-  .topnav-saved-stamp {
-    display: none;
-  }
+  /* Autosave state is reassurance, not an action;
 
   /* The remaining-credits number is the part that governs a decision;
-     the frames/clips estimate behind it is detail the popover already
-     shows in full. Dropping it takes the chip from 165px to ~72px. */
-  .usage-chip-detail {
-    display: none;
-  }
-
-  /* Single-user local app — the avatar identifies nobody here, and it
-     is the last thing worth 32px on a 375px bar. */
-  .topnav-avatar {
-    display: none;
-  }
 
   /* Theme is a set-once preference, unlike Skills and the Key Vault
      which are used mid-session. It yields its 44px first. */
-  .topnav-right .theme-toggle {
-    display: none;
-  }
-
-  /* Once the row genuinely cannot fit, the ends must still be able to
-     give ground rather than push the bar wider than the screen. */
-  .topnav-right {
-    flex: 0 1 auto;
-    min-width: 0;
-  }
 }
 
 /* ============================================================
@@ -4049,22 +3431,6 @@ textarea {
   flex-direction: column;
   gap: var(--sp-8);
   padding-bottom: var(--sp-8);
-}
-
-/* Title block ---------------------------------------------- */
-.dash-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--sp-6);
-  padding-top: var(--sp-6);
-}
-
-.dash-head-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  min-width: 0;
 }
 
 .dash-eyebrow {
@@ -4113,102 +3479,6 @@ textarea {
 }
 .dash-meta-sep { color: var(--cream-deep); }
 
-.dash-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  flex: none;
-}
-
-/* Hero frame ----------------------------------------------- */
-.dash-frame {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-}
-
-.dash-frame-img {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-}
-
-/* Scrim only where the caption sits, so the image is untouched above it. */
-.dash-frame-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.62), transparent 38%);
-  pointer-events: none;
-}
-
-.dash-frame-cap {
-  position: absolute;
-  left: var(--sp-4);
-  bottom: var(--sp-4);
-  font-family: var(--font-mono);
-  font-size: var(--t-body-s);
-  letter-spacing: var(--tracking-mono);
-  color: #FFFFFF;
-}
-
-.dash-frame-flag {
-  position: absolute;
-  top: var(--sp-4);
-  right: var(--sp-4);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 5px 10px;
-  border-radius: var(--r-pill);
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(8px);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  color: #FFFFFF;
-}
-.dash-frame-flag::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--signal-success);
-}
-
-.dash-frame-empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-3);
-  color: var(--mute);
-  font-family: var(--font-mono);
-  font-size: var(--t-body-s);
-}
-
-/* Section headers ------------------------------------------ */
-.dash-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-
-.dash-section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  padding-bottom: var(--sp-3);
-  border-bottom: 1px solid var(--cream-deep);
-}
-
 /* A text link, not a button: these are navigation, and buttons here
    competed with the one real action in the title block. */
 .dash-link {
@@ -4223,156 +3493,6 @@ textarea {
 }
 .dash-link:hover { color: var(--ink); }
 
-/* Pipeline -------------------------------------------------- */
-.dash-pipeline {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.dash-stage {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-4) var(--sp-4) 0;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  border-right: 1px solid var(--cream-deep);
-  font-family: var(--font-ui);
-  cursor: pointer;
-  transition: opacity var(--dur-2) var(--ease-out);
-}
-.dash-stage:last-child { border-right: 0; }
-.dash-stage[data-locked="true"] { opacity: 0.4; cursor: not-allowed; }
-
-.dash-stage-no {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  font-variant-numeric: tabular-nums;
-  color: var(--mute);
-}
-
-.dash-stage-name {
-  font-size: var(--t-h4);
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  color: var(--ink);
-}
-
-.dash-stage-note {
-  font-size: var(--t-body-s);
-  color: var(--mute);
-}
-
-/* A 2px rule rather than a rounded bar: it reads as a measurement,
-   which is what it is. */
-.dash-stage-rule {
-  height: 2px;
-  margin-top: auto;
-  background: var(--cream-deep);
-  overflow: hidden;
-}
-.dash-stage-rule > span {
-  display: block;
-  height: 100%;
-  transition: width var(--dur-4) var(--ease-out);
-}
-
-/* Frame strip ----------------------------------------------- */
-.dash-frames {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--sp-3);
-}
-
-.dash-thumb {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  padding: 0;
-  border: 0;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-  cursor: pointer;
-  transition: box-shadow var(--dur-2) var(--ease-out);
-}
-.dash-thumb:hover { box-shadow: inset 0 0 0 1px var(--surface-3); }
-
-.dash-thumb-cap {
-  position: absolute;
-  left: var(--sp-2);
-  bottom: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: #FFFFFF;
-}
-
-/* Activity + crew ------------------------------------------- */
-.dash-lower {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  gap: var(--sp-7);
-  align-items: start;
-}
-
-.dash-log-row {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
-  gap: var(--sp-3);
-  align-items: start;
-  padding: var(--sp-3) 0;
-  border-bottom: 1px solid var(--cream-deep);
-}
-.dash-log-row:last-child { border-bottom: 0; }
-
-.dash-log-text {
-  font-size: var(--t-body-s);
-  color: var(--ink-soft);
-  min-width: 0;
-}
-.dash-log-text strong { color: var(--ink); font-weight: 600; }
-
-.dash-log-time {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-  white-space: nowrap;
-}
-
-.dash-crew-row {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
-  gap: var(--sp-3);
-  align-items: center;
-  padding: var(--sp-3) 0;
-  border-bottom: 1px solid var(--cream-deep);
-}
-.dash-crew-row:last-child { border-bottom: 0; }
-
-.dash-crew-name {
-  font-size: var(--t-body-s);
-  color: var(--ink);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dash-crew-state {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-}
-
 .dash-empty {
   padding: var(--sp-4) 0;
   font-size: var(--t-body-s);
@@ -4381,22 +3501,10 @@ textarea {
 
 @media (max-width: 1100px) {
   .dash { gap: var(--sp-7); }
-  .dash-head {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-  }
-  .dash-pipeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .dash-stage:nth-child(3n) { border-right: 0; }
-  .dash-frames { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .dash-lower { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
 }
 
 @media (max-width: 720px) {
   .dash { gap: var(--sp-6); }
-  .dash-pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dash-stage { border-right: 0; }
-  .dash-frames { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dash-actions > * { flex: 1 1 100%; justify-content: center; }
 }
 
 /* ============================================================
@@ -4464,10 +3572,6 @@ textarea {
      carries navigation, so the rail is redundant width — drop it. */
   .app-body {
     grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    display: none;
   }
 
   .beat-editor-grid,

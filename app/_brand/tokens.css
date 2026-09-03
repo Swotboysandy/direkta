@@ -148,9 +148,11 @@
   --page-pad: 40px;
   --max-w:    1400px;
 
-  --topnav-h:            60px;
-  --sidebar-w:           232px;
-  --sidebar-w-collapsed: 64px;
+  --topnav-h:  60px;
+  /* The rail is one fixed width and does not collapse, so there is no second
+     width to name. The old --sidebar-w / --sidebar-w-collapsed pair described
+     a component that no longer exists. */
+  --rail-w:    56px;
 }
 
 /* ============================================================

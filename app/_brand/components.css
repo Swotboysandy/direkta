@@ -275,68 +275,11 @@
 .quick-card[data-accent="accent"]   .qc-icon { background: var(--accent);   color: var(--on-accent); }
 .quick-card[data-accent="accent-2"] .qc-icon { background: var(--accent-2); color: var(--on-accent-2); }
 .quick-card[data-accent="accent-3"] .qc-icon { background: var(--accent-3); color: var(--on-accent-3); }
-
-/* ─── Top nav ─────────────────────────────────────────────── */
-
-.topnav {
-  display: flex; align-items: center; gap: var(--sp-4);
-  padding: 14px var(--sp-5);
-  background: transparent;
-  border-bottom: 1px solid var(--cream-deep);
-  box-shadow: none;
-}
-.topnav-brand { display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; }
-.topnav-brand img { height: 36px; width: auto; display: block; }
-.topnav-project {
-  display: flex; flex-direction: column; gap: 0;
-  padding: 6px var(--sp-3);
-  background: var(--accent-2);
-  color: var(--on-accent-2);
-  border-radius: var(--r-md);
-  cursor: pointer;
-}
-.topnav-project .name { font-weight: 600; font-size: var(--t-body); letter-spacing: -0.005em; }
-.topnav-project .meta {
-  font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 0.02em;
-  text-transform: uppercase; opacity: 0.75;
-}
-.topnav-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-3); }
-.topnav-saved { font-family: var(--font-mono); font-size: var(--t-eyebrow); letter-spacing: 0.02em; color: var(--accent-3); }
-.topnav-avatar {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: var(--accent-3); color: var(--on-accent-3);
-  display: grid; place-items: center;
-  font-family: var(--font-ui); font-weight: 600; font-size: 12px;
-}
-
-/* ─── Sidebar items ───────────────────────────────────────── */
-
-.sidebar-item {
-  display: flex; align-items: center; gap: var(--sp-3);
-  padding: 10px var(--sp-3);
-  border-radius: var(--r-md);
-  cursor: pointer;
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-weight: 500;
-  font-size: var(--t-body);
-  transition: background var(--dur-1) var(--ease-out);
-}
-.sidebar-item:hover { background: var(--surface-2); }
 /* Active background is painted by the sliding layoutId pill in Sidebar.tsx —
    keeping it out of CSS lets the highlight glide between items.
    v4: that pill was a solid --ink fill, which put the brightest block in the
    whole interface in the navigation. It is now a faint surface, and the active
    item is marked by ink weight and an accent rule instead. */
-.sidebar-item[data-active="true"] {
-  color: var(--ink);
-  font-weight: 600;
-}
-.sidebar-item[data-active="true"]:hover { background: transparent; }
-.sidebar-item[data-locked="true"] { opacity: 0.4; cursor: not-allowed; }
-.sidebar-item .si-icon { width: 22px; height: 22px; display: grid; place-items: center; }
 
 /* ─── Inputs ──────────────────────────────────────────────── */
 
