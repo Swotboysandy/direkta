@@ -42,6 +42,38 @@ const RAIL: Array<{ id: Filter; label: string; Icon: typeof ImageIcon }> = [
   { id: "favourite", label: "Favourites", Icon: Heart }
 ];
 
+/** What each tab is missing, and what actually makes it. */
+const EMPTY: Record<Filter, { title: string; next: string }> = {
+  all: {
+    title: "Nothing in this project yet.",
+    next: "Describe a shot in the box below to make the first one."
+  },
+  image: {
+    title: "No frames yet.",
+    next: "Describe a shot below, or open Storyboard to generate them per beat."
+  },
+  video: {
+    title: "No clips yet.",
+    next: "Clips come from animating a frame — open Stitch once you have one."
+  },
+  character: {
+    title: "No cast yet.",
+    next: "Add characters in Casting; their portraits become references you can @-mention."
+  },
+  location: {
+    title: "No locations yet.",
+    next: "Add them in Casting so shots can lock to the same place."
+  },
+  prop: {
+    title: "No props yet.",
+    next: "Add them in Casting to keep objects consistent between shots."
+  },
+  favourite: {
+    title: "No favourites yet.",
+    next: "Star anything on the canvas to keep it here."
+  }
+};
+
 const PAGE = 60;
 
 interface Props {
@@ -211,16 +243,8 @@ export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0
         {status === "empty" && (
           <div className="canvas-empty">
             <ImageIcon size={22} />
-            <p>
-              {debounced
-                ? `Nothing matching “${debounced}”.`
-                : filter === "favourite"
-                ? "No favourites yet. Star something to keep it here."
-                : "Nothing here yet."}
-            </p>
-            {!debounced && filter !== "favourite" && (
-              <span>Describe a shot in the box below to make the first one.</span>
-            )}
+            <p>{debounced ? `Nothing matching “${debounced}”.` : EMPTY[filter].title}</p>
+            {!debounced && <span>{EMPTY[filter].next}</span>}
           </div>
         )}
 
