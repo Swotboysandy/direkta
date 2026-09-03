@@ -83,7 +83,6 @@
    own animation is its own. */
 .theme-toggle { padding: 0; }
 
-
 /* ============================================================
    MOTION — production pass
    ------------------------------------------------------------
@@ -162,7 +161,6 @@
   .agent-cards > *,
   .canvas-grid [data-slot="skeleton"] { animation: none; }
 }
-
 
 /* ============================================================
    RAIL
@@ -416,7 +414,6 @@
   }
 }
 
-
 /* ============================================================
    HOME
    ------------------------------------------------------------
@@ -443,50 +440,9 @@
 
 /* Five stages as one measured row: this is progress through a fixed
    sequence, which is a reading rather than a menu. */
-.home-pipeline {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--sp-2);
-}
-
-.home-stage {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  font-family: var(--font-ui);
-  cursor: pointer;
-  transition: opacity var(--dur-2) var(--ease-out);
-}
-.home-stage[data-locked="true"] { opacity: 0.35; cursor: not-allowed; }
-.home-stage:not([data-locked]):hover .home-stage-name { color: var(--ink); }
-
-.home-stage-rule { display: block; height: 2px; border-radius: 1px; }
-
-.home-stage-name {
-  font-size: var(--t-body-s);
-  color: var(--ink-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color var(--dur-1) var(--ease-out);
-}
-
-.home-stage-n {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  font-variant-numeric: tabular-nums;
-  color: var(--mute);
-}
 
 @media (max-width: 720px) {
-  .home-pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 }
-
 
 /* ============================================================
    TOP BAR
@@ -704,7 +660,6 @@
   .topbar-search { display: none; }
 }
 
-
 /* ============================================================
    ASSET CANVAS
    ------------------------------------------------------------
@@ -733,7 +688,6 @@
    language the sidebar uses, so "where am I" reads the same everywhere. */
 
 .canvas-main { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
-
 
 .canvas-grid {
   display: grid;
@@ -855,7 +809,6 @@
   .canvas { grid-template-columns: minmax(0, 1fr); }
   .canvas-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
-
 
 /* ============================================================
    COMPOSER
@@ -1059,7 +1012,6 @@
   z-index: 30;
 }
 
-
 /* ============================================================
    LEGACY TOKEN COMPATIBILITY LAYER
    ------------------------------------------------------------
@@ -1151,7 +1103,6 @@ strong, b {
     var(--bg);
   overflow: hidden;
 }
-
 
 /* Stitch — timeline (NLE) view */
 .stitch-timeline {
@@ -1261,11 +1212,6 @@ strong, b {
 }
 .app-body[data-agent="true"] { --agent-w: 380px; }
 
-
-
-
-
-
 .sb-ws .head {
   padding: var(--sp-2) var(--sp-3);
   font-family: var(--font-mono);
@@ -1273,9 +1219,6 @@ strong, b {
   letter-spacing: 0.02em;
   color: var(--mute);
 }
-
-
-
 
 /* ============================================================
    MAIN AREA
@@ -1289,7 +1232,6 @@ strong, b {
   display: flex;
   flex-direction: column;
 }
-
 
 .main-inner {
   padding: var(--sp-5) var(--page-pad) var(--sp-7);
@@ -2411,7 +2353,6 @@ strong, b {
   gap: var(--sp-2);
   transition: left 220ms var(--ease-out);
 }
-
 
 .storyboard-strip-row {
   display: flex;
