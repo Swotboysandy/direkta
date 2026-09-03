@@ -213,6 +213,21 @@ function migrate(db: DatabaseSync) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    /* Favourites span two different sources: generated media lives in the
+       assets table, while characters, locations and props are their own
+       tables, so this cannot be a column on either. The pair (kind, item_id)
+       is the same addressing the assets route returns, which keeps the UI and
+       the store speaking one language. */
+    CREATE TABLE IF NOT EXISTS asset_favourites (
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (project_id, kind, item_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_favourites_project ON asset_favourites(project_id);
+
     CREATE TABLE IF NOT EXISTS stitch_nodes (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

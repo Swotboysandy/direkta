@@ -22,6 +22,218 @@
 @layer legacy {
 
 /* ============================================================
+   ASSET CANVAS
+   ------------------------------------------------------------
+   Every asset in the project on one surface, filtered by an
+   icon-only rail. Replaces per-workspace grids that each had
+   their own card, their own empty state and their own idea of
+   what an asset was.
+
+   Cards are a fixed 16:9 rather than a masonry of mixed heights:
+   the assets are frames and clips, which already share that
+   ratio, and a ragged grid would be decoration invented on top
+   of uniform content.
+   ============================================================ */
+.canvas {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+/* Icon-only rail. Labels live in title/aria-label, so the column
+   stays the width of one glyph at every breakpoint. */
+.canvas-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  position: sticky;
+  top: var(--sp-4);
+}
+
+.canvas-rail-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.canvas-rail-btn:hover { background: var(--surface-2); color: var(--ink); }
+.canvas-rail-btn.is-active { background: var(--surface-2); color: var(--ink); }
+/* The active filter is marked by a rule at the leading edge, the same
+   language the sidebar uses, so "where am I" reads the same everywhere. */
+.canvas-rail-btn.is-active::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.canvas-main { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+
+.canvas-search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--cream-deep);
+  color: var(--mute);
+}
+.canvas-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  outline: none;
+}
+.canvas-search input::placeholder { color: var(--mute); }
+
+.canvas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-3);
+}
+
+.canvas-card {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  transition: box-shadow var(--dur-2) var(--ease-out);
+}
+.canvas-card:hover { box-shadow: inset 0 0 0 1px var(--surface-3); }
+
+.canvas-card-hit {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.canvas-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.canvas-card-blank {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--mute);
+}
+
+.canvas-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent 42%);
+  pointer-events: none;
+}
+
+.canvas-card-title {
+  position: absolute;
+  left: var(--sp-2);
+  bottom: var(--sp-2);
+  right: var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: #FFFFFF;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-card-play {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  background: rgba(0,0,0,0.55);
+  color: #FFFFFF;
+  pointer-events: none;
+}
+
+.canvas-card-fav {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: rgba(0,0,0,0.5);
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+/* Revealed on hover, but a set favourite stays visible — otherwise the only
+   way to see what is starred is to hover every card in turn. Keyboard focus
+   reveals it too, or it would be unreachable without a mouse. */
+.canvas-card:hover .canvas-card-fav,
+.canvas-card-fav:focus-visible,
+.canvas-card-fav.is-on { opacity: 1; }
+.canvas-card-fav.is-on { color: var(--signal-danger); }
+
+.canvas-sentinel {
+  display: grid;
+  place-items: center;
+  min-height: 32px;
+}
+.canvas-more {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+@media (max-width: 720px) {
+  /* The rail becomes a scrolling strip above the grid; a 48px column plus a
+     two-card grid does not fit at this width. */
+  .canvas { grid-template-columns: minmax(0, 1fr); }
+  .canvas-rail {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: var(--sp-2);
+  }
+  .canvas-rail-btn.is-active::before { display: none; }
+  .canvas-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+
+/* ============================================================
    COMPOSER
    ------------------------------------------------------------
    The prompt bar, and the reference picker that opens above it.

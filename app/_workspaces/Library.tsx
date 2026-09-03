@@ -1,244 +1,47 @@
 "use client";
 
-import { useState } from "react";
-import { useAsync } from "../_hooks/useAsync";
-import { ErrorState, SkeletonFrames } from "../_components/AsyncStates";
 import { motion } from "framer-motion";
-import type { CSSProperties } from "react";
-import { pageIn, staggerContainer, staggerItem } from "../_components/motion";
+import { pageIn } from "../_components/motion";
+import { AssetCanvas, type CanvasItem } from "../_components/AssetCanvas";
 import type { Project, WorkspaceId } from "../../lib/types";
-
-interface Generation {
-  id: string;
-  url: string;
-  prompt: string;
-  created_at: string;
-  beat_n: number | null;
-  variant_n: number | null;
-  beat_title: string | null;
-}
-
-interface Sequence {
-  id: string;
-  url: string;
-  title: string;
-  created_at: string;
-}
-
-interface SoulId {
-  id: string;
-  name: string;
-  role: string;
-  state: string;
-  consistency: number | null;
-  refs: string[];
-}
-
-interface LocationLib {
-  id: string;
-  name: string;
-  int_ext: string;
-  state: string;
-  refs: string[];
-}
-
-interface Library {
-  generations: Generation[];
-  sequences: Sequence[];
-  characters: SoulId[];
-  locations: LocationLib[];
-}
-
-type Tab = "generations" | "sequences" | "soulids" | "locations";
 
 interface Props {
   project: Project;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
-// The mockup's mono captions (eyebrow, tab pills, card meta) trade the app's
-// older wide-tracked ALL CAPS for a tighter, mixed-case voice — one override
-// reused everywhere that voice shows up.
-const TIGHT_MONO: CSSProperties = { letterSpacing: "0.02em", textTransform: "none" };
-const TAB_BTN_STYLE: CSSProperties = { ...TIGHT_MONO, border: "none" };
-const CARD_RADIUS: CSSProperties = { borderRadius: 18 };
-
-export function Library({ project }: Props) {
-  const [tab, setTab] = useState<Tab>("generations");
-
-  // The previous version caught failures by substituting an empty library, so a
-  // broken request was presented as a project with nothing in it. useAsync keeps
-  // the failure visible and offers a retry.
-  const req = useAsync<Library>(
-    `/api/projects/${project.id}/library`,
-    (body) => ({
-      generations: body.generations ?? [],
-      sequences: body.sequences ?? [],
-      characters: body.characters ?? [],
-      locations: body.locations ?? []
-    }),
-    {
-      isEmpty: (d) =>
-        d.generations.length === 0 &&
-        d.sequences.length === 0 &&
-        d.characters.length === 0 &&
-        d.locations.length === 0
-    }
-  );
-  const data = req.data;
+/**
+ * The project's assets, on one canvas.
+ *
+ * This used to be four tabs — Frames, Sequences, Soul IDs, Locations — each
+ * with its own card, its own empty state and its own idea of what an asset
+ * was, over a route that returned four separate arrays. They were four views
+ * of one thing: everything the project has made or been given. The canvas is
+ * that one thing, with the tabs demoted to filters on a rail.
+ */
+export function Library({ project, onSwitchWorkspace }: Props) {
+  const open = (item: CanvasItem) => {
+    // Frames belong to the board; clips belong to the timeline. Entities are
+    // cast, so they open where they are managed.
+    if (item.kind === "video") onSwitchWorkspace("stitch");
+    else if (item.kind === "image") onSwitchWorkspace("storyboard");
+    else onSwitchWorkspace("casting");
+  };
 
   return (
-    <motion.div className="main-inner" {...pageIn}>
-      <header className="page-head">
-        <div>
-          <span className="crumb" style={TIGHT_MONO}>06 / Workspace · Library</span>
-          <h1
-            style={{
-              margin: "8px 0 0",
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(24px, 2.4vw, 32px)",
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "var(--ink)"
-            }}
-          >
-            Library
-          </h1>
-          <p className="lead" style={{ margin: "12px 0 0" }}>
-            Every generated asset on this project. Browse, restore variants, or hand a frame back to
-            the Cinematographer.
+    <motion.div className="main-inner dash" {...pageIn}>
+      <header className="dash-head">
+        <div className="dash-head-copy">
+          <span className="dash-eyebrow">Library</span>
+          <h1 className="dash-title">Everything in {project.title}</h1>
+          <p className="dash-logline">
+            Frames, clips and cast. Star what you want to keep close, or reference any of it
+            from a prompt with <strong>@</strong>.
           </p>
-        </div>
-        <div className="page-head-actions">
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 10px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              borderRadius: 999,
-              background: "var(--cream-deep)",
-              color: "var(--ink-soft)"
-            }}
-          >
-            {data ? `${data.generations.length + data.sequences.length} items` : "—"}
-          </span>
         </div>
       </header>
 
-      <div className="library-tabs">
-        <button data-active={tab === "generations"} onClick={() => setTab("generations")} style={TAB_BTN_STYLE}>
-          Frames {data ? `· ${data.generations.length}` : ""}
-        </button>
-        <button data-active={tab === "sequences"} onClick={() => setTab("sequences")} style={TAB_BTN_STYLE}>
-          Sequences {data ? `· ${data.sequences.length}` : ""}
-        </button>
-        <button data-active={tab === "soulids"} onClick={() => setTab("soulids")} style={TAB_BTN_STYLE}>
-          Soul IDs {data ? `· ${data.characters.length}` : ""}
-        </button>
-        <button data-active={tab === "locations"} onClick={() => setTab("locations")} style={TAB_BTN_STYLE}>
-          Locations {data ? `· ${data.locations.length}` : ""}
-        </button>
-      </div>
-
-      {req.status === "loading" && <SkeletonFrames count={6} />}
-      {req.status === "error" && <ErrorState message={req.error} onRetry={req.reload} />}
-
-      {data && tab === "generations" && (
-        <motion.div className="library-grid" variants={staggerContainer} initial="hidden" animate="show">
-          {data.generations.map((g) => (
-            <motion.div key={g.id} className="library-card" style={CARD_RADIUS} variants={staggerItem}>
-              <div className="thumb">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={g.url} alt={g.beat_title ?? g.prompt} />
-              </div>
-              <div className="body">
-                <div className="title">
-                  {g.beat_n ? `Beat ${String(g.beat_n).padStart(2, "0")}` : "Frame"}
-                  {g.variant_n ? ` · V${String(g.variant_n).padStart(2, "0")}` : ""}
-                  {g.beat_title ? ` — ${g.beat_title}` : ""}
-                </div>
-                <div className="meta" style={TIGHT_MONO}>
-                  <span>{new Date(g.created_at + "Z").toLocaleString()}</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
-
-      {data && tab === "sequences" && (
-        <motion.div className="library-grid" variants={staggerContainer} initial="hidden" animate="show">
-          {data.sequences.map((s) => (
-            <motion.div key={s.id} className="library-card" style={CARD_RADIUS} variants={staggerItem}>
-              <div className="thumb">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.url} alt={s.title} />
-              </div>
-              <div className="body">
-                <div className="title">{s.title}</div>
-                <div className="meta" style={TIGHT_MONO}>
-                  <span>{new Date(s.created_at + "Z").toLocaleString()}</span>
-                  <span>MP4</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-          {data.sequences.length === 0 && (
-            <p className="t-mute">No sequences yet. Build an animatic in Stitch.</p>
-          )}
-        </motion.div>
-      )}
-
-      {data && tab === "soulids" && (
-        <motion.div className="library-grid" variants={staggerContainer} initial="hidden" animate="show">
-          {data.characters.map((c) => (
-            <motion.div key={c.id} className="library-card" style={CARD_RADIUS} variants={staggerItem}>
-              <div className="thumb">
-                {c.refs[0] && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={c.refs[0]} alt={c.name} style={{ objectPosition: "top" }} />
-                )}
-              </div>
-              <div className="body">
-                <div className="title">{c.name}</div>
-                <div className="meta" style={TIGHT_MONO}>
-                  <span>{c.role}</span>
-                  <span>{c.state.toUpperCase()}</span>
-                  {c.consistency != null && <span>{c.consistency.toFixed(1)}/10</span>}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
-
-      {data && tab === "locations" && (
-        <motion.div className="library-grid" variants={staggerContainer} initial="hidden" animate="show">
-          {data.locations.map((l) => (
-            <motion.div key={l.id} className="library-card" style={CARD_RADIUS} variants={staggerItem}>
-              <div className="thumb">
-                {l.refs[0] && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={l.refs[0]} alt={l.name} />
-                )}
-              </div>
-              <div className="body">
-                <div className="title">{l.name}</div>
-                <div className="meta" style={TIGHT_MONO}>
-                  <span>{l.int_ext}</span>
-                  <span>{l.state.toUpperCase()}</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
+      <AssetCanvas projectId={project.id} onOpen={open} />
     </motion.div>
   );
 }

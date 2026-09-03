@@ -497,3 +497,69 @@ test("composer references map onto the H3 channel each one belongs to", () => {
   assert.ok(prompt.indexOf("<Picture 1>") < prompt.indexOf("<Picture 2>"));
   assert.ok(prompt.includes("<Video 1>") && prompt.includes("<Audio 1>"));
 });
+
+test("favourites are addressed by kind and id, so two sources cannot collide", async () => {
+  const db = getDb();
+  db.prepare("INSERT INTO projects (id,title,aspect_ratio) VALUES ('fav','Fav','16:9')").run();
+  db.prepare("INSERT INTO beats (id,project_id,n,title,direction) VALUES ('fav-b','fav',1,'B','x')").run();
+  db.prepare("INSERT INTO storyboard_variants (id,beat_id,n) VALUES ('shared-id','fav-b',1)").run();
+  // Deliberately give a frame and a character the SAME id. They live in
+  // different tables, so a favourites store keyed on id alone would treat
+  // starring one as starring the other.
+  db.prepare("INSERT INTO assets (id,target_kind,target_id,kind,url) VALUES ('shared-id','storyboard_variant','shared-id','image','/oss/f.png')").run();
+  db.prepare("INSERT INTO characters (id,project_id,name,role) VALUES ('shared-id','fav','Twin','Lead')").run();
+
+  const { PUT } = require("../app/api/projects/[id]/favourites/route.ts");
+  const { GET } = require("../app/api/projects/[id]/assets/route.ts");
+  const params = Promise.resolve({ id: "fav" });
+
+  const star = await PUT(
+    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: true }) }),
+    { params }
+  );
+  assert.equal(star.status, 200);
+
+  const all = await (await GET(new Request("http://x/a"), { params })).json();
+  const frame = all.items.find((a) => a.kind === "image" && a.id === "shared-id");
+  const character = all.items.find((a) => a.kind === "character" && a.id === "shared-id");
+  assert.equal(frame.favourite, true, "the starred frame should be marked");
+  assert.equal(character.favourite, false, "the character sharing that id must NOT be");
+
+  // Starring twice is a no-op, because the UI toggles optimistically and may resend.
+  const again = await PUT(
+    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: true }) }),
+    { params }
+  );
+  assert.equal(again.status, 200);
+
+  const only = await (await GET(new Request("http://x/a?favourite=1"), { params })).json();
+  assert.equal(only.items.length, 1);
+  assert.equal(only.items[0].kind, "image");
+
+  const off = await PUT(
+    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: false }) }),
+    { params }
+  );
+  assert.equal(off.status, 200);
+  const cleared = await (await GET(new Request("http://x/a?favourite=1"), { params })).json();
+  assert.equal(cleared.items.length, 0);
+});
+
+test("favourites route rejects a malformed toggle", async () => {
+  const { PUT } = require("../app/api/projects/[id]/favourites/route.ts");
+  const params = Promise.resolve({ id: "fav" });
+  const bad = [
+    { kind: "banana", item_id: "x", favourite: true },
+    { kind: "image", favourite: true },
+    { kind: "image", item_id: "x" }
+  ];
+  for (const body of bad) {
+    const res = await PUT(new Request("http://x/f", { method: "PUT", body: JSON.stringify(body) }), { params });
+    assert.equal(res.status, 400, `should reject ${JSON.stringify(body)}`);
+  }
+  const missingProject = await PUT(
+    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "x", favourite: true }) }),
+    { params: Promise.resolve({ id: "no-such-project" }) }
+  );
+  assert.equal(missingProject.status, 404);
+});

@@ -33,6 +33,7 @@ import {
   Stamp01Icon,
   ZoomInAreaIcon,
   PlayIcon,
+  FavouriteIcon,
   PauseIcon,
   Delete02Icon,
   Add01Icon,
@@ -116,6 +117,8 @@ export const Grid = make(GridIcon);
 export const Stamp = make(Stamp01Icon);
 export const ZoomIn = make(ZoomInAreaIcon);
 export const Play = make(PlayIcon);
+/** Favourite marker on canvas cards. Hugeicons spells it the British way. */
+export const Heart = make(FavouriteIcon);
 export const Pause = make(PauseIcon);
 export const Trash2 = make(Delete02Icon);
 export const Plus = make(Add01Icon);

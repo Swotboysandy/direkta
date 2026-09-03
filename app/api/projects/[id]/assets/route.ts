@@ -32,6 +32,7 @@ export interface AssetItem {
   mentionable: boolean;
   /** Which H3 reference channel this feeds, or null if it cannot be a reference. */
   ref_kind: "image" | "video" | null;
+  favourite: boolean;
 }
 
 const KINDS: AssetKind[] = ["image", "video", "character", "location", "prop"];
@@ -72,7 +73,8 @@ function media(projectId: string): AssetItem[] {
       subtitle: r.beat_title ?? (r.prompt ? r.prompt.slice(0, 80) : null),
       created_at: r.created_at,
       mentionable: true,
-      ref_kind: isVideo ? "video" : "image"
+      ref_kind: isVideo ? "video" : "image",
+      favourite: false
     } satisfies AssetItem;
   });
 }
@@ -90,7 +92,8 @@ function entities(projectId: string): AssetItem[] {
       subtitle: c.role,
       created_at: c.created_at,
       mentionable: true,
-      ref_kind: "image"
+      ref_kind: "image",
+      favourite: false
     });
   }
   for (const l of locations.forProject(projectId)) {
@@ -102,7 +105,8 @@ function entities(projectId: string): AssetItem[] {
       subtitle: l.int_ext,
       created_at: l.created_at,
       mentionable: true,
-      ref_kind: "image"
+      ref_kind: "image",
+      favourite: false
     });
   }
   for (const p of props.forProject(projectId)) {
@@ -114,7 +118,8 @@ function entities(projectId: string): AssetItem[] {
       subtitle: p.description ? p.description.slice(0, 80) : null,
       created_at: p.created_at,
       mentionable: true,
-      ref_kind: "image"
+      ref_kind: "image",
+      favourite: false
     });
   }
   return out;
@@ -148,6 +153,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     ].filter((a) => kinds.includes(a.kind));
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "Could not read this project's assets." }, { status: 500 });
+  }
+
+  // One query for the whole page rather than a lookup per item.
+  const starred = new Set(
+    (
+      getDb()
+        .prepare("SELECT kind, item_id FROM asset_favourites WHERE project_id = ?")
+        .all(id) as Array<{ kind: string; item_id: string }>
+    ).map((r) => `${r.kind}:${r.item_id}`)
+  );
+  for (const a of items) a.favourite = starred.has(`${a.kind}:${a.id}`);
+
+  if (url.searchParams.get("favourite") === "1") {
+    items = items.filter((a) => a.favourite);
   }
 
   if (q) {
