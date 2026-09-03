@@ -220,6 +220,16 @@ export async function ensureH3PodRunning(options: { turbo?: boolean } = {}): Pro
     // it ComfyUI reports step counts but never sends an image, so the UI can
     // show how far a render has got but not what it is producing. The cost is
     // one small decode per preview interval, against a 15-minute render.
+    // A pod that moves hosts comes back with its container disk reset, and
+    // ComfyUI's Python packages live there rather than on the network volume.
+    // It then dies on the first missing import — sqlalchemy, then tqdm, then
+    // the next — which reads as the pod being broken while it bills. Probing
+    // the imports and reinstalling only when one is missing costs nothing on a
+    // warm container and saves a cold one from failing outright.
+    "python3 -c 'import tqdm,sqlalchemy,blake3,safetensors,einops' 2>/dev/null || " +
+    "pip install -q --break-system-packages tqdm sqlalchemy alembic blake3 psutil " +
+    "safetensors einops transformers tokenizers sentencepiece aiohttp yarl pyyaml " +
+    "pillow scipy soundfile av spandrel kornia; " +
     "nohup python3 main.py --listen 0.0.0.0 --port 8188 --preview-method auto > /workspace/comfyui_server.log 2>&1 </dev/null & disown; sleep 1)";
   await sshExec(netInfo.publicIp, netInfo.sshPort, bootstrap, 5 * 60_000).catch(() => {
     /* best-effort — the health-check wait below is the real gate */
