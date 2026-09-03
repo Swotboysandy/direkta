@@ -271,7 +271,23 @@ export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0
                     onClick={() => onOpen?.(item)}
                     aria-label={item.subtitle ? `${item.title} — ${item.subtitle}` : item.title}
                   >
-                    {item.url ? (
+                    {item.url && item.kind === "video" ? (
+                      // A clip in an <img> renders nothing. A muted video with
+                      // preload="metadata" paints its first frame as the poster
+                      // without fetching the whole file, and plays on hover.
+                      <video
+                        className="canvas-card-img"
+                        src={item.url}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        onMouseEnter={(e) => void e.currentTarget.play().catch(() => {})}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.pause();
+                          e.currentTarget.currentTime = 0;
+                        }}
+                      />
+                    ) : item.url ? (
                       <img
                         className="canvas-card-img"
                         src={item.url}

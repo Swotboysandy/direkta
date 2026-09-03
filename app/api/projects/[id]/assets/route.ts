@@ -72,8 +72,16 @@ function media(projectId: string): AssetItem[] {
       id: r.id,
       kind: isVideo ? "video" : "image",
       url: r.url,
-      title: r.beat_n ? `Beat ${String(r.beat_n).padStart(2, "0")}` : isVideo ? "Sequence" : "Frame",
-      subtitle: r.beat_title ?? (r.prompt ? r.prompt.slice(0, 80) : null),
+      // A beat names itself; anything else uses the prompt it was filed with,
+      // falling back to the generic word only when there is nothing to say.
+      title: r.beat_n
+        ? `Beat ${String(r.beat_n).padStart(2, "0")}`
+        : r.prompt?.trim()
+        ? r.prompt.trim().slice(0, 60)
+        : isVideo
+        ? "Sequence"
+        : "Frame",
+      subtitle: r.beat_title ?? null,
       created_at: r.created_at,
       mentionable: true,
       ref_kind: isVideo ? "video" : "image",
