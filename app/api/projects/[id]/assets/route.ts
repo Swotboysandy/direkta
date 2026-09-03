@@ -46,7 +46,8 @@ function media(projectId: string): AssetItem[] {
          FROM assets a
          LEFT JOIN storyboard_variants v
            ON v.id = a.target_id AND a.target_kind = 'storyboard_variant'
-         LEFT JOIN beats b ON b.id = v.beat_id
+         LEFT JOIN beats b
+           ON b.id = COALESCE(v.beat_id, CASE WHEN a.target_kind = 'beat' THEN a.target_id END)
         WHERE b.project_id = ?
            OR (a.target_kind = 'sequence' AND a.target_id = ?)
         ORDER BY a.created_at DESC`
@@ -75,13 +76,13 @@ function media(projectId: string): AssetItem[] {
       // A beat names itself; anything else uses the prompt it was filed with,
       // falling back to the generic word only when there is nothing to say.
       title: r.beat_n
-        ? `Beat ${String(r.beat_n).padStart(2, "0")}`
+        ? `${String(r.beat_n).padStart(2, "0")} · ${r.beat_title || "Beat"}`
         : r.prompt?.trim()
         ? r.prompt.trim().slice(0, 60)
         : isVideo
         ? "Sequence"
         : "Frame",
-      subtitle: r.beat_title ?? null,
+      subtitle: r.beat_n ? null : r.beat_title,
       created_at: r.created_at,
       mentionable: true,
       ref_kind: isVideo ? "video" : "image",

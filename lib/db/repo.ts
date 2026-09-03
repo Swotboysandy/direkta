@@ -203,7 +203,25 @@ export const projects = {
     getDb().prepare(`UPDATE projects SET ${fields.join(", ")} WHERE id = ?`).run(...values);
   },
   delete(id: string) {
-    getDb().prepare("DELETE FROM projects WHERE id = ?").run(id);
+    const db = getDb();
+    // Beats, characters, nodes and the rest cascade on their project_id foreign
+    // key. Assets do not: they point at a project through the polymorphic
+    // target_id, which carries no key, so deleting the project would leave
+    // their rows behind forever. Clear them in the same transaction.
+    db.exec("BEGIN");
+    try {
+      db.prepare("DELETE FROM assets WHERE target_kind = 'sequence' AND target_id = ?").run(id);
+      db.prepare(
+        `DELETE FROM assets
+          WHERE target_kind = 'beat'
+            AND target_id IN (SELECT id FROM beats WHERE project_id = ?)`
+      ).run(id);
+      db.prepare("DELETE FROM projects WHERE id = ?").run(id);
+      db.exec("COMMIT");
+    } catch (err) {
+      db.exec("ROLLBACK");
+      throw err;
+    }
   }
 };
 
