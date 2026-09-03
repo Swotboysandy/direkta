@@ -1138,10 +1138,13 @@
   aspect-ratio: 16 / 9;
   border-radius: var(--r-md);
   overflow: hidden;
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  /* Not var(--surface): in light that resolves to #FFFFFF, which is a white
+     tile on a near-white page. The card needs its own ground in both themes. */
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--cream-deep);
   transition: box-shadow var(--dur-2) var(--ease-out);
 }
+
 .canvas-card:hover { box-shadow: inset 0 0 0 1px var(--surface-3); }
 
 .canvas-card-hit {
@@ -1161,20 +1164,47 @@
   display: block;
 }
 
+/* An entity with no portrait yet. It carries its own initial rather than a
+   picture icon, so it reads as a character waiting to be shot rather than as a
+   frame that failed to load. */
 .canvas-card-blank {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  background: linear-gradient(160deg, var(--surface-3), var(--surface-2));
   color: var(--mute);
 }
+
+.canvas-card-initial {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+
+.canvas-card-none {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
 
 .canvas-card-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent 42%);
+  background: linear-gradient(to top, rgba(0,0,0,0.62), transparent 42%);
   pointer-events: none;
 }
+
+.canvas-card[data-media="false"] .canvas-card-title { color: var(--ink); }
 
 .canvas-card-title {
   position: absolute;

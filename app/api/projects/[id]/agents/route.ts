@@ -22,17 +22,28 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const built = bible.ensure(id).built;
   const submitted = project.script_submitted;
 
+  // "working" was asserted from absence: script submitted and no beats meant an
+  // agent was running. Nothing checks whether a run is actually in flight, so a
+  // failed pipeline left agents claiming to work indefinitely — which is worse
+  // than saying nothing, because the screen insists progress is being made.
+  // After this long with no result, the truthful state is that it needs
+  // attention.
+  const STALL_MS = 10 * 60_000;
+  const since = Date.parse(`${project.updated_at}Z`);
+  const stalled = Number.isFinite(since) && Date.now() - since > STALL_MS;
+  const pending = (done: boolean) => (done ? "done" : stalled ? "attention" : "working");
+
   const agents: AgentStatus[] = [
     { id: "script-reader", name: "Script Reader", state: !submitted ? "idle" : "done" },
     {
       id: "beat-writer",
       name: "Beat Writer",
-      state: !submitted ? "idle" : beatCount > 0 ? "done" : "working"
+      state: !submitted ? "idle" : pending(beatCount > 0)
     },
     {
       id: "bible-builder",
       name: "Bible Builder",
-      state: !submitted ? "idle" : built ? "done" : "working"
+      state: !submitted ? "idle" : pending(built)
     },
     {
       id: "casting-dir",
@@ -44,9 +55,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           ? "attention"
           : charsTraining > 0
           ? "working"
-          : charsTrained === charList.length
-          ? "done"
-          : "working"
+          : pending(charsTrained === charList.length)
     },
     {
       id: "cinematographer",

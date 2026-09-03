@@ -232,6 +232,7 @@ export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0
                   key={`${item.kind}:${item.id}`}
                   className="canvas-card"
                   data-kind={item.kind}
+                  data-media={item.url ? "true" : "false"}
                   initial={{ y: 10 }}
                   animate={{ y: 0 }}
                   transition={{
@@ -256,10 +257,11 @@ export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0
                       />
                     ) : (
                       <span className="canvas-card-blank">
-                        <ImageIcon size={18} />
+                        <span className="canvas-card-initial">{item.title.slice(0, 1)}</span>
+                        <span className="canvas-card-none">No image yet</span>
                       </span>
                     )}
-                    <span className="canvas-card-scrim" />
+                    {item.url && <span className="canvas-card-scrim" />}
                     <span className="canvas-card-title">{item.title}</span>
                   </button>
 
