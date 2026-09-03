@@ -417,7 +417,8 @@ export default function Home() {
       <div className="app-body" data-agent={agentOpen ? "true" : "false"}>
         <Rail workspaces={workspaces} active={activeWorkspace} onSwitch={switchWorkspace} />
 
-        <main className="main">
+        <div className="work">
+          <main className="main">
           {!bundle && bundleState === "loading" ? (
             <SkeletonWorkspace />
           ) : !bundle && bundleState === "error" ? (
@@ -531,6 +532,8 @@ export default function Home() {
               )}
             </>
           )}
+          </main>
+
           {bundle && (
             <div className="composer-dock">
               <div className="main-inner">
@@ -546,7 +549,7 @@ export default function Home() {
               </div>
             </div>
           )}
-        </main>
+          </div>
 
         {bundle && (
           <AgentPanel

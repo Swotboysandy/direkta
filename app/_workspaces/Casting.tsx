@@ -243,7 +243,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
     <motion.div className="main-inner" {...pageIn}>
       <motion.header
         {...fadeUp}
-        className="ws-head ws-head-row"
+        className="page-head"
       >
         <div style={{ minWidth: 0, maxWidth: "64ch" }}>
           <span className="ws-eyebrow">Casting</span>

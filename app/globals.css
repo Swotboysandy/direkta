@@ -21,13 +21,19 @@
 
 @layer legacy {
 
+
+
+
 /* Activity and crew, below the canvas.
    Nothing else in the app reports what the agents did or which is running, so
    these are kept rather than replaced — the work comes first and its history
    second, which is why they sit under the canvas instead of above it. */
 .home-lower {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  /* Closer to equal than 1.7fr/1fr. An empty activity log beside a ten-row crew
+     list left most of the wider column blank, which read as broken rather than
+     as empty. */
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   gap: var(--sp-6);
   align-items: start;
   padding-top: var(--sp-6);
@@ -327,13 +333,6 @@
 
 /* Actions sit on the header's baseline at width, and wrap under it when the
    measure gets tight rather than squeezing the title. */
-.ws-head-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--sp-5);
-  flex-wrap: wrap;
-}
 
 
 /* Filters read left to right above the grid, with their names showing.
@@ -1320,16 +1319,14 @@
 }
 
 .composer-dock {
-  position: sticky;
-  bottom: 0;
-  /* Sticky, but the column reserves room for it via .main padding-bottom, so it
-     rests under the content rather than covering the last of it. */
+  /* In normal flow as the column's second row. It is opaque, because a
+     translucent bar over a scrolling grid showed rows sliding behind the
+     prompt the user was typing into. */
   padding: var(--sp-3) var(--page-pad) var(--sp-4);
-  background: linear-gradient(to top, var(--bg) 55%, color-mix(in srgb, var(--bg) 70%, transparent));
-  backdrop-filter: blur(6px);
-  z-index: 30;
-  flex: none;
+  background: var(--bg);
+  border-top: 1px solid var(--cream-deep);
 }
+
 
 
 /* ============================================================
@@ -1543,23 +1540,31 @@ strong, b {
 /* ============================================================
    MAIN AREA
    ============================================================ */
+/* The work column: a scrolling row and a fixed row beneath it.
+   The composer used to be sticky inside .main, and sticky reserves no space —
+   it pins to the bottom edge while everything above scrolls underneath, which
+   put it on top of the crew list on home and on top of the script in
+   Screenplay. Two grid rows cannot overlap. */
+.work {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  min-width: 0;
+}
+
 .main {
   min-width: 0;
   min-height: 0;
-  overflow: auto;
-  /* Scrolling one column rather than the page keeps the bar and rail fixed and
-     lets the composer dock to the bottom of the work area. */
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 
+
 .main-inner {
-  /* Centred in its column, with the measure set by the content rather than by
-     a fixed band: 1400px inside a 1900px track read as drifted to one side,
-     and pinning it to the left instead just moved the void to the other edge.
-     The composer's own clearance is added here, so a docked composer can never
-     sit on top of what is being read. */
+  /* Centred in its column, with the measure set by the content rather than a
+     fixed band: 1400px inside a 1900px track read as drifted to one side, and
+     pinning it left only moved the void to the other edge. */
   width: 100%;
   max-width: min(var(--max-w), 100%);
   margin-inline: auto;
@@ -2065,7 +2070,17 @@ strong, b {
 /* Stop a long subtitle on the left from crushing the action cluster. */
 .page-head > div:first-child {
   min-width: 0;
-  max-width: 64ch;
+  /* A basis rather than only a max: without one the block sizes to its text and
+     the actions sit hard against the last word. Below 1000px it takes the whole
+     row and the actions drop beneath it. */
+  flex: 1 1 44ch;
+  max-width: 68ch;
+}
+
+@media (max-width: 1000px) {
+  .page-head > div:first-child { flex-basis: 100%; }
+  .page-head .actions,
+  .page-head .page-head-actions { justify-content: flex-start; }
 }
 
 .page-head .sub,
