@@ -355,3 +355,89 @@ test("generation and the live monitor share one ComfyUI client id", () => {
   const route = fs.readFileSync(path.resolve(__dirname, "../app/api/minimax-h3/stream/route.ts"), "utf8");
   assert.ok(route.includes("H3_CLIENT_ID"), "the live feed must listen on the same client id");
 });
+
+test("assets route returns media and entities in one shape, newest first", async () => {
+  const db = getDb();
+  db.prepare("INSERT INTO projects (id,title,aspect_ratio) VALUES ('as-test','Assets Test','16:9')").run();
+  db.prepare("INSERT INTO beats (id,project_id,n,title,direction) VALUES ('as-b1','as-test',1,'Opening','x')").run();
+  db.prepare("INSERT INTO storyboard_variants (id,beat_id,n) VALUES ('as-v1','as-b1',1)").run();
+  db.prepare("INSERT INTO assets (id,target_kind,target_id,kind,url,created_at) VALUES ('as-img','storyboard_variant','as-v1','image','/oss/a.png','2026-01-01 00:00:01')").run();
+  db.prepare("INSERT INTO assets (id,target_kind,target_id,kind,url,created_at) VALUES ('as-seq','sequence','as-test','video','/oss/a.mp4','2026-01-01 00:00:02')").run();
+  db.prepare("INSERT INTO characters (id,project_id,name,role) VALUES ('as-c1','as-test','Kalki','Lead')").run();
+
+  const { GET } = require("../app/api/projects/[id]/assets/route.ts");
+  const params = Promise.resolve({ id: "as-test" });
+
+  const all = await (await GET(new Request("http://x/api/projects/as-test/assets"), { params })).json();
+  const byId = Object.fromEntries(all.items.map((a) => [a.id, a]));
+
+  assert.ok(byId["as-img"], "storyboard frame missing");
+  assert.equal(byId["as-img"].kind, "image");
+  // The field the composer needs: which H3 channel this can be wired to.
+  assert.equal(byId["as-img"].ref_kind, "image");
+  assert.equal(byId["as-img"].title, "Beat 01");
+
+  assert.equal(byId["as-seq"].kind, "video", "a rendered sequence is video regardless of its row kind");
+  assert.equal(byId["as-seq"].ref_kind, "video");
+
+  assert.equal(byId["as-c1"].kind, "character");
+  assert.equal(byId["as-c1"].title, "Kalki");
+  assert.equal(byId["as-c1"].mentionable, true);
+
+  // Media and entities come from different tables, so ordering is done in the
+  // route; if that sort is dropped the list interleaves by table instead of time.
+  const times = all.items.map((a) => a.created_at);
+  assert.deepEqual([...times].sort().reverse(), times, "items must be newest first");
+});
+
+test("assets route filters by kind and rejects an unknown one", async () => {
+  const { GET } = require("../app/api/projects/[id]/assets/route.ts");
+  const params = Promise.resolve({ id: "as-test" });
+
+  const imagesRes = await GET(new Request("http://x/a?kind=image"), { params });
+  const images = await imagesRes.json();
+  assert.ok(images.items.length > 0);
+  assert.ok(images.items.every((a) => a.kind === "image"), "kind=image returned other kinds");
+
+  const chars = await (await GET(new Request("http://x/a?kind=character"), { params })).json();
+  assert.ok(chars.items.every((a) => a.kind === "character"));
+
+  const bad = await GET(new Request("http://x/a?kind=banana"), { params });
+  assert.equal(bad.status, 400, "an unknown kind must fail loudly, not silently return everything");
+});
+
+test("assets route paginates with a cursor that survives identical timestamps", async () => {
+  const db = getDb();
+  // Same created_at on purpose: a timestamp-only cursor cannot separate these,
+  // which is why the cursor carries the id too.
+  for (const n of [1, 2, 3]) {
+    db.prepare("INSERT INTO characters (id,project_id,name,role) VALUES (?,?,?,?)").run(
+      `as-p${n}`, "as-test", `Extra ${n}`, "Background"
+    );
+  }
+  db.prepare("UPDATE characters SET created_at='2026-02-02 00:00:00' WHERE project_id='as-test'").run();
+
+  const { GET } = require("../app/api/projects/[id]/assets/route.ts");
+  const params = Promise.resolve({ id: "as-test" });
+
+  const first = await (await GET(new Request("http://x/a?kind=character&limit=2"), { params })).json();
+  assert.equal(first.items.length, 2);
+  assert.ok(first.next_cursor, "more rows remain, so a cursor must be returned");
+
+  const second = await (
+    await GET(new Request(`http://x/a?kind=character&limit=2&cursor=${encodeURIComponent(first.next_cursor)}`), { params })
+  ).json();
+
+  const firstIds = first.items.map((a) => a.id);
+  const secondIds = second.items.map((a) => a.id);
+  assert.equal(firstIds.filter((id) => secondIds.includes(id)).length, 0, "pages must not overlap");
+});
+
+test("assets route searches titles and subtitles", async () => {
+  const { GET } = require("../app/api/projects/[id]/assets/route.ts");
+  const params = Promise.resolve({ id: "as-test" });
+  const hit = await (await GET(new Request("http://x/a?q=kalki"), { params })).json();
+  assert.ok(hit.items.some((a) => a.title === "Kalki"), "case-insensitive search should match");
+  const miss = await (await GET(new Request("http://x/a?q=zzzzz"), { params })).json();
+  assert.equal(miss.items.length, 0);
+});

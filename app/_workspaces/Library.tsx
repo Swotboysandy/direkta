@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAsync } from "../_hooks/useAsync";
+import { ErrorState, SkeletonFrames } from "../_components/AsyncStates";
 import { motion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { pageIn, staggerContainer, staggerItem } from "../_components/motion";
@@ -62,17 +64,28 @@ const TAB_BTN_STYLE: CSSProperties = { ...TIGHT_MONO, border: "none" };
 const CARD_RADIUS: CSSProperties = { borderRadius: 18 };
 
 export function Library({ project }: Props) {
-  const [data, setData] = useState<Library | null>(null);
   const [tab, setTab] = useState<Tab>("generations");
 
-  useEffect(() => {
-    fetch(`/api/projects/${project.id}/library`)
-      .then((r) => r.json())
-      .then(setData)
-      // Don't strand the UI on "Loading…" — fall back to empty so the empty
-      // states render instead.
-      .catch(() => setData({ generations: [], sequences: [], characters: [], locations: [] }));
-  }, [project.id]);
+  // The previous version caught failures by substituting an empty library, so a
+  // broken request was presented as a project with nothing in it. useAsync keeps
+  // the failure visible and offers a retry.
+  const req = useAsync<Library>(
+    `/api/projects/${project.id}/library`,
+    (body) => ({
+      generations: body.generations ?? [],
+      sequences: body.sequences ?? [],
+      characters: body.characters ?? [],
+      locations: body.locations ?? []
+    }),
+    {
+      isEmpty: (d) =>
+        d.generations.length === 0 &&
+        d.sequences.length === 0 &&
+        d.characters.length === 0 &&
+        d.locations.length === 0
+    }
+  );
+  const data = req.data;
 
   return (
     <motion.div className="main-inner" {...pageIn}>
@@ -133,7 +146,8 @@ export function Library({ project }: Props) {
         </button>
       </div>
 
-      {!data && <p className="t-mute">Loading…</p>}
+      {req.status === "loading" && <SkeletonFrames count={6} />}
+      {req.status === "error" && <ErrorState message={req.error} onRetry={req.reload} />}
 
       {data && tab === "generations" && (
         <motion.div className="library-grid" variants={staggerContainer} initial="hidden" animate="show">

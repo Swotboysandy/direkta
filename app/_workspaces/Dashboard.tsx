@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -16,6 +16,14 @@ import {
   Image as ImageIcon
 } from "../_components/icons";
 import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
+import { useAsync } from "../_hooks/useAsync";
+import {
+  EmptyState,
+  ErrorState,
+  SkeletonFrames,
+  SkeletonHeroFrame,
+  SkeletonRows
+} from "../_components/AsyncStates";
 import type {
   ActivityItem,
   AgentState,
@@ -114,22 +122,31 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
   const wsMap = Object.fromEntries(workspaces.map((w) => [w.id, w]));
   const hasScript = project.script_submitted;
 
-  const [frames, setFrames] = useState<LibraryFrame[] | null>(null);
-  const [board, setBoard] = useState<BoardData | null>(null);
-
-  // Real storyboard imagery — no fabricated placeholders. The library route gives
+  // Real storyboard imagery — no fabricated placeholders. The assets route gives
   // true recency order for "latest frames"; the storyboard route carries director
   // approval state for the hero's "latest approved frame."
-  useEffect(() => {
-    fetch(`/api/projects/${project.id}/library`)
-      .then((r) => r.json())
-      .then((data) => setFrames(data.generations ?? []))
-      .catch(() => setFrames([]));
-    fetch(`/api/projects/${project.id}/storyboard`)
-      .then((r) => r.json())
-      .then((data) => setBoard({ beats: data.beats ?? [], variants: data.variants ?? [] }))
-      .catch(() => setBoard({ beats: [], variants: [] }));
-  }, [project.id]);
+  //
+  // Both go through useAsync so loading, empty and failed stay distinguishable.
+  // Previously a slow fetch and an empty project rendered the same nothing, and
+  // a failed one was swallowed into an empty array.
+  const framesReq = useAsync<LibraryFrame[]>(
+    `/api/projects/${project.id}/assets?kind=image&limit=5`,
+    (body) =>
+      (body.items ?? []).map((a: any) => ({
+        id: a.id,
+        url: a.url,
+        beat_n: typeof a.title === "string" && a.title.startsWith("Beat ") ? Number(a.title.slice(5)) : null,
+        beat_title: a.subtitle ?? null
+      }))
+  );
+  const boardReq = useAsync<BoardData>(
+    `/api/projects/${project.id}/storyboard`,
+    (body) => ({ beats: body.beats ?? [], variants: body.variants ?? [] }),
+    { isEmpty: (d) => d.beats.length === 0 }
+  );
+
+  const frames = framesReq.data;
+  const board = boardReq.data;
 
   const heroFrame = useMemo(() => {
     if (!board) return null;
@@ -181,6 +198,11 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
       </header>
 
       {/* HERO FRAME — the largest thing on the page, and the only saturated one. */}
+      {boardReq.status === "loading" ? (
+        <SkeletonHeroFrame />
+      ) : boardReq.status === "error" ? (
+        <ErrorState message={boardReq.error} onRetry={boardReq.reload} />
+      ) : (
       <motion.section className="dash-frame" {...fadeUp}>
         {heroFrame ? (
           <>
@@ -203,6 +225,7 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
           </div>
         )}
       </motion.section>
+      )}
 
       {/* PIPELINE — five stages divided by hairlines, progress as a measured rule. */}
       <section className="dash-section">
@@ -255,8 +278,12 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
             Open storyboard →
           </button>
         </div>
-        {frames === null ? null : frames.length === 0 ? (
-          <p className="dash-empty">No frames generated yet. Open Storyboard to start generating.</p>
+        {framesReq.status === "loading" ? (
+          <SkeletonFrames />
+        ) : framesReq.status === "error" ? (
+          <ErrorState message={framesReq.error} onRetry={framesReq.reload} />
+        ) : framesReq.status === "empty" || !frames ? (
+          <EmptyState>No frames generated yet. Open Storyboard to start generating.</EmptyState>
         ) : (
           <motion.div className="dash-frames" variants={staggerContainer} initial="hidden" animate="show">
             {frames.slice(0, 5).map((f) => (
@@ -289,7 +316,7 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
           </div>
           <motion.div {...fadeUp}>
             {activity.length === 0 && (
-              <p className="dash-empty">No activity yet. Submit your script in Screenplay to wake the crew.</p>
+              <EmptyState>No activity yet. Submit your script in Screenplay to wake the crew.</EmptyState>
             )}
             {activity.map((item) => {
               const Icn = AGENT_ICON[item.agent] ?? Wand2;
@@ -312,6 +339,7 @@ export function Dashboard({ project, workspaces, activity, stats, agents, onSwit
             <span className="dash-eyebrow">Crew</span>
           </div>
           <motion.div variants={staggerContainer} initial="hidden" animate="show">
+            {agents.length === 0 && <SkeletonRows count={4} />}
             {agents.map((a) => {
               const Icn = AGENT_ICON[a.id] ?? Wand2;
               const tone = CREW_STATE_COLOR[a.state];

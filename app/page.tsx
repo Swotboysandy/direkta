@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TopNav } from "./_components/TopNav";
 import { Sidebar } from "./_components/Sidebar";
+import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
 import { NewProjectModal } from "./_components/NewProjectModal";
 import { MovieBibleModal } from "./_components/MovieBibleModal";
 import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
@@ -15,7 +16,7 @@ import { Screenplay } from "./_workspaces/Screenplay";
 import { Casting } from "./_workspaces/Casting";
 // Conditionally-rendered workspaces are code-split so their weight (React Flow
 // in Stitch especially) stays out of the initial bundle and loads on first open.
-const wsLoading = () => <div className="main-inner" />;
+const wsLoading = () => <SkeletonWorkspace />;
 const Storyboard = dynamic(() => import("./_workspaces/Storyboard").then((m) => ({ default: m.Storyboard })), { ssr: false, loading: wsLoading });
 const Stitch = dynamic(() => import("./_workspaces/Stitch").then((m) => ({ default: m.Stitch })), { ssr: false, loading: wsLoading });
 const Library = dynamic(() => import("./_workspaces/Library").then((m) => ({ default: m.Library })), { ssr: false, loading: wsLoading });
@@ -65,6 +66,11 @@ export default function Home() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [bundle, setBundle] = useState<ProjectBundle | null>(null);
+  // Distinguishes "still loading" from "no project" and "load failed" —
+  // a null bundle alone cannot tell those apart, and claiming a project is
+  // missing while it is in flight is the worst of the three to get wrong.
+  const [bundleState, setBundleState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [bundleError, setBundleError] = useState<string | null>(null);
   const [agents, setAgents] = useState<AgentStatus[]>(DEFAULT_AGENTS);
   // Pipeline gate data — how far production has actually progressed.
   const [gate, setGate] = useState<{ frames: number; stitchNodes: number; hasFinalVideo: boolean }>({
@@ -174,10 +180,26 @@ export default function Home() {
 
   const reload = useCallback(async () => {
     if (!projectId) return;
-    const res = await fetch(`/api/projects/${projectId}`);
-    if (!res.ok) return;
+    setBundleState((prev) => (prev === "ready" ? prev : "loading"));
+    setBundleError(null);
+    let res: Response;
+    try {
+      res = await fetch(`/api/projects/${projectId}`);
+    } catch {
+      setBundleState("error");
+      setBundleError("Could not reach the server.");
+      return;
+    }
+    if (!res.ok) {
+      // Previously this returned silently, leaving the bundle null and the
+      // screen claiming no project existed.
+      setBundleState("error");
+      setBundleError(`Could not load this project (${res.status}).`);
+      return;
+    }
     const data = (await res.json()) as ProjectBundle;
     setBundle(data);
+    setBundleState("ready");
     const agentsRes = await fetch(`/api/projects/${projectId}/agents`);
     if (agentsRes.ok) {
       const agentsData = await agentsRes.json();
@@ -382,7 +404,13 @@ export default function Home() {
         />
 
         <main className="main">
-          {!bundle ? (
+          {!bundle && bundleState === "loading" ? (
+            <SkeletonWorkspace />
+          ) : !bundle && bundleState === "error" ? (
+            <div className="main-inner">
+              <ErrorState message={bundleError} onRetry={reload} />
+            </div>
+          ) : !bundle ? (
             <div className="main-inner">
               <div
                 style={{
