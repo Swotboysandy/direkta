@@ -36,6 +36,7 @@ interface Props {
   agents: AgentStatus[];
   stats: DashStats;
   query: string;
+  assetsVersion?: number;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
@@ -85,7 +86,7 @@ const CREW_STATE_COLOR: Record<AgentState, string> = {
  * beside it, so it was the one thing here that genuinely duplicated something
  * else on screen.
  */
-export function Dashboard({ project, activity, agents, stats, query, onSwitchWorkspace }: Props) {
+export function Dashboard({ project, activity, agents, stats, query, assetsVersion, onSwitchWorkspace }: Props) {
   const open = (item: CanvasItem) => {
     if (item.kind === "video") onSwitchWorkspace("stitch");
     else if (item.kind === "image") onSwitchWorkspace("storyboard");
@@ -111,7 +112,7 @@ export function Dashboard({ project, activity, agents, stats, query, onSwitchWor
         </div>
       </header>
 
-      <AssetCanvas projectId={project.id} query={query} onOpen={open} />
+      <AssetCanvas projectId={project.id} query={query} assetsVersion={assetsVersion} onOpen={open} />
 
       <div className="home-lower">
         <section className="home-panel">

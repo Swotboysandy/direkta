@@ -49,6 +49,9 @@ interface Props {
   /** Search text, when a surface above owns the field — the home screen takes
    *  it from the top bar so there is one search box on screen, not two. */
   query?: string;
+  /** Changes when something finishes generating, so the new asset appears
+   *  without the user having to reload or change filter. */
+  assetsVersion?: number;
   onOpen?: (item: CanvasItem) => void;
 }
 
@@ -64,7 +67,7 @@ interface Props {
  * Paging is by the assets route's cursor, requested when a sentinel at the foot
  * of the grid comes into view.
  */
-export function AssetCanvas({ projectId, query: externalQuery, onOpen }: Props) {
+export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0, onOpen }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -117,7 +120,7 @@ export function AssetCanvas({ projectId, query: externalQuery, onOpen }: Props) 
       live = false;
       controller.abort();
     };
-  }, [url]);
+  }, [url, assetsVersion]);
 
   const loadMore = useCallback(async () => {
     if (!cursor || more) return;

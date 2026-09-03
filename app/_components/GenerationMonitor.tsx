@@ -35,10 +35,14 @@ interface Live {
  * client, so a listener using any other id sees the queue count and nothing
  * else.
  */
-export function GenerationMonitor() {
+export function GenerationMonitor({ onFinished }: { onFinished?: () => void }) {
   const [live, setLive] = useState<Live>({ connected: false });
   const [elapsed, setElapsed] = useState(0);
   const startedAt = useRef<number | undefined>(undefined);
+  // Held in a ref so the subscription is not torn down and rebuilt each time
+  // the parent re-renders with a new inline callback.
+  const finishedRef = useRef(onFinished);
+  finishedRef.current = onFinished;
 
   useEffect(() => {
     const source = new EventSource("/api/minimax-h3/stream");
@@ -61,9 +65,11 @@ export function GenerationMonitor() {
     });
     on("executing", (d) => {
       if (d?.node == null) {
-        // A null node marks the end of a job, not a node with no id.
+        // A null node marks the end of a job, not a node with no id — which is
+        // the only signal that a result now exists to be shown.
         startedAt.current = undefined;
         setLive((l) => ({ ...l, step: undefined, steps: undefined, preview: undefined }));
+        finishedRef.current?.();
       }
     });
     on("progress", (d) => setLive((l) => ({ ...l, step: d?.value, steps: d?.max })));

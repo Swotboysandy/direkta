@@ -7,6 +7,7 @@ import type { Project, WorkspaceId } from "../../lib/types";
 
 interface Props {
   project: Project;
+  assetsVersion?: number;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
@@ -19,7 +20,7 @@ interface Props {
  * of one thing: everything the project has made or been given. The canvas is
  * that one thing, with the tabs demoted to filters on a rail.
  */
-export function Library({ project, onSwitchWorkspace }: Props) {
+export function Library({ project, assetsVersion, onSwitchWorkspace }: Props) {
   const open = (item: CanvasItem) => {
     // Frames belong to the board; clips belong to the timeline. Entities are
     // cast, so they open where they are managed.
@@ -41,7 +42,7 @@ export function Library({ project, onSwitchWorkspace }: Props) {
         </div>
       </header>
 
-      <AssetCanvas projectId={project.id} onOpen={open} />
+      <AssetCanvas projectId={project.id} assetsVersion={assetsVersion} onOpen={open} />
     </motion.div>
   );
 }

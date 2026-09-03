@@ -74,6 +74,10 @@ export default function Home() {
   // Set when a suggestion is taken from the agent; the composer consumes it
   // and clears it, so pressing the same card twice loads it again.
   const [composerSeed, setComposerSeed] = useState<string | null>(null);
+  // Bumped whenever anything finishes generating. The canvas watches it and
+  // re-fetches; without it a finished shot never appeared until the filter
+  // was changed or the page reloaded.
+  const [assetsVersion, setAssetsVersion] = useState(0);
   // Distinguishes "still loading" from "no project" and "load failed" —
   // a null bundle alone cannot tell those apart, and claiming a project is
   // missing while it is in flight is the worst of the three to get wrong.
@@ -383,6 +387,7 @@ export default function Home() {
             ? `Shot rendered${refs.length ? ` with ${refs.length} reference${refs.length > 1 ? "s" : ""}` : ""}.`
             : runBody?.error || "The shot could not be generated."
         );
+        setAssetsVersion((v) => v + 1);
         reload();
       } catch {
         setComposeNote("Could not reach the server.");
@@ -482,6 +487,7 @@ export default function Home() {
                   project={bundle.project}
                   activity={bundle.activity}
                   agents={agents}
+                  assetsVersion={assetsVersion}
                   stats={{
                     beats: bundle.beats.length,
                     characters: bundle.characters.length,
@@ -525,7 +531,7 @@ export default function Home() {
                 <Stitch project={bundle.project} onSwitchWorkspace={switchWorkspace} />
               )}
               {activeWorkspace === "library" && (
-                <Library project={bundle.project} onSwitchWorkspace={switchWorkspace} />
+                <Library project={bundle.project} assetsVersion={assetsVersion} onSwitchWorkspace={switchWorkspace} />
               )}
               {activeWorkspace === "export" && (
                 <ExportWorkspace project={bundle.project} onSwitchWorkspace={switchWorkspace} />
@@ -537,7 +543,7 @@ export default function Home() {
           {bundle && (
             <div className="composer-dock">
               <div className="main-inner">
-                <GenerationMonitor />
+                <GenerationMonitor onFinished={() => setAssetsVersion((v) => v + 1)} />
                 <Composer
                   projectId={bundle.project.id}
                   onSubmit={compose}
