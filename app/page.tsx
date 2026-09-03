@@ -479,6 +479,8 @@ export default function Home() {
               {activeWorkspace === "dashboard" && (
                 <Dashboard
                   project={bundle.project}
+                  activity={bundle.activity}
+                  agents={agents}
                   stats={{
                     beats: bundle.beats.length,
                     characters: bundle.characters.length,

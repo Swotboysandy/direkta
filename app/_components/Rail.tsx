@@ -7,6 +7,7 @@ import {
   Clapperboard,
   Folder,
   LayoutDashboard,
+  Library,
   Lock,
   PenLine,
   Share2,
@@ -21,13 +22,22 @@ const ICONS: Record<WorkspaceId, IconType> = {
   casting: Folder,
   storyboard: Boxes,
   stitch: Share2,
-  library: LayoutDashboard,
+  library: Library,
   export: Clapperboard
 };
 
-/** Library is gone from navigation — home is the canvas, and Library was the
- *  same canvas behind an extra click. */
-const ORDER: WorkspaceId[] = ["dashboard", "screenplay", "casting", "storyboard", "stitch", "export"];
+/** Library keeps its place. Home shows the same canvas, but Library was a
+ *  destination the project had, and dropping it removed a way in rather than
+ *  moving it. */
+const ORDER: WorkspaceId[] = [
+  "dashboard",
+  "screenplay",
+  "casting",
+  "storyboard",
+  "stitch",
+  "library",
+  "export"
+];
 
 interface Props {
   workspaces: WorkspaceMeta[];
