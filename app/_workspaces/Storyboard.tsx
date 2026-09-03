@@ -483,9 +483,9 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     <div className="main-inner storyboard">
       <motion.header className="page-head" {...fadeUp}>
         <div>
-          <span className="t-eyebrow crumb">04 / WORKSPACE · STORYBOARD</span>
-          <h1 className="t-display-m" style={{ marginTop: "var(--sp-2)" }}>Storyboard</h1>
-          <p className="lead" style={{ marginTop: "var(--sp-3)", maxWidth: "64ch" }}>
+          <span className="ws-eyebrow">Storyboard</span>
+          <h1 className="ws-title">Storyboard</h1>
+          <p className="ws-lead">
             The Cinematographer rolls 4 variants per beat. Pick a winner. Click a beat to edit its
             prompt and camera direction, or open any frame to review a single take.
           </p>
@@ -606,7 +606,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
                             </span>
                           ) : null}
                         </span>
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: "var(--mute)", whiteSpace: "nowrap" }}>
+                        <span className="ws-meta">
                           ≈{costK}k tok
                         </span>
                       </button>
@@ -1154,7 +1154,7 @@ function BeatEditor({
                   {selected && <Check size={11} />}
                   {m.name}
                   {!m.hasLook && (
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.7 }}>no look</span>
+                    <span className="ws-meta">no look</span>
                   )}
                 </button>
               );

@@ -345,23 +345,13 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     <div className="main-inner" style={{ paddingBottom: 0 }}>
       <motion.header className="page-head" {...fadeUp}>
         <div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--accent)" }}>
+          <span className="ws-eyebrow">
             05 / Workspace · Stitch
           </span>
-          <h1
-            style={{
-              margin: "8px 0 0",
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(24px, 2.4vw, 32px)",
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "var(--ink)"
-            }}
-          >
+          <h1 className="ws-title">
             Stitch
           </h1>
-          <p className="lead" style={{ marginTop: 12, maxWidth: "60ch" }}>
+          <p className="ws-lead">
             The assembly. Scrub the timeline, play the cut in the monitor, and click a shot to set duration, pick a
             video model, and roll a motion clip.
           </p>
@@ -510,7 +500,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
                 pointerEvents: "none"
               }}
             >
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--mute)" }}>
+              <span className="ws-meta">
                 Node graph · drag a node to move · drag the canvas to pan · click a node to edit
               </span>
             </div>
@@ -695,7 +685,7 @@ function StitchTimeline({
             />
           ) : (
             <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+              <span className="ws-meta">
                 Frame pending · S{current.node.beat?.n ? String(current.node.beat.n).padStart(2, "0") : "—"}
               </span>
             </div>
@@ -775,7 +765,7 @@ function StitchTimeline({
       {/* Filmstrip */}
       <div style={{ display: "flex", flexDirection: "column", background: "var(--surface)", minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--cream-deep)" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          <span className="ws-meta">
             {ordered.length} shots · {total.toFixed(1)}s runtime
           </span>
           <span style={{ fontSize: 11, color: "var(--mute)" }}>Click the ruler to scrub · click a shot to edit · ▶ plays the assembly</span>
@@ -1012,7 +1002,7 @@ function StitchInspector({
     >
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, paddingBottom: 12, borderBottom: "1px solid var(--cream-deep)" }}>
         <div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          <span className="ws-meta">
             SCENE {String(scene).padStart(2, "0")}
             {node.variant_n ? ` · V${String(node.variant_n).padStart(2, "0")}` : ""}
           </span>
@@ -1079,14 +1069,14 @@ function StitchInspector({
           />
           {(animating || node.clip_state === "generating") && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.62)" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "#FFFBF1" }}>Rendering clip…</span>
+              <span className="ws-meta">Rendering clip…</span>
             </div>
           )}
         </div>
       ) : null}
 
       <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Scene number</span>
+        <span className="ws-meta">Scene number</span>
         <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
           <input
             type="number"
@@ -1115,7 +1105,7 @@ function StitchInspector({
       </div>
 
       <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Scene heading</span>
+        <span className="ws-meta">Scene heading</span>
         <div
           style={{
             marginTop: 8,
@@ -1133,7 +1123,7 @@ function StitchInspector({
 
       {(node.beat?.characters?.length ?? 0) > 0 && (
         <div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Cast in frame</span>
+          <span className="ws-meta">Cast in frame</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
             {(node.beat?.characters ?? []).map((c) => (
               <span
@@ -1158,7 +1148,7 @@ function StitchInspector({
       )}
 
       <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+        <span className="ws-meta">
           Duration · {duration.toFixed(3)}s
         </span>
         <input
@@ -1176,7 +1166,7 @@ function StitchInspector({
       </div>
 
       <div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+        <span className="ws-meta">
           Trim in-point · {trimStart.toFixed(3)}s into the clip
         </span>
         <input
@@ -1197,7 +1187,7 @@ function StitchInspector({
       {(node.lipsync_url || node.clip_url) && <ClipFrameTools nodeId={node.id} clipUrl={(node.lipsync_url || node.clip_url)!} />}
 
       <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Camera motion</span>
+        <span className="ws-meta">Camera motion</span>
         <select
           value={motionId}
           onChange={(e) => setMotionId(e.target.value)}
@@ -1385,7 +1375,7 @@ function StitchInspector({
       )}
 
       <div style={{ borderTop: "1px solid var(--cream-deep)", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>
+        <span className="ws-meta">
           Lip sync {node.dialogue_audio_url ? "· dialogue attached" : "· no dialogue yet"}
         </span>
         <label

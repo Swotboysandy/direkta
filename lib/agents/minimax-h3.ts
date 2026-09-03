@@ -210,7 +210,11 @@ export async function ensureH3PodRunning(options: { turbo?: boolean } = {}): Pro
   const bootstrap =
     "curl -fsS -m 3 -o /dev/null http://127.0.0.1:8188/system_stats || " +
     "(cd /workspace/ComfyUI && pip3 install -q --break-system-packages -r requirements.txt >/workspace/comfyui_install.log 2>&1; " +
-    "nohup python3 main.py --listen 0.0.0.0 --port 8188 > /workspace/comfyui_server.log 2>&1 </dev/null & disown; sleep 1)";
+    // --preview-method is what makes the sampler emit latent previews. Without
+    // it ComfyUI reports step counts but never sends an image, so the UI can
+    // show how far a render has got but not what it is producing. The cost is
+    // one small decode per preview interval, against a 15-minute render.
+    "nohup python3 main.py --listen 0.0.0.0 --port 8188 --preview-method auto > /workspace/comfyui_server.log 2>&1 </dev/null & disown; sleep 1)";
   await sshExec(netInfo.publicIp, netInfo.sshPort, bootstrap, 5 * 60_000).catch(() => {
     /* best-effort — the health-check wait below is the real gate */
   });

@@ -92,40 +92,13 @@ export function Export({ project }: Props) {
     <div className="main-inner">
       <motion.header className="page-head" {...fadeUp}>
         <div style={{ minWidth: 0, maxWidth: "64ch" }}>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              color: "var(--accent)"
-            }}
-          >
+          <span className="ws-eyebrow">
             07 / Workspace · Export
           </span>
-          <h1
-            style={{
-              margin: "8px 0 0",
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(24px, 2.4vw, 32px)",
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "var(--ink)"
-            }}
-          >
+          <h1 className="ws-title">
             Export
           </h1>
-          <p
-            style={{
-              margin: "12px 0 0",
-              fontWeight: 500,
-              fontSize: 16,
-              lineHeight: 1.5,
-              color: "var(--ink)",
-              maxWidth: "56ch"
-            }}
-          >
+          <p className="ws-lead">
             Hand off the project. Animatic for pitch decks, storyboard for the crew, shot list for
             production, bible for the writers&apos; room.
           </p>
@@ -175,15 +148,7 @@ export function Export({ project }: Props) {
               <span style={{ color: "var(--mute)" }}>
                 <Film size={28} />
               </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  fontWeight: 500,
-                  letterSpacing: "0.02em",
-                  color: "var(--accent)"
-                }}
-              >
+              <span className="ws-meta">
                 {exStatus}
               </span>
             </div>
@@ -266,14 +231,7 @@ export function Export({ project }: Props) {
                   placeItems: "center"
                 }}
               >
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10,
-                    letterSpacing: "0.02em",
-                    color: "var(--mustard-deep)"
-                  }}
-                >
+                <span className="ws-meta">
                   STITCHING SHOTS + TRANSITIONS…
                 </span>
               </div>
@@ -425,15 +383,7 @@ function ExportCard({
         <span style={{ color: "var(--mute)" }}>
           <Icn size={28} />
         </span>
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            fontWeight: 500,
-            letterSpacing: "0.02em",
-            color: "var(--mute)"
-          }}
-        >
+        <span className="ws-meta">
           SOON
         </span>
       </div>

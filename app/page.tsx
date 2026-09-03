@@ -6,6 +6,7 @@ import { Rail } from "./_components/Rail";
 import { AgentPanel } from "./_components/AgentPanel";
 import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
 import { Composer, type ComposerSubmission } from "./_components/Composer";
+import { GenerationMonitor } from "./_components/GenerationMonitor";
 import { NewProjectModal } from "./_components/NewProjectModal";
 import { MovieBibleModal } from "./_components/MovieBibleModal";
 import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
@@ -531,6 +532,7 @@ export default function Home() {
           {bundle && (
             <div className="composer-dock">
               <div className="main-inner">
+                <GenerationMonitor />
                 <Composer
                   projectId={bundle.project.id}
                   onSubmit={compose}

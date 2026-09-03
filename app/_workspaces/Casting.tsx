@@ -243,34 +243,14 @@ export function Casting({ project, characters, locations, props: propList, onSwi
     <motion.div className="main-inner" {...pageIn}>
       <motion.header
         {...fadeUp}
-        style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 28, padding: "32px 0" }}
+        className="ws-head ws-head-row"
       >
         <div style={{ minWidth: 0, maxWidth: "64ch" }}>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              color: "var(--accent)"
-            }}
-          >
-            03 / Workspace · Casting
-          </span>
-          <h1
-            style={{
-              margin: "8px 0 0",
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(24px, 2.4vw, 32px)",
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "var(--ink)"
-            }}
-          >
+          <span className="ws-eyebrow">Casting</span>
+          <h1 className="ws-title">
             Casting
           </h1>
-          <p style={{ margin: "12px 0 0", fontWeight: 500, fontSize: 16, lineHeight: 1.5, color: "var(--ink)", maxWidth: "56ch" }}>
+          <p className="ws-lead">
             Train a <strong>Soul ID</strong> for every character and key location. Consistency across every frame
             starts here.
           </p>
@@ -393,7 +373,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
 
       <div className="page-body">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          <span className="ws-meta">
             Characters · {characters.length} cast
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -441,7 +421,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
 
         {characters.length === 0 ? (
           <div style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--accent)" }}>
+            <span className="ws-meta">
               Casting director
             </span>
             <p style={{ margin: "8px 0 0", color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5, maxWidth: "56ch" }}>
@@ -486,7 +466,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
         )}
 
         <div style={{ margin: "40px 0 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          <span className="ws-meta">
             Locations · {locations.length} identified
           </span>
           <BatchGenerate
@@ -549,7 +529,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
         )}
 
         <div style={{ margin: "40px 0 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          <span className="ws-meta">
             Props &amp; artifacts · {propList.length} identified
           </span>
           <BatchGenerate
@@ -763,7 +743,7 @@ function CharacterCard({
             }}
           >
             <Plus size={18} />
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em" }}>Add reference photos</span>
+            <span className="ws-meta">Add reference photos</span>
           </div>
         )}
         {(state === "training" || busy) && <div className="cast-shimmer" style={{ background: "none" }} />}
@@ -879,7 +859,7 @@ function CharacterCard({
                 }}
               />
             </div>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--viridian-deep)" }}>
+            <span className="ws-meta">
               {character.consistency.toFixed(1)}
             </span>
           </div>
@@ -1109,7 +1089,7 @@ function CharacterEditModal({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", color: "var(--accent)" }}>
+          <span className="ws-meta">
             Edit character
           </span>
           <button
@@ -1682,7 +1662,7 @@ function BatchGenerate({
         >
           <Sparkles size={12} /> {label}
           {missing.length > 0 && (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--mute)" }}>
+            <span className="ws-meta">
               {missing.length} missing
             </span>
           )}
@@ -1705,7 +1685,7 @@ function BatchGenerate({
             gap: 10
           }}
         >
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: "0.02em", color: "var(--mute)" }}>
+          <span className="ws-meta">
             {label} · pick who to generate
           </span>
           <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: 260, overflowY: "auto" }}>
@@ -1758,7 +1738,7 @@ function BatchGenerate({
                     {i.name}
                   </span>
                   {i.hasLook && (
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--viridian)", flexShrink: 0 }}>
+                    <span className="ws-meta">
                       has look
                     </span>
                   )}

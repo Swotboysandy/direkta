@@ -21,6 +21,155 @@
 
 @layer legacy {
 
+/* ============================================================
+   GENERATION MONITOR
+   ------------------------------------------------------------
+   The pipeline already streamed sampler progress; it was just
+   rendered by one panel inside the Stitch inspector, so a
+   fifteen-minute render looked like nothing happening from
+   anywhere else in the app. This shows it wherever you are,
+   above the composer the work was started from, and only while
+   something is actually running.
+   ============================================================ */
+.genmon {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: min(820px, 100%);
+  margin: 0 auto var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* A latent preview is 16:9 like the output, so it reserves that shape and the
+   row does not resize when one arrives mid-render. */
+.genmon-preview {
+  width: 72px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  flex: none;
+  background: var(--cream-deep);
+}
+
+.genmon-body { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+
+.genmon-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.genmon-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.genmon-nums {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  /* Digits hold their column so the row does not jitter each second. */
+  font-variant-numeric: tabular-nums;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.genmon-track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--cream-deep);
+  overflow: hidden;
+}
+.genmon-track > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  /* Matches the step cadence rather than snapping, so the bar reads as motion
+     instead of a series of jumps. */
+  transition: width var(--dur-4) var(--ease-out);
+}
+
+.genmon-after {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+}
+
+
+/* ============================================================
+   PAGE — the shared measure for every workspace
+   ------------------------------------------------------------
+   Each workspace previously set its own eyebrow, title and lead
+   as inline style objects, so five copies of the same header
+   drifted apart and none of them could be reached by a media
+   query. One set of classes governs them now.
+   ============================================================ */
+.ws-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-4);
+  margin-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--cream-deep);
+}
+
+.ws-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* Running metadata, not a heading. Same face as the eyebrow but mixed case and
+   without the wide tracking, because these are read as part of the interface
+   rather than as a label above it. */
+.ws-meta {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+}
+
+.ws-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--t-display-m);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.ws-lead {
+  margin: 0;
+  max-width: 68ch;
+  font-size: var(--t-body);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+}
+
+/* Actions sit on the header's baseline at width, and wrap under it when the
+   measure gets tight rather than squeezing the title. */
+.ws-head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+
 /* Filters read left to right above the grid, with their names showing.
    As a second vertical icon column they sat beside the workspace rail and
    read as more navigation, hid every label behind a hover, and were left
@@ -829,7 +978,7 @@
   flex-direction: column;
   gap: var(--sp-2);
   width: min(820px, 100%);
-  margin: 0 auto;
+  margin-inline: auto;
 }
 
 .composer-input {
@@ -1007,10 +1156,15 @@
 .composer-dock {
   position: sticky;
   bottom: 0;
-  padding: var(--sp-4) 0 var(--sp-5);
-  background: linear-gradient(to top, var(--bg) 62%, transparent);
+  /* Sticky, but the column reserves room for it via .main padding-bottom, so it
+     rests under the content rather than covering the last of it. */
+  padding: var(--sp-3) var(--page-pad) var(--sp-4);
+  background: linear-gradient(to top, var(--bg) 55%, color-mix(in srgb, var(--bg) 70%, transparent));
+  backdrop-filter: blur(6px);
   z-index: 30;
+  flex: none;
 }
+
 
 /* ============================================================
    LEGACY TOKEN COMPATIBILITY LAYER
@@ -1227,21 +1381,29 @@ strong, b {
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  /* Scrolling one column rather than the page means the bar and rail stay put
-     and the composer can dock to the bottom of the work area. */
+  /* Scrolling one column rather than the page keeps the bar and rail fixed and
+     lets the composer dock to the bottom of the work area. */
   display: flex;
   flex-direction: column;
 }
 
+
 .main-inner {
-  padding: var(--sp-5) var(--page-pad) var(--sp-7);
-  max-width: var(--max-w);
-  /* Aligned to the rail rather than centred in the track. Centring left a
-     wide gutter between the navigation and the content it belongs to, which
-     read as the page having drifted off to one side. */
-  margin: 0;
+  /* Centred in its column, with the measure set by the content rather than by
+     a fixed band: 1400px inside a 1900px track read as drifted to one side,
+     and pinning it to the left instead just moved the void to the other edge.
+     The composer's own clearance is added here, so a docked composer can never
+     sit on top of what is being read. */
   width: 100%;
+  max-width: min(var(--max-w), 100%);
+  margin-inline: auto;
+  padding: var(--sp-5) var(--page-pad) var(--sp-6);
 }
+
+/* Everything in the work column shares one measure, so pages line up with each
+   other instead of each choosing its own width. */
+.main > .main-inner { flex: 1 1 auto; min-height: 0; }
+
 
 .page-body {
   padding-bottom: var(--sp-7);

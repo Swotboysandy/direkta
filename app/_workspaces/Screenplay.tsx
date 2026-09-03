@@ -249,21 +249,11 @@ export function Screenplay({
       <div className="main-inner screenplay">
         <motion.header className="page-head" {...fadeUp}>
           <div>
-            <span style={{ ...mono10, color: "var(--accent)" }}>02 / Workspace · Screenplay</span>
-            <h1
-              style={{
-                margin: "8px 0 0",
-                fontFamily: "var(--font-display)",
-                fontWeight: 800,
-                fontSize: "clamp(24px,2.4vw,32px)",
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "var(--ink)"
-              }}
-            >
+            <span className="ws-eyebrow">Screenplay</span>
+            <h1 className="ws-title">
               Screenplay
             </h1>
-            <p style={{ margin: "12px 0 0", fontWeight: 500, fontSize: 16, lineHeight: 1.5, color: "var(--ink)", maxWidth: "56ch" }}>
+            <p className="ws-lead">
               Paste your script or write it here. Once you submit, <strong>Script Reader</strong> breaks it
               into beats and <strong>Bible Builder</strong> drafts the production bible.
             </p>
@@ -584,21 +574,11 @@ export function Screenplay({
     <div className="main-inner screenplay">
       <motion.header className="page-head" {...fadeUp}>
         <div>
-          <span style={{ ...mono10, color: "var(--accent)" }}>02 / Workspace · Screenplay</span>
-          <h1
-            style={{
-              margin: "8px 0 0",
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(24px,2.4vw,32px)",
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "var(--ink)"
-            }}
-          >
+          <span className="ws-eyebrow">Screenplay</span>
+          <h1 className="ws-title">
             Screenplay
           </h1>
-          <p style={{ margin: "12px 0 0", fontWeight: 500, fontSize: 16, lineHeight: 1.5, color: "var(--ink)", maxWidth: "56ch" }}>
+          <p className="ws-lead">
             {beats.length === 0
               ? extracting
                 ? "Script Reader is reading your screenplay — beats will appear shortly."
@@ -890,12 +870,12 @@ function RailBeatItem({
         fontFamily: "var(--font-ui)"
       }}
     >
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: expanded ? "var(--accent)" : "var(--mute)", paddingTop: 2 }}>
+      <span className="ws-meta">
         {pad}
       </span>
       <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
         <span style={{ fontWeight: 500, fontSize: 13, lineHeight: 1.35 }}>{beat.title || "Untitled beat"}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: "0.02em", color: "var(--mute)" }}>
+        <span className="ws-meta">
           {beat.scene_heading || "—"}
         </span>
         {beat.flag && (
