@@ -563,3 +563,61 @@ test("favourites route rejects a malformed toggle", async () => {
   );
   assert.equal(missingProject.status, 404);
 });
+
+test("gemini image provider builds a request that can actually return an image", async () => {
+  const gem = require("../lib/agents/gemini-image.ts");
+  const os = require("node:os");
+  let captured = null;
+  const realFetch = global.fetch;
+  global.fetch = async (url, init) => {
+    captured = { url: String(url), body: JSON.parse(init.body), headers: init.headers };
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/png", data: Buffer.from("x").toString("base64") } }] } }]
+      })
+    };
+  };
+  try {
+    const out = await gem.generateImageViaGemini({
+      apiKey: "test-key-never-sent",
+      model: "gemini-3-pro-image-preview",
+      prompt: "A man in a workshop.",
+      aspectRatio: "16:9",
+      ossDir: os.tmpdir(),
+      resolution: "2K"
+    });
+    assert.ok(out.url.startsWith("/oss/"));
+  } finally {
+    global.fetch = realFetch;
+  }
+
+  // Without responseModalities the model answers with prose about the image
+  // rather than producing one, which is the whole failure mode of this call.
+  assert.deepEqual(captured.body.generationConfig.responseModalities, ["IMAGE"]);
+  assert.equal(captured.body.generationConfig.imageConfig.aspectRatio, "16:9");
+  assert.equal(captured.headers["x-goog-api-key"], "test-key-never-sent");
+  assert.ok(captured.url.includes("gemini-3-pro-image-preview:generateContent"));
+});
+
+test("gemini image surfaces the model's own words when it returns no image", async () => {
+  const gem = require("../lib/agents/gemini-image.ts");
+  const os = require("node:os");
+  const realFetch = global.fetch;
+  global.fetch = async () => ({
+    ok: true,
+    json: async () => ({ candidates: [{ finishReason: "SAFETY", content: { parts: [{ text: "I can't make that." }] } }] })
+  });
+  try {
+    await assert.rejects(
+      gem.generateImageViaGemini({
+        apiKey: "k", model: "m", prompt: "p", aspectRatio: "16:9", ossDir: os.tmpdir()
+      }),
+      // A refusal arrives shaped like a success, so it must not read as a
+      // generic failure.
+      /can't make that/
+    );
+  } finally {
+    global.fetch = realFetch;
+  }
+});

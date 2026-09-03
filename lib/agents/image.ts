@@ -3,6 +3,7 @@ import path from "node:path";
 import { nanoid } from "nanoid";
 import { vendors } from "../db/repo";
 import { generateImageViaByteplus } from "./byteplus-image";
+import { generateImageViaGemini } from "./gemini-image";
 import type { AspectRatio, VendorConfig } from "../types";
 
 /** On Vercel, /tmp is the only writable path. Files reset on cold start. */
@@ -54,6 +55,17 @@ export async function generateImage(input: {
       prompt: input.prompt,
       size: SEEDREAM_SIZES[input.aspectRatio],
       imageUrls: input.referenceImages
+    });
+  }
+  if (vendor.provider === "google-image") {
+    return await generateImageViaGemini({
+      apiKey: vendor.api_key,
+      model: vendor.model,
+      prompt: input.prompt,
+      aspectRatio: input.aspectRatio,
+      ossDir: OSS_DIR,
+      referenceImages: input.referenceImages,
+      resolution: "2K"
     });
   }
   throw new Error(`Unsupported image provider: ${vendor.provider}`);

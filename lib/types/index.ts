@@ -157,7 +157,9 @@ export interface Message {
 export type VendorKind = "text" | "image" | "video" | "lipsync";
 
 export type TextProvider = "anthropic" | "openai" | "google" | "deepseek" | "openai-compatible";
-export type ImageProvider = "fal" | "openai-image" | "higgsfield" | "byteplus-image";
+/** "google-image" is Nano Banana Pro / Gemini 3 Pro Image called directly on
+ *  the user's own key, as opposed to the same model billed through Higgsfield. */
+export type ImageProvider = "fal" | "openai-image" | "higgsfield" | "byteplus-image" | "google-image";
 export type VideoProvider = "fal-video" | "runway" | "minimax" | "higgsfield-video" | "byteplus-video";
 export type LipsyncProvider = "sync-lipsync";
 

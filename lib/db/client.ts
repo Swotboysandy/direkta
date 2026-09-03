@@ -483,6 +483,10 @@ function seed(db: DatabaseSync) {
   ensureVendor(db, "anthropic-default", "Anthropic Claude", "anthropic", "claude-sonnet-4-6", "text", 1);
   ensureVendor(db, "openai-default", "OpenAI GPT", "openai", "gpt-4o-mini", "text", 0);
   ensureVendor(db, "google-default", "Google Gemini", "google", "gemini-2.0-flash", "text", 0);
+  // Nano Banana Pro on the user's own Gemini key. The catalog already offered
+  // this model, but only through Higgsfield, which bills Higgsfield credits per
+  // frame; this runs the same model on a key they already pay for.
+  ensureVendor(db, "google-image-default", "Nano Banana Pro (own key)", "google-image", "gemini-3-pro-image-preview", "image", 0);
   ensureVendor(db, "fal-default", "Fal AI (Flux)", "fal", "fal-ai/flux/schnell", "image", 1);
   ensureVendor(db, "openai-image-default", "OpenAI gpt-image-1", "openai-image", "gpt-image-1", "image", 0);
   ensureVendor(db, "fal-video-default", "Fal AI (Kling)", "fal-video", "fal-ai/kling-video/v1/standard/text-to-video", "video", 1);
