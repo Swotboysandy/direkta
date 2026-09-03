@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TopBar } from "./_components/TopBar";
-import { Sidebar } from "./_components/Sidebar";
+import { Rail } from "./_components/Rail";
+import { AgentPanel } from "./_components/AgentPanel";
 import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
 import { Composer, type ComposerSubmission } from "./_components/Composer";
 import { NewProjectModal } from "./_components/NewProjectModal";
@@ -49,7 +50,6 @@ interface ProjectBundle {
 }
 
 const LAST_PROJECT_KEY = "fylmer:last-project";
-const SIDEBAR_KEY = "fylmer:sidebar-collapsed";
 
 const DEFAULT_AGENTS: AgentStatus[] = [
   { id: "script-reader", name: "Script Reader", state: "idle" },
@@ -70,6 +70,9 @@ export default function Home() {
   // One search box on screen: the bar owns the field, the canvas reads it.
   const [query, setQuery] = useState("");
   const [agentOpen, setAgentOpen] = useState(false);
+  // Set when a suggestion is taken from the agent; the composer consumes it
+  // and clears it, so pressing the same card twice loads it again.
+  const [composerSeed, setComposerSeed] = useState<string | null>(null);
   // Distinguishes "still loading" from "no project" and "load failed" —
   // a null bundle alone cannot tell those apart, and claiming a project is
   // missing while it is in flight is the worst of the three to get wrong.
@@ -84,7 +87,6 @@ export default function Home() {
   });
   const [gateLoaded, setGateLoaded] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>("dashboard");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [keyVaultOpen, setKeyVaultOpen] = useState(false);
   const [skillsOpen, setSkillsOpen] = useState(false);
@@ -97,9 +99,6 @@ export default function Home() {
     const fromUrlWs = url.searchParams.get("ws") as WorkspaceId | null;
     const fromStorage =
       typeof localStorage !== "undefined" ? localStorage.getItem(LAST_PROJECT_KEY) : null;
-    const collapsed =
-      typeof localStorage !== "undefined" ? localStorage.getItem(SIDEBAR_KEY) === "1" : false;
-    setSidebarCollapsed(collapsed);
 
     if (fromUrlWs) setActiveWorkspace(fromUrlWs);
 
@@ -123,34 +122,6 @@ export default function Home() {
     localStorage.setItem(LAST_PROJECT_KEY, projectId);
   }, [projectId, activeWorkspace]);
 
-  useEffect(() => {
-    // Don't persist a collapse the viewport forced — otherwise visiting on a
-    // narrow screen silently rewrites the user's real preference, and the
-    // sidebar stays collapsed when they return to a wide one.
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1100px)").matches) return;
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? "1" : "0");
-    }
-  }, [sidebarCollapsed]);
-
-  // Below 1100px the sidebar only has room for its icon rail. The collapsed
-  // styling is driven by data-collapsed on .app-body (and by inline styles in
-  // Sidebar itself), so narrowing the track in CSS alone left full-width
-  // labels being clipped by the main column — the state has to change, not
-  // just the width. Restores the user's own preference on the way back up.
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1100px)");
-    const apply = () => {
-      if (mq.matches) {
-        setSidebarCollapsed(true);
-      } else if (typeof localStorage !== "undefined") {
-        setSidebarCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
-      }
-    };
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
 
   // Lightweight gate refresh — only the counts that unlock later stages.
   // Kept separate from the full bundle reload so it can poll without
@@ -442,14 +413,8 @@ export default function Home() {
         agentOpen={agentOpen}
       />
 
-      <div className="app-body" data-collapsed={sidebarCollapsed}>
-        <Sidebar
-          workspaces={workspaces}
-          activeWorkspace={activeWorkspace}
-          collapsed={sidebarCollapsed}
-          onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
-          onSwitchWorkspace={switchWorkspace}
-        />
+      <div className="app-body" data-agent={agentOpen ? "true" : "false"}>
+        <Rail workspaces={workspaces} active={activeWorkspace} onSwitch={switchWorkspace} />
 
         <main className="main">
           {!bundle && bundleState === "loading" ? (
@@ -567,12 +532,30 @@ export default function Home() {
           {bundle && (
             <div className="composer-dock">
               <div className="main-inner">
-                <Composer projectId={bundle.project.id} onSubmit={compose} busy={composing} />
+                <Composer
+                  projectId={bundle.project.id}
+                  onSubmit={compose}
+                  busy={composing}
+                  seed={composerSeed}
+                  onSeedConsumed={() => setComposerSeed(null)}
+                />
                 {composeNote && <p className="composer-note">{composeNote}</p>}
               </div>
             </div>
           )}
         </main>
+
+        {bundle && (
+          <AgentPanel
+            projectId={bundle.project.id}
+            open={agentOpen}
+            onClose={() => setAgentOpen(false)}
+            onUsePrompt={(text) => {
+              setComposerSeed(text);
+              setAgentOpen(false);
+            }}
+          />
+        )}
       </div>
 
       <KeyVaultPanel open={keyVaultOpen} onClose={() => setKeyVaultOpen(false)} />

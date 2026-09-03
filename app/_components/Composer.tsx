@@ -29,6 +29,10 @@ interface Props {
   onSubmit: (value: ComposerSubmission) => void | Promise<void>;
   busy?: boolean;
   placeholder?: string;
+  /** A prompt handed over from the agent's suggestions. */
+  seed?: string | null;
+  /** Called once the seed has been taken, so the same card can be used again. */
+  onSeedConsumed?: () => void;
 }
 
 const KIND_LABEL: Record<AssetItem["kind"], string> = {
@@ -57,7 +61,7 @@ const KIND_LABEL: Record<AssetItem["kind"], string> = {
  * textarea for one costs the browser's own undo, spellcheck and IME handling;
  * this keeps those and still shows every attachment with its thumbnail.
  */
-export function Composer({ projectId, onSubmit, busy = false, placeholder }: Props) {
+export function Composer({ projectId, onSubmit, busy = false, placeholder, seed, onSeedConsumed }: Props) {
   const [text, setText] = useState("");
   const [refs, setRefs] = useState<ComposerSubmission["refs"]>([]);
   const [mention, setMention] = useState<{ query: string; at: number } | null>(null);
@@ -79,6 +83,17 @@ export function Composer({ projectId, onSubmit, busy = false, placeholder }: Pro
   }, [mention, assets.data]);
 
   useEffect(() => setHighlight(0), [mention?.query]);
+
+  // Taking a suggestion replaces the draft and puts the caret at the end, so
+  // it can be edited immediately rather than being a fixed block of text.
+  useEffect(() => {
+    if (!seed) return;
+    setText(seed);
+    onSeedConsumed?.();
+    const el = rootRef.current?.querySelector("textarea");
+    el?.focus();
+    requestAnimationFrame(() => el?.setSelectionRange(seed.length, seed.length));
+  }, [seed, onSeedConsumed]);
 
   /** Find an unterminated `@word` immediately before the caret. */
   const detectMention = useCallback((value: string, caret: number) => {

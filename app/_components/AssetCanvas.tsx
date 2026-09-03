@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { SPRING_SMOOTH } from "./motion";
 import {
   Boxes,
   Film,
@@ -217,8 +219,20 @@ export function AssetCanvas({ projectId, query: externalQuery, onOpen }: Props) 
         {status === "ready" && (
           <>
             <div className="canvas-grid">
-              {items.map((item) => (
-                <article key={`${item.kind}:${item.id}`} className="canvas-card" data-kind={item.kind}>
+              {items.map((item, i) => (
+                <motion.article
+                  key={`${item.kind}:${item.id}`}
+                  className="canvas-card"
+                  data-kind={item.kind}
+                  initial={{ y: 10 }}
+                  animate={{ y: 0 }}
+                  transition={{
+                    ...SPRING_SMOOTH,
+                    // Only the first screenful staggers; past that the delay
+                    // would be longer than the scroll that revealed the card.
+                    delay: i < 12 ? i * 0.025 : 0
+                  }}
+                >
                   <button
                     className="canvas-card-hit"
                     onClick={() => onOpen?.(item)}
@@ -255,7 +269,7 @@ export function AssetCanvas({ projectId, query: externalQuery, onOpen }: Props) 
                   >
                     <Heart size={12} />
                   </button>
-                </article>
+                </motion.article>
               ))}
             </div>
             <div ref={sentinel} className="canvas-sentinel">
