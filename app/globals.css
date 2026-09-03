@@ -22,6 +22,290 @@
 @layer legacy {
 
 /* ============================================================
+   HOME
+   ------------------------------------------------------------
+   The project's assets, with just enough above them to say what
+   the project is and how far it has got. What used to be here —
+   a blown-up hero frame, a five-item recent strip, an activity
+   log and a crew list — were all subsets of the canvas below,
+   picked by a rule the reader could not change.
+   ============================================================ */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding-top: var(--sp-5);
+  padding-bottom: var(--sp-8);
+}
+
+.home-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.home-head-copy { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+
+/* Five stages as one measured row: this is progress through a fixed
+   sequence, which is a reading rather than a menu. */
+.home-pipeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.home-stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.home-stage[data-locked="true"] { opacity: 0.35; cursor: not-allowed; }
+.home-stage:not([data-locked]):hover .home-stage-name { color: var(--ink); }
+
+.home-stage-rule { display: block; height: 2px; border-radius: 1px; }
+
+.home-stage-name {
+  font-size: var(--t-body-s);
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--dur-1) var(--ease-out);
+}
+
+.home-stage-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  font-variant-numeric: tabular-nums;
+  color: var(--mute);
+}
+
+@media (max-width: 720px) {
+  .home-pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+}
+
+
+/* ============================================================
+   TOP BAR
+   ------------------------------------------------------------
+   One row: identity, project, search, generator state, controls.
+
+   What it replaced mattered more than what it is. The old bar
+   carried nine identical crew glyphs — a row of grey icons that
+   said nothing at a glance — and a BytePlus token count, which
+   described a system that no longer generates anything here. The
+   GPU that does the work, bills by the hour, and can run out of
+   credit mid-project was the one thing not shown.
+   ============================================================ */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--topnav-h);
+  padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--cream-deep);
+  background: var(--bg);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink);
+  flex: none;
+  cursor: default;
+}
+.topbar-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.topbar-project {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  max-width: 30ch;
+  padding: 5px var(--sp-3);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  font-weight: 500;
+  cursor: pointer;
+  flex: none;
+  transition: background var(--dur-1) var(--ease-out);
+}
+.topbar-project:hover { background: var(--surface-2); }
+.topbar-project-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.topbar-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 260px;
+  padding: var(--sp-1);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  box-shadow: var(--shadow-3);
+  z-index: 80;
+}
+.topbar-menu-row { display: flex; align-items: center; gap: 2px; }
+.topbar-menu-row .topbar-menu-item { flex: 1; min-width: 0; }
+.topbar-menu-del {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+/* Destructive, so it stays out of the way until the row is being considered,
+   and is reachable by keyboard rather than hover alone. */
+.topbar-menu-row:hover .topbar-menu-del,
+.topbar-menu-del:focus-visible { opacity: 1; }
+.topbar-menu-del:hover { color: var(--signal-danger); }
+
+.topbar-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  text-align: left;
+  cursor: pointer;
+}
+.topbar-menu-item:hover { background: var(--surface-2); }
+.topbar-menu-item.is-active { background: var(--surface-2); }
+.topbar-menu-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-menu-meta {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+  flex: none;
+}
+.topbar-menu-new { color: var(--mute); justify-content: flex-start; }
+.topbar-menu-new:hover { color: var(--ink); }
+
+/* The search takes whatever room is left, so the bar never overflows. */
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 5px var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--cream-deep);
+  color: var(--mute);
+}
+.topbar-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  outline: none;
+}
+.topbar-search input::placeholder { color: var(--mute); }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: none;
+}
+
+/* Generator state. Colour carries the meaning, and the text repeats it, so it
+   is not colour alone doing the work. */
+.topbar-gen {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px var(--sp-3);
+  margin-right: var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+  white-space: nowrap;
+}
+.topbar-gen-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mute);
+  flex: none;
+}
+.topbar-gen[data-tone="warm"]   { color: var(--signal-success); }
+.topbar-gen[data-tone="warm"]   .topbar-gen-pip { background: var(--signal-success); }
+.topbar-gen[data-tone="waking"] { color: var(--signal-warning); }
+.topbar-gen[data-tone="waking"] .topbar-gen-pip {
+  background: var(--signal-warning);
+  animation: fx-pulse-pip 1.6s var(--ease-out) infinite;
+}
+.topbar-gen[data-tone="down"]   { color: var(--signal-danger); }
+.topbar-gen[data-tone="down"]   .topbar-gen-pip { background: var(--signal-danger); }
+
+.topbar-gen-balance {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.topbar-icon:hover { background: var(--surface-2); color: var(--ink); }
+.topbar-icon.is-active { background: var(--surface-2); color: var(--accent); }
+
+@media (max-width: 900px) {
+  /* Identity survives; the wordmark does not need to. */
+  .topbar-wordmark { display: none; }
+  .topbar-gen span:not(.topbar-gen-pip):not(.topbar-gen-balance) { display: none; }
+}
+@media (max-width: 640px) {
+  .topbar-search { display: none; }
+}
+
+
+/* ============================================================
    ASSET CANVAS
    ------------------------------------------------------------
    Every asset in the project on one surface, filtered by an

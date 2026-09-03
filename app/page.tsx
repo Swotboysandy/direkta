@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TopNav } from "./_components/TopNav";
+import { TopBar } from "./_components/TopBar";
 import { Sidebar } from "./_components/Sidebar";
 import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
 import { Composer, type ComposerSubmission } from "./_components/Composer";
@@ -67,6 +67,9 @@ export default function Home() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [bundle, setBundle] = useState<ProjectBundle | null>(null);
+  // One search box on screen: the bar owns the field, the canvas reads it.
+  const [query, setQuery] = useState("");
+  const [agentOpen, setAgentOpen] = useState(false);
   // Distinguishes "still loading" from "no project" and "load failed" —
   // a null bundle alone cannot tell those apart, and claiming a project is
   // missing while it is in flight is the worst of the three to get wrong.
@@ -420,23 +423,23 @@ export default function Home() {
 
   return (
     <div className="workbench">
-      <TopNav
+      <TopBar
         project={bundle?.project ?? null}
         projects={projects}
         activeProjectId={projectId}
-        sidebarCollapsed={sidebarCollapsed}
-        agents={agents}
-        keyVaultOpen={keyVaultOpen}
-        skillsOpen={skillsOpen}
+        query={query}
+        onQuery={setQuery}
         onSwitchProject={(id) => {
+          if (!id) return;
           setProjectId(id);
           setActiveWorkspace("dashboard");
         }}
         onNewProject={() => setNewProjectOpen(true)}
         onDeleteProject={deleteProject}
-        onSwitchWorkspace={switchWorkspace}
-        onOpenKeyVault={() => setKeyVaultOpen(true)}
+        onOpenKeys={() => setKeyVaultOpen(true)}
         onOpenSkills={() => setSkillsOpen(true)}
+        onOpenAgent={() => setAgentOpen((v) => !v)}
+        agentOpen={agentOpen}
       />
 
       <div className="app-body" data-collapsed={sidebarCollapsed}>
@@ -511,15 +514,13 @@ export default function Home() {
                 <Dashboard
                   project={bundle.project}
                   workspaces={workspaces}
-                  activity={bundle.activity}
                   stats={{
                     beats: bundle.beats.length,
                     characters: bundle.characters.length,
                     locations: bundle.locations.length
                   }}
-                  agents={agents}
+                  query={query}
                   onSwitchWorkspace={switchWorkspace}
-                  onOpenBible={() => setBibleOpen(true)}
                 />
               )}
 

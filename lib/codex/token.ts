@@ -39,15 +39,37 @@ function upsert(data: Partial<CodexRow> & { access_token: string }) {
   );
 }
 
+/** True when a token exists AND can still be used — either it is unexpired, or
+ *  there is a refresh token to renew it with.
+ *
+ *  This previously returned true for the mere presence of an access_token, so
+ *  a token that expired weeks ago still counted as connected. The orchestrator
+ *  routes to Codex on this answer, which meant every agent request was sent
+ *  with a dead credential and failed at the API with an opaque auth error
+ *  instead of saying the connection needed renewing. */
 export function isCodexConnected(): boolean {
-  return !!(getRow()?.access_token);
+  const row = getRow();
+  if (!row?.access_token) return false;
+  if (!isExpired(row)) return true;
+  return !!row.refresh_token;
+}
+
+function isExpired(row: CodexRow): boolean {
+  return row.expires_at > 0 && row.expires_at <= Date.now();
 }
 
 export function getCodexStatus() {
   const row = getRow();
-  if (!row?.access_token) return { connected: false, connectedAt: null, expiresAt: null };
+  if (!row?.access_token) {
+    return { connected: false, expired: false, renewable: false, connectedAt: null, expiresAt: null };
+  }
+  const expired = isExpired(row);
   return {
-    connected: true,
+    connected: isCodexConnected(),
+    // Reported separately so the UI can distinguish "never connected" from
+    // "connected but needs renewing", which need different instructions.
+    expired,
+    renewable: expired ? !!row.refresh_token : true,
     connectedAt: row.connected_at,
     expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null
   };
@@ -142,8 +164,18 @@ export async function getValidCodexToken(): Promise<{ access_token: string; acco
         return { access_token: tokens.access_token, account_id: row.account_id };
       }
     } catch {
-      // Fall through and use the existing token
+      // Fall through to the expiry check below.
     }
+  }
+
+  // Refreshing either was not attempted or did not succeed. Returning the old
+  // token here is only safe while it is still valid; handing back an expired
+  // one produces an auth failure several layers away, where nothing can say
+  // what actually needs doing.
+  if (isExpired(row)) {
+    throw new Error(
+      "The ChatGPT connection has expired and could not be renewed. Reconnect it in Settings, or add a text model API key."
+    );
   }
 
   return { access_token: row.access_token, account_id: row.account_id };

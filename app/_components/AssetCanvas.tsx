@@ -44,6 +44,9 @@ const PAGE = 60;
 
 interface Props {
   projectId: string;
+  /** Search text, when a surface above owns the field — the home screen takes
+   *  it from the top bar so there is one search box on screen, not two. */
+  query?: string;
   onOpen?: (item: CanvasItem) => void;
 }
 
@@ -59,7 +62,7 @@ interface Props {
  * Paging is by the assets route's cursor, requested when a sentinel at the foot
  * of the grid comes into view.
  */
-export function AssetCanvas({ projectId, onOpen }: Props) {
+export function AssetCanvas({ projectId, query: externalQuery, onOpen }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -70,11 +73,14 @@ export function AssetCanvas({ projectId, onOpen }: Props) {
   const [more, setMore] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
 
+  const ownsSearch = externalQuery === undefined;
+  const effectiveQuery = ownsSearch ? query : externalQuery;
+
   // Typing shouldn't fire a request per keystroke.
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(query.trim()), 220);
+    const t = setTimeout(() => setDebounced(effectiveQuery.trim()), 220);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [effectiveQuery]);
 
   const url = useMemo(() => {
     const p = new URLSearchParams({ limit: String(PAGE) });
@@ -176,15 +182,17 @@ export function AssetCanvas({ projectId, onOpen }: Props) {
       </nav>
 
       <div className="canvas-main">
-        <div className="canvas-search">
-          <Search size={14} />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search this project"
-            aria-label="Search assets"
-          />
-        </div>
+        {ownsSearch && (
+          <div className="canvas-search">
+            <Search size={14} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search this project"
+              aria-label="Search assets"
+            />
+          </div>
+        )}
 
         {status === "loading" && (
           <div className="canvas-grid" aria-hidden="true">
