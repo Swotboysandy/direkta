@@ -1103,7 +1103,7 @@ function CharacterEditModal({
           <input style={fieldInput} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div className="ws-grid-2">
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <span style={fieldLabel}>Role</span>
             <select style={{ ...fieldInput, cursor: "pointer" }} value={role} onChange={(e) => setRole(e.target.value as Character["role"])}>

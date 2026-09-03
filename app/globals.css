@@ -21,6 +21,94 @@
 
 @layer legacy {
 
+/* The frame-review dialog: image on the left, its details on the right.
+   .modal alone is a 480px padded box, which this is not — the pane needs the
+   width to show a 16:9 frame at a reviewable size, and the panes supply their
+   own padding, so the shell has none. Converting its grid to a class initially
+   dropped those, which collapsed it to the narrow default. */
+.modal-review {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  max-width: 1100px;
+  width: calc(100% - var(--sp-7));
+  max-height: calc(100vh - var(--sp-7));
+  padding: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  /* Below this the frame is smaller than the details beside it, which inverts
+     what the dialog is for, so it stacks and scrolls. */
+  .modal-review {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+}
+
+
+/* ============================================================
+   WORKSPACE LAYOUTS
+   ------------------------------------------------------------
+   The grids that could not reflow. Each of these was a fixed
+   track pair written inline, which no media query can reach —
+   the same class of bug already recorded for the dashboard
+   hero. A pair like 1.5fr 1fr cannot collapse: at 700px both
+   columns are around 340px and each holds a textarea, so the
+   fields are unusable side by side.
+
+   The auto-fill grids are deliberately not here. They already
+   adapt, and wrapping them would only add a breakpoint that
+   does nothing.
+   ============================================================ */
+
+/* Two paired fields or panels, read together. */
+.ws-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+  align-items: start;
+}
+
+/* A fixed index beside the thing it indexes. */
+.ws-grid-aside {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+/* The same relationship where the main pane should dominate. */
+.ws-grid-aside-wide {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+/* Four counts and an action. */
+.ws-grid-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: var(--sp-3);
+  align-items: center;
+  margin-bottom: var(--sp-4);
+}
+
+@media (max-width: 1100px) {
+  /* The aside loses its purpose once it is narrower than the labels it holds,
+     so it stacks rather than being squeezed. */
+  .ws-grid-aside,
+  .ws-grid-aside-wide { grid-template-columns: minmax(0, 1fr); }
+  .ws-grid-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* The action was the fifth cell; on two columns it takes its own row. */
+  .ws-grid-stats > *:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 820px) {
+  .ws-grid-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+
 /* ============================================================
    GENERATION MONITOR
    ------------------------------------------------------------

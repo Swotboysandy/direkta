@@ -1530,17 +1530,8 @@ function FrameLightbox({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal"
+        className="modal modal-review"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: 1100,
-          width: "calc(100% - var(--sp-7))",
-          maxHeight: "calc(100vh - var(--sp-7))",
-          display: "grid",
-          gridTemplateColumns: "1.4fr 1fr",
-          padding: 0,
-          overflow: "hidden"
-        }}
       >
         <div style={{ background: "#14100c", display: "grid", placeItems: "center", padding: "var(--sp-5)" }}>
           {variant.asset_url && (
@@ -1673,14 +1664,7 @@ function FrameLightbox({
             <section>
               <span className="t-eyebrow">CAMERA · INHERITED FROM BEAT</span>
               <div
-                style={{
-                  marginTop: "var(--sp-2)",
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "var(--sp-2)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 12
-                }}
+                className="ws-grid-2"
               >
                 <LightboxKV k="Shot" v={row?.style.shot_size ?? "—"} />
                 <LightboxKV k="Angle" v={row?.style.camera_angle ?? "—"} />
@@ -1694,14 +1678,7 @@ function FrameLightbox({
             <section>
               <span className="t-eyebrow">VARIANT META</span>
               <div
-                style={{
-                  marginTop: "var(--sp-2)",
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "var(--sp-2)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 12
-                }}
+                className="ws-grid-2"
               >
                 <LightboxKV k="State" v={variant.state} />
                 <LightboxKV k="Asset" v={variant.asset_url ? "Stored" : "—"} />

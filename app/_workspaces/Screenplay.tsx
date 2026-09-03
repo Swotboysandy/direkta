@@ -312,10 +312,8 @@ export function Screenplay({
           {/* Creative direction — steers script generation, AI prompts and
               every frame. Autosaves on blur. */}
           <div
+            className="ws-grid-2"
             style={{
-              display: "grid",
-              gridTemplateColumns: "1.5fr 1fr",
-              gap: 12,
               marginBottom: 16
             }}
           >
@@ -691,7 +689,7 @@ export function Screenplay({
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            style={{ ...panelStyle, display: "grid", gridTemplateColumns: "repeat(4, 1fr) auto", marginBottom: 16 }}
+            className="ws-grid-stats" style={panelStyle}
           >
             <StatCell value={(bible?.word_count ?? 0).toLocaleString()} label="Bible words" />
             <StatCell value={String(beats.length)} label="Beats" />
@@ -707,7 +705,7 @@ export function Screenplay({
             </motion.div>
           </motion.div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "250px minmax(0, 1fr)", gap: 16, alignItems: "start" }}>
+          <div className="ws-grid-aside">
             {/* BEAT INDEX — LEFT RAIL */}
             <div
               style={{
