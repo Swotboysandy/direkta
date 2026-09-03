@@ -376,7 +376,7 @@ test("assets route returns media and entities in one shape, newest first", async
   assert.equal(byId["as-img"].kind, "image");
   // The field the composer needs: which H3 channel this can be wired to.
   assert.equal(byId["as-img"].ref_kind, "image");
-  assert.equal(byId["as-img"].title, "Beat 01");
+  assert.equal(byId["as-img"].title, "01 · Opening");
 
   assert.equal(byId["as-seq"].kind, "video", "a rendered sequence is video regardless of its row kind");
   assert.equal(byId["as-seq"].ref_kind, "video");

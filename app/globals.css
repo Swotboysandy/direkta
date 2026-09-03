@@ -1317,21 +1317,11 @@
 .composer-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--sp-3);
   padding-top: var(--sp-2);
 }
 .composer-actions-right { display: flex; align-items: center; gap: var(--sp-2); }
-
-.composer-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-}
 
 .composer-count {
   display: inline-flex;

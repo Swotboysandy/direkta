@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PromptInput, PromptInputTextarea, PromptInputActions } from "./ui/prompt-input";
 import { useAsync } from "../_hooks/useAsync";
-import { ArrowRight, Plus, X, Sparkles } from "./icons";
+import { ArrowRight, X, Sparkles } from "./icons";
 import { cn } from "@/lib/utils";
 
 /** An item from GET /api/projects/:id/assets. */
@@ -233,10 +233,6 @@ export function Composer({ projectId, onSubmit, busy = false, placeholder, seed,
           disableAutosize={false}
         />
         <PromptInputActions className="composer-actions">
-          <span className="composer-hint">
-            <Plus size={13} />
-            <span>@ to reference</span>
-          </span>
           <span className="composer-actions-right">
             {refs.length > 0 && (
               <span className="composer-count" title="References attached to this prompt">
