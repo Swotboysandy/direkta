@@ -1,0 +1,106 @@
+/* ============================================================
+   FYLMER — Tailwind bridge
+   ------------------------------------------------------------
+   Phase 1 of the interface rebuild. This file makes Tailwind and
+   shadcn read Fylmer's existing tokens instead of shipping their
+   own palette, so components added later are on-brand by default
+   rather than by correction.
+
+   TWO DELIBERATE OMISSIONS, both load-bearing:
+
+   1. PREFLIGHT IS NOT IMPORTED. Tailwind's base layer resets
+      margins, borders, heading sizes and list styles globally.
+      The app is ~4,300 lines of hand-written CSS that assumes
+      browser defaults, so importing preflight would restyle every
+      existing screen — the opposite of this phase's requirement
+      that nothing changes visually. Only `theme` and `utilities`
+      are imported. Preflight can be adopted later, per-screen, as
+      each surface is rebuilt.
+
+   2. THE THEME IS `inline`. A plain `@theme` block resolves values
+      at build time, which would freeze the dark palette into the
+      utilities and break the light theme. `@theme inline` emits
+      `var(--…)` references instead, so utilities follow
+      `:root[data-theme="light"]` exactly as the hand-written CSS
+      does.
+
+   SPACING: no override needed. Tailwind's default scale is a 4px
+   base, and so is ours — `--sp-5` (24px) is `p-6`, `--sp-7` (48px)
+   is `p-12`, `--sp-8` (72px) is `p-18`. The scales already agree.
+   ============================================================ */
+
+@layer theme, base, legacy, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme inline {
+  /* ─── Fylmer's own names ───────────────────────────────── */
+  --color-bg:          var(--bg);
+  --color-surface:     var(--surface);
+  --color-surface-2:   var(--surface-2);
+  --color-surface-3:   var(--surface-3);
+  --color-ink:         var(--ink);
+  --color-ink-soft:    var(--ink-soft);
+  --color-mute:        var(--mute);
+  --color-hairline:    var(--cream-deep);
+
+  /* NAME COLLISION, deliberately resolved in shadcn's favour.
+     shadcn uses `accent` for a subtle hover surface (dropdown highlight,
+     ghost-button hover) and `primary` for the brand colour. Fylmer uses
+     `accent` for the brand purple. Mapping them together renders every
+     shadcn hover state as a solid purple block — the generated Skeleton
+     came through as `bg-accent` and proved it.
+
+     So `accent-*` below follows shadcn, and Fylmer's purple is exposed as
+     `brand-*`. Use `bg-brand` / `text-brand` for the real accent; `primary`
+     also resolves to it, for components that ask for it by that name. */
+  --color-brand:       var(--accent);
+  --color-brand-hover: var(--accent-hover);
+  --color-brand-quiet: var(--accent-quiet);
+  --color-on-brand:    var(--on-accent);
+
+  --color-success: var(--signal-success);
+  --color-warning: var(--signal-warning);
+  --color-danger:  var(--signal-danger);
+
+  /* ─── shadcn's expected vocabulary ─────────────────────────
+     shadcn components hard-code these names. Pointing them at
+     Fylmer's tokens means anything installed from shadcn,
+     prompt-kit or AI SDK Elements inherits the palette on the
+     first render, with no per-component theming pass. */
+  --color-background:       var(--bg);
+  --color-foreground:       var(--ink);
+  --color-card:             var(--surface);
+  --color-card-foreground:  var(--ink);
+  --color-popover:          var(--bg);
+  --color-popover-foreground: var(--ink);
+  --color-primary:          var(--accent);
+  --color-primary-foreground: var(--on-accent);
+  --color-secondary:        var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted:            var(--surface-2);
+  --color-muted-foreground: var(--mute);
+  --color-destructive:      var(--signal-danger);
+  --color-destructive-foreground: #FFFFFF;
+  --color-accent:            var(--surface-2);
+  --color-accent-foreground: var(--ink);
+  --color-border:            var(--cream-deep);
+  --color-input:             var(--cream-deep);
+  --color-ring:              var(--accent);
+
+  /* ─── Type ─────────────────────────────────────────────── */
+  --font-sans:    var(--font-ui);
+  --font-display: var(--font-display);
+  --font-mono:    var(--font-mono);
+
+  /* ─── Radii ────────────────────────────────────────────── */
+  --radius-sm:   var(--r-sm);
+  --radius-md:   var(--r-md);
+  --radius-lg:   var(--r-lg);
+  --radius-full: var(--r-pill);
+
+  /* ─── Motion ───────────────────────────────────────────── */
+  --ease-out-fylmer: var(--ease-out);
+  --ease-spring:     var(--ease-spring);
+}

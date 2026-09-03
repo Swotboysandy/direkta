@@ -6,10 +6,19 @@
    the brand stylesheets.
    ============================================================ */
 
-@import "./_brand/tokens.css";
-@import "./_brand/type-scale.css";
-@import "./_brand/components.css";
-@import "./_brand/motion.css";
+/* Tailwind first: it declares the layer order every import below relies on.
+   See _brand/tailwind.css for why preflight is deliberately not imported. */
+@import "./_brand/tailwind.css";
+
+/* The hand-written system, named so Tailwind utilities can win against it
+   as surfaces are rebuilt. */
+@import "./_brand/tokens.css" layer(legacy);
+@import "./_brand/type-scale.css" layer(legacy);
+@import "./_brand/components.css" layer(legacy);
+@import "./_brand/motion.css" layer(legacy);
+
+@layer legacy {
+
 
 /* ============================================================
    LEGACY TOKEN COMPATIBILITY LAYER
@@ -3465,4 +3474,5 @@ textarea {
 .h3-live-preview {
   width: 100%; height: auto; display: block;
   border-radius: var(--radius-sm); border: 1px solid var(--line);
+}
 }
