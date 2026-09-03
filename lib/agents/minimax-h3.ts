@@ -3,7 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import { nanoid } from "nanoid";
-import { buildH3Workflow } from "./h3-workflow";
+import { buildH3Workflow, buildH3ReferenceWorkflow, type H3ReferenceInputs } from "./h3-workflow";
 import { h3Settings, estimateH3Spend, type H3SettingsInput } from "./h3-settings";
 import { extractLastVideoFrame, exportVideoFrame, ossFile } from "../media/video-frames";
 
@@ -265,6 +265,40 @@ async function prepareReferenceImage(ref: string, width: number, height: number)
   }
 }
 
+/** Put a reference clip in ComfyUI's input directory so LoadVideo can read it.
+ *  Unlike stills these are not re-encoded: the node decodes frames and audio
+ *  from one file, and re-encoding here would risk desyncing them. */
+async function uploadReferenceVideo(ref: string): Promise<string> {
+  let bytes: Buffer;
+  let name: string;
+  if (/^https?:\/\//i.test(ref)) {
+    const res = await fetch(ref, { signal: AbortSignal.timeout(180_000) });
+    if (!res.ok) throw new Error(`Reference clip download failed (${res.status}).`);
+    bytes = Buffer.from(await res.arrayBuffer());
+    name = path.basename(new URL(ref).pathname) || `ref-${nanoid(8)}.mp4`;
+  } else {
+    const local = ref.startsWith("/oss/") ? ossFile(ref, OSS_DIR) : ref;
+    if (!fs.existsSync(local)) throw new Error(`Reference clip not found: ${ref}`);
+    bytes = fs.readFileSync(local);
+    name = path.basename(local);
+  }
+  // The node's own limit is a 2-15s clip; anything larger is a wasted upload
+  // and a slow one, so it fails here rather than on the pod.
+  if (!bytes.length || bytes.length > 256 * 1024 * 1024) throw new Error("Reference clip must be between 1 byte and 256 MB.");
+  const form = new FormData();
+  form.append("image", new Blob([new Uint8Array(bytes)]), name);
+  form.append("overwrite", "true");
+  const res = await fetch(`${proxyBase()}/upload/image`, {
+    method: "POST",
+    body: form,
+    signal: AbortSignal.timeout(180_000)
+  });
+  if (!res.ok) throw new Error(`Uploading the reference clip failed (${res.status}).`);
+  const data = (await res.json()) as { name?: string };
+  if (!data.name) throw new Error("ComfyUI did not return an uploaded clip filename.");
+  return data.name;
+}
+
 async function uploadReferenceImage(file: string): Promise<string> {
   const form = new FormData();
   form.append("image", new Blob([new Uint8Array(fs.readFileSync(file))], { type: "image/png" }), path.basename(file));
@@ -319,10 +353,28 @@ async function submitAndWait(workflow: Record<string, any>): Promise<PromptResul
   return { videoUrl: q(videoOut), audioUrl: q(audioOut) };
 }
 
+/** A thing attached to a prompt in the composer — a character, a location, a
+ *  prop, or a previously generated frame or clip. `refKind` decides which
+ *  MiniMax H3 channel it is wired to, and comes straight from the assets route
+ *  so the UI and the graph cannot disagree about it. */
+export interface H3PromptRef {
+  /** Shown to the model as the reference's role, e.g. "Kalki" or "Beat 04". */
+  title: string;
+  /** Local path or URL of the still/clip standing in for this reference. */
+  url: string;
+  refKind: "image" | "video";
+}
+
 export type H3VideoInput = H3SettingsInput & {
   prompt: string;
   referenceImageUrl?: string;
   lastFrameImageUrl?: string;
+  /** Composer attachments. When present the shot is generated through the
+   *  ref2va checkpoint instead of first/last-frame conditioning, because that
+   *  is the only path that can carry identity, motion and sound together. */
+  refs?: H3PromptRef[];
+  /** Whether the references continue the previous shot or establish a new one. */
+  refMode?: "cut" | "continue";
   /** Explicit batch use only. Errors still stop the pod; the batch must stop it on success. */
   keepWarm?: boolean;
 };
@@ -366,7 +418,40 @@ async function generateH3WithLock(input: H3VideoInput, batchOwnsLock: boolean) {
     await ensureH3PodRunning({ turbo: input.turbo });
     const firstFrameName = startImage ? await uploadReferenceImage(startImage) : undefined;
     const lastFrameName = endImage ? await uploadReferenceImage(endImage) : undefined;
-    const built = buildH3Workflow({ ...input, firstFrameName, lastFrameName });
+
+    // Two graphs, chosen by whether the prompt carries attachments.
+    //
+    // fl2va conditions on a first and last frame and cannot express "this is
+    // the same person" or "continue this sound". Anything attached in the
+    // composer therefore has to go through ref2va, which is the checkpoint with
+    // the image/video/audio reference channels.
+    let built;
+    if (input.refs?.length) {
+      const images: string[] = [];
+      let video: string | undefined;
+      for (const ref of input.refs) {
+        // Stills are cropped to the target canvas first; an off-ratio reference
+        // is otherwise stretched by the node.
+        if (ref.refKind === "image") {
+          images.push(await uploadReferenceImage(await prepareReferenceImage(ref.url, settings.width, settings.height)));
+        } else if (!video) {
+          // The node takes one reference video, and its soundtrack rides with it.
+          video = await uploadReferenceVideo(ref.url);
+        } else {
+          warnings.push(`Only one reference clip can be used per shot; "${ref.title}" was left off.`);
+        }
+      }
+      built = buildH3ReferenceWorkflow({
+        ...input,
+        mode: input.refMode ?? "cut",
+        references: {
+          images,
+          ...(video ? { video, videoAudio: video } : {})
+        } satisfies H3ReferenceInputs
+      });
+    } else {
+      built = buildH3Workflow({ ...input, firstFrameName, lastFrameName });
+    }
     const { videoUrl, audioUrl } = await submitAndWait(built.workflow);
     const tag = `${Date.now()}-${nanoid(6)}`;
     const webm = path.join(os.tmpdir(), `h3-${tag}.webm`);

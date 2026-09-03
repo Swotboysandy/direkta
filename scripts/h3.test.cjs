@@ -16,6 +16,7 @@ process.env.RUNPOD_H3_POD_ID = "test-pod";
 global.fetch = async () => { throw new Error("Unexpected network request in offline H3 tests"); };
 const settings = require("../lib/agents/h3-settings.ts");
 const workflow = require("../lib/agents/h3-workflow.ts");
+const workflow_mod = workflow;
 const frames = require("../lib/media/video-frames.ts");
 const h3 = require("../lib/agents/minimax-h3.ts");
 const prompts = require("../lib/agents/h3-prompt-expander.ts");
@@ -440,4 +441,59 @@ test("assets route searches titles and subtitles", async () => {
   assert.ok(hit.items.some((a) => a.title === "Kalki"), "case-insensitive search should match");
   const miss = await (await GET(new Request("http://x/a?q=zzzzz"), { params })).json();
   assert.equal(miss.items.length, 0);
+});
+
+test("compose creates a beat-less shot that stores its own direction", async () => {
+  const db = getDb();
+  db.prepare("INSERT INTO projects (id,title,aspect_ratio) VALUES ('cmp','Compose','16:9')").run();
+
+  const { POST } = require("../app/api/projects/[id]/compose/route.ts");
+  const params = Promise.resolve({ id: "cmp" });
+
+  const res = await POST(
+    new Request("http://x/c", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt: "Kalki turns to face the ridge." })
+    }),
+    { params }
+  );
+  const body = await res.json();
+  assert.equal(res.status, 200);
+  assert.ok(body.node_id);
+
+  const row = db.prepare("SELECT beat_id, direction FROM stitch_nodes WHERE id = ?").get(body.node_id);
+  // Every other shot inherits its direction from a beat; this one has no beat,
+  // so if it did not store the text it would later generate from nothing.
+  assert.equal(row.beat_id, null, "a composed shot must not be attached to a beat");
+  assert.equal(row.direction, "Kalki turns to face the ridge.");
+
+  const empty = await POST(
+    new Request("http://x/c", { method: "POST", body: JSON.stringify({ prompt: "   " }) }),
+    { params }
+  );
+  assert.equal(empty.status, 400, "a shot with no description must be rejected");
+});
+
+test("composer references map onto the H3 channel each one belongs to", () => {
+  // The chips the user attaches carry ref_kind straight from the assets route.
+  // This is the join between the two halves of the feature: if stills stopped
+  // landing on ref_images, or a clip's soundtrack stopped riding with it, the
+  // references would be silently ignored by the model.
+  const { workflow, prompt } = workflow_mod.buildH3ReferenceWorkflow({
+    prompt: "The stand on the stair.",
+    mode: "continue",
+    references: { images: ["kalki.png", "armour.png"], video: "prev.mp4", videoAudio: "prev.mp4" }
+  });
+  const inputs = workflow["5"].inputs;
+
+  assert.deepEqual(Object.keys(inputs.ref_images), ["ref_image_0", "ref_image_1"]);
+  assert.deepEqual(Object.keys(inputs.ref_videos), ["ref_video_0"]);
+  assert.deepEqual(Object.keys(inputs.ref_video_audios), ["ref_video_audio_0"]);
+  // Frames and sound come off one decode node, so a clip cannot desync from
+  // its own soundtrack.
+  assert.equal(inputs.ref_videos.ref_video_0[0], inputs.ref_video_audios.ref_video_audio_0[0]);
+  // Two stills means <Picture 1> and <Picture 2> must both be named, in order.
+  assert.ok(prompt.indexOf("<Picture 1>") < prompt.indexOf("<Picture 2>"));
+  assert.ok(prompt.includes("<Video 1>") && prompt.includes("<Audio 1>"));
 });

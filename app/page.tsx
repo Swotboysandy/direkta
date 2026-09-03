@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { TopNav } from "./_components/TopNav";
 import { Sidebar } from "./_components/Sidebar";
 import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
+import { Composer, type ComposerSubmission } from "./_components/Composer";
 import { NewProjectModal } from "./_components/NewProjectModal";
 import { MovieBibleModal } from "./_components/MovieBibleModal";
 import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
@@ -373,6 +374,50 @@ export default function Home() {
     [reloadProjects]
   );
 
+
+  // The composer creates the shot, then hands it to the existing animate route.
+  // Keeping generation in one place means a composed shot and a storyboard shot
+  // travel exactly the same path, so they cannot drift apart.
+  const [composing, setComposing] = useState(false);
+  const [composeNote, setComposeNote] = useState<string | null>(null);
+
+  const compose = useCallback(
+    async ({ text, refs }: ComposerSubmission) => {
+      if (!projectId) return;
+      setComposing(true);
+      setComposeNote(null);
+      try {
+        const created = await fetch(`/api/projects/${projectId}/compose`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ prompt: text })
+        });
+        const createdBody = await created.json().catch(() => null);
+        if (!created.ok || !createdBody?.node_id) {
+          setComposeNote(createdBody?.error || "Could not start that shot.");
+          return;
+        }
+        const run = await fetch(`/api/stitch/nodes/${createdBody.node_id}/animate`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ model: "minimax_h3", refs })
+        });
+        const runBody = await run.json().catch(() => null);
+        setComposeNote(
+          run.ok && runBody?.ok
+            ? `Shot rendered${refs.length ? ` with ${refs.length} reference${refs.length > 1 ? "s" : ""}` : ""}.`
+            : runBody?.error || "The shot could not be generated."
+        );
+        reload();
+      } catch {
+        setComposeNote("Could not reach the server.");
+      } finally {
+        setComposing(false);
+      }
+    },
+    [projectId, reload]
+  );
+
   return (
     <div className="workbench">
       <TopNav
@@ -517,6 +562,14 @@ export default function Home() {
                 <ExportWorkspace project={bundle.project} onSwitchWorkspace={switchWorkspace} />
               )}
             </>
+          )}
+          {bundle && (
+            <div className="composer-dock">
+              <div className="main-inner">
+                <Composer projectId={bundle.project.id} onSubmit={compose} busy={composing} />
+                {composeNote && <p className="composer-note">{composeNote}</p>}
+              </div>
+            </div>
           )}
         </main>
       </div>

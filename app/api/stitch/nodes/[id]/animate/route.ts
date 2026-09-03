@@ -32,6 +32,8 @@ interface NodeRow {
   beat_title: string | null;
   beat_scene: string | null;
   beat_direction: string | null;
+  /** Set only on shots composed from a typed prompt, which have no beat. */
+  node_direction: string | null;
   row_style: string | null;
   aspect_ratio: AspectRatio;
   premise: string | null;
@@ -75,6 +77,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .prepare(
       `SELECT sn.id, sn.project_id, sn.x, sn.y, sn.duration,
               b.title as beat_title, b.scene_heading as beat_scene, b.direction as beat_direction,
+              sn.direction as node_direction,
               sr.style as row_style,
               p.aspect_ratio, p.premise, p.style_template, p.continuity_lock, p.set_lock, p.avoid_prompt,
               COALESCE(a_direct.url, a_selected.url) as frame_url
@@ -99,6 +102,41 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const isMinimaxH3 = chosen.provider === "minimax_h3";
   const clipDuration = isMinimaxH3 ? (body.durationSeconds ?? node.duration ?? 5) : Math.min(maxDur, Math.max(minDur, Math.round(Number(node.duration) || minDur)));
   const continuityMode: H3ContinuityMode = body.continuityMode ?? "cut";
+
+  // Composer attachments. Each already carries the H3 channel it belongs on,
+  // decided once in the assets route, so nothing here has to infer it from a
+  // file extension. Anything malformed is rejected rather than silently
+  // dropped — a shot generated without the reference the user attached looks
+  // like the model ignoring them.
+  let promptRefs: Array<{ title: string; url: string; refKind: "image" | "video" }> | undefined;
+  if (body.refs !== undefined) {
+    if (!Array.isArray(body.refs)) {
+      return NextResponse.json({ error: "refs must be an array." }, { status: 400 });
+    }
+    if (body.refs.length > 9) {
+      return NextResponse.json({ error: "H3 accepts at most 9 references on one shot." }, { status: 400 });
+    }
+    promptRefs = [];
+    for (const raw of body.refs) {
+      const title = typeof raw?.title === "string" ? raw.title.trim() : "";
+      const url = typeof raw?.url === "string" ? raw.url.trim() : "";
+      const refKind = raw?.refKind;
+      if (!title || !url || (refKind !== "image" && refKind !== "video")) {
+        return NextResponse.json(
+          { error: "Each reference needs a title, a url, and a refKind of \"image\" or \"video\"." },
+          { status: 400 }
+        );
+      }
+      promptRefs.push({ title, url, refKind });
+    }
+    if (promptRefs.length === 0) promptRefs = undefined;
+  }
+  if (promptRefs && !isMinimaxH3) {
+    return NextResponse.json(
+      { error: "Prompt references are only supported by MiniMax H3; the other providers have no reference channels." },
+      { status: 400 }
+    );
+  }
   const [h3Width, h3Height] = H3_CANVAS[node.aspect_ratio] ?? H3_CANVAS["16:9"];
   if (isMinimaxH3) {
     try {
@@ -218,7 +256,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const continuityLine = node.continuity_lock ? `CONTINUITY\n${node.continuity_lock}` : "";
   // The beat's own direction — the move and sound it was written for, plus the
   // continuity it inherits from the previous shot.
-  const directionLine = node.beat_direction ? `DIRECTION\n${node.beat_direction}` : "";
+  // A composed shot carries its own direction; a storyboard shot inherits the
+  // beat's. The node's own wins when both exist, since it was typed for this shot.
+  const shotDirection = node.node_direction || node.beat_direction;
+  const directionLine = shotDirection ? `DIRECTION\n${shotDirection}` : "";
   // Block order matches the reference architecture: the three immutable blocks
   // (STYLE LOCK, CONTINUITY, DIRECTION) frame the one variable block (SHOT),
   // and sit last so they win against anything descriptive earlier.
@@ -386,8 +427,12 @@ ${node.avoid_prompt}` : "";
           durationSeconds: clipDuration,
           width: h3Width,
           height: h3Height,
-          referenceImageUrl: h3Refs.first,
-          lastFrameImageUrl: h3Refs.last,
+          // With attachments the generator switches to the ref2va graph and
+          // ignores first/last-frame conditioning, which cannot express them.
+          referenceImageUrl: promptRefs ? undefined : h3Refs.first,
+          lastFrameImageUrl: promptRefs ? undefined : h3Refs.last,
+          refs: promptRefs,
+          refMode: continuityMode,
           keepWarm: body.keepWarm === true
         })
       : useBrowser

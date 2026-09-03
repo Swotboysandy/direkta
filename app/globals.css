@@ -17,7 +17,211 @@
 @import "./_brand/components.css" layer(legacy);
 @import "./_brand/motion.css" layer(legacy);
 
+@custom-variant dark (&:is(.dark *));
+
 @layer legacy {
+
+/* ============================================================
+   COMPOSER
+   ------------------------------------------------------------
+   The prompt bar, and the reference picker that opens above it.
+   Sits at the bottom of the workspace as the one thing always in
+   reach — everything in the app starts by describing a shot, so
+   the input should never have to be navigated to.
+
+   The chips are the visible form of MiniMax H3's reference
+   channels: what you attach here is literally what the generator
+   receives, which is why each carries its own thumbnail rather
+   than being a bare name.
+   ============================================================ */
+.composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.composer-input {
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+}
+.composer-input textarea {
+  font-family: var(--font-ui);
+  font-size: var(--t-body-l);
+  color: var(--ink);
+  background: transparent;
+}
+.composer-input textarea::placeholder { color: var(--mute); }
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: var(--sp-2);
+}
+.composer-actions-right { display: flex; align-items: center; gap: var(--sp-2); }
+
+.composer-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+}
+
+.composer-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent-quiet);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The only saturated control on the surface, and only once there is
+   something to send. */
+.composer-send {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.composer-send:hover:not(:disabled) { background: var(--accent-hover); }
+.composer-send:active:not(:disabled) { transform: scale(0.94); }
+.composer-send:disabled {
+  background: var(--surface-2);
+  color: var(--mute);
+  cursor: not-allowed;
+}
+
+/* ── Attached references ─────────────────────────────────── */
+.composer-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 3px 5px 3px 3px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--cream-deep);
+  font-size: var(--t-body-s);
+  color: var(--ink);
+}
+/* A clip and a still feed different channels, so they are told apart at a
+   glance rather than only in the graph. */
+.composer-chip[data-kind="video"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.composer-chip-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  background: var(--cream-deep) center / cover no-repeat;
+  flex: none;
+}
+.composer-chip-name { max-width: 18ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-chip-x {
+  display: grid;
+  place-items: center;
+  width: 16px; height: 16px;
+  border: 0; border-radius: var(--r-pill);
+  background: transparent; color: var(--mute); cursor: pointer;
+}
+.composer-chip-x:hover { background: var(--surface-3); color: var(--ink); }
+
+/* ── Mention picker ──────────────────────────────────────── */
+.composer-picker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + var(--sp-2));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-1);
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: var(--r-md);
+  background: var(--bg);
+  box-shadow: var(--shadow-3);
+}
+
+.composer-picker-note {
+  padding: var(--sp-3);
+  font-size: var(--t-body-s);
+  color: var(--mute);
+}
+
+.composer-picker-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.composer-picker-row.is-active { background: var(--surface-2); }
+
+.composer-picker-thumb {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--cream-deep) center / cover no-repeat;
+}
+.composer-picker-name {
+  font-size: var(--t-body-s);
+  color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.composer-picker-kind {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* Docked at the foot of the workspace column. */
+.composer-note {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--t-body-s);
+  color: var(--mute);
+  text-align: center;
+}
+
+.composer-dock {
+  position: sticky;
+  bottom: 0;
+  padding: var(--sp-4) 0 var(--sp-5);
+  background: linear-gradient(to top, var(--bg) 62%, transparent);
+  z-index: 30;
+}
 
 
 /* ============================================================

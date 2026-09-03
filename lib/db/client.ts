@@ -411,6 +411,12 @@ function migrate(db: DatabaseSync) {
   // slot to clip_asset_id/clip_state, so lip-syncing never destroys the
   // original (silent or native-audio) clip it ran against.
   ensureColumn(db, "stitch_nodes", "dialogue_audio_url", "TEXT");
+  // A shot composed from a typed prompt has no beat behind it, so it has
+  // nowhere to inherit its direction from — every other shot reads that off
+  // beats.direction through a join. Without this the shot would carry no
+  // record of what it is, and re-animating it later would generate from an
+  // empty prompt.
+  ensureColumn(db, "stitch_nodes", "direction", "TEXT");
   ensureColumn(db, "stitch_nodes", "lipsync_asset_id", "TEXT");
   ensureColumn(db, "stitch_nodes", "lipsync_state", "TEXT NOT NULL DEFAULT 'none'");
   // storyboard_variants: director review — approval state + director's note
