@@ -52,6 +52,12 @@ async function rp(pathSuffix: string, init?: RequestInit): Promise<any> {
 export const H3_CLIENT_ID = "direkta-h3";
 
 export function proxyBase(): string {
+  // RunPod will not add a port mapping to a running pod, so a pod that came back
+  // without 8188 exposed has no proxy at all. This override lets the server
+  // reach ComfyUI another way — an SSH tunnel to localhost, most usefully —
+  // without a stop/start and the cold boot that costs.
+  const override = process.env.RUNPOD_H3_PROXY_BASE?.trim();
+  if (override) return override.replace(/\/$/, "");
   return `https://${podId()}-8188.proxy.runpod.net`;
 }
 
