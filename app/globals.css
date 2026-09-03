@@ -21,6 +21,130 @@
 
 @layer legacy {
 
+/* ============================================================
+   PROJECT RULES
+   ------------------------------------------------------------
+   The six locks, as one list rather than a 2x3 grid of outlined
+   textareas.
+
+   As boxes they were congested by construction: every rule
+   looked equally important, and an empty one took exactly as
+   much room as one holding three paragraphs. On a real project
+   two are set and four are not, so most of that screen was empty
+   boxes competing with the two that mattered. Here an unset rule
+   costs one line, a set one gets room, and the set reads as a
+   single object with six entries.
+   ============================================================ */
+.rules {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cream-deep);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: var(--sp-5);
+}
+
+.rules-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--cream-deep);
+  background: var(--surface);
+}
+
+.rules-count {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--mute);
+}
+
+.rules-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--cream-deep);
+}
+.rules-row:last-child { border-bottom: 0; }
+
+.rules-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.rules-name {
+  font-size: var(--t-body-s);
+  font-weight: 600;
+  color: var(--mute);
+}
+/* A set rule is brighter than an unset one, so what is locked on this project
+   reads down the left edge without opening anything. */
+.rules-row[data-set="true"] .rules-name { color: var(--ink); }
+
+.rules-hint {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+  line-height: 1.4;
+}
+
+/* The value is a button until it is being edited: no box, no border, just the
+   text, so an unfilled rule is one quiet line instead of an empty container. */
+.rules-value {
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+  cursor: text;
+  /* Long rules are clamped; opening one shows all of it. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rules-value:hover { color: var(--ink); }
+
+.rules-unset { color: var(--mute); font-style: italic; }
+
+.rules-input {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  line-height: var(--leading-body);
+  resize: vertical;
+  outline: none;
+}
+
+.rules-saving {
+  position: absolute;
+  right: var(--sp-4);
+  top: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--mute);
+}
+
+@media (max-width: 760px) {
+  .rules-row { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+}
+
+
 
 
 
