@@ -361,7 +361,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             <div
               role="tablist"
               aria-label="Stitch view"
-              style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: 999 }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: "var(--r-pill)" }}
             >
               <button
                 role="tab"
@@ -373,7 +373,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
                   letterSpacing: "0.02em",
                   padding: "6px 14px",
                   border: "none",
-                  borderRadius: 999,
+                  borderRadius: "var(--r-pill)",
                   cursor: "pointer",
                   color: view === "timeline" ? "var(--ink)" : "var(--mute)",
                   background: view === "timeline" ? "var(--surface)" : "transparent",
@@ -392,7 +392,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
                   letterSpacing: "0.02em",
                   padding: "6px 14px",
                   border: "none",
-                  borderRadius: 999,
+                  borderRadius: "var(--r-pill)",
                   cursor: "pointer",
                   color: view === "board" ? "var(--ink)" : "var(--mute)",
                   background: view === "board" ? "var(--surface)" : "transparent",
@@ -413,7 +413,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
               fontSize: 10,
               fontWeight: 500,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: allClipsDone
                 ? "color-mix(in srgb, var(--viridian) 18%, transparent)"
                 : "color-mix(in srgb, var(--mustard) 20%, transparent)",
@@ -433,7 +433,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
               fontSize: 10,
               fontWeight: 500,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: "var(--cream-deep)",
               color: "var(--ink-soft)"
             }}
@@ -446,7 +446,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
         </div>
       </motion.header>
 
-      <div className="stitch-shell" style={{ height: "calc(100vh - 64px - 230px)", borderRadius: 18 }}>
+      <div className="stitch-shell" style={{ height: "calc(100vh - 64px - 230px)", borderRadius: "var(--r-lg)" }}>
         {view === "board" ? (
           <div style={{ position: "absolute", inset: 0, background: "#0B0B0D" }}>
             <ReactFlow
@@ -495,7 +495,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
                 gap: 10,
                 padding: "6px 12px",
                 background: "rgba(23,23,27,0.85)",
-                borderRadius: 999,
+                borderRadius: "var(--r-pill)",
                 boxShadow: "var(--shadow-1)",
                 pointerEvents: "none"
               }}
@@ -664,7 +664,7 @@ function StitchTimeline({
     <div style={{ position: "absolute", inset: 0, display: "grid", gridTemplateRows: "minmax(0, 1fr) 190px", background: "var(--bg)", overflow: "hidden" }}>
       {/* Monitor */}
       <div style={{ position: "relative", display: "grid", placeItems: "center", background: "#060607", overflow: "hidden", borderBottom: "1px solid var(--cream-deep)", padding: 20 }}>
-        <div style={{ position: "relative", height: "100%", maxHeight: "100%", aspectRatio: "16/9", maxWidth: "100%", background: "#000", borderRadius: 12, overflow: "hidden", boxShadow: "var(--shadow-2)" }}>
+        <div style={{ position: "relative", height: "100%", maxHeight: "100%", aspectRatio: "16/9", maxWidth: "100%", background: "#000", borderRadius: "var(--r-md)", overflow: "hidden", boxShadow: "var(--shadow-2)" }}>
           {current.node.clip_url ? (
             /* eslint-disable-next-line jsx-a11y/media-has-caption */
             <video
@@ -737,7 +737,7 @@ function StitchTimeline({
               background: "rgba(10,10,12,0.72)",
               color: "#EDE8DC",
               border: "1px solid rgba(237,232,220,0.25)",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               cursor: "pointer"
             }}
           >
@@ -796,7 +796,7 @@ function StitchTimeline({
                     height: "100%",
                     width: n.duration * PX_PER_SEC,
                     border: "none",
-                    borderRadius: 12,
+                    borderRadius: "var(--r-md)",
                     overflow: "hidden",
                     background: "var(--cream-deep)",
                     boxShadow: n.id === selectedId ? "inset 0 0 0 2px var(--accent), var(--shadow-2)" : "var(--shadow-1)",
@@ -832,7 +832,7 @@ function StitchTimeline({
                         fontSize: 8.5,
                         letterSpacing: "0.02em",
                         padding: "2px 6px",
-                        borderRadius: 999,
+                        borderRadius: "var(--r-pill)",
                         background: "var(--viridian)",
                         color: "var(--on-accent-3)"
                       }}
@@ -851,7 +851,7 @@ function StitchTimeline({
                           fontSize: 8.5,
                           letterSpacing: "0.02em",
                           padding: "2px 6px",
-                          borderRadius: 999,
+                          borderRadius: "var(--r-pill)",
                           background: "var(--mustard)",
                           color: "#14100C"
                         }}
@@ -892,7 +892,7 @@ function StitchTimeline({
                     fontFamily: "var(--font-mono)",
                     fontSize: 8.5,
                     letterSpacing: "0.02em",
-                    borderRadius: 999,
+                    borderRadius: "var(--r-pill)",
                     boxShadow: "var(--shadow-1)",
                     whiteSpace: "nowrap",
                     pointerEvents: "none"
@@ -989,9 +989,8 @@ function StitchInspector({
         // graph view has no bottom chrome to clear.
         bottom: view === "timeline" ? 206 : 16,
         width: 320,
-        backdropFilter: "blur(20px)",
         background: "var(--surface)",
-        borderRadius: 18,
+        borderRadius: "var(--r-lg)",
         boxShadow: "var(--shadow-2)",
         padding: 16,
         display: "flex",
@@ -1018,11 +1017,10 @@ function StitchInspector({
             alignItems: "center",
             padding: 6,
             color: "var(--ink)",
-            backdropFilter: "blur(10px)",
             background: "color-mix(in srgb, var(--ink) 5%, transparent)",
             border: 0,
             boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-            borderRadius: 999,
+            borderRadius: "var(--r-pill)",
             cursor: "pointer"
           }}
         >
@@ -1031,7 +1029,7 @@ function StitchInspector({
       </header>
 
       {node.clip_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "#14100c", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
+        <div style={{ position: "relative", overflow: "hidden", borderRadius: "var(--r-lg)", background: "#14100c", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video
             src={node.lipsync_url ?? node.clip_url}
@@ -1051,7 +1049,7 @@ function StitchInspector({
               fontSize: 9,
               letterSpacing: "0.02em",
               padding: "2px 6px",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: "var(--viridian)",
               color: "var(--on-accent-3)",
               pointerEvents: "none"
@@ -1061,7 +1059,7 @@ function StitchInspector({
           </span>
         </div>
       ) : node.frame_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: 18, background: "var(--cream-deep)", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
+        <div style={{ position: "relative", overflow: "hidden", borderRadius: "var(--r-lg)", background: "var(--cream-deep)", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
           <div
             role="img"
             aria-label={node.beat?.title ?? ""}
@@ -1092,7 +1090,7 @@ function StitchInspector({
               background: "var(--bg)",
               color: "var(--ink)",
               border: "none",
-              borderRadius: 12,
+              borderRadius: "var(--r-md)",
               boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
               fontFamily: "var(--font-mono)",
               fontSize: 13,
@@ -1111,7 +1109,7 @@ function StitchInspector({
             marginTop: 8,
             padding: "8px 12px",
             background: "var(--bg)",
-            borderRadius: 18,
+            borderRadius: "var(--r-lg)",
             fontFamily: "var(--font-mono)",
             fontSize: 13,
             color: "var(--ink-soft)"
@@ -1134,7 +1132,7 @@ function StitchInspector({
                   padding: "5px 12px",
                   fontWeight: 500,
                   fontSize: 13,
-                  borderRadius: 999,
+                  borderRadius: "var(--r-pill)",
                   background: "var(--bg)",
                   color: "var(--ink)",
                   boxShadow: "var(--shadow-1)"
@@ -1198,7 +1196,7 @@ function StitchInspector({
             background: "var(--bg)",
             color: "var(--ink)",
             border: "none",
-            borderRadius: 18,
+            borderRadius: "var(--r-lg)",
             boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
             fontFamily: "var(--font-ui)",
             fontSize: 13,
@@ -1248,7 +1246,7 @@ function StitchInspector({
             background: "var(--bg)",
             color: "var(--ink)",
             border: "none",
-            borderRadius: 18,
+            borderRadius: "var(--r-lg)",
             boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
             fontFamily: "var(--font-ui)",
             fontSize: 13,
@@ -1315,7 +1313,7 @@ function StitchInspector({
             color: "var(--on-accent)",
             background: "var(--accent)",
             border: "none",
-            borderRadius: 999,
+            borderRadius: "var(--r-pill)",
             boxShadow: "var(--shadow-1)",
             cursor: "pointer"
           }}
@@ -1343,7 +1341,7 @@ function StitchInspector({
           fontSize: 13,
           color: "var(--ink)",
           background: "var(--surface-2)",
-          borderRadius: 999,
+          borderRadius: "var(--r-pill)",
           cursor: uploadingClip ? "default" : "pointer",
           opacity: uploadingClip ? 0.6 : 1
         }}
@@ -1389,7 +1387,7 @@ function StitchInspector({
             fontSize: 13,
             color: "var(--ink)",
             background: "var(--surface-2)",
-            borderRadius: 999,
+            borderRadius: "var(--r-pill)",
             cursor: uploadingDialogue ? "default" : "pointer",
             opacity: uploadingDialogue ? 0.6 : 1
           }}
@@ -1425,7 +1423,7 @@ function StitchInspector({
             background: "var(--bg)",
             color: "var(--ink)",
             border: "none",
-            borderRadius: 12,
+            borderRadius: "var(--r-md)",
             boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
             fontFamily: "var(--font-ui)",
             fontSize: 13
@@ -1462,7 +1460,7 @@ function StitchInspector({
             color: "var(--ink)",
             background: "var(--surface-2)",
             border: "none",
-            borderRadius: 999,
+            borderRadius: "var(--r-pill)",
             cursor: "pointer",
             opacity: lipsyncing || !node.dialogue_audio_url || (!node.clip_url && !node.frame_url) ? 0.5 : 1
           }}
@@ -1492,7 +1490,7 @@ function StitchInspector({
           color: "var(--on-accent)",
           background: "var(--tomato-deep)",
           border: "none",
-          borderRadius: 999,
+          borderRadius: "var(--r-pill)",
           boxShadow: "var(--shadow-1)",
           cursor: "pointer"
         }}

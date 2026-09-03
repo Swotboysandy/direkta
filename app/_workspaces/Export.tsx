@@ -114,7 +114,7 @@ export function Export({ project }: Props) {
               fontSize: 10,
               fontWeight: 500,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: "var(--cream-deep)",
               color: "var(--ink-soft)"
             }}
@@ -136,7 +136,7 @@ export function Export({ project }: Props) {
             style={{
               padding: 28,
               background: "var(--surface)",
-              borderRadius: 18,
+              borderRadius: "var(--r-lg)",
               boxShadow: "var(--shadow-2)",
               display: "flex",
               flexDirection: "column",
@@ -167,7 +167,7 @@ export function Export({ project }: Props) {
                 gap: 10,
                 padding: "10px 14px",
                 background: "var(--bg)",
-                borderRadius: 14,
+                borderRadius: "var(--r-md)",
                 fontSize: 12
               }}
             >
@@ -223,7 +223,7 @@ export function Export({ project }: Props) {
                 className="shimmer"
                 style={{
                   position: "relative",
-                  borderRadius: 18,
+                  borderRadius: "var(--r-lg)",
                   overflow: "hidden",
                   background: "var(--cream-deep)",
                   aspectRatio: aspect,
@@ -238,7 +238,7 @@ export function Export({ project }: Props) {
             )}
 
             {!rendering && cut && (
-              <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", background: "#14100c", aspectRatio: aspect }}>
+              <div style={{ position: "relative", borderRadius: "var(--r-lg)", overflow: "hidden", background: "#14100c", aspectRatio: aspect }}>
                 {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                 <video
                   src={cut.url}
@@ -254,7 +254,7 @@ export function Export({ project }: Props) {
                     fontSize: 9,
                     letterSpacing: "0.02em",
                     padding: "2px 8px",
-                    borderRadius: 999,
+                    borderRadius: "var(--r-pill)",
                     background: "var(--viridian)",
                     color: "var(--on-accent-3)",
                     pointerEvents: "none"
@@ -370,7 +370,7 @@ function ExportCard({
       style={{
         padding: 28,
         background: "var(--surface)",
-        borderRadius: 18,
+        borderRadius: "var(--r-lg)",
         boxShadow: "var(--shadow-2)",
         display: "flex",
         flexDirection: "column",
@@ -413,7 +413,7 @@ function ExportCard({
               background: "var(--bg)",
               color: "var(--ink)",
               border: "none",
-              borderRadius: 18,
+              borderRadius: "var(--r-lg)",
               boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
               fontFamily: "var(--font-ui)",
               fontSize: 13,
@@ -445,7 +445,7 @@ function ExportCard({
           color: "var(--ink)",
           background: "var(--bg)",
           border: "none",
-          borderRadius: 999,
+          borderRadius: "var(--r-pill)",
           boxShadow: "var(--shadow-1)",
           cursor: "not-allowed",
           opacity: 0.6

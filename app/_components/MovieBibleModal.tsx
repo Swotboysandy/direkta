@@ -117,11 +117,10 @@ export function MovieBibleModal({ project, bible, beats, characters, locations, 
               alignItems: "center",
               padding: 6,
               color: "var(--ink)",
-              backdropFilter: "blur(10px)",
               background: `color-mix(in srgb, var(--ink) ${closeHover ? 14 : 5}%, transparent)`,
               border: 0,
               boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               cursor: "pointer"
             }}
           >
@@ -755,7 +754,7 @@ function SceneSection({ beats }: { beats: Beat[] }) {
                     padding: "2px 8px",
                     fontWeight: 500,
                     fontSize: 10,
-                    borderRadius: 999,
+                    borderRadius: "var(--r-pill)",
                     background: "var(--surface)",
                     color: "var(--ink)",
                     boxShadow: "var(--shadow-1)"
@@ -778,7 +777,7 @@ function SceneSection({ beats }: { beats: Beat[] }) {
                     fontFamily: "var(--font-mono)",
                     fontSize: 9,
                     letterSpacing: "0.02em",
-                    borderRadius: 999,
+                    borderRadius: "var(--r-pill)",
                     background: "rgba(232,74,53,0.16)",
                     color: "var(--tomato-deep)"
                   }}

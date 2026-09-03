@@ -27,7 +27,7 @@ export function StitchNodeCard({ data, selected }: NodeProps) {
       data-selected={selected}
       style={{
         background: "#17171B",
-        borderRadius: 14,
+        borderRadius: "var(--r-md)",
         boxShadow: selected
           ? "inset 0 0 0 2px var(--accent), 0 10px 26px rgba(0,0,0,0.45)"
           : "0 6px 18px rgba(0,0,0,0.35)"
@@ -74,7 +74,9 @@ export function StitchNodeCard({ data, selected }: NodeProps) {
           alignItems: "center",
           padding: "7px 10px",
           background: "#1F1F25",
-          borderRadius: "14px 14px 0 0",
+          // Rounded at the top only: this is the card's header, and its lower corners
+          // meet the body.
+          borderRadius: "var(--r-md) var(--r-md) 0 0",
           borderBottom: "1px solid rgba(237,232,220,0.08)"
         }}
       >
@@ -88,7 +90,7 @@ export function StitchNodeCard({ data, selected }: NodeProps) {
               fontSize: 8.5,
               letterSpacing: "0.02em",
               padding: "1px 6px",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: "var(--viridian)",
               color: "var(--on-accent-3)"
             }}
@@ -103,7 +105,7 @@ export function StitchNodeCard({ data, selected }: NodeProps) {
               fontSize: 8.5,
               letterSpacing: "0.02em",
               padding: "1px 6px",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: "var(--mustard)",
               color: "#14100C"
             }}

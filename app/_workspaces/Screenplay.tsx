@@ -25,7 +25,7 @@ const mono10: React.CSSProperties = {
    each panel controls its own inner spacing. */
 const panelStyle: React.CSSProperties = {
   background: "var(--surface)",
-  borderRadius: 18,
+  borderRadius: "var(--r-lg)",
   boxShadow: "var(--shadow-1)",
   overflow: "hidden"
 };
@@ -259,7 +259,7 @@ export function Screenplay({
             </p>
           </div>
           <div className="page-head-actions">
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: "var(--cream-deep)", color: "var(--ink-soft)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: "var(--r-pill)", background: "var(--cream-deep)", color: "var(--ink-soft)" }}>
               {words} {words === 1 ? "word" : "words"}
             </span>
             {/* Hidden file input — accepts .txt .fountain .fdx .md */}
@@ -341,7 +341,7 @@ export function Screenplay({
                   background: "var(--surface)",
                   color: "var(--ink)",
                   border: 0,
-                  borderRadius: 14,
+                  borderRadius: "var(--r-md)",
                   boxShadow: "inset 0 0 0 1px var(--cream-deep)",
                   fontFamily: "var(--font-ui)",
                   fontSize: 13,
@@ -373,7 +373,7 @@ export function Screenplay({
                   background: "var(--surface)",
                   color: "var(--ink)",
                   border: 0,
-                  borderRadius: 14,
+                  borderRadius: "var(--r-md)",
                   boxShadow: "inset 0 0 0 1px var(--cream-deep)",
                   fontFamily: "var(--font-ui)",
                   fontSize: 13,
@@ -405,7 +405,7 @@ export function Screenplay({
                   background: "var(--surface)",
                   color: "var(--ink)",
                   border: 0,
-                  borderRadius: 14,
+                  borderRadius: "var(--r-md)",
                   boxShadow: "inset 0 0 0 1px var(--cream-deep)",
                   fontFamily: "var(--font-ui)",
                   fontSize: 13,
@@ -437,7 +437,7 @@ export function Screenplay({
                   background: "var(--surface)",
                   color: "var(--ink)",
                   border: 0,
-                  borderRadius: 14,
+                  borderRadius: "var(--r-md)",
                   boxShadow: "inset 0 0 0 1px var(--cream-deep)",
                   fontFamily: "var(--font-ui)",
                   fontSize: 13,
@@ -469,7 +469,7 @@ export function Screenplay({
                   background: "var(--surface)",
                   color: "var(--ink)",
                   border: 0,
-                  borderRadius: 14,
+                  borderRadius: "var(--r-md)",
                   boxShadow: "inset 0 0 0 1px var(--cream-deep)",
                   fontFamily: "var(--font-ui)",
                   fontSize: 13,
@@ -501,7 +501,7 @@ export function Screenplay({
                   background: "var(--surface)",
                   color: "var(--ink)",
                   border: 0,
-                  borderRadius: 14,
+                  borderRadius: "var(--r-md)",
                   boxShadow: "inset 0 0 0 1px var(--cream-deep)",
                   fontFamily: "var(--font-ui)",
                   fontSize: 13,
@@ -516,7 +516,7 @@ export function Screenplay({
           <div
             style={{
               background: "var(--surface)",
-              borderRadius: 18,
+              borderRadius: "var(--r-lg)",
               boxShadow: "var(--shadow-2)",
               overflow: "hidden",
               opacity: generating ? 0.85 : 1
@@ -590,7 +590,7 @@ export function Screenplay({
         </div>
         <div className="page-head-actions">
           {beats.length > 0 && (
-            <div role="tablist" aria-label="Breakdown view" style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: 999 }}>
+            <div role="tablist" aria-label="Breakdown view" style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: "var(--r-pill)" }}>
               {(["split", "board"] as const).map((mode) => {
                 const active = view === mode;
                 return (
@@ -610,7 +610,7 @@ export function Screenplay({
                       letterSpacing: "0.02em",
                       padding: "6px 14px",
                       border: "none",
-                      borderRadius: 999,
+                      borderRadius: "var(--r-pill)",
                       cursor: "pointer",
                       background: "transparent",
                       color: active ? "var(--ink)" : "var(--mute)",
@@ -625,7 +625,7 @@ export function Screenplay({
                           position: "absolute",
                           inset: 0,
                           background: "var(--surface)",
-                          borderRadius: 999,
+                          borderRadius: "var(--r-pill)",
                           boxShadow: "var(--shadow-1)",
                           zIndex: 0
                         }}
@@ -639,7 +639,7 @@ export function Screenplay({
               })}
             </div>
           )}
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: beatsPillBg, color: beatsPillFg }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: "var(--r-pill)", background: beatsPillBg, color: beatsPillFg }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
             {beatsPillLabel}
           </span>
@@ -655,7 +655,7 @@ export function Screenplay({
       {view === "board" ? (
         <motion.div className="page-body" {...pageIn}>
           {beats.length === 0 ? (
-            <div className="card" style={{ borderRadius: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="card" style={{ borderRadius: "var(--r-lg)", display: "flex", flexDirection: "column", gap: 12 }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6, ...mono10, color: "var(--accent)" }}>
                 <Sparkles size={12} /> Script Reader
               </span>
@@ -671,7 +671,7 @@ export function Screenplay({
                 </motion.button>
               )}
               {extracting && (
-                <span style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: "rgba(242,184,60,0.20)", color: "var(--mustard-deep)" }}>
+                <span style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: "var(--r-pill)", background: "rgba(242,184,60,0.20)", color: "var(--mustard-deep)" }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
                   Working
                 </span>
@@ -772,7 +772,7 @@ export function Screenplay({
                   </h3>
                 </div>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: 999, background: "rgba(95,191,143,0.16)", color: "var(--viridian-deep)" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", ...mono10, borderRadius: "var(--r-pill)", background: "rgba(95,191,143,0.16)", color: "var(--viridian-deep)" }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
                     Draft {project.draft_version}
                   </span>
@@ -863,7 +863,7 @@ function RailBeatItem({
         width: "100%",
         padding: 10,
         border: 0,
-        borderRadius: 12,
+        borderRadius: "var(--r-md)",
         cursor: "pointer",
         background: expanded ? "var(--cream-deep)" : "transparent",
         color: "var(--ink)",
@@ -889,7 +889,7 @@ function RailBeatItem({
               fontFamily: "var(--font-mono)",
               fontSize: 9,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: "rgba(232,74,53,0.16)",
               color: "var(--tomato-deep)"
             }}
@@ -910,7 +910,7 @@ function SceneCard({ beat, rot }: { beat: Beat; rot: string }) {
     <motion.article
       className="scene-card"
       variants={staggerItem}
-      style={{ "--card-rot": rot, borderRadius: 18 } as React.CSSProperties}
+      style={{ "--card-rot": rot, borderRadius: "var(--r-lg)" } as React.CSSProperties}
     >
       <div className="scene-card-head">
         <span className="scene-card-no" style={{ letterSpacing: "0.02em" }}>
@@ -927,7 +927,7 @@ function SceneCard({ beat, rot }: { beat: Beat; rot: string }) {
               fontFamily: "var(--font-mono)",
               fontSize: 10,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: "rgba(232,74,53,0.16)",
               color: "var(--tomato-deep)"
             }}

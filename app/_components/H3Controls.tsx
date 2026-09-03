@@ -30,7 +30,7 @@ export function H3Controls({ duration, aspectRatio, value, onChange, onReady }: 
     });
     return () => controller.abort();
   }, [duration, aspectRatio, onReady]);
-  return <fieldset style={{ border: "1px solid var(--cream-deep)", borderRadius: 12, padding: 10, margin: 0, fontSize: 12 }}>
+  return <fieldset style={{ border: "1px solid var(--cream-deep)", borderRadius: "var(--r-md)", padding: 10, margin: 0, fontSize: 12 }}>
     <legend>H3 continuity and budget</legend>
     <label style={{ display: "grid", gap: 5 }}>
       Opening

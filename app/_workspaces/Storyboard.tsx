@@ -544,8 +544,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
                   style={{
                     width: 260,
                     background: "var(--surface)",
-                    backdropFilter: "blur(20px)",
-                    borderRadius: 18,
+                    borderRadius: "var(--r-lg)",
                     boxShadow: "var(--shadow-3)",
                     padding: 10,
                     zIndex: 90,
@@ -583,7 +582,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
                           width: "100%",
                           textAlign: "left",
                           padding: "10px 12px",
-                          borderRadius: 12,
+                          borderRadius: "var(--r-md)",
                           background: "transparent",
                           color: "var(--ink)",
                           cursor: "pointer",
@@ -1142,7 +1141,7 @@ function BeatEditor({
                     alignItems: "center",
                     gap: 6,
                     padding: "6px 13px",
-                    borderRadius: 999,
+                    borderRadius: "var(--r-pill)",
                     fontSize: 13,
                     fontWeight: 500,
                     cursor: inBeat ? "default" : "pointer",
@@ -1180,8 +1179,7 @@ function BeatEditor({
                 style={{
                   width: 260,
                   background: "var(--surface)",
-                  backdropFilter: "blur(20px)",
-                  borderRadius: 18,
+                  borderRadius: "var(--r-lg)",
                   boxShadow: "var(--shadow-3)",
                   padding: 8,
                   zIndex: 90,
@@ -1205,7 +1203,7 @@ function BeatEditor({
                       alignItems: "flex-start",
                       gap: 2,
                       padding: "8px 10px",
-                      borderRadius: 12,
+                      borderRadius: "var(--r-md)",
                       background: "transparent",
                       border: "none",
                       cursor: "pointer",
@@ -1326,7 +1324,7 @@ function BeatEditor({
               gap: 2,
               padding: 3,
               background: "var(--surface-2)",
-              borderRadius: 999
+              borderRadius: "var(--r-pill)"
             }}
           >
             {[1, 2, 4].map((n) => (
@@ -1338,7 +1336,7 @@ function BeatEditor({
                 title={`${n} ${n === 1 ? "take" : "takes"} · ≈${Math.round((n * 14_400) / 1000)}k tokens`}
                 style={{
                   padding: "5px 12px",
-                  borderRadius: 999,
+                  borderRadius: "var(--r-pill)",
                   fontFamily: "var(--font-mono)",
                   fontSize: 10,
                   fontWeight: 600,

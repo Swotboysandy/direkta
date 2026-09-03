@@ -47,7 +47,7 @@ const fieldInputStyle: CSSProperties = {
   color: "var(--ink)",
   background: "var(--bg)",
   border: "none",
-  borderRadius: 18,
+  borderRadius: "var(--r-lg)",
   boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
   outline: "none",
   boxSizing: "border-box"
@@ -62,11 +62,10 @@ const ghostPillStyle: CSSProperties = {
   fontWeight: 600,
   fontSize: 14,
   color: "var(--ink)",
-  backdropFilter: "blur(10px)",
   background: "color-mix(in srgb, var(--ink) 5%, transparent)",
   border: 0,
   boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-  borderRadius: 999,
+  borderRadius: "var(--r-pill)",
   cursor: "pointer"
 };
 
@@ -81,7 +80,7 @@ const primaryPillStyle: CSSProperties = {
   color: "var(--on-accent)",
   background: "var(--accent)",
   border: "none",
-  borderRadius: 999,
+  borderRadius: "var(--r-pill)",
   boxShadow: "var(--shadow-1)",
   cursor: "pointer"
 };
@@ -106,7 +105,7 @@ function chipStyle(active: boolean, mono = false): CSSProperties {
     color: active ? "var(--accent)" : "var(--ink-soft)",
     background: "var(--bg)",
     border: "none",
-    borderRadius: 999,
+    borderRadius: "var(--r-pill)",
     boxShadow: active ? "inset 0 0 0 1.5px var(--accent)" : "inset 0 0 0 1px var(--cream-deep)",
     cursor: "pointer"
   };
@@ -176,9 +175,8 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={SPRING_SMOOTH}
         style={{
-          backdropFilter: "blur(24px)",
           background: "var(--surface)",
-          borderRadius: 24,
+          borderRadius: "var(--r-lg)",
           padding: 32,
           maxWidth: 480,
           width: "100%",

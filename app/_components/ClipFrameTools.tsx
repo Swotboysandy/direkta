@@ -21,7 +21,7 @@ export function ClipFrameTools({ nodeId, clipUrl }: { nodeId: string; clipUrl: s
   const last = info ? Math.max(0, (info.frames ?? Math.floor(info.duration * info.fps)) - 1) : 0;
   return <details style={{ fontSize: 12 }}>
     <summary>Inspect / export a still frame</summary>
-    <video ref={video} src={clipUrl} controls preload="metadata" style={{ width: "100%", marginTop: 8, borderRadius: 8 }} />
+    <video ref={video} src={clipUrl} controls preload="metadata" style={{ width: "100%", marginTop: 8, borderRadius: "var(--r-sm)" }} />
     <label style={{ display: "grid", gap: 6, marginTop: 8 }}>
       Frame {frame}{info ? ` / ${last} · ${(frame / info.fps).toFixed(3)}s` : ""}
       <input aria-label="Still frame index" type="range" min={0} max={last} step={1} value={Math.min(frame, last)} disabled={!info}

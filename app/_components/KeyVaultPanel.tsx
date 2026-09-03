@@ -38,7 +38,7 @@ const eyebrowStyle: CSSProperties = {
 const cardStyle: CSSProperties = {
   padding: 16,
   background: "var(--bg)",
-  borderRadius: 18,
+  borderRadius: "var(--r-lg)",
   display: "flex",
   flexDirection: "column",
   gap: 8
@@ -53,11 +53,10 @@ const pillGhostSm: CSSProperties = {
   fontWeight: 600,
   fontSize: 13,
   color: "var(--ink)",
-  backdropFilter: "blur(10px)",
   background: "color-mix(in srgb, var(--ink) 5%, transparent)",
   border: 0,
   boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-  borderRadius: 999,
+  borderRadius: "var(--r-pill)",
   cursor: "pointer"
 };
 
@@ -72,7 +71,7 @@ const pillPrimarySm: CSSProperties = {
   color: "var(--on-accent)",
   background: "var(--accent)",
   border: "none",
-  borderRadius: 999,
+  borderRadius: "var(--r-pill)",
   boxShadow: "var(--shadow-1)",
   cursor: "pointer"
 };
@@ -277,11 +276,10 @@ export function KeyVaultPanel({ open, onClose }: Props) {
                 alignItems: "center",
                 padding: 6,
                 color: "var(--ink)",
-                backdropFilter: "blur(10px)",
                 background: "color-mix(in srgb, var(--ink) 5%, transparent)",
                 border: 0,
                 boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-                borderRadius: 999,
+                borderRadius: "var(--r-pill)",
                 cursor: "pointer"
               }}
             >
@@ -317,7 +315,7 @@ export function KeyVaultPanel({ open, onClose }: Props) {
                 padding: "12px 16px",
                 background: "var(--accent-2)",
                 color: "var(--on-accent-2)",
-                borderRadius: 18
+                borderRadius: "var(--r-lg)"
               }}
             >
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em" }}>
@@ -547,7 +545,7 @@ function HiggsfieldCreds({
     color: "var(--ink)",
     background: "var(--surface-2)",
     border: "none",
-    borderRadius: 14,
+    borderRadius: "var(--r-md)",
     outline: "none",
     boxSizing: "border-box"
   };

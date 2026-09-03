@@ -117,7 +117,7 @@ function UploadLookButton({
           fontFamily: "var(--font-ui)",
           color: "var(--ink)",
           background: "var(--surface-2)",
-          borderRadius: 999,
+          borderRadius: "var(--r-pill)",
           cursor: busy ? "default" : "pointer",
           opacity: busy ? 0.6 : 1,
           whiteSpace: "nowrap"
@@ -266,7 +266,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
               fontSize: 10,
               fontWeight: 500,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: castTone.bg,
               color: castTone.fg
             }}
@@ -292,7 +292,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
               color: "var(--ink)",
               background: "var(--surface)",
               border: "none",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               boxShadow: "var(--shadow-1)",
               cursor: "pointer",
               whiteSpace: "nowrap"
@@ -321,7 +321,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
               color: "var(--ink)",
               background: "var(--surface)",
               border: "none",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               boxShadow: "var(--shadow-1)",
               cursor: "pointer",
               whiteSpace: "nowrap"
@@ -343,7 +343,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
               color: "var(--on-accent)",
               background: "var(--accent)",
               border: "none",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               boxShadow: "var(--shadow-1)",
               cursor: "pointer",
               whiteSpace: "nowrap"
@@ -360,7 +360,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
           style={{
             marginBottom: 16,
             padding: "12px 18px",
-            borderRadius: 14,
+            borderRadius: "var(--r-md)",
             background: "color-mix(in srgb, var(--accent) 10%, transparent)",
             color: "var(--ink)",
             fontSize: 13,
@@ -391,7 +391,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
                   fontFamily: "var(--font-ui)",
                   color: "var(--tomato)",
                   background: "transparent",
-                  borderRadius: 999,
+                  borderRadius: "var(--r-pill)",
                   cursor: "pointer",
                   whiteSpace: "nowrap"
                 }}
@@ -420,7 +420,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
         </div>
 
         {characters.length === 0 ? (
-          <div style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
+          <div style={{ background: "var(--surface)", borderRadius: "var(--r-lg)", boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
             <span className="ws-meta">
               Casting director
             </span>
@@ -441,7 +441,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
                 color: "var(--on-accent)",
                 background: "var(--accent)",
                 border: "none",
-                borderRadius: 999,
+                borderRadius: "var(--r-pill)",
                 boxShadow: "var(--shadow-1)",
                 cursor: "pointer"
               }}
@@ -486,7 +486,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
         </div>
 
         {locations.length === 0 ? (
-          <div style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
+          <div style={{ background: "var(--surface)", borderRadius: "var(--r-lg)", boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
             <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5, maxWidth: "56ch" }}>
               No locations cast yet. Submit your script and the crew will import the scene locations — or add one
               manually.
@@ -504,7 +504,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
                 color: "var(--on-accent)",
                 background: "var(--accent)",
                 border: "none",
-                borderRadius: 999,
+                borderRadius: "var(--r-pill)",
                 boxShadow: "var(--shadow-1)",
                 cursor: "pointer"
               }}
@@ -549,7 +549,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
         </div>
 
         {propList.length === 0 ? (
-          <div style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
+          <div style={{ background: "var(--surface)", borderRadius: "var(--r-lg)", boxShadow: "var(--shadow-2)", border: "1.5px dashed var(--surface-2)", padding: 28 }}>
             <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5, maxWidth: "56ch" }}>
               No recurring props cast yet. Add a named object (a weapon, an artifact, a set piece) that needs to
               stay visually identical across every shot it appears in.
@@ -567,7 +567,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
                 color: "var(--on-accent)",
                 background: "var(--accent)",
                 border: "none",
-                borderRadius: 999,
+                borderRadius: "var(--r-pill)",
                 boxShadow: "var(--shadow-1)",
                 cursor: "pointer"
               }}
@@ -699,7 +699,7 @@ function CharacterCard({
     color: "var(--ink)",
     background: "var(--bg)",
     border: "none",
-    borderRadius: 999,
+    borderRadius: "var(--r-pill)",
     boxShadow: "var(--shadow-1)",
     cursor: "pointer"
   };
@@ -711,11 +711,10 @@ function CharacterCard({
     fontWeight: 600,
     fontSize: 13,
     color: "var(--ink)",
-    backdropFilter: "blur(10px)",
     background: "color-mix(in srgb, var(--ink) 5%, transparent)",
     border: 0,
     boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-    borderRadius: 999,
+    borderRadius: "var(--r-pill)",
     cursor: "pointer"
   };
   const dimHover: React.CSSProperties = { background: "color-mix(in srgb, var(--ink) 12%, transparent)" };
@@ -723,7 +722,7 @@ function CharacterCard({
 
   return (
     <HoverDiv
-      style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", overflow: "hidden", display: "flex", flexDirection: "column" }}
+      style={{ background: "var(--surface)", borderRadius: "var(--r-lg)", boxShadow: "var(--shadow-2)", overflow: "hidden", display: "flex", flexDirection: "column" }}
       hoverStyle={{ boxShadow: "var(--shadow-3)" }}
     >
       <div className={busy ? "shimmer" : undefined} style={{ position: "relative", aspectRatio: "1 / 1", background: "var(--cream-deep)", overflow: "hidden" }}>
@@ -757,7 +756,6 @@ function CharacterCard({
               justifyContent: "center",
               gap: 8,
               background: "color-mix(in srgb, var(--bg) 50%, transparent)",
-              backdropFilter: "blur(1px)",
               fontFamily: "var(--font-mono)",
               fontSize: 10,
               letterSpacing: "0.04em",
@@ -787,7 +785,7 @@ function CharacterCard({
             fontFamily: "var(--font-mono)",
             fontSize: 11,
             fontWeight: 600,
-            borderRadius: 999,
+            borderRadius: "var(--r-pill)",
             background: pipTone.bg,
             color: pipTone.fg
           }}
@@ -807,7 +805,7 @@ function CharacterCard({
                   height: 40,
                   padding: 0,
                   border: i === sel ? "2px solid var(--accent)" : "2px solid transparent",
-                  borderRadius: 12,
+                  borderRadius: "var(--r-md)",
                   overflow: "hidden",
                   cursor: "pointer",
                   background: l.url ? "var(--cream-deep)" : gradFor(character.name, l.seed ?? 0),
@@ -836,7 +834,7 @@ function CharacterCard({
                   color: "var(--mute)",
                   border: "2px dashed var(--surface-2)",
                   background: "transparent",
-                  borderRadius: 12,
+                  borderRadius: "var(--r-md)",
                   cursor: "pointer"
                 }}
                 hoverStyle={{ color: "var(--accent)", borderColor: "var(--accent)" }}
@@ -849,7 +847,7 @@ function CharacterCard({
 
         {state === "trained" && character.consistency != null && (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ flex: 1, height: 6, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 6, background: "var(--surface-2)", borderRadius: "var(--r-pill)", overflow: "hidden" }}>
               <div
                 style={{
                   height: "100%",
@@ -1052,7 +1050,7 @@ function CharacterEditModal({
     background: "var(--bg)",
     color: "var(--ink)",
     border: 0,
-    borderRadius: 12,
+    borderRadius: "var(--r-md)",
     fontFamily: "var(--font-ui)",
     fontSize: 14,
     outline: "none",
@@ -1079,8 +1077,7 @@ function CharacterEditModal({
           maxHeight: "min(640px, calc(100vh - 48px))",
           overflowY: "auto",
           background: "var(--surface)",
-          backdropFilter: "blur(20px)",
-          borderRadius: 24,
+          borderRadius: "var(--r-lg)",
           boxShadow: "var(--shadow-3)",
           padding: 28,
           display: "flex",
@@ -1095,7 +1092,7 @@ function CharacterEditModal({
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ width: 30, height: 30, display: "grid", placeItems: "center", borderRadius: 999, background: "var(--surface-2)", color: "var(--ink)", cursor: "pointer" }}
+            style={{ width: 30, height: 30, display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "var(--surface-2)", color: "var(--ink)", cursor: "pointer" }}
           >
             <X size={14} />
           </button>
@@ -1161,7 +1158,7 @@ function CharacterEditModal({
               fontFamily: "var(--font-ui)",
               color: "var(--on-accent)",
               background: "var(--accent)",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               cursor: "pointer",
               opacity: busy || !name.trim() ? 0.6 : 1
             }}
@@ -1181,7 +1178,7 @@ function CharacterEditModal({
                 color: "var(--tomato)",
                 background: "transparent",
                 boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--tomato) 45%, transparent)",
-                borderRadius: 999,
+                borderRadius: "var(--r-pill)",
                 cursor: "pointer"
               }}
             >
@@ -1199,7 +1196,7 @@ function CharacterEditModal({
               fontFamily: "var(--font-ui)",
               color: "var(--tomato)",
               background: "color-mix(in srgb, var(--tomato) 12%, transparent)",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               cursor: "pointer"
             }}
           >
@@ -1272,7 +1269,7 @@ function LocationCard({
 
   return (
     <HoverDiv
-      style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      style={{ background: "var(--surface)", borderRadius: "var(--r-lg)", boxShadow: "var(--shadow-2)", display: "flex", flexDirection: "column", overflow: "hidden" }}
       hoverStyle={{ boxShadow: "var(--shadow-3)" }}
     >
       <div
@@ -1293,7 +1290,6 @@ function LocationCard({
               justifyContent: "center",
               gap: 8,
               background: "color-mix(in srgb, var(--bg) 55%, transparent)",
-              backdropFilter: "blur(1px)",
               fontFamily: "var(--font-mono)",
               fontSize: 10,
               letterSpacing: "0.04em",
@@ -1326,7 +1322,7 @@ function LocationCard({
               fontSize: 10,
               fontWeight: 500,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: tone.bg,
               color: tone.fg
             }}
@@ -1348,7 +1344,7 @@ function LocationCard({
               fontFamily: "var(--font-ui)",
               color: "var(--ink)",
               background: "var(--surface-2)",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               cursor: "pointer",
               whiteSpace: "nowrap"
             }}
@@ -1431,7 +1427,7 @@ function PropCard({
 
   return (
     <HoverDiv
-      style={{ background: "var(--surface)", borderRadius: 18, boxShadow: "var(--shadow-2)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      style={{ background: "var(--surface)", borderRadius: "var(--r-lg)", boxShadow: "var(--shadow-2)", display: "flex", flexDirection: "column", overflow: "hidden" }}
       hoverStyle={{ boxShadow: "var(--shadow-3)" }}
     >
       <div
@@ -1452,7 +1448,6 @@ function PropCard({
               justifyContent: "center",
               gap: 8,
               background: "color-mix(in srgb, var(--bg) 55%, transparent)",
-              backdropFilter: "blur(1px)",
               fontFamily: "var(--font-mono)",
               fontSize: 10,
               letterSpacing: "0.04em",
@@ -1485,7 +1480,7 @@ function PropCard({
               fontSize: 10,
               fontWeight: 500,
               letterSpacing: "0.02em",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               background: tone.bg,
               color: tone.fg
             }}
@@ -1507,7 +1502,7 @@ function PropCard({
               fontFamily: "var(--font-ui)",
               color: "var(--ink)",
               background: "var(--surface-2)",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               cursor: "pointer",
               whiteSpace: "nowrap"
             }}
@@ -1629,7 +1624,7 @@ function BatchGenerate({
           fontFamily: "var(--font-ui)",
           color: "var(--tomato)",
           background: "color-mix(in srgb, var(--tomato) 12%, transparent)",
-          borderRadius: 999,
+          borderRadius: "var(--r-pill)",
           cursor: "pointer",
           whiteSpace: "nowrap"
         }}
@@ -1654,7 +1649,7 @@ function BatchGenerate({
             fontFamily: "var(--font-ui)",
             color: "var(--ink)",
             background: "var(--surface)",
-            borderRadius: 999,
+            borderRadius: "var(--r-pill)",
             boxShadow: "var(--shadow-1)",
             cursor: "pointer",
             whiteSpace: "nowrap"
@@ -1675,8 +1670,7 @@ function BatchGenerate({
           style={{
             width: 300,
             background: "var(--surface)",
-            backdropFilter: "blur(20px)",
-            borderRadius: 18,
+            borderRadius: "var(--r-lg)",
             boxShadow: "var(--shadow-3)",
             padding: 14,
             zIndex: 90,
@@ -1709,7 +1703,7 @@ function BatchGenerate({
                     width: "100%",
                     textAlign: "left",
                     padding: "8px 10px",
-                    borderRadius: 10,
+                    borderRadius: "var(--r-md)",
                     background: "transparent",
                     color: "var(--ink)",
                     cursor: "pointer",
@@ -1726,7 +1720,7 @@ function BatchGenerate({
                       height: 16,
                       display: "grid",
                       placeItems: "center",
-                      borderRadius: 5,
+                      borderRadius: "var(--r-sm)",
                       background: on ? "var(--accent)" : "var(--surface-2)",
                       color: "var(--on-accent)",
                       flexShrink: 0
@@ -1757,7 +1751,7 @@ function BatchGenerate({
               fontFamily: "var(--font-ui)",
               color: "var(--on-accent)",
               background: "var(--accent)",
-              borderRadius: 999,
+              borderRadius: "var(--r-pill)",
               cursor: "pointer",
               opacity: picked.size === 0 ? 0.5 : 1
             }}
