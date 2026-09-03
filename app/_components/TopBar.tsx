@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { ThemeToggle } from "./ThemeToggle";
-import { ChevronDown, Key, Plus, Search, Sparkles, Trash2, Wand2 } from "./icons";
+import { BookOpen, ChevronDown, Key, Plus, Search, Sparkles, Trash2 } from "./icons";
 import type { Project } from "../../lib/types";
 import { cn } from "@/lib/utils";
 
@@ -186,6 +186,8 @@ export function TopBar({
           )}
         </span>
 
+        <span className="topbar-sep" aria-hidden="true" />
+
         <button
           className={cn("topbar-icon", agentOpen && "is-active")}
           onClick={onOpenAgent}
@@ -196,7 +198,7 @@ export function TopBar({
           <Sparkles size={15} />
         </button>
         <button className="topbar-icon" onClick={onOpenSkills} aria-label="Skills" title="Skills">
-          <Wand2 size={15} />
+          <BookOpen size={15} />
         </button>
         <button className="topbar-icon" onClick={onOpenKeys} aria-label="Keys and connections" title="Keys">
           <Key size={15} />

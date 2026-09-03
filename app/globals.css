@@ -21,6 +21,69 @@
 
 @layer legacy {
 
+/* Filters read left to right above the grid, with their names showing.
+   As a second vertical icon column they sat beside the workspace rail and
+   read as more navigation, hid every label behind a hover, and were left
+   stranded in open space whenever the canvas held little. */
+.canvas-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--cream-deep);
+}
+
+.canvas-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px var(--sp-3);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--mute);
+  font-family: var(--font-ui);
+  font-size: var(--t-body-s);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.canvas-filter:hover { background: var(--surface-2); color: var(--ink); }
+.canvas-filter.is-active { background: var(--surface-2); color: var(--ink); }
+
+/* An empty canvas was one line of text adrift in a mostly blank viewport.
+   It now occupies the space the grid would have, so the screen reads as
+   waiting for work rather than as broken. */
+.canvas-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 280px;
+  padding: var(--sp-7) var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px dashed var(--cream-deep);
+  color: var(--mute);
+  text-align: center;
+}
+.canvas-empty p { margin: 0; color: var(--ink-soft); font-size: var(--t-body); }
+.canvas-empty span { font-size: var(--t-body-s); color: var(--mute); }
+
+/* Separates the generator status from the controls, so the chip is not read
+   as another button. */
+.topbar-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 var(--sp-1);
+  background: var(--cream-deep);
+}
+
+/* The toggle is one of the bar's icon buttons and inherits their box; only its
+   own animation is its own. */
+.theme-toggle { padding: 0; }
+
+
 /* ============================================================
    MOTION — production pass
    ------------------------------------------------------------
@@ -485,6 +548,10 @@
 .topbar-menu {
   display: flex;
   flex-direction: column;
+  /* A long project list otherwise runs past the bottom of the window with no
+     way to reach the end of it. */
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
   min-width: 260px;
   padding: var(--sp-1);
   border-radius: var(--r-md);
@@ -652,74 +719,21 @@
    of uniform content.
    ============================================================ */
 .canvas {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  gap: var(--sp-5);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+  flex: 1;
 }
 
 /* Icon-only rail. Labels live in title/aria-label, so the column
    stays the width of one glyph at every breakpoint. */
-.canvas-rail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-  position: sticky;
-  top: var(--sp-4);
-}
 
-.canvas-rail-btn {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 0;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--mute);
-  cursor: pointer;
-  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
-}
-.canvas-rail-btn:hover { background: var(--surface-2); color: var(--ink); }
-.canvas-rail-btn.is-active { background: var(--surface-2); color: var(--ink); }
 /* The active filter is marked by a rule at the leading edge, the same
    language the sidebar uses, so "where am I" reads the same everywhere. */
-.canvas-rail-btn.is-active::before {
-  content: "";
-  position: absolute;
-  left: -6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 18px;
-  border-radius: 2px;
-  background: var(--accent);
-}
 
 .canvas-main { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
 
-.canvas-search {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--cream-deep);
-  color: var(--mute);
-}
-.canvas-search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--t-body-s);
-  outline: none;
-}
-.canvas-search input::placeholder { color: var(--mute); }
 
 .canvas-grid {
   display: grid;
@@ -839,13 +853,6 @@
   /* The rail becomes a scrolling strip above the grid; a 48px column plus a
      two-card grid does not fit at this width. */
   .canvas { grid-template-columns: minmax(0, 1fr); }
-  .canvas-rail {
-    position: static;
-    flex-direction: row;
-    overflow-x: auto;
-    gap: var(--sp-2);
-  }
-  .canvas-rail-btn.is-active::before { display: none; }
   .canvas-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
 
@@ -868,7 +875,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  width: min(760px, 100%);
+  width: min(820px, 100%);
   margin: 0 auto;
 }
 
@@ -1285,9 +1292,13 @@ strong, b {
 
 
 .main-inner {
-  padding: var(--sp-6) var(--page-pad) var(--sp-7);
+  padding: var(--sp-5) var(--page-pad) var(--sp-7);
   max-width: var(--max-w);
-  margin: 0 auto;
+  /* Aligned to the rail rather than centred in the track. Centring left a
+     wide gutter between the navigation and the content it belongs to, which
+     read as the page having drifted off to one side. */
+  margin: 0;
+  width: 100%;
 }
 
 .page-body {

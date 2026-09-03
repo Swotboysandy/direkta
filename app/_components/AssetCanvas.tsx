@@ -168,17 +168,16 @@ export function AssetCanvas({ projectId, query: externalQuery, onOpen }: Props) 
 
   return (
     <div className="canvas">
-      <nav className="canvas-rail" aria-label="Filter assets">
+      <nav className="canvas-filters" aria-label="Filter assets">
         {RAIL.map(({ id, label, Icon }) => (
           <button
             key={id}
-            className={cn("canvas-rail-btn", filter === id && "is-active")}
-            aria-label={label}
+            className={cn("canvas-filter", filter === id && "is-active")}
             aria-pressed={filter === id}
-            title={label}
             onClick={() => setFilter(id)}
           >
-            <Icon size={17} />
+            <Icon size={14} />
+            <span>{label}</span>
           </button>
         ))}
       </nav>
@@ -207,13 +206,19 @@ export function AssetCanvas({ projectId, query: externalQuery, onOpen }: Props) 
         {status === "error" && <ErrorState message={error} onRetry={() => setQuery((q) => q)} />}
 
         {status === "empty" && (
-          <p className="dash-empty">
-            {debounced
-              ? `Nothing matching “${debounced}”.`
-              : filter === "favourite"
-              ? "No favourites yet. Star something to keep it here."
-              : "Nothing here yet. Describe a shot below to make the first one."}
-          </p>
+          <div className="canvas-empty">
+            <ImageIcon size={22} />
+            <p>
+              {debounced
+                ? `Nothing matching “${debounced}”.`
+                : filter === "favourite"
+                ? "No favourites yet. Star something to keep it here."
+                : "Nothing here yet."}
+            </p>
+            {!debounced && filter !== "favourite" && (
+              <span>Describe a shot in the box below to make the first one.</span>
+            )}
+          </div>
         )}
 
         {status === "ready" && (

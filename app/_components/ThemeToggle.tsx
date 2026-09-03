@@ -92,7 +92,7 @@ export function ThemeToggle() {
     <motion.button
       ref={btnRef}
       type="button"
-      className="btn btn-ghost btn-sm theme-toggle"
+      className="topbar-icon theme-toggle"
       onClick={toggle}
       whileTap={{ scale: 0.9 }}
       transition={SPRING_POP}
@@ -106,7 +106,7 @@ export function ThemeToggle() {
         transition={SPRING_POP}
         style={{ display: "inline-flex" }}
       >
-        {isDark ? <Sun size={16} /> : <Moon size={16} />}
+        {isDark ? <Sun size={15} /> : <Moon size={15} />}
       </motion.span>
     </motion.button>
   );

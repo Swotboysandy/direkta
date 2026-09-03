@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { AssetCanvas, type CanvasItem } from "../_components/AssetCanvas";
 import { pageIn } from "../_components/motion";
-import type { Project, WorkspaceId, WorkspaceMeta } from "../../lib/types";
+import type { Project, WorkspaceId } from "../../lib/types";
 
 interface DashStats {
   beats: number;
@@ -13,18 +13,12 @@ interface DashStats {
 
 interface Props {
   project: Project;
-  workspaces: WorkspaceMeta[];
   stats: DashStats;
   query: string;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
-const PIPELINE: WorkspaceId[] = ["screenplay", "casting", "storyboard", "stitch", "export"];
 
-const STATUS_TONE: Record<string, string> = {
-  complete: "var(--signal-success)",
-  "in-progress": "var(--signal-warning)"
-};
 
 /**
  * Home is the project's assets.
@@ -37,10 +31,11 @@ const STATUS_TONE: Record<string, string> = {
  * of which are simply the first cards here.
  *
  * What remains above it is what a summary is actually for: what this project
- * is, and how far through the pipeline it has got.
+ * is. The pipeline row that sat here was removed too — it listed the same six
+ * destinations as the rail immediately to its left, so the screen carried two
+ * navigations to the same places.
  */
-export function Dashboard({ project, workspaces, stats, query, onSwitchWorkspace }: Props) {
-  const wsMap = Object.fromEntries(workspaces.map((w) => [w.id, w]));
+export function Dashboard({ project, stats, query, onSwitchWorkspace }: Props) {
 
   const open = (item: CanvasItem) => {
     if (item.kind === "video") onSwitchWorkspace("stitch");
@@ -66,30 +61,6 @@ export function Dashboard({ project, workspaces, stats, query, onSwitchWorkspace
           </div>
         </div>
 
-        {/* The pipeline as a single measured row rather than five cards: it is
-            progress through a fixed sequence, which is a reading, not a menu. */}
-        <div className="home-pipeline">
-          {PIPELINE.map((wsId, i) => {
-            const w = wsMap[wsId];
-            const status = w?.status ?? "idle";
-            const locked = w?.unlocked === false;
-            const tone = STATUS_TONE[status] ?? "var(--cream-deep)";
-            return (
-              <button
-                key={wsId}
-                className="home-stage"
-                data-locked={locked ? "true" : undefined}
-                disabled={locked}
-                onClick={() => w?.unlocked && onSwitchWorkspace(wsId)}
-                title={w?.note ? `${w.label} · ${w.note}` : w?.label}
-              >
-                <span className="home-stage-rule" style={{ background: tone }} />
-                <span className="home-stage-name">{w?.label ?? wsId}</span>
-                <span className="home-stage-n">{String(i + 1).padStart(2, "0")}</span>
-              </button>
-            );
-          })}
-        </div>
       </header>
 
       <AssetCanvas projectId={project.id} query={query} onOpen={open} />
