@@ -64,6 +64,25 @@
   --color-warning: var(--signal-warning);
   --color-danger:  var(--signal-danger);
 
+  /* --- Semantic layer (brief S74): bg-surface-raised, text-secondary,
+         border-standard, bg-status-info ... */
+  --color-surface-canvas:   var(--surface-canvas);
+  --color-surface-base:     var(--surface-base);
+  --color-surface-raised:   var(--surface-raised);
+  --color-surface-overlay:  var(--surface-overlay);
+  --color-surface-selected: var(--surface-selected);
+  --color-text-primary:     var(--text-primary);
+  --color-text-secondary:   var(--text-secondary);
+  --color-text-tertiary:    var(--text-tertiary);
+  --color-text-disabled:    var(--text-disabled);
+  --color-border-subtle:    var(--border-subtle);
+  --color-border-standard:  var(--border-standard);
+  --color-border-strong:    var(--border-strong);
+  --color-status-success:   var(--status-success);
+  --color-status-warning:   var(--status-warning);
+  --color-status-error:     var(--status-error);
+  --color-status-info:      var(--status-info);
+
   /* ─── shadcn's expected vocabulary ─────────────────────────
      shadcn components hard-code these names. Pointing them at
      Fylmer's tokens means anything installed from shadcn,
@@ -99,6 +118,15 @@
   --radius-md:   var(--r-md);
   --radius-lg:   var(--r-lg);
   --radius-full: var(--r-pill);
+  /* rounded-control / rounded-surface / rounded-overlay */
+  --radius-control: var(--r-control);
+  --radius-surface: var(--r-surface);
+  --radius-overlay: var(--r-overlay);
+
+  /* --- Layering ----------------------------------------------------
+     Tailwind v4 has no z-index theme namespace; use the CSS-variable
+     shorthand: `z-(--z-dock)`, `z-(--z-modal)`. The scale lives in
+     tokens.css. */
 
   /* ─── Motion ───────────────────────────────────────────── */
   --ease-out-fylmer: var(--ease-out);

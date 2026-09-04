@@ -327,7 +327,7 @@
   background: rgba(42, 26, 18, 0.45);
   backdrop-filter: blur(4px);
   display: grid; place-items: center;
-  z-index: 100;
+  z-index: var(--z-modal);
   animation: modal-fade var(--dur-2) var(--ease-out);
 }
 .modal {

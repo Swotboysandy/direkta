@@ -164,7 +164,7 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
         backdropFilter: "blur(4px)",
         display: "grid",
         placeItems: "center",
-        zIndex: 130,
+        zIndex: "var(--z-modal)",
         padding: 28
       }}
     >

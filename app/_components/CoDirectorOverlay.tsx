@@ -95,7 +95,7 @@ export function CoDirectorOverlay({ project, onSwitchWorkspace, onOpenKeyVault }
         position: "fixed",
         right: 24,
         bottom: 24,
-        zIndex: 75,
+        zIndex: "var(--z-dock)",
         width: 380,
         maxWidth: "calc(100vw - 48px)",
         background: "var(--ink-05)",

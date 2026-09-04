@@ -208,7 +208,7 @@ export function KeyVaultPanel({ open, onClose }: Props) {
             inset: 0,
             background: "rgba(0,0,0,0.62)",
             backdropFilter: "blur(4px)",
-            zIndex: 90
+            zIndex: "var(--z-modal)"
           }}
         />
         <Drawer.Content
@@ -221,7 +221,7 @@ export function KeyVaultPanel({ open, onClose }: Props) {
             width: "min(440px, calc(100vw - 28px))",
             background: "var(--surface)",
             boxShadow: "var(--shadow-3)",
-            zIndex: 92,
+            zIndex: "var(--z-modal)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",

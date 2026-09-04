@@ -62,6 +62,34 @@
   --signal-warning: var(--mustard);
   --signal-danger:  var(--tomato);
 
+  /* --- Semantic layer (brief S74) -------------------------------
+     Names by role, all aliased onto the palette above so adopting them
+     changes nothing that is already styled. New work reads these; the
+     older names stay as the implementation underneath. */
+  --surface-canvas:   var(--bg);            /* the page itself */
+  --surface-base:     var(--surface);       /* a panel on the page */
+  --surface-raised:   var(--surface-2);     /* a control on a panel */
+  --surface-overlay:  #121218;              /* popovers, menus: solid, never translucent */
+  --surface-selected: var(--accent-quiet);
+
+  --text-primary:     var(--ink);
+  --text-secondary:   var(--ink-soft);
+  --text-tertiary:    var(--mute);
+  --text-disabled:    rgba(124, 126, 138, 0.55);
+
+  --border-subtle:    var(--cream-deep);
+  --border-standard:  rgba(255,255,255,0.11);
+  --border-strong:    rgba(255,255,255,0.18);
+
+  --brand-accent:       var(--accent);
+  --brand-accent-hover: var(--accent-hover);
+  --brand-accent-fg:    var(--on-accent);
+
+  --status-success:   var(--signal-success);
+  --status-warning:   var(--signal-warning);
+  --status-error:     var(--signal-danger);
+  --status-info:      #8FB0DE;              /* the one non-accent hue: informational, never a call to action */
+
   /* ─── Type ─────────────────────────────────────────────── */
   /* --font-*-loaded vars are set by next/font/google in app/layout.tsx. */
   --font-ui:      var(--font-ui-loaded), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -101,6 +129,12 @@
   --r-pill:  999px;
 
   --radius:  var(--r-md);  /* alias for default */
+
+  /* Brief S43: a fixed set named by what it rounds, not by size. Pills are
+     for true chips, tags and segmented controls only. */
+  --r-control: 6px;    /* buttons, inputs, small controls */
+  --r-surface: 8px;    /* panels, tiles, cards that must exist */
+  --r-overlay: 12px;   /* dialogs, sheets, the dock */
 
   --hairline: 1px;
 
@@ -148,6 +182,20 @@
   --page-pad: 40px;
   --max-w:    1400px;
 
+  /* --- Layering (brief S74) --------------------------------------
+     One documented scale. Every fixed or absolute surface takes one of
+     these; nothing invents its own number. In CSS: `z-index: var(--z-dock)`.
+     In Tailwind v4: `z-(--z-dock)`. */
+  --z-base:      0;    /* in-flow content */
+  --z-raised:    10;   /* a hovered or dragged item within its container */
+  --z-sticky:    20;   /* sticky headers, rulers, playheads */
+  --z-dock:      30;   /* the Director Dock and floating launchers */
+  --z-inspector: 40;   /* the contextual inspector */
+  --z-overlay:   50;   /* popovers, menus, tooltips */
+  --z-modal:     60;   /* dialogs, sheets, focus mode */
+  --z-toast:     70;   /* notifications, above whatever caused them */
+  --z-palette:   80;   /* the command palette wins over everything */
+
   --topnav-h:  60px;
   /* The rail is one fixed width and does not collapse, so there is no second
      width to name. The old --sidebar-w / --sidebar-w-collapsed pair described
@@ -180,6 +228,12 @@
 
   --surface-2:    rgba(8,9,12,0.05);
   --surface-3:    rgba(8,9,12,0.08);
+
+  --surface-overlay:  #FFFFFF;
+  --text-disabled:    rgba(99,100,111,0.5);
+  --border-standard:  rgba(8,9,12,0.13);
+  --border-strong:    rgba(8,9,12,0.22);
+  --status-info:      #3F6FB5;
 
   --accent:       #5341E0;
   --accent-hover: #4433C4;
