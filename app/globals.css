@@ -3373,7 +3373,7 @@ textarea {
 .dash {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-8);
+  gap: var(--sp-5);
   padding-bottom: var(--sp-8);
 }
 
