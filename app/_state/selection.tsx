@@ -14,7 +14,20 @@ import * as React from "react";
  * what the Dock and inspector act on; the set is for batch actions.
  */
 
-export type SelectionKind = "shot" | "take" | "frame" | "beat" | "scene" | "character" | "location" | "prop";
+export type SelectionKind =
+  | "shot"
+  | "take"
+  | "frame"
+  | "beat"
+  | "scene"
+  | "character"
+  | "location"
+  | "prop"
+  // Assets selects the asset itself. "frame" already means a storyboard frame
+  // inside a beat row, which is a narrower thing than "an image in the
+  // library" — a still uploaded to a production is not a storyboard frame.
+  | "image"
+  | "video";
 
 export interface Selected {
   kind: SelectionKind;

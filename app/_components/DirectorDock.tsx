@@ -9,7 +9,16 @@ import { engineState, type H3Status } from "./RenderEngineChip";
 import { Status } from "./ui/status";
 import { useSelection } from "../_state/selection";
 import { ArrowRight, ChevronDown, ChevronUp, Sparkles } from "./icons";
+import { InlineError } from "./ui/inline-error";
+import {
+  ApprovalSheet,
+  PlanSteps,
+  ToolActivity,
+  type ApprovalView,
+  type ToolView
+} from "./DirectorActivity";
 import type { Project } from "../../lib/types";
+import type { DirectorEvent, ToolCost, ToolResult } from "../../lib/agents/director-tools";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -27,12 +36,26 @@ interface Props {
 
 type Mode = "direct" | "generate";
 
-interface Turn {
-  id: string;
-  role: "user" | "director";
-  text: string;
-  suggestions?: Array<{ label: string; prompt: string }>;
+interface Suggestion {
+  label: string;
+  prompt: string;
 }
+
+type PlanStep = { title: string; detail?: string; cost?: ToolCost };
+
+/**
+ * One entry in the conversation. Prose, a tool doing something, a tool asking
+ * permission, a plan, or a failure — in the order they happened, so what the
+ * Director did reads as a sequence rather than as a chat log with side effects
+ * hidden behind it.
+ */
+type Item =
+  | { kind: "user"; id: string; text: string }
+  | { kind: "say"; id: string; text: string; suggestions?: Suggestion[] }
+  | { kind: "plan"; id: string; steps: PlanStep[] }
+  | { kind: "failed"; id: string; message: string }
+  | ({ kind: "tool" } & ToolView)
+  | ({ kind: "approval" } & ApprovalView);
 
 /** "**Label** — prompt" lines become cards that load into the input. */
 function extractSuggestions(text: string) {
@@ -70,10 +93,12 @@ export function DirectorDock({ project, h3, onGenerate, generating, generateNote
   const [mode, setMode] = useState<Mode>(initialMode);
   useEffect(() => setMode(initialMode), [initialMode]);
   const [open, setOpen] = useState(false);
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [thinking, setThinking] = useState<string | null>(null);
   const [plan, setPlan] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
+  /** Approvals whose answer is in flight, so a button cannot be pressed twice. */
+  const [answering, setAnswering] = useState<string[]>([]);
   const [seed, setSeed] = useState<string | null>(null);
   const [pendingRefs, setPendingRefs] = useState(0);
   const barRef = useRef<HTMLDivElement>(null);
@@ -97,7 +122,15 @@ export function DirectorDock({ project, h3, onGenerate, generating, generateNote
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
-  }, [turns, thinking, open]);
+  }, [items, thinking, open]);
+
+  /** A tool that finished may have changed the canvas; say so once. */
+  const settle = useCallback(
+    (result: ToolResult | undefined) => {
+      if (result?.invalidates && result.invalidates.length > 0) onFinished();
+    },
+    [onFinished]
+  );
 
   const ask = useCallback(
     async ({ text }: ComposerSubmission) => {
@@ -105,14 +138,65 @@ export function DirectorDock({ project, h3, onGenerate, generating, generateNote
       setOpen(true);
       setBusy(true);
       setThinking("Thinking");
-      setTurns((t) => [...t, { id: `u${Date.now()}`, role: "user", text }]);
-      const id = `d${Date.now()}`;
+      const stamp = Date.now();
+      setItems((prev) => [...prev, { kind: "user", id: `u${stamp}`, text }]);
+
+      // Prose accumulates into one bubble until something else happens — a
+      // tool, a plan, an approval — after which the next words start a new one,
+      // so the reply reads in the order the work happened.
+      let sayId: string | null = null;
       let acc = "";
+      let n = 0;
+      const nextId = () => `d${stamp}-${n++}`;
+      const interrupt = () => {
+        sayId = null;
+        acc = "";
+        setThinking(null);
+      };
+
+      /** Attach a finished or failed outcome to the tool that asked for it. */
+      const resolve = (
+        id: string,
+        patch: { stage: "done" | "error"; result?: ToolResult; message?: string; name?: string }
+      ) => {
+        setItems((prev) => {
+          const at = prev.findIndex((x) => (x.kind === "tool" || x.kind === "approval") && x.id === id);
+          if (at === -1) {
+            return [
+              ...prev,
+              {
+                kind: "tool",
+                id,
+                name: patch.name ?? id,
+                running: patch.result?.summary ?? patch.message ?? "",
+                cost: "free",
+                args: null,
+                stage: patch.stage,
+                result: patch.result,
+                message: patch.message
+              }
+            ];
+          }
+          const next = prev.slice();
+          const found = next[at];
+          if (found.kind === "tool" || found.kind === "approval") {
+            next[at] = { ...found, stage: patch.stage, result: patch.result, message: patch.message };
+          }
+          return next;
+        });
+      };
+
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ project_id: project.id, message: text })
+          // The selection travels with the message: it is what makes "this
+          // shot" mean something without the director naming it (brief §10).
+          body: JSON.stringify({
+            project_id: project.id,
+            message: text,
+            selection: primary ? { kind: primary.kind, id: primary.id, label: primary.label } : null
+          })
         });
         if (!res.ok || !res.body) throw new Error(`The director did not respond (${res.status}).`);
         const reader = res.body.getReader();
@@ -128,36 +212,163 @@ export function DirectorDock({ project, h3, onGenerate, generating, generateNote
           for (const frame of frames) {
             const line = frame.split("\n").find((l) => l.startsWith("data: "));
             if (!line) continue;
-            let event: any;
+            // `layer` predates the tool protocol and is not in DirectorEvent;
+            // it is still emitted by the pipeline that is being replaced.
+            let event: (DirectorEvent | { type: "layer"; layer?: string; status?: string }) & Record<string, any>;
             try {
               event = JSON.parse(line.slice(6));
             } catch {
               continue;
             }
+
             if (event.type === "layer") {
               setThinking(event.status === "start" ? `Thinking · ${event.layer}` : null);
+            } else if (event.type === "thinking") {
+              setThinking(typeof event.text === "string" && event.text ? event.text : "Thinking");
             } else if (event.type === "delta") {
               acc += event.text;
               setThinking(null);
-              setTurns((t) => [...t.filter((x) => x.id !== id), { id, role: "director", text: acc }]);
+              const id = sayId ?? (sayId = nextId());
+              const said = acc;
+              setItems((prev) => {
+                const at = prev.findIndex((x) => x.id === id);
+                if (at === -1) return [...prev, { kind: "say", id, text: said }];
+                const next = prev.slice();
+                next[at] = { kind: "say", id, text: said };
+                return next;
+              });
+            } else if (event.type === "tool") {
+              interrupt();
+              const id = String(event.id);
+              setItems((prev) => {
+                // An approved tool starts running under the id it was approved
+                // with; that is the same entry, not a second one.
+                const at = prev.findIndex((x) => x.kind === "approval" && x.id === id);
+                if (at !== -1) {
+                  const next = prev.slice();
+                  const found = next[at];
+                  if (found.kind === "approval") next[at] = { ...found, stage: "running" };
+                  return next;
+                }
+                return [
+                  ...prev,
+                  {
+                    kind: "tool",
+                    id,
+                    name: event.name,
+                    running: event.running,
+                    cost: event.cost,
+                    args: event.args,
+                    stage: "running"
+                  }
+                ];
+              });
+            } else if (event.type === "approval") {
+              interrupt();
+              setItems((prev) => [
+                ...prev,
+                {
+                  kind: "approval",
+                  id: String(event.id),
+                  name: event.name,
+                  running: event.running,
+                  cost: event.cost,
+                  args: event.args,
+                  estimate: event.estimate,
+                  decision: "pending",
+                  stage: "waiting"
+                }
+              ]);
+            } else if (event.type === "tool_result") {
+              interrupt();
+              resolve(String(event.id), { stage: "done", result: event.result, name: event.name });
+              settle(event.result);
+            } else if (event.type === "tool_error") {
+              interrupt();
+              resolve(String(event.id), { stage: "error", message: event.message, name: event.name });
             } else if (event.type === "plan") {
-              setPlan(event.plan);
+              // The new event carries steps; the pipeline being replaced sends
+              // a free-form `plan`, which still goes to the side column.
+              if (Array.isArray(event.steps)) {
+                interrupt();
+                const steps = event.steps as PlanStep[];
+                setItems((prev) => [...prev, { kind: "plan", id: nextId(), steps }]);
+              } else {
+                setPlan(event.plan);
+              }
             } else if (event.type === "error") {
-              acc = acc || event.message || "The director could not answer.";
-              setTurns((t) => [...t.filter((x) => x.id !== id), { id, role: "director", text: acc }]);
+              interrupt();
+              const message = event.message || "The director could not answer.";
+              setItems((prev) => [...prev, { kind: "failed", id: nextId(), message }]);
             }
           }
         }
-        setTurns((t) => t.map((x) => (x.id === id ? { ...x, suggestions: extractSuggestions(x.text) } : x)));
+        setItems((prev) =>
+          prev.map((x) => (x.kind === "say" ? { ...x, suggestions: extractSuggestions(x.text) } : x))
+        );
       } catch (e: any) {
-        setTurns((t) => [...t, { id, role: "director", text: e?.message || "The director is unreachable." }]);
+        const message = e?.message || "The director is unreachable.";
+        setItems((prev) => [...prev, { kind: "failed", id: nextId(), message }]);
       } finally {
         setThinking(null);
         setBusy(false);
       }
     },
-    [busy, project.id]
+    // `primary` is read when the message is sent, so a stale closure would
+    // send the selection the director had a moment ago.
+    [busy, project.id, settle, primary]
   );
+
+  /**
+   * Answer an approval (brief §13). The stream is still open and waiting on
+   * this, so a cancel has to be sent too — otherwise the run hangs. A refusal
+   * from the route is shown beside the buttons rather than swallowed, and the
+   * sheet stays answerable.
+   */
+  const answer = useCallback(async (id: string, approved: boolean) => {
+    setAnswering((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setItems((prev) =>
+      prev.map((x) => (x.kind === "approval" && x.id === id ? { ...x, postError: undefined } : x))
+    );
+    try {
+      const res = await fetch("/api/chat/approve", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ approval_id: id, approved })
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(
+          `That answer did not reach the director (${res.status}).${detail ? ` ${detail.slice(0, 200)}` : ""}`
+        );
+      }
+      // The approve route runs the tool and returns its result in this
+      // response — there is no second stream event to wait for, because the
+      // conversation that asked has already finished. So what the tool did is
+      // shown from here, on the sheet that asked for it.
+      const body = (await res.json().catch(() => null)) as
+        | { ok?: boolean; approved?: boolean; result?: ToolResult }
+        | null;
+      setItems((prev) =>
+        prev.map((x) =>
+          x.kind === "approval" && x.id === id
+            ? {
+                ...x,
+                decision: approved ? "approved" : "cancelled",
+                stage: "done",
+                result: approved ? body?.result ?? x.result : x.result
+              }
+            : x
+        )
+      );
+      if (approved && body?.result?.invalidates?.length) onFinished();
+    } catch (e: any) {
+      const message = e?.message || "That answer did not reach the director.";
+      setItems((prev) => prev.map((x) => (x.kind === "approval" && x.id === id ? { ...x, postError: message } : x)));
+    } finally {
+      setAnswering((prev) => prev.filter((x) => x !== id));
+    }
+  }, [onFinished]);
 
   const submit = useCallback(
     (v: ComposerSubmission) => (mode === "generate" ? onGenerate(v) : ask(v)),
@@ -183,38 +394,61 @@ export function DirectorDock({ project, h3, onGenerate, generating, generateNote
             aria-label="Director"
           >
             <div className="dock-col dock-col--talk" ref={scroller}>
-              {turns.length === 0 && !thinking && (
+              {items.length === 0 && !thinking && (
                 <p className="dock-hint">
                   Ask for a way into a scene, three framings of this beat, or how two shots should cut. Anything it
                   suggests loads into the bar below.
                 </p>
               )}
-              {turns.map((t) => (
-                <div key={t.id} className={cn("dock-turn", t.role === "user" && "is-user")}>
-                  <p className="dock-turn-text">{t.text}</p>
-                  {t.suggestions && t.suggestions.length > 0 && (
-                    <div className="dock-cards">
-                      {t.suggestions.map((s, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          className="dock-card"
-                          onClick={() => {
-                            setMode("generate");
-                            setSeed(s.prompt);
-                          }}
-                        >
-                          <span className="dock-card-label">{s.label}</span>
-                          <span className="dock-card-text">{s.prompt}</span>
-                          <span className="dock-card-use">
-                            Use <ArrowRight size={11} />
-                          </span>
-                        </button>
-                      ))}
+              {items.map((it) => {
+                if (it.kind === "tool") return <ToolActivity key={it.id} tool={it} />;
+                if (it.kind === "approval")
+                  return (
+                    <ApprovalSheet
+                      key={it.id}
+                      item={it}
+                      busy={answering.includes(it.id)}
+                      onApprove={() => void answer(it.id, true)}
+                      onCancel={() => void answer(it.id, false)}
+                    />
+                  );
+                if (it.kind === "plan")
+                  return (
+                    <div key={it.id} className="dx-row">
+                      <p className="dx-line">
+                        <span className="dx-line-text">Here is what that takes.</span>
+                      </p>
+                      <PlanSteps steps={it.steps} />
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                if (it.kind === "failed") return <InlineError key={it.id} message={it.message} />;
+                return (
+                  <div key={it.id} className={cn("dock-turn", it.kind === "user" && "is-user")}>
+                    <p className="dock-turn-text">{it.text}</p>
+                    {it.kind === "say" && it.suggestions && it.suggestions.length > 0 && (
+                      <div className="dock-cards">
+                        {it.suggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className="dock-card"
+                            onClick={() => {
+                              setMode("generate");
+                              setSeed(s.prompt);
+                            }}
+                          >
+                            <span className="dock-card-label">{s.label}</span>
+                            <span className="dock-card-text">{s.prompt}</span>
+                            <span className="dock-card-use">
+                              Use <ArrowRight size={11} />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               {thinking && (
                 <div className="dock-thinking" aria-live="polite">
                   <span className="dock-thinking-dot" />

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { nanoid } from "nanoid";
 import { getDb } from "../../../../../lib/db/client";
 import { characters, locations, props } from "../../../../../lib/db/repo";
 
@@ -16,9 +17,21 @@ export const dynamic = "force-dynamic";
  *  reference channel an item can feed (`ref_images` vs `ref_videos`), so a chip
  *  dropped into a prompt already knows how it should be wired. Entities carry
  *  their portrait/plate, which is why a character is `ref_kind: "image"`.
+ *
+ *  Scope (brief §34). The route is still addressed by one project, because
+ *  every caller already has one and the favourites, the composer and the
+ *  canvas all mean "this production". `?scope=all` widens it to every
+ *  production without changing a single existing parameter or field: the
+ *  project in the path stays the default and the fallback. Each item now
+ *  names its production so a global view can label and group; that field is
+ *  additive and always present, so a caller that ignores it is unaffected.
  */
 
 export type AssetKind = "image" | "video" | "character" | "location" | "prop";
+
+/** Where a media asset is filed. It is what decides which actions an item can
+ *  offer: a storyboard frame can become a shot, a clip already is one. */
+export type AssetSource = "storyboard_variant" | "stitch_clip" | "sequence" | "beat";
 
 export interface AssetItem {
   id: string;
@@ -33,12 +46,27 @@ export interface AssetItem {
   /** Which H3 reference channel this feeds, or null if it cannot be a reference. */
   ref_kind: "image" | "video" | null;
   favourite: boolean;
+  /** The production this belongs to. A global list has to be able to say. */
+  project_id: string;
+  project_title: string;
+  /** How this media is filed, and against what. Null for entities. */
+  source_kind: AssetSource | null;
+  source_id: string | null;
+  /** Ids of the collections this item belongs to. */
+  collections: string[];
 }
 
 const KINDS: AssetKind[] = ["image", "video", "character", "location", "prop"];
 
-/** Generated media: storyboard frames and rendered sequences. */
-function media(projectId: string): AssetItem[] {
+interface Production {
+  id: string;
+  title: string;
+}
+
+const KNOWN_SOURCES = ["storyboard_variant", "stitch_clip", "sequence", "beat"] as const;
+
+/** Generated media: storyboard frames, shot clips and rendered sequences. */
+function media(p: Production): AssetItem[] {
   const rows = getDb()
     .prepare(
       // A clip made in Shots is filed against its stitch node, which is the
@@ -46,7 +74,7 @@ function media(projectId: string): AssetItem[] {
       // app itself generated was invisible here, while clips filed by hand
       // as sequences showed — the canvas was hiding exactly the work the
       // product exists to make.
-      `SELECT a.id, a.url, a.kind, a.prompt, a.created_at, a.target_kind,
+      `SELECT a.id, a.url, a.kind, a.prompt, a.created_at, a.target_kind, a.target_id,
               b.n AS beat_n, b.title AS beat_title,
               sn.direction AS node_direction
          FROM assets a
@@ -61,13 +89,14 @@ function media(projectId: string): AssetItem[] {
            OR (a.target_kind = 'sequence' AND a.target_id = ?)
         ORDER BY a.created_at DESC`
     )
-    .all(projectId, projectId, projectId) as Array<{
+    .all(p.id, p.id, p.id) as Array<{
     id: string;
     url: string;
     kind: string;
     prompt: string;
     created_at: string;
     target_kind: string;
+    target_id: string | null;
     beat_n: number | null;
     beat_title: string | null;
     node_direction: string | null;
@@ -98,52 +127,65 @@ function media(projectId: string): AssetItem[] {
       created_at: r.created_at,
       mentionable: true,
       ref_kind: isVideo ? "video" : "image",
-      favourite: false
+      favourite: false,
+      project_id: p.id,
+      project_title: p.title,
+      source_kind: (KNOWN_SOURCES as readonly string[]).includes(r.target_kind)
+        ? (r.target_kind as AssetSource)
+        : null,
+      source_id: r.target_id,
+      collections: []
     } satisfies AssetItem;
   });
 }
 
 /** Named entities. These are what make @-mentions worth having. */
-function entities(projectId: string): AssetItem[] {
+function entities(p: Production): AssetItem[] {
   const out: AssetItem[] = [];
+  const base = {
+    mentionable: true,
+    ref_kind: "image" as const,
+    favourite: false,
+    project_id: p.id,
+    project_title: p.title,
+    source_kind: null,
+    source_id: null
+  };
 
-  for (const c of characters.forProject(projectId)) {
+  for (const c of characters.forProject(p.id)) {
     out.push({
+      ...base,
+      collections: [],
       id: c.id,
       kind: "character",
       url: c.refs[0] ?? null,
       title: c.name,
       subtitle: c.role,
-      created_at: c.created_at,
-      mentionable: true,
-      ref_kind: "image",
-      favourite: false
+      created_at: c.created_at
     });
   }
-  for (const l of locations.forProject(projectId)) {
+  for (const l of locations.forProject(p.id)) {
     out.push({
+      ...base,
+      collections: [],
       id: l.id,
       kind: "location",
       url: l.refs[0] ?? null,
       title: l.name,
       subtitle: l.int_ext,
-      created_at: l.created_at,
-      mentionable: true,
-      ref_kind: "image",
-      favourite: false
+      created_at: l.created_at
     });
   }
-  for (const p of props.forProject(projectId)) {
+  for (const pr of props.forProject(p.id)) {
     out.push({
-      id: p.id,
+      ...base,
+      collections: [],
+      id: pr.id,
       kind: "prop",
-      url: p.refs[0] ?? null,
-      title: p.name,
-      subtitle: p.description ? p.description.slice(0, 80) : null,
-      created_at: p.created_at,
-      mentionable: true,
-      ref_kind: "image",
-      favourite: false
+      url: pr.refs[0] ?? null,
+      title: pr.name,
+      subtitle: pr.description ? pr.description.slice(0, 80) : null,
+      created_at: pr.created_at
     });
   }
   return out;
@@ -166,31 +208,67 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const limit = Number.isSafeInteger(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 60;
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
   const cursor = url.searchParams.get("cursor");
+  const global = url.searchParams.get("scope") === "all";
+  // Inside a global list, one production can still be singled out — that is a
+  // filter on the same list, not a different request.
+  const only = url.searchParams.get("production");
+  const collection = url.searchParams.get("collection");
+
+  const db = getDb();
+  let productions: Production[];
+  if (global) {
+    productions = db
+      .prepare("SELECT id, title FROM projects ORDER BY updated_at DESC")
+      .all() as unknown as Production[];
+    if (only) productions = productions.filter((p) => p.id === only);
+  } else {
+    const row = db.prepare("SELECT id, title FROM projects WHERE id = ?").get(id) as Production | undefined;
+    // A missing project is an empty list, not an error: the old route read
+    // straight through with no existence check and callers rely on that.
+    productions = row ? [row] : [{ id, title: "" }];
+  }
 
   let items: AssetItem[];
   try {
     const wantsMedia = kinds.some((k) => k === "image" || k === "video");
     const wantsEntities = kinds.some((k) => k !== "image" && k !== "video");
-    items = [
-      ...(wantsMedia ? media(id) : []),
-      ...(wantsEntities ? entities(id) : [])
-    ].filter((a) => kinds.includes(a.kind));
+    items = productions
+      .flatMap((p) => [...(wantsMedia ? media(p) : []), ...(wantsEntities ? entities(p) : [])])
+      .filter((a) => kinds.includes(a.kind));
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "Could not read this project's assets." }, { status: 500 });
   }
 
+  const scanned = productions.map((p) => p.id);
+  const holes = scanned.map(() => "?").join(", ");
+
   // One query for the whole page rather than a lookup per item.
   const starred = new Set(
     (
-      getDb()
-        .prepare("SELECT kind, item_id FROM asset_favourites WHERE project_id = ?")
-        .all(id) as Array<{ kind: string; item_id: string }>
-    ).map((r) => `${r.kind}:${r.item_id}`)
+      db
+        .prepare(`SELECT project_id, kind, item_id FROM asset_favourites WHERE project_id IN (${holes})`)
+        .all(...scanned) as Array<{ project_id: string; kind: string; item_id: string }>
+    ).map((r) => `${r.project_id}:${r.kind}:${r.item_id}`)
   );
-  for (const a of items) a.favourite = starred.has(`${a.kind}:${a.id}`);
+  const sets = new Map<string, string[]>();
+  for (const r of db
+    .prepare(`SELECT collection_id, project_id, kind, item_id FROM asset_collection_items WHERE project_id IN (${holes})`)
+    .all(...scanned) as Array<{ collection_id: string; project_id: string; kind: string; item_id: string }>) {
+    const k = `${r.project_id}:${r.kind}:${r.item_id}`;
+    sets.set(k, [...(sets.get(k) ?? []), r.collection_id]);
+  }
+  for (const a of items) {
+    const k = `${a.project_id}:${a.kind}:${a.id}`;
+    a.favourite = starred.has(k);
+    a.collections = sets.get(k) ?? [];
+  }
 
   if (url.searchParams.get("favourite") === "1") {
     items = items.filter((a) => a.favourite);
+  }
+
+  if (collection) {
+    items = items.filter((a) => a.collections.includes(collection));
   }
 
   if (q) {
@@ -219,4 +297,68 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     next_cursor: items.length > limit && last ? `${last.created_at}|${last.id}` : null,
     total: items.length
   });
+}
+
+const COMPOSED_COL_WIDTH = 280;
+const COMPOSED_ROW_Y = 520;
+
+/**
+ * File an existing piece of media into this production (brief §35, "add to
+ * production" / "add to the cut").
+ *
+ * Nothing is copied on disk: the media already lives under `/oss` and both
+ * productions point at the same file. `as: "reference"` files it as one of the
+ * production's own assets so it shows on this canvas and in the @-picker;
+ * `as: "shot"` additionally creates a shot holding it, which is how a clip
+ * made elsewhere gets into the cut — the same `clip_asset_id` / `clip_state`
+ * pair the animate and upload-clip routes write.
+ */
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const body = (await req.json().catch(() => null)) as
+    | { url?: string; kind?: string; title?: string; as?: string }
+    | null;
+
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Expected an object request body." }, { status: 400 });
+  }
+  const mediaUrl = typeof body.url === "string" ? body.url.trim() : "";
+  if (!mediaUrl) return NextResponse.json({ error: "url is required." }, { status: 400 });
+  const kind = body.kind === "video" ? "video" : body.kind === "image" ? "image" : null;
+  if (!kind) return NextResponse.json({ error: 'kind must be "image" or "video".' }, { status: 400 });
+  const as = body.as === "shot" ? "shot" : "reference";
+  if (as === "shot" && kind !== "video") {
+    return NextResponse.json({ error: "Only a clip can be added to the cut." }, { status: 400 });
+  }
+  const title = (typeof body.title === "string" ? body.title.trim() : "").slice(0, 200);
+
+  const db = getDb();
+  const project = db.prepare("SELECT id FROM projects WHERE id = ?").get(id) as { id: string } | undefined;
+  if (!project) return NextResponse.json({ error: "Project not found." }, { status: 404 });
+
+  const assetId = nanoid(10);
+
+  if (as === "reference") {
+    db.prepare(
+      "INSERT INTO assets (id, target_kind, target_id, kind, url, prompt) VALUES (?, 'sequence', ?, ?, ?, ?)"
+    ).run(assetId, id, kind, mediaUrl, title || "Added to this production");
+    return NextResponse.json({ ok: true, asset_id: assetId });
+  }
+
+  // Placed after whatever composed shots already exist, the way compose does,
+  // so a run of additions reads left to right instead of stacking on one spot.
+  const placed = db
+    .prepare("SELECT COUNT(*) AS n FROM stitch_nodes WHERE project_id = ? AND beat_id IS NULL")
+    .get(id) as { n: number };
+  const nodeId = nanoid(12);
+  db.prepare(
+    `INSERT INTO stitch_nodes (id, project_id, beat_id, x, y, duration, direction)
+     VALUES (?, ?, NULL, ?, ?, ?, ?)`
+  ).run(nodeId, id, (placed.n + 1) * COMPOSED_COL_WIDTH, COMPOSED_ROW_Y, 5, title || "Added clip");
+  db.prepare(
+    "INSERT INTO assets (id, target_kind, target_id, kind, url, prompt) VALUES (?, 'stitch_clip', ?, 'video', ?, ?)"
+  ).run(assetId, nodeId, mediaUrl, title || "Added clip");
+  db.prepare("UPDATE stitch_nodes SET clip_asset_id = ?, clip_state = 'complete' WHERE id = ?").run(assetId, nodeId);
+
+  return NextResponse.json({ ok: true, asset_id: assetId, node_id: nodeId });
 }

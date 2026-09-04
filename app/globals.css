@@ -21,6 +21,8 @@
 @import "./_brand/stage-storyboard.css" layer(legacy);
 @import "./_brand/stage-shots.css" layer(legacy);
 @import "./_brand/stage-cut.css" layer(legacy);
+@import "./_brand/stage-assets.css" layer(legacy);
+@import "./_brand/director.css" layer(legacy);
 @import "./_brand/motion.css" layer(legacy);
 
 @custom-variant dark (&:is(.dark *));

@@ -1,0 +1,382 @@
+/* ============================================================
+   THE DIRECTOR — activity, results, approval (brief §12, §13, §62, §64)
+   ------------------------------------------------------------
+   The Dock's conversation column is a reading surface, so this
+   sheet holds almost no boxes. A tool doing something is a line
+   of text with a dot; a tool that finished is a line of text and,
+   where the result has a shape, the shape. Structure comes from
+   the space between things and from one hairline where a section
+   genuinely begins — the approval sheet, which is the only place
+   in the app where a person is asked to spend money.
+
+   Everything here is prefixed `dx-` and lives only inside the
+   Dock's talk column. `.dock-*` in components.css keeps the bar,
+   the panel and the prose turns; nothing in this file overrides
+   them.
+   ============================================================ */
+
+/* ── One entry: an activity line and whatever it produced ──────────────── */
+
+.dx-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  /* The same measure as a prose turn, so a tool result does not read as a
+     different column of the page. */
+  max-width: 72ch;
+  min-width: 0;
+}
+
+/* The activity line is the whole point of §64: while a tool runs this says
+   "Preparing Shot 08", not `generate_storyboard`. When it finishes the same
+   line becomes the tool's own summary, so the entry does not jump. */
+.dx-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: 13.5px;
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.dx-line-text { min-width: 0; }
+
+/* A running step is dimmer than a finished one: what is still happening
+   should not read louder than what is already true. */
+.dx-row[data-running] .dx-line-text { color: var(--text-secondary); }
+
+.dx-line-dot {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--status-warning);
+  animation: status-breathe 1.2s ease-in-out infinite;
+}
+
+/* ── The technical detail, folded (§64) ───────────────────────────────── */
+
+.dx-tech {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary);
+}
+.dx-tech > summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  width: fit-content;
+}
+.dx-tech > summary::-webkit-details-marker { display: none; }
+.dx-tech > summary::before {
+  content: "▸ ";
+  color: var(--text-tertiary);
+}
+.dx-tech[open] > summary::before { content: "▾ "; }
+.dx-tech > summary:hover { color: var(--text-secondary); }
+.dx-tech > pre {
+  margin: var(--sp-2) 0 0;
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* ── Beats: a numbered list, because that is what beats are ───────────── */
+
+.dx-beats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dx-beats > li {
+  display: grid;
+  grid-template-columns: 2.4ch minmax(0, 1fr);
+  gap: var(--sp-3);
+  align-items: baseline;
+}
+.dx-beats-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+.dx-beats-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.dx-beats-title {
+  font-size: var(--t-body-s);
+  color: var(--text-primary);
+}
+.dx-beats-heading {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.dx-beats-summary {
+  font-size: var(--t-cap);
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+}
+
+/* ── Shots and assets: a strip of pictures with their names ───────────── */
+
+.dx-strip {
+  display: flex;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0 0 var(--sp-1);
+  list-style: none;
+  /* Wide results scroll inside their own track rather than widening the
+     conversation. */
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.dx-strip-item {
+  flex: 0 0 auto;
+  width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.dx-strip-frame {
+  display: block;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-control);
+  overflow: hidden;
+  background: var(--surface-raised);
+}
+.dx-strip-media,
+.dx-strip-blank {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dx-strip-name {
+  font-size: var(--t-cap);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dx-strip-note {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Cast: faces, not rows of names ───────────────────────────────────── */
+
+.dx-faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dx-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 88px;
+  min-width: 0;
+  text-align: center;
+}
+.dx-face-img {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--surface-raised);
+}
+.dx-face-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.dx-face-initial {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+.dx-face-name {
+  font-size: var(--t-cap);
+  color: var(--text-primary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dx-face-note {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dx-face-note:empty { display: none; }
+
+/* ── The cost, as one line ────────────────────────────────────────────── */
+
+.dx-estimate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-3);
+  margin: 0;
+  font-size: var(--t-body-s);
+  color: var(--text-primary);
+}
+.dx-estimate-label { min-width: 0; }
+.dx-estimate-nums {
+  font-family: var(--font-mono);
+  font-size: var(--t-cap);
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+/* The one place colour is used to stop someone: a render that cannot finish
+   on the balance available. */
+.dx-estimate.is-blocked .dx-estimate-nums { color: var(--status-warning); }
+.dx-estimate-blocked {
+  flex: 1 0 100%;
+  font-size: var(--t-cap);
+  color: var(--status-warning);
+}
+
+/* ── A plan, before any of it runs (§12) ──────────────────────────────── */
+
+.dx-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dx-plan > li {
+  display: grid;
+  grid-template-columns: 2ch minmax(0, 1fr);
+  gap: var(--sp-3);
+  align-items: baseline;
+}
+.dx-plan-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+.dx-plan-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.dx-plan-title {
+  font-size: var(--t-body-s);
+  color: var(--text-primary);
+}
+.dx-plan-detail {
+  font-size: var(--t-cap);
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+}
+/* The cost marker is words, not a badge. A step that will spend says so in
+   the same quiet voice as everything else; the weight it carries comes from
+   the sheet it will raise, not from a coloured capsule. */
+.dx-plan-cost {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary);
+}
+.dx-plan-cost[data-cost="spend"],
+.dx-plan-cost[data-cost="destructive"] { color: var(--status-warning); }
+
+/* ── Prose and emptiness ──────────────────────────────────────────────── */
+
+.dx-note {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+}
+.dx-empty {
+  margin: 0;
+  font-size: var(--t-cap);
+  color: var(--text-tertiary);
+}
+
+/* ── Approval (§13) ───────────────────────────────────────────────────── */
+
+/* Ruled off above and below rather than boxed. The sheet is a passage in the
+   conversation that has to be answered before it continues, and a card would
+   make it look like a notification that could be ignored. */
+.dx-approval {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 72ch;
+  min-width: 0;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-standard);
+  border-bottom: 1px solid var(--border-standard);
+}
+
+.dx-approval-what {
+  margin: 0;
+  font-size: var(--t-body);
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+}
+
+.dx-approval-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* After an answer the buttons are gone and the sheet states what it became,
+   so scrolling back through a session shows what was approved and what was
+   not. */
+.dx-approval-said {
+  margin: 0;
+  font-size: var(--t-body-s);
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dx-line-dot { animation: none; }
+}
