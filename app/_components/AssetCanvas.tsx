@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "./ui/skeleton";
 import { ErrorState } from "./AsyncStates";
 import { cn } from "@/lib/utils";
+import { MediaTile } from "./ui/media-tile";
 
 export interface CanvasItem {
   id: string;
@@ -271,29 +272,13 @@ export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0
                     onClick={() => onOpen?.(item)}
                     aria-label={item.subtitle ? `${item.title} — ${item.subtitle}` : item.title}
                   >
-                    {item.url && item.kind === "video" ? (
-                      // A clip in an <img> renders nothing. A muted video with
-                      // preload="metadata" paints its first frame as the poster
-                      // without fetching the whole file, and plays on hover.
-                      <video
+                    {item.url ? (
+                      // A clip paints its first frame as the poster and plays
+                      // only after the pointer rests on it; one plays at a time.
+                      <MediaTile
                         className="canvas-card-img"
-                        src={item.url}
-                        muted
-                        playsInline
-                        preload="metadata"
-                        onMouseEnter={(e) => void e.currentTarget.play().catch(() => {})}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.pause();
-                          e.currentTarget.currentTime = 0;
-                        }}
-                      />
-                    ) : item.url ? (
-                      <img
-                        className="canvas-card-img"
-                        src={item.url}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
+                        url={item.url}
+                        kind={item.kind === "video" ? "video" : "image"}
                       />
                     ) : (
                       <span className="canvas-card-blank">
