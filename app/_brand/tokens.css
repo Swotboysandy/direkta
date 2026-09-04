@@ -116,6 +116,9 @@
      through a monospace. */
   --font-display: var(--font-ui);
   --font-mono:    var(--font-ui);
+  /* The screenplay only — see .script-type. Everything else in the product is
+     the one family above. */
+  --font-script:  var(--font-script-loaded), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
   /* Type scale — one clear jump from display to body, nothing in
      between competing. Minimalism needs fewer sizes, not smaller ones. */

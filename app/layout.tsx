@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 // One voice. Display and mono used to be Inter Tight and JetBrains Mono; three
@@ -9,6 +9,17 @@ import "./globals.css";
 const ui = Inter({
   subsets: ["latin"],
   variable: "--font-ui-loaded",
+  display: "swap"
+});
+
+// The one deliberate exception to the single family: the screenplay. A script
+// is read in a fixed pitch, and the editor and the rendered page share this
+// type so switching Write/Read does not reflow the writer's eye. Nothing else
+// in the product loads it.
+const script = JetBrains_Mono({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  variable: "--font-script-loaded",
   display: "swap"
 });
 
@@ -28,7 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className={ui.variable}
+      className={`${ui.variable} ${script.variable}`}
       suppressHydrationWarning
     >
       <head>

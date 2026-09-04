@@ -91,10 +91,12 @@
 .script-tip { margin: 0; font-size: 12px; color: var(--text-tertiary); max-width: 68ch; text-wrap: pretty; }
 
 /* The shared type of the editor and the rendered page: one mono, one
-   measure, so switching Write/Read does not reflow the writer's eye. */
+   measure, so switching Write/Read does not reflow the writer's eye. This is
+   the only place in the product that is not the single UI family - a script is
+   read in a fixed pitch, and the measure below is set in ch against it. */
 .script-type {
   width: 100%; max-width: 76ch; margin: 0 auto;
-  font-family: var(--font-mono); font-size: 13px; line-height: 1.85; color: var(--text-primary);
+  font-family: var(--font-script); font-size: 13px; line-height: 1.85; color: var(--text-primary);
   background: var(--surface-base); border-radius: var(--r-surface); box-shadow: var(--shadow-1);
   padding: var(--sp-6) var(--sp-7) var(--sp-8);
 }
