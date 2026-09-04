@@ -400,7 +400,7 @@
      it broke mid-phrase against them. */
   flex-wrap: wrap;
   padding: var(--sp-5) 0 var(--sp-4);
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-4);
   border-bottom: 1px solid var(--cream-deep);
 }
 .page-head-actions { display: flex; gap: var(--sp-3); }

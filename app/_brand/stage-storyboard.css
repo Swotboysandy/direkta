@@ -283,6 +283,16 @@ button.sbd-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); 
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
   pointer-events: none;
 }
+.sbd-take-n[data-angle] {
+  max-width: calc(100% - 12px);
+  padding: 1px 5px;
+  border-radius: var(--r-pill);
+  background: rgb(0 0 0 / 0.55);
+  text-shadow: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .sbd-take-mark {
   position: absolute;
   right: 6px;
@@ -349,13 +359,18 @@ button.sbd-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); 
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* Each column is only as tall as its own content. Without this the camera,
+     being the taller of the two, stretched the left column and opened an
+     empty band under the prompt. */
+  align-items: start;
   gap: var(--sp-5);
   margin-top: var(--sp-3);
   padding-top: var(--sp-4);
   border-top: 1px solid var(--border-subtle);
 }
+/* Prompt, cast and style stack down one column; camera owns the other. */
+.sbd-direction-left { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-5); }
 .sbd-dsec { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
-.sbd-dsec-camera { grid-column: 2; grid-row: 1 / span 2; }
 .sbd-dsec-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
 .sbd-dsec-head h3 {
   margin: 0;
@@ -446,6 +461,43 @@ button.sbd-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); 
 .sbd-frame-cell:hover { background: var(--surface-selected); }
 .sbd-frame-cell[aria-checked="true"] { background: var(--brand-accent); }
 .sbd-frame-cell:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+/* ── Coverage: the same grid, multi-select ──────────────────
+   The grid picks one framing normally and a set of them in coverage mode.
+   Nothing moves between the two — only the ring and the order number appear,
+   so the control stays the same object doing a second job. */
+.sbd-frame[data-covering="true"] { box-shadow: inset 0 0 0 1px var(--brand-accent); }
+.sbd-frame-cell { position: relative; }
+.sbd-frame-order {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--surface-canvas);
+  pointer-events: none;
+}
+.sbd-cover-toggle {
+  padding: 2px 9px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-pill);
+  background: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.sbd-cover-toggle:hover { background: var(--surface-raised); color: var(--text-primary); }
+.sbd-cover-toggle[data-on="true"] {
+  background: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: var(--surface-canvas);
+}
+.sbd-cover-toggle:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.sbd-cover-hint { margin: 0; }
 
 .sbd-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 .sbd-preset {
@@ -573,7 +625,6 @@ button.sbd-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); 
   .sbd-beat { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
   .sbd-strip[data-density="overview"] .sbd-beat { grid-template-columns: minmax(0, 1fr); }
   .sbd-direction { grid-template-columns: minmax(0, 1fr); }
-  .sbd-dsec-camera { grid-column: 1; grid-row: auto; }
   .sbd-focus { grid-template-columns: minmax(0, 1fr); max-height: calc(100dvh - 32px); }
   .sbd-focus-side { border-left: 0; border-top: 1px solid var(--border-subtle); }
 }

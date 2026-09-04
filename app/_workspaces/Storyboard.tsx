@@ -59,6 +59,15 @@ const costK = (takes: number) => Math.round((takes * IMAGE_TOKENS) / 1000);
 const takeWord = (n: number) => (n === 1 ? "take" : "takes");
 
 /**
+ * Coverage: one beat rolled from several framings at once, the way a scene is
+ * actually shot. `prompts[i]` is the full shot description for angle
+ * `angles[i]`; the reference locks are composed server-side and shared across
+ * the set, so it comes back as one moment seen three ways, not three scenes.
+ */
+type Coverage = { prompts: string[]; angles: string[] };
+const angleLabel = (shot: string, angle: string) => shot + " · " + angle;
+
+/**
  * Storyboard (brief §27–28): a filmstrip by beat.
  *
  * Each beat is a row — its number, title, heading, who is in it and where,
@@ -247,7 +256,8 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     }).catch(() => {});
   }
 
-  async function generate(beatId: string, prompt: string, takes: number = 4) {
+  /** `coverage` rolls one frame per framing instead of N takes of one framing. */
+  async function generate(beatId: string, prompt: string, takes: number = 4, coverage?: Coverage) {
     setRowErrors((e) => {
       const { [beatId]: _drop, ...rest } = e;
       return rest;
@@ -265,7 +275,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
         id: `pending-${beatId}-${i}`,
         beat_id: beatId,
         n: i + 1,
-        prompt,
+        prompt: coverage ? coverage.prompts[i] : prompt,
         state: "generating",
         asset_id: null,
         asset_url: null,
@@ -277,7 +287,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
       const res = await fetch(`/api/storyboard/rows/${beatId}/generate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ variants: takes, prompt })
+        body: JSON.stringify({ variants: takes, prompt, ...(coverage ? { prompts: coverage.prompts, angles: coverage.angles } : {}) })
       });
       const data = await res.json().catch(() => null);
       // Surface exactly who/what got reference-locked — otherwise the
@@ -303,19 +313,21 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
   }
 
   /** Rolling a beat that already has takes deletes them — say so first. */
-  async function confirmedGenerate(beat: Beat, prompt: string, takes: number) {
+  async function confirmedGenerate(beat: Beat, prompt: string, takes: number, coverage?: Coverage) {
     const existing = (variantsByBeat[beat.id] ?? []).filter((v) => v.asset_url && !v.id.startsWith("pending-"));
     if (existing.length > 0) {
       const approved = existing.filter((v) => v.approval === "approved").length;
       const ok = await confirm({
         title: `Roll beat ${pad2(beat.n)} again?`,
-        description: `Rolling again replaces the ${existing.length} ${takeWord(existing.length)} for this beat with ${takes} new ${takeWord(takes)}.${approved ? ` ${approved} of them ${approved === 1 ? "is" : "are"} approved; that approval is lost.` : ""} Costs about ${costK(takes)}k tokens.`,
-        confirmLabel: `Roll ${takes} ${takeWord(takes)}`,
+        description: `Rolling again replaces the ${existing.length} ${takeWord(existing.length)} for this beat with ${
+          coverage ? `${takes} angles (${coverage.angles.join(", ")})` : `${takes} new ${takeWord(takes)}`
+        }.${approved ? ` ${approved} of them ${approved === 1 ? "is" : "are"} approved; that approval is lost.` : ""} Costs about ${costK(takes)}k tokens.`,
+        confirmLabel: coverage ? `Roll ${takes} angles` : `Roll ${takes} ${takeWord(takes)}`,
         destructive: true
       });
       if (!ok) return;
     }
-    await generate(beat.id, prompt, takes);
+    await generate(beat.id, prompt, takes, coverage);
   }
 
   /** Roll every beat that has no frame yet — N takes each, sequentially. */
@@ -557,7 +569,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
                 onAddToStitch={addToStitch}
                 onRemoveFromStitch={removeFromStitch}
                 onPatchRow={(patch) => patchRow(beat.id, patch)}
-                onGenerate={(prompt, takes) => confirmedGenerate(beat, prompt, takes)}
+                onGenerate={(prompt, takes, coverage) => confirmedGenerate(beat, prompt, takes, coverage)}
                 onClearError={() =>
                   setRowErrors((e) => {
                     const { [beat.id]: _drop, ...rest } = e;
@@ -665,7 +677,7 @@ function BeatRow({
   onAddToStitch: (v: StoryboardVariant) => void;
   onRemoveFromStitch: (v: StoryboardVariant) => void;
   onPatchRow: (patch: { style?: BeatStyle }) => void;
-  onGenerate: (prompt: string, takes: number) => void;
+  onGenerate: (prompt: string, takes: number, coverage?: Coverage) => void;
   onClearError: () => void;
 }) {
   const state = row?.state ?? "waiting";
@@ -755,7 +767,7 @@ function BeatRow({
           )
         ) : (
           variants.map((v) => (
-            <Take key={v.id} beat={beat} variant={v} onBoard={stitched.has(v.id)} selected={selectedId === v.id} onSelect={() => onSelect(v)} onFocus={() => onFocus(v)} onAddToStitch={() => onAddToStitch(v)} onRemoveFromStitch={() => onRemoveFromStitch(v)} />
+            <Take key={v.id} beat={beat} variant={v} angle={style.angles?.[v.n - 1]} onBoard={stitched.has(v.id)} selected={selectedId === v.id} onSelect={() => onSelect(v)} onFocus={() => onFocus(v)} onAddToStitch={() => onAddToStitch(v)} onRemoveFromStitch={() => onRemoveFromStitch(v)} />
           ))
         )}
       </div>
@@ -779,6 +791,7 @@ function BeatRow({
 function Take({
   beat,
   variant,
+  angle,
   onBoard,
   selected,
   onSelect,
@@ -788,6 +801,8 @@ function Take({
 }: {
   beat: Beat;
   variant: StoryboardVariant;
+  /** Set only on a coverage roll: the framing this take was shot from. */
+  angle?: string;
   onBoard: boolean;
   selected: boolean;
   onSelect: () => void;
@@ -815,7 +830,9 @@ function Take({
       <button type="button" className="sbd-take-hit" onClick={onSelect} onDoubleClick={onFocus} aria-pressed={selected} aria-label={`Take ${variant.n} of beat ${pad2(beat.n)}${onBoard ? ", in Shots" : ""}`}>
         <MediaTile url={variant.asset_url} kind="image" alt="" className="sbd-take-img" />
       </button>
-      <span className="sbd-take-n">T{variant.n}</span>
+      <span className="sbd-take-n" data-angle={angle ? "" : undefined} title={angle ? `Take ${variant.n} — ${angle}` : undefined}>
+        {angle ?? `T${variant.n}`}
+      </span>
       {variant.approval === "approved" && (
         <span className="sbd-take-mark" data-a="approved" title="Approved">
           <Check size={11} />
@@ -856,7 +873,7 @@ function Direction({
   state: StoryboardRow["state"];
   cast: CastMember[];
   onPatchRow: (patch: { style?: BeatStyle }) => void;
-  onGenerate: (prompt: string, takes: number) => void;
+  onGenerate: (prompt: string, takes: number, coverage?: Coverage) => void;
 }) {
   const [prompt, setPrompt] = useState(style.prompt_override || defaultPromptFor(beat, style, globalStyle));
   const [takes, setTakes] = useState(4);
@@ -896,10 +913,35 @@ function Direction({
 
   const shot = style.shot_size ?? "Wide";
   const angle = style.camera_angle ?? "Eye level";
+  // Coverage turns the framing grid into a multi-select: every cell picked is
+  // one frame in the roll. Off by default, so the grid stays the plain
+  // "this beat is framed like this" control it has always been.
+  const [covering, setCovering] = useState(false);
+  const [picked, setPicked] = useState<Array<{ shot: string; angle: string }>>([]);
+  const pickedAt = (sh: string, an: string) => picked.findIndex((c) => c.shot === sh && c.angle === an);
+  const togglePick = (sh: string, an: string) =>
+    setPicked((cur) => {
+      const i = cur.findIndex((c) => c.shot === sh && c.angle === an);
+      if (i >= 0) return cur.filter((_, j) => j !== i);
+      return cur.length >= 8 ? cur : [...cur, { shot: sh, angle: an }];
+    });
+  // One prompt per angle, each built from this beat's own style with only the
+  // framing swapped, so light, lens, cast and aspect stay identical across the
+  // set and only the camera moves.
+  const coverage: Coverage = {
+    angles: picked.map((c) => angleLabel(c.shot, c.angle)),
+    prompts: picked.map((c) =>
+      defaultPromptFor(beat, { ...style, shot_size: c.shot, camera_angle: c.angle }, globalStyle)
+    )
+  };
   const presetOn = (p: (typeof SHOT_PRESETS)[number]) => p.style.shot_size === shot && p.style.camera_angle === angle && p.style.lens === (style.lens ?? "35mm");
 
   return (
     <div className="sbd-direction">
+      {/* Two independent columns. The camera used to span some of the left
+          column's rows, and being the taller of the two it stretched them —
+          which is the empty band that opened under the prompt. */}
+      <div className="sbd-direction-left">
       <section className="sbd-dsec sbd-dsec-prompt">
         <div className="sbd-dsec-head">
           <h3>Prompt</h3>
@@ -970,10 +1012,43 @@ function Direction({
         </section>
       )}
 
+      <section className="sbd-dsec">
+        <div className="sbd-dsec-head">
+          <h3>Style · this beat only</h3>
+          <span className="sbd-note">Inherits the project style until changed here.</span>
+        </div>
+        <div className="sbd-fields">
+          <Field label="Visual" value={style.visual ?? globalStyle.visual} options={VISUAL_OPTIONS} onChange={(v) => set({ visual: v })} />
+          <Field label="Light" value={style.light ?? globalStyle.light} options={LIGHT_OPTIONS} onChange={(v) => set({ light: v })} />
+          <Field label="Temp" value={style.temp ?? globalStyle.temp} options={TEMP_OPTIONS} onChange={(v) => set({ temp: v })} />
+          <Field label="Aspect" value={style.aspect ?? globalStyle.aspect} options={ASPECT_OPTIONS} onChange={(v) => set({ aspect: v as AspectRatio })} />
+        </div>
+      </section>
+      </div>
+
       <section className="sbd-dsec sbd-dsec-camera">
         <div className="sbd-dsec-head">
           <h3>Camera</h3>
+          <button
+            type="button"
+            className="sbd-cover-toggle"
+            data-on={covering}
+            aria-pressed={covering}
+            onClick={() => {
+              setCovering((v) => !v);
+              setPicked([]);
+            }}
+            title="Roll this beat from several framings at once instead of repeating one"
+          >
+            {covering ? "Framing" : "Coverage"}
+          </button>
         </div>
+        {covering && (
+          <p className="sbd-note sbd-cover-hint">
+            Pick the framings in the grid below — one frame each, same light, lens and cast. Click a chosen cell to
+            drop it.
+          </p>
+        )}
         <div className="sbd-camera">
           <div className="sbd-framing">
             <div className="sbd-framing-cols" aria-hidden="true">
@@ -986,13 +1061,30 @@ function Direction({
                 <span key={a}>{a === "Eye level" ? "Eye" : a}</span>
               ))}
             </div>
-            <div className="sbd-frame" role="radiogroup" aria-label="Framing: shot size by angle">
+            <div
+              className="sbd-frame"
+              role={covering ? "group" : "radiogroup"}
+              aria-label={covering ? "Coverage: pick the framings to roll" : "Framing: shot size by angle"}
+              data-covering={covering}
+            >
               {FRAMING_ANGLES.map((a) =>
                 FRAMING_SHOTS.map((s) => {
-                  const on = shot === s && angle === a;
+                  const order = covering ? pickedAt(s, a) : -1;
+                  const on = covering ? order >= 0 : shot === s && angle === a;
                   return (
-                    <button key={`${s}-${a}`} type="button" role="radio" aria-checked={on} aria-label={`${s} shot, ${a.toLowerCase()} angle`} title={`${s} · ${a}`} className="sbd-frame-cell" data-on={on} onClick={() => set({ shot_size: s, camera_angle: a })}>
+                    <button
+                      key={`${s}-${a}`}
+                      type="button"
+                      role={covering ? "checkbox" : "radio"}
+                      aria-checked={on}
+                      aria-label={`${s} shot, ${a.toLowerCase()} angle${covering ? (on ? `, angle ${order + 1} of the roll` : ", add to the roll") : ""}`}
+                      title={covering ? (on ? `Angle ${order + 1} — click to drop it` : `Add ${angleLabel(s, a)} to the roll`) : angleLabel(s, a)}
+                      className="sbd-frame-cell"
+                      data-on={on}
+                      onClick={() => (covering ? togglePick(s, a) : set({ shot_size: s, camera_angle: a }))}
+                    >
                       <FigureGlyph shot={s} angle={a} />
+                      {order >= 0 && <span className="sbd-frame-order">{order + 1}</span>}
                     </button>
                   );
                 })
@@ -1020,31 +1112,36 @@ function Direction({
         </div>
       </section>
 
-      <section className="sbd-dsec">
-        <div className="sbd-dsec-head">
-          <h3>Style · this beat only</h3>
-          <span className="sbd-note">Inherits the project style until changed here.</span>
-        </div>
-        <div className="sbd-fields">
-          <Field label="Visual" value={style.visual ?? globalStyle.visual} options={VISUAL_OPTIONS} onChange={(v) => set({ visual: v })} />
-          <Field label="Light" value={style.light ?? globalStyle.light} options={LIGHT_OPTIONS} onChange={(v) => set({ light: v })} />
-          <Field label="Temp" value={style.temp ?? globalStyle.temp} options={TEMP_OPTIONS} onChange={(v) => set({ temp: v })} />
-          <Field label="Aspect" value={style.aspect ?? globalStyle.aspect} options={ASPECT_OPTIONS} onChange={(v) => set({ aspect: v as AspectRatio })} />
-        </div>
-      </section>
-
       <div className="sbd-roll">
-        <div className="sbd-seg" role="radiogroup" aria-label="Number of takes">
-          {[1, 2, 4].map((n) => (
-            <button key={n} type="button" role="radio" aria-checked={takes === n} data-on={takes === n} onClick={() => setTakes(n)} disabled={generating}>
-              {n} {takeWord(n)}
-            </button>
-          ))}
-        </div>
-        <Button intent="primary" size="sm" disabled={generating} onClick={() => onGenerate(prompt, takes)} title={generating ? "This beat is already rolling" : undefined}>
+        {!covering && (
+          <div className="sbd-seg" role="radiogroup" aria-label="Number of takes">
+            {[1, 2, 4].map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={takes === n} data-on={takes === n} onClick={() => setTakes(n)} disabled={generating}>
+                {n} {takeWord(n)}
+              </button>
+            ))}
+          </div>
+        )}
+        <Button
+          intent="primary"
+          size="sm"
+          disabled={generating || (covering && picked.length === 0)}
+          onClick={() => (covering ? onGenerate(prompt, picked.length, coverage) : onGenerate(prompt, takes))}
+          title={
+            generating
+              ? "This beat is already rolling"
+              : covering && picked.length === 0
+              ? "Pick at least one framing in the grid"
+              : undefined
+          }
+        >
           {generating ? (
             <>
               <RefreshCcw size={12} className="fx-rotate-load" /> Rolling…
+            </>
+          ) : covering ? (
+            <>
+              <Wand2 size={12} /> Roll {picked.length || "no"} {picked.length === 1 ? "angle" : "angles"}
             </>
           ) : (
             <>
@@ -1052,8 +1149,16 @@ function Direction({
             </>
           )}
         </Button>
-        <span className="sbd-mono">≈{costK(takes)}k tokens</span>
-        <span className="sbd-note">{generating ? "Frames land here as they finish." : "Seedream via your BytePlus pack, or Higgsfield when connected."}</span>
+        <span className="sbd-mono">≈{costK(covering ? picked.length : takes)}k tokens</span>
+        <span className="sbd-note">
+          {generating
+            ? "Frames land here as they finish."
+            : covering
+            ? picked.length
+              ? picked.map((c) => angleLabel(c.shot, c.angle)).join(", ")
+              : "Pick framings in the grid above."
+            : "Seedream via your BytePlus pack, or Higgsfield when connected."}
+        </span>
       </div>
     </div>
   );

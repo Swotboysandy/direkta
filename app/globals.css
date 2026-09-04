@@ -1791,6 +1791,13 @@ strong, b {
 
 /* Stop a long subtitle on the left from crushing the action cluster. */
 .page-head > div:first-child {
+  /* Eyebrow, title and lede had no rhythm of their own: the h1 and p carry
+     margin 0, so the three lines sat jammed together under a header whose
+     outside spacing was generous. Give the stack its own gap. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  align-items: flex-start;
   min-width: 0;
   /* A basis rather than only a max: without one the block sizes to its text and
      the actions sit hard against the last word. Below 1000px it takes the whole

@@ -24,8 +24,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const body = await req
     .json()
     .catch(() => ({} as { variants?: number; prompt?: string; model?: string; resolution?: string }));
-  const variantCount = Math.max(1, Math.min(8, Number(body.variants ?? 4)));
   const promptIn = typeof body.prompt === "string" ? body.prompt.trim() : "";
+  // Coverage - the same beat shot from several framings in one roll. Each entry
+  // replaces only the SHOT block; every lock (cast, location, props, house
+  // style) is shared, which is what keeps the angles one scene rather than three.
+  const asStrings = (v: unknown) =>
+    (Array.isArray(v) ? v : []).filter((x): x is string => typeof x === "string" && x.trim().length > 0).slice(0, 8);
+  const promptsIn = asStrings((body as { prompts?: unknown }).prompts);
+  const anglesIn = asStrings((body as { angles?: unknown }).angles);
+  const variantCount = promptsIn.length || Math.max(1, Math.min(8, Number(body.variants ?? 4)));
   const modelIn = typeof body.model === "string" ? body.model : undefined;
   const resolutionIn = typeof body.resolution === "string" ? body.resolution : undefined;
   const bodyUseBrowser = (body as { useBrowser?: boolean }).useBrowser;
@@ -108,7 +115,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ beatId:
   const castRows = db
     .prepare("SELECT name, refs, brief FROM characters WHERE project_id = ?")
     .all(beat.project_id) as Array<{ name: string; refs: string; brief: string }>;
-  const promptLower = prompt.toLowerCase();
+  // Coverage angles name the cast too - detect across the whole set.
+  const promptLower = [prompt, ...promptsIn].join(" ").toLowerCase();
   const referenceImages: string[] = [];
   const referencedNames: string[] = [];
   const referencedDescs: string[] = [];
@@ -204,12 +212,12 @@ ${beat.avoid_prompt}` : "";
 ${beat.direction}` : "";
   // Immutable blocks lead, then the one block that varies per beat (SHOT),
   // then the reference locks and house style that must survive contact with it.
-  const genPrompt = [
+  const compose = (shotBlock: string) => [
     styleLine,
     continuityLine,
     setLine,
     directionLine,
-    `SHOT\n${prompt}`,
+    `SHOT\n${shotBlock}`,
     castLock,
     locationLock,
     propLock,
@@ -220,6 +228,10 @@ ${beat.direction}` : "";
   ]
     .filter(Boolean)
     .join("\n\n");
+  const genPrompt = compose(prompt);
+  // Variant n's full prompt: its own angle when this is a coverage roll,
+  // otherwise the one prompt repeated (takes of a single framing).
+  const genPromptAt = (i: number) => (promptsIn.length ? compose(promptsIn[i]) : genPrompt);
 
   // A keyed image vendor (e.g. BytePlus Seedream) takes priority; the
   // Higgsfield OAuth connection is the fallback when no vendor key is set.
@@ -248,7 +260,7 @@ ${beat.direction}` : "";
       "INSERT INTO storyboard_variants (id, beat_id, n, prompt, state, asset_id) VALUES (?, ?, ?, ?, 'waiting', NULL)"
     );
     db.prepare("DELETE FROM storyboard_variants WHERE beat_id = ?").run(beatId);
-    for (let n = 1; n <= variantCount; n++) insert.run(nanoid(10), beatId, n, prompt);
+    for (let n = 1; n <= variantCount; n++) insert.run(nanoid(10), beatId, n, promptsIn[n - 1] || prompt);
     db.prepare(
       "INSERT INTO storyboard_rows (beat_id, state, selected_variant_id, style) VALUES (?, 'generating', NULL, '{}') " +
         "ON CONFLICT(beat_id) DO UPDATE SET state = 'generating', updated_at = datetime('now')"
@@ -282,6 +294,9 @@ ${beat.direction}` : "";
     | undefined;
   const style = existing?.style ? JSON.parse(existing.style) : {};
   style.prompt_override = prompt;
+  // Take captions on the board read from here; a plain roll clears them.
+  if (anglesIn.length) style.angles = anglesIn;
+  else delete style.angles;
 
   // Per-beat aspect override (Style override → Aspect) wins over the project default.
   const VALID_ASPECTS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5", "21:9"];
@@ -309,7 +324,7 @@ ${beat.direction}` : "";
   const ids: string[] = [];
   for (let n = 1; n <= variantCount; n++) {
     const vid = nanoid(10);
-    insertVariant.run(vid, beatId, n, genPrompt);
+    insertVariant.run(vid, beatId, n, genPromptAt(n - 1));
     ids.push(vid);
   }
 
@@ -320,17 +335,17 @@ ${beat.direction}` : "";
   const markError = db.prepare("UPDATE storyboard_variants SET state = 'error' WHERE id = ?");
 
   const results = await Promise.allSettled(
-    ids.map(() =>
+    ids.map((_id, i) =>
       useBrowser
-        ? generateImageViaBrowser({ prompt: genPrompt, referencePaths: referenceImages })
+        ? generateImageViaBrowser({ prompt: genPromptAt(i), referencePaths: referenceImages })
         : useMcp
         ? generateImageViaMcp({
-            prompt: genPrompt,
+            prompt: genPromptAt(i),
             aspectRatio: aspect,
             model: modelIn,
             resolution: resolutionIn
           })
-        : generateImage({ prompt: genPrompt, aspectRatio: aspect, vendor: vendor!, referenceImages })
+        : generateImage({ prompt: genPromptAt(i), aspectRatio: aspect, vendor: vendor!, referenceImages })
     )
   );
 
@@ -341,7 +356,7 @@ ${beat.direction}` : "";
     const vid = ids[i];
     if (res.status === "fulfilled") {
       const assetId = nanoid(10);
-      insertAsset.run(assetId, vid, res.value.url, genPrompt, vendor ? vendor.id : null);
+      insertAsset.run(assetId, vid, res.value.url, genPromptAt(i), vendor ? vendor.id : null);
       markComplete.run(assetId, vid);
       generated++;
     } else {

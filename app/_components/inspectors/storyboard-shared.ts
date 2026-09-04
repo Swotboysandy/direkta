@@ -46,6 +46,9 @@ export interface BeatStyle {
   camera_body?: string;
   /** Cast members explicitly placed in this frame (reference-locked). */
   cast_override?: string[];
+  /** Coverage: the framing each take was rolled from, in take order. Set by a
+   *  coverage roll, cleared by a plain one. Captions the takes on the board. */
+  angles?: string[];
 }
 
 export interface GlobalStyle {
