@@ -239,7 +239,7 @@ export function ProductionHome({ project, beats, characters, activity, workspace
       {/* ── Recent work, as media ───────────────────────────────── */}
       <section className="phome-section">
         <div className="phome-section-head"><h2>Recent work</h2></div>
-        <AssetCanvas projectId={project.id} assetsVersion={assetsVersion} onOpen={open} />
+        <AssetCanvas projectId={project.id} assetsVersion={assetsVersion} onOpen={open} onGo={onSwitchWorkspace} />
       </section>
     </motion.div>
   );

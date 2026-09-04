@@ -18,6 +18,8 @@ import { Skeleton } from "./ui/skeleton";
 import { ErrorState } from "./AsyncStates";
 import { cn } from "@/lib/utils";
 import { MediaTile } from "./ui/media-tile";
+import { EmptyState } from "./ui/empty-state";
+import type { WorkspaceId } from "../../lib/types";
 
 export interface CanvasItem {
   id: string;
@@ -43,35 +45,48 @@ const RAIL: Array<{ id: Filter; label: string; Icon: typeof ImageIcon }> = [
   { id: "favourite", label: "Favourites", Icon: Heart }
 ];
 
-/** What each tab is missing, and what actually makes it. */
-const EMPTY: Record<Filter, { title: string; next: string }> = {
+/** What each tab is missing, why, and the one action that makes it (brief §40).
+ *  `go` names the stage that makes this kind of thing; without one the action
+ *  puts the cursor in the Dock, because a shot is described there. */
+const EMPTY: Record<Filter, { title: string; why: string; action: string; go?: WorkspaceId }> = {
   all: {
-    title: "Nothing in this project yet.",
-    next: "Describe a shot in the box below to make the first one."
+    title: "Nothing here yet",
+    why: "Frames, clips, cast and places appear here as they are made.",
+    action: "Describe a shot"
   },
   image: {
-    title: "No frames yet.",
-    next: "Describe a shot below, or open Storyboard to generate them per beat."
+    title: "No frames yet",
+    why: "Frames are the stills the storyboard generates for each beat, and any still a shot starts from.",
+    action: "Open Storyboard",
+    go: "storyboard"
   },
   video: {
-    title: "No clips yet.",
-    next: "Clips come from animating a frame — open Shots once you have one."
+    title: "No clips yet",
+    why: "A clip is a rendered shot. Shots come from storyboard frames, or from a description in the Dock.",
+    action: "Describe a shot"
   },
   character: {
-    title: "No cast yet.",
-    next: "Add characters in World; their portraits become references you can @-mention."
+    title: "No cast yet",
+    why: "Characters live in World. Each gets a Soul ID that keeps them the same person across shots.",
+    action: "Open World",
+    go: "casting"
   },
   location: {
-    title: "No locations yet.",
-    next: "Add them in World so shots can lock to the same place."
+    title: "No locations yet",
+    why: "Locations live in World. Each gets a World ID so shots return to the same place.",
+    action: "Open World",
+    go: "casting"
   },
   prop: {
-    title: "No props yet.",
-    next: "Add them in World to keep objects consistent between shots."
+    title: "No props yet",
+    why: "Props live in World, so an object looks the same every time it appears.",
+    action: "Open World",
+    go: "casting"
   },
   favourite: {
-    title: "No favourites yet.",
-    next: "Star anything on the canvas to keep it here."
+    title: "No favourites yet",
+    why: "Star anything on the canvas and it stays here for quick reach.",
+    action: "Show everything"
   }
 };
 
@@ -86,6 +101,8 @@ interface Props {
    *  without the user having to reload or change filter. */
   assetsVersion?: number;
   onOpen?: (item: CanvasItem) => void;
+  /** Lets an empty state open the stage that makes the missing thing. */
+  onGo?: (ws: WorkspaceId) => void;
 }
 
 /**
@@ -100,7 +117,7 @@ interface Props {
  * Paging is by the assets route's cursor, requested when a sentinel at the foot
  * of the grid comes into view.
  */
-export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0, onOpen }: Props) {
+export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0, onOpen, onGo }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -241,13 +258,28 @@ export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0
 
         {status === "error" && <ErrorState message={error} onRetry={() => setQuery((q) => q)} />}
 
-        {status === "empty" && (
-          <div className="canvas-empty">
-            <ImageIcon size={22} />
-            <p>{debounced ? `Nothing matching “${debounced}”.` : EMPTY[filter].title}</p>
-            {!debounced && <span>{EMPTY[filter].next}</span>}
-          </div>
-        )}
+        {status === "empty" &&
+          (debounced ? (
+            <EmptyState
+              title={`Nothing matching “${debounced}”`}
+              why="Search looks at titles and subtitles of everything on the canvas."
+              action={{ label: "Clear search", onClick: () => setQuery("") }}
+            />
+          ) : (
+            <EmptyState
+              title={EMPTY[filter].title}
+              why={EMPTY[filter].why}
+              action={{
+                label: EMPTY[filter].action,
+                onClick: () => {
+                  const go = EMPTY[filter].go;
+                  if (filter === "favourite") setFilter("all");
+                  else if (go && onGo) onGo(go);
+                  else document.querySelector<HTMLTextAreaElement>(".dock textarea")?.focus();
+                }
+              }}
+            />
+          ))}
 
         {status === "ready" && (
           <>

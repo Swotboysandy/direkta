@@ -42,7 +42,7 @@ export function Library({ project, assetsVersion, onSwitchWorkspace }: Props) {
         </div>
       </header>
 
-      <AssetCanvas projectId={project.id} assetsVersion={assetsVersion} onOpen={open} />
+      <AssetCanvas projectId={project.id} assetsVersion={assetsVersion} onOpen={open} onGo={onSwitchWorkspace} />
     </motion.div>
   );
 }
