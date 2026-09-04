@@ -16,6 +16,7 @@ import { SkillsPanel } from "./_components/SkillsPanel";
 import { ConfirmProvider } from "./_components/ui/alert-dialog";
 import { STAGE_LABELS, LOCK_REASONS, isAppMode, type AppMode } from "./_lib/stages";
 import { SelectionProvider } from "./_state/selection";
+import { TooltipProvider } from "./_components/ui/tooltip";
 import dynamic from "next/dynamic";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
@@ -410,6 +411,9 @@ export default function Home() {
   );
 
   return (
+    // One tooltip provider for the whole shell: every icon button and locked
+    // stage explains itself through it, and Radix throws without one.
+    <TooltipProvider delayDuration={300}>
     <ConfirmProvider>
     <SelectionProvider>
     <div className="workbench">
@@ -621,5 +625,6 @@ export default function Home() {
     </div>
     </SelectionProvider>
     </ConfirmProvider>
+    </TooltipProvider>
   );
 }
