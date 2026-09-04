@@ -252,9 +252,8 @@ export function Screenplay({
       <div className="main-inner screenplay">
         <motion.header className="page-head" {...fadeUp}>
           <div>
-            <span className="ws-eyebrow">Screenplay</span>
-            <h1 className="ws-title">
-              Screenplay
+            <span className="ws-eyebrow">Script</span>
+            <h1 className="ws-title">Script
             </h1>
             <p className="ws-lead">
               Paste your script or write it here. Once you submit, <strong>Script Reader</strong> breaks it
@@ -376,9 +375,8 @@ export function Screenplay({
     <div className="main-inner screenplay">
       <motion.header className="page-head" {...fadeUp}>
         <div>
-          <span className="ws-eyebrow">Screenplay</span>
-          <h1 className="ws-title">
-            Screenplay
+          <span className="ws-eyebrow">Script</span>
+          <h1 className="ws-title">Script
           </h1>
           <p className="ws-lead">
             {beats.length === 0
@@ -449,7 +447,7 @@ export function Screenplay({
             <FileText size={14} /> View Bible
           </motion.button>
           <motion.button {...tap} className="btn btn-primary" onClick={() => onSwitchWorkspace("casting")}>
-            Continue to Casting <ArrowRight size={14} />
+            Continue to World <ArrowRight size={14} />
           </motion.button>
         </div>
       </motion.header>

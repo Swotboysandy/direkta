@@ -251,9 +251,8 @@ export function Casting({ project, characters, locations, props: propList, onSwi
         className="page-head"
       >
         <div style={{ minWidth: 0, maxWidth: "64ch" }}>
-          <span className="ws-eyebrow">Casting</span>
-          <h1 className="ws-title">
-            Casting
+          <span className="ws-eyebrow">World</span>
+          <h1 className="ws-title">World
           </h1>
           <p className="ws-lead">
             Train a <strong>Soul ID</strong> for every character and key location. Consistency across every frame
@@ -285,7 +284,7 @@ export function Casting({ project, characters, locations, props: propList, onSwi
             title={
               project.script_submitted
                 ? "AI reads the script and adds every character + location it finds (existing cast untouched)"
-                : "Submit a script in Screenplay first"
+                : "Submit the script first"
             }
             style={{
               display: "inline-flex",

@@ -55,8 +55,8 @@ export function StitchNodeCard({ data, selected }: NodeProps) {
       <button
         type="button"
         className="stitch-node-delete"
-        aria-label="Remove from Stitch"
-        title="Remove from Stitch"
+        aria-label="Remove from the board"
+        title="Remove from the board"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={async (e) => {
           e.stopPropagation();

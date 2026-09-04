@@ -318,12 +318,12 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
       body: JSON.stringify({ variant_id: variant.id })
     });
     if (!res.ok) {
-      flashToast("error", "Failed to add to Stitch.");
+      flashToast("error", "Failed to add to the board.");
       return;
     }
     const data = (await res.json()) as { action: string; beat_n: number; scene_number: number };
     if (data.action === "exists") {
-      flashToast("info", `Already on Stitch · Scene ${data.scene_number}`);
+      flashToast("info", `Already on the board · Scene ${data.scene_number}`);
     } else {
       flashToast("success", `Added · Beat ${String(data.beat_n).padStart(2, "0")} V${String(variant.n).padStart(2, "0")} → Scene ${data.scene_number}`);
     }
@@ -338,7 +338,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
     await fetch(`/api/stitch/nodes?variant_id=${encodeURIComponent(variant.id)}`, {
       method: "DELETE"
     }).catch(() => {});
-    flashToast("info", `Removed V${String(variant.n).padStart(2, "0")} from Stitch`);
+    flashToast("info", `Removed V${String(variant.n).padStart(2, "0")} from the board`);
   }
 
   async function patchRow(beatId: string, patch: { style?: BeatStyle }) {
@@ -417,7 +417,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
         await addVariantToStitch(best);
         added++;
       }
-      flashToast(added ? "success" : "info", added ? `${added} shots on the Stitch board.` : "Every beat's best take is already on Stitch.");
+      flashToast(added ? "success" : "info", added ? `${added} shots on the board.` : "Every beat's best take is already on Stitch.");
     } finally {
       setBatchStitching(false);
       batchStop.current = false;
@@ -644,7 +644,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
             disabled={selectedCount === 0}
             onClick={() => onSwitchWorkspace("stitch")}
           >
-            Continue to Stitch <ArrowRight size={14} />
+            Continue to Shots <ArrowRight size={14} />
           </button>
         </div>
       </motion.header>
@@ -882,7 +882,7 @@ function BeatRow({
           </button>
         </div>
         <p className="t-mute" style={{ fontSize: 11, lineHeight: 1.4 }}>
-          Click <strong>Add to Stitch</strong> on any frame below to push it as <strong>Scene {beat.n}</strong>. Multiple cuts of the same beat allowed.
+          Click <strong>Add to Shots</strong> on any frame below to push it as <strong>Scene {beat.n}</strong>. Multiple cuts of the same beat allowed.
         </p>
       </div>
 
@@ -936,7 +936,7 @@ function BeatRow({
                 <button
                   className="storyboard-frame-btn"
                   data-primary={!onStitch}
-                  title={onStitch ? "Remove from Stitch" : `Add to Stitch as Scene ${beat.n}`}
+                  title={onStitch ? "Remove from the board" : `Add to Shots as Scene ${beat.n}`}
                   onClick={() => (onStitch ? onRemoveFromStitch(variant) : onAddToStitch(variant))}
                 >
                   {onStitch ? <X size={14} /> : <Film size={14} />}
@@ -1128,7 +1128,7 @@ function BeatEditor({
                       ? `${m.name} is in this beat's script — always included`
                       : m.hasLook
                         ? `Toggle ${m.name} into this frame (portrait reference-locked)`
-                        : `Toggle ${m.name} — cast a portrait in Casting first for a tighter lock`
+                        : `Toggle ${m.name} — cast a portrait in World first for a tighter lock`
                   }
                   style={{
                     display: "inline-flex",

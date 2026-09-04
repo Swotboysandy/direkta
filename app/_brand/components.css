@@ -154,6 +154,12 @@
 .ui-fade[data-state="closed"] { animation: ui-fade-out var(--dur-1) var(--ease-in)  both; }
 .ui-pop[data-state="open"]    { animation: ui-pop-in   var(--dur-2) var(--ease-out) both; }
 .ui-pop[data-state="closed"]  { animation: ui-fade-out var(--dur-1) var(--ease-in)  both; }
+/* For anchored popovers. ui-pop's translate(-50%,-50%) centres a dialog; on a
+   popover Radix has already positioned, it shoves the panel half its own
+   size up and left, off the top of the screen. */
+.ui-pop-anchor[data-state="open"]   { animation: ui-pop-anchor-in var(--dur-2) var(--ease-out) both; transform-origin: var(--radix-popover-content-transform-origin, top); }
+.ui-pop-anchor[data-state="closed"] { animation: ui-fade-out var(--dur-1) var(--ease-in) both; }
+@keyframes ui-pop-anchor-in { from { opacity: 0; transform: scale(0.97) } to { opacity: 1; transform: scale(1) } }
 .ui-slide-right[data-state="open"]  { animation: ui-slide-right-in var(--dur-3) var(--ease-out) both; }
 .ui-slide-left[data-state="open"]   { animation: ui-slide-left-in  var(--dur-3) var(--ease-out) both; }
 .ui-slide-up[data-state="open"]     { animation: ui-slide-up-in    var(--dur-3) var(--ease-out) both; }

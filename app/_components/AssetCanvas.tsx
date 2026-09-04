@@ -55,19 +55,19 @@ const EMPTY: Record<Filter, { title: string; next: string }> = {
   },
   video: {
     title: "No clips yet.",
-    next: "Clips come from animating a frame — open Stitch once you have one."
+    next: "Clips come from animating a frame — open Shots once you have one."
   },
   character: {
     title: "No cast yet.",
-    next: "Add characters in Casting; their portraits become references you can @-mention."
+    next: "Add characters in World; their portraits become references you can @-mention."
   },
   location: {
     title: "No locations yet.",
-    next: "Add them in Casting so shots can lock to the same place."
+    next: "Add them in World so shots can lock to the same place."
   },
   prop: {
     title: "No props yet.",
-    next: "Add them in Casting to keep objects consistent between shots."
+    next: "Add them in World to keep objects consistent between shots."
   },
   favourite: {
     title: "No favourites yet.",

@@ -97,7 +97,7 @@ export function RenderEngineChip({ h3, className }: { h3: H3Status | null; class
           align="end"
           sideOffset={8}
           collisionPadding={12}
-          className="z-(--z-overlay) w-[300px] rounded-overlay bg-surface-overlay p-4 text-[12px] text-fg-secondary shadow-(--shadow-3) ui-pop"
+          className="z-(--z-overlay) w-[300px] rounded-overlay bg-surface-overlay p-4 text-[12px] text-fg-secondary shadow-(--shadow-3) ui-pop-anchor"
         >
           <p className="mb-3 text-[13px] font-semibold text-fg-primary">Render engine</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 font-mono text-[11px]">

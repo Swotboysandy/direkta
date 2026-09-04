@@ -93,10 +93,9 @@ export function Export({ project }: Props) {
       <motion.header className="page-head" {...fadeUp}>
         <div style={{ minWidth: 0, maxWidth: "64ch" }}>
           <span className="ws-eyebrow">
-            07 / Workspace · Export
+            Finish
           </span>
-          <h1 className="ws-title">
-            Export
+          <h1 className="ws-title">Finish
           </h1>
           <p className="ws-lead">
             Hand off the project. Animatic for pitch decks, storyboard for the crew, shot list for

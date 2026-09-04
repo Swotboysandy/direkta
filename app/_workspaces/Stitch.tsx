@@ -348,10 +348,9 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
       <motion.header className="page-head" {...fadeUp}>
         <div>
           <span className="ws-eyebrow">
-            05 / Workspace · Stitch
+            Shots
           </span>
-          <h1 className="ws-title">
-            Stitch
+          <h1 className="ws-title">Shots
           </h1>
           <p className="ws-lead">
             The assembly. Scrub the timeline, play the cut in the monitor, and click a shot to set duration, pick a
@@ -443,7 +442,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             {balanceLabel}
           </span>
           <button className="btn btn-primary" onClick={() => onSwitchWorkspace("export")}>
-            Continue to Export <ArrowRight size={14} />
+            Continue to Finish <ArrowRight size={14} />
           </button>
         </div>
       </motion.header>
@@ -1504,7 +1503,7 @@ function StitchInspector({
           cursor: "pointer"
         }}
       >
-        <Trash2 size={12} /> Remove from Stitch
+        <Trash2 size={12} /> Remove from the board
       </button>
     </motion.aside>
   );

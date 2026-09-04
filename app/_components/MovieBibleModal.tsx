@@ -526,7 +526,7 @@ function CharactersSection({ characters }: { characters: Character[] }) {
           title="Characters"
           sub="One spread per character — psychology, arc, voice, wardrobe, relationships."
         />
-        <p style={{ color: "var(--mute)" }}>No characters yet. Import from script or add manually in Casting.</p>
+        <p style={{ color: "var(--mute)" }}>No characters yet. Import from script or add manually in World.</p>
       </div>
     );
   }
