@@ -16,6 +16,11 @@
 @import "./_brand/type-scale.css" layer(legacy);
 @import "./_brand/components.css" layer(legacy);
 @import "./_brand/inspector.css" layer(legacy);
+@import "./_brand/stage-script.css" layer(legacy);
+@import "./_brand/stage-world.css" layer(legacy);
+@import "./_brand/stage-storyboard.css" layer(legacy);
+@import "./_brand/stage-shots.css" layer(legacy);
+@import "./_brand/stage-cut.css" layer(legacy);
 @import "./_brand/motion.css" layer(legacy);
 
 @custom-variant dark (&:is(.dark *));

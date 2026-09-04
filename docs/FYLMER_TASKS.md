@@ -36,6 +36,15 @@ theirs.
 - Motion: `framer-motion` via `app/_components/motion.ts` presets; transform
   and opacity only; under 200ms for feedback; nothing decorative.
 
+**Where your code goes — so five of you can work at once**
+
+- Your stylesheet is `app/_brand/stage-<name>.css` (script, world, storyboard,
+  shots, cut). It is already imported. Do not edit `globals.css`,
+  `components.css`, `tokens.css`, `page.tsx`, `icons.tsx`, or anything under
+  `ui/` — if a primitive is missing, build it inside your workspace file and
+  say so in your report.
+- Do not add dependencies.
+
 **What must keep working — the audit's §3 contracts**
 
 Every fetch the old workspace made, you make with the same route, method and
