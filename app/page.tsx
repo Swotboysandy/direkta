@@ -17,7 +17,7 @@ import { STAGE_LABELS, LOCK_REASONS, isAppMode, type AppMode } from "./_lib/stag
 import { SelectionProvider } from "./_state/selection";
 import { TooltipProvider } from "./_components/ui/tooltip";
 import dynamic from "next/dynamic";
-import { Dashboard } from "./_workspaces/Dashboard";
+import { ProductionHome } from "./_workspaces/ProductionHome";
 import { Screenplay } from "./_workspaces/Screenplay";
 import { Casting } from "./_workspaces/Casting";
 // Conditionally-rendered workspaces are code-split so their weight (React Flow
@@ -510,16 +510,14 @@ export default function Home() {
           ) : (
             <>
               {activeWorkspace === "dashboard" && (
-                <Dashboard
+                <ProductionHome
                   project={bundle.project}
+                  beats={bundle.beats}
+                  characters={bundle.characters}
                   activity={bundle.activity}
-                  agents={agents}
+                  workspaces={workspaces}
+                  gate={gate}
                   assetsVersion={assetsVersion}
-                  stats={{
-                    beats: bundle.beats.length,
-                    characters: bundle.characters.length,
-                    locations: bundle.locations.length
-                  }}
                   onSwitchWorkspace={switchWorkspace}
                 />
               )}

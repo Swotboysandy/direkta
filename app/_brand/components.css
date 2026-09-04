@@ -625,3 +625,80 @@
   .dock-col--side { border-left: 0; border-top: 1px solid var(--border-subtle); }
   .dock-cost { display: none; }
 }
+
+
+/* ============================================================
+   PRODUCTION HOME (brief §20)
+   ============================================================ */
+.phome { display: flex; flex-direction: column; gap: var(--sp-6); }
+
+.phome-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--sp-5);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.phome-hero-copy { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.phome-kicker { margin: 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
+.phome-title { margin: 0; font-family: var(--font-display); font-size: clamp(30px, 3.6vw, 44px); line-height: 1.02; letter-spacing: -0.025em; font-weight: 600; color: var(--text-primary); text-wrap: balance; }
+.phome-logline { margin: 2px 0 0; max-width: 62ch; font-size: 14px; color: var(--text-secondary); text-wrap: pretty; }
+.phome-facts { margin: 0; display: flex; gap: var(--sp-5); }
+.phome-facts > div { display: flex; flex-direction: column; gap: 2px; }
+.phome-facts dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.phome-facts dd { margin: 0; font-size: 14px; color: var(--text-primary); white-space: nowrap; }
+
+.phome-section { display: flex; flex-direction: column; gap: var(--sp-3); }
+.phome-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.phome-section-head h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--text-primary); }
+.phome-muted { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.phome-empty { margin: 0; max-width: 60ch; font-size: 13px; color: var(--text-tertiary); }
+
+/* Sequence strip: one row, every shot, scrolls sideways. */
+.phome-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.phome-shot, .phome-strip-skel {
+  position: relative; flex: 0 0 auto; width: 148px; aspect-ratio: 16 / 9;
+  border-radius: var(--r-control); overflow: hidden; background: var(--surface-raised); border: 0; padding: 0; cursor: pointer;
+}
+.phome-strip-skel { animation: ui-fade-in 1s ease-in-out infinite alternate; opacity: 0.5; }
+.phome-shot-media { width: 100%; height: 100%; object-fit: cover; display: block; }
+.phome-shot-blank { display: block; width: 100%; height: 100%; background: var(--surface-raised); }
+.phome-shot-label { position: absolute; left: 6px; bottom: 5px; font-family: var(--font-mono); font-size: 10px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.phome-shot-state { position: absolute; right: 6px; top: 5px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.85); background: rgba(0,0,0,0.45); padding: 2px 5px; border-radius: 3px; }
+.phome-shot:hover { outline: 1px solid var(--border-strong); }
+.phome-shot:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+/* Stages, compact: five columns, dot + name + one line of state. */
+.phome-stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; background: var(--border-subtle); border: 1px solid var(--border-subtle); border-radius: var(--r-surface); overflow: hidden; }
+.phome-stage {
+  display: grid; grid-template-columns: 10px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; align-items: center;
+  padding: 10px 12px; background: var(--surface-canvas); border: 0; text-align: left; cursor: pointer; color: var(--text-primary);
+}
+.phome-stage:hover:not(:disabled) { background: var(--surface-base); }
+.phome-stage.is-locked { color: var(--text-disabled); cursor: not-allowed; }
+.phome-stage-dot { grid-row: 1 / span 2; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); display: inline-flex; align-items: center; justify-content: center; }
+.phome-stage[data-status="in-progress"] .phome-stage-dot { background: var(--status-warning); }
+.phome-stage[data-status="complete"] .phome-stage-dot { background: var(--status-success); }
+.phome-stage.is-locked .phome-stage-dot { background: none; width: auto; height: auto; }
+.phome-stage-name { font-size: 13px; font-weight: 500; }
+.phome-stage-note { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.phome-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 0.6fr); gap: var(--sp-6); align-items: start; }
+.phome-decisions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.phome-decision { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-subtle); font-size: 13px; }
+.phome-decision:last-child { border-bottom: 0; }
+.phome-decision-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-info); }
+.phome-decision[data-tone="warn"] .phome-decision-dot { background: var(--status-warning); }
+.phome-decision-text { color: var(--text-primary); }
+.phome-link { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; cursor: pointer; font-size: 12px; color: var(--brand-accent); padding: 2px 4px; border-radius: 4px; white-space: nowrap; }
+.phome-link:hover { text-decoration: underline; }
+.phome-suggest { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); border-left: 2px solid var(--brand-accent); background: var(--surface-base); border-radius: 0 var(--r-surface) var(--r-surface) 0; }
+.phome-suggest-text { margin: 0; font-size: 13px; color: var(--text-primary); text-wrap: pretty; }
+.phome-suggest .phome-section-head h2 { color: var(--brand-accent); }
+
+@media (max-width: 1100px) {
+  .phome-hero { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .phome-stages { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .phome-two { grid-template-columns: 1fr; }
+}
