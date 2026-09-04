@@ -466,13 +466,16 @@
 .mode-active { position: absolute; inset: 0; border-radius: var(--r-control); background: var(--surface-raised); }
 
 .topbar-project {
-  /* Baseline, not centre: centring a 10px kicker against a 13px title lifts
-     the small one off the title's baseline, which is the stagger. */
-  display: inline-flex; align-items: baseline; gap: 8px; max-width: 100%;
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
   height: 32px; padding: 0 10px; border: 0; background: none; cursor: pointer;
   border-radius: var(--r-control); color: var(--text-primary); line-height: 1;
 }
 .topbar-project:hover { background: var(--surface-raised); }
+/* The kicker and the title share a baseline inside this group, and the group
+   as a whole is centred in the chip. Doing it with align-items:baseline on the
+   chip itself parked the text at the top of the box and left the chevron
+   centred below it - one stagger traded for another. */
+.topbar-project-text { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
 .topbar-project-kicker { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
 .topbar-project-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar-project svg { align-self: center; color: var(--text-tertiary); }
@@ -527,11 +530,8 @@
 .stage-strip::-webkit-scrollbar { display: none; }
 .stage-slot { display: flex; align-items: center; }
 .stage-sep { width: 20px; height: 1px; background: var(--border-standard); margin: 0 2px; flex: 0 0 auto; }
-/* Same as the production chip: the 10px note sits on the label's baseline
-   rather than centred against it. The dot has no text to align, so it keeps
-   its own centring. */
 .stage {
-  position: relative; display: inline-flex; align-items: baseline; gap: 8px;
+  position: relative; display: inline-flex; align-items: center; gap: 8px;
   height: 30px; padding: 0 10px; border: 0; background: none; cursor: pointer;
   border-radius: var(--r-control); color: var(--text-secondary); font-size: 13px; white-space: nowrap;
   transition: color var(--dur-1) var(--ease-out);
@@ -541,9 +541,12 @@
 .stage[data-locked] { color: var(--text-disabled); cursor: not-allowed; }
 .stage > * { position: relative; z-index: 1; }
 .stage-active { position: absolute; inset: 0; z-index: 0; border-radius: var(--r-control); background: var(--surface-raised); }
+/* Same as the production chip: label and note share a baseline inside the
+   group, the group is centred in the chip, and the dot - which has no text to
+   align to - is centred with it. */
+.stage-text { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
 .stage-dot {
   display: inline-flex; align-items: center; justify-content: center;
-  align-self: center;
   width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); flex: 0 0 auto;
 }
 .stage[data-status="in-progress"] .stage-dot { background: var(--status-warning); }

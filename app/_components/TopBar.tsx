@@ -104,8 +104,10 @@ export function TopBar({
           <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <Popover.Trigger asChild>
               <button type="button" className="topbar-project" aria-label="Switch production">
-                <span className="topbar-project-kicker">Production</span>
-                <span className="topbar-project-title">{project?.title ?? "No production"}</span>
+                <span className="topbar-project-text">
+                  <span className="topbar-project-kicker">Production</span>
+                  <span className="topbar-project-title">{project?.title ?? "No production"}</span>
+                </span>
                 <ChevronDown size={13} />
               </button>
             </Popover.Trigger>

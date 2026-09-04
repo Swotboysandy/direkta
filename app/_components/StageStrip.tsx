@@ -51,8 +51,10 @@ export function StageStrip({ workspaces, active, onSwitch }: Props) {
             <span className="stage-dot" aria-hidden="true">
               {locked ? <Lock size={10} /> : null}
             </span>
-            <span className="stage-label">{w.label}</span>
-            {w.note && !locked && <span className="stage-note">{w.note}</span>}
+            <span className="stage-text">
+              <span className="stage-label">{w.label}</span>
+              {w.note && !locked && <span className="stage-note">{w.note}</span>}
+            </span>
           </button>
         );
 
