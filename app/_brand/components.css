@@ -772,3 +772,8 @@
 }
 .canvas-search > input::placeholder { color: var(--text-tertiary); }
 .canvas-search > input:focus { outline: none; border-color: var(--brand-accent); box-shadow: 0 0 0 3px var(--accent-quiet); }
+
+/* A tile with no media has no dark image to sit on; its label takes the
+   page's own tertiary text so it survives the light theme. */
+.phome-shot:has(.phome-shot-blank) .phome-shot-label { color: var(--text-tertiary); text-shadow: none; }
+.phome-shot:has(.phome-shot-blank) .phome-shot-state { color: var(--text-tertiary); background: var(--surface-base); }
