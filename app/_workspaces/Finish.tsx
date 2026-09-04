@@ -127,7 +127,7 @@ export function Finish({ project, onSwitchWorkspace }: Props) {
         />
       ) : (
         <section className="finish-cut">
-          <div className="finish-viewer" style={{ aspectRatio: aspect }} data-state={rendering ? "rendering" : cut ? "ready" : "idle"}>
+          <div className="finish-viewer" style={cut || rendering ? { aspectRatio: aspect } : undefined} data-state={rendering ? "rendering" : cut ? "ready" : "idle"}>
             {rendering ? (
               <div className="finish-rendering" role="status" aria-live="polite">
                 <Status domain="generation" value="Processing" />
