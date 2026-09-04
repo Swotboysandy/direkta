@@ -14,6 +14,8 @@ import { CommandPalette } from "./_components/CommandPalette";
 import { KeyVaultPanel } from "./_components/KeyVaultPanel";
 import { SkillsPanel } from "./_components/SkillsPanel";
 import { ConfirmProvider } from "./_components/ui/alert-dialog";
+import { STAGE_LABELS, LOCK_REASONS, isAppMode, type AppMode } from "./_lib/stages";
+import { SelectionProvider } from "./_state/selection";
 import dynamic from "next/dynamic";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
@@ -93,6 +95,10 @@ export default function Home() {
   });
   const [gateLoaded, setGateLoaded] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>("dashboard");
+  // Top-level destination (brief §8). `home` shows the current production;
+  // the others are surfaces that exist without one. Carried in `?m=` so a
+  // link to Create or Assets opens there.
+  const [mode, setMode] = useState<AppMode>("home");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [keyVaultOpen, setKeyVaultOpen] = useState(false);
   const [skillsOpen, setSkillsOpen] = useState(false);
@@ -103,10 +109,12 @@ export default function Home() {
     const url = new URL(window.location.href);
     const fromUrlProject = url.searchParams.get("p");
     const fromUrlWs = url.searchParams.get("ws") as WorkspaceId | null;
+    const fromUrlMode = url.searchParams.get("m");
     const fromStorage =
       typeof localStorage !== "undefined" ? localStorage.getItem(LAST_PROJECT_KEY) : null;
 
     if (fromUrlWs) setActiveWorkspace(fromUrlWs);
+    if (isAppMode(fromUrlMode)) setMode(fromUrlMode);
 
     (async () => {
       const list = await fetch("/api/projects").then((r) => r.json());
@@ -124,9 +132,13 @@ export default function Home() {
     const url = new URL(window.location.href);
     url.searchParams.set("p", projectId);
     url.searchParams.set("ws", activeWorkspace);
+    // Home is the default and needs no parameter; a stale `?m=create` on a
+    // link that has since gone home would otherwise reopen Create.
+    if (mode === "home") url.searchParams.delete("m");
+    else url.searchParams.set("m", mode);
     window.history.replaceState(null, "", url.toString());
     localStorage.setItem(LAST_PROJECT_KEY, projectId);
-  }, [projectId, activeWorkspace]);
+  }, [projectId, activeWorkspace, mode]);
 
 
   // Lightweight gate refresh — only the counts that unlock later stages.
@@ -211,13 +223,13 @@ export default function Home() {
   const workspaces = useMemo<WorkspaceMeta[]>(() => {
     if (!bundle) {
       return [
-        { id: "dashboard", label: "Dashboard", status: "idle", unlocked: true },
-        { id: "screenplay", label: "Screenplay", status: "idle", unlocked: true },
-        { id: "casting", label: "Casting", status: "idle", unlocked: false, lockReason: "Submit a script in Screenplay first" },
-        { id: "storyboard", label: "Storyboard", status: "idle", unlocked: false, lockReason: "Cast at least one character first" },
-        { id: "stitch", label: "Stitch", status: "idle", unlocked: false, lockReason: "Generate a storyboard frame first" },
-        { id: "library", label: "Library", status: "idle", unlocked: true },
-        { id: "export", label: "Export", status: "idle", unlocked: false, lockReason: "Assemble shots in Stitch first" }
+        { id: "dashboard", label: STAGE_LABELS.dashboard, status: "idle", unlocked: true },
+        { id: "screenplay", label: STAGE_LABELS.screenplay, status: "idle", unlocked: true },
+        { id: "casting", label: STAGE_LABELS.casting, status: "idle", unlocked: false, lockReason: LOCK_REASONS.casting },
+        { id: "storyboard", label: STAGE_LABELS.storyboard, status: "idle", unlocked: false, lockReason: LOCK_REASONS.storyboard },
+        { id: "stitch", label: STAGE_LABELS.stitch, status: "idle", unlocked: false, lockReason: LOCK_REASONS.stitch },
+        { id: "library", label: STAGE_LABELS.library, status: "idle", unlocked: true },
+        { id: "export", label: STAGE_LABELS.export, status: "idle", unlocked: false, lockReason: LOCK_REASONS.export }
       ];
     }
     const submitted = bundle.project.script_submitted;
@@ -234,17 +246,17 @@ export default function Home() {
     const exportUnlocked = (stitchUnlocked && gate.stitchNodes > 0) || gate.hasFinalVideo;
 
     return [
-      { id: "dashboard", label: "Dashboard", status: "idle", unlocked: true },
+      { id: "dashboard", label: STAGE_LABELS.dashboard, status: "idle", unlocked: true },
       {
         id: "screenplay",
-        label: "Screenplay",
+        label: STAGE_LABELS.screenplay,
         status: submitted ? (beatsDone ? "complete" : "in-progress") : "idle",
         unlocked: true,
         note: submitted ? `${bundle.beats.length} beats` : undefined
       },
       {
         id: "casting",
-        label: "Casting",
+        label: STAGE_LABELS.casting,
         status:
           bundle.characters.length === 0
             ? "idle"
@@ -252,7 +264,7 @@ export default function Home() {
             ? "complete"
             : "in-progress",
         unlocked: castingUnlocked,
-        lockReason: castingUnlocked ? undefined : "Submit a script in Screenplay first",
+        lockReason: castingUnlocked ? undefined : LOCK_REASONS.casting,
         note:
           bundle.characters.length > 0
             ? `${trainedCount} / ${castableChars.length} soul ids`
@@ -260,32 +272,32 @@ export default function Home() {
       },
       {
         id: "storyboard",
-        label: "Storyboard",
+        label: STAGE_LABELS.storyboard,
         status: gate.frames > 0 ? "in-progress" : "idle",
         unlocked: storyboardUnlocked,
-        lockReason: storyboardUnlocked ? undefined : "Cast at least one character first",
+        lockReason: storyboardUnlocked ? undefined : LOCK_REASONS.storyboard,
         note: storyboardUnlocked && beatsDone ? `${bundle.beats.length} beats ready` : undefined
       },
       {
         id: "stitch",
-        label: "Stitch",
+        label: STAGE_LABELS.stitch,
         status: gate.stitchNodes > 0 ? "in-progress" : "idle",
         unlocked: stitchUnlocked,
-        lockReason: stitchUnlocked ? undefined : "Generate a storyboard frame first",
+        lockReason: stitchUnlocked ? undefined : LOCK_REASONS.stitch,
         note: gate.stitchNodes > 0 ? `${gate.stitchNodes} shots` : undefined
       },
       {
         id: "library",
-        label: "Library",
+        label: STAGE_LABELS.library,
         status: "idle",
         unlocked: true
       },
       {
         id: "export",
-        label: "Export",
+        label: STAGE_LABELS.export,
         status: "idle",
         unlocked: exportUnlocked,
-        lockReason: exportUnlocked ? undefined : "Assemble shots in Stitch first"
+        lockReason: exportUnlocked ? undefined : LOCK_REASONS.export
       }
     ];
   }, [bundle, gate]);
@@ -401,6 +413,7 @@ export default function Home() {
 
   return (
     <ConfirmProvider>
+    <SelectionProvider>
     <div className="workbench">
       <TopBar
         project={bundle?.project ?? null}
@@ -611,6 +624,7 @@ export default function Home() {
         onOpenKeyVault={() => setKeyVaultOpen(true)}
       />
     </div>
+    </SelectionProvider>
     </ConfirmProvider>
   );
 }
