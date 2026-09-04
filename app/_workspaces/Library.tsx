@@ -33,7 +33,7 @@ export function Library({ project, assetsVersion, onSwitchWorkspace }: Props) {
     <motion.div className="main-inner dash" {...pageIn}>
       <header className="dash-head">
         <div className="dash-head-copy">
-          <span className="dash-eyebrow">Library</span>
+          <span className="dash-eyebrow">Assets</span>
           <h1 className="dash-title">Everything in {project.title}</h1>
           <p className="dash-logline">
             Frames, clips and cast. Star what you want to keep close, or reference any of it

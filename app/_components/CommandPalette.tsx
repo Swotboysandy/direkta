@@ -17,6 +17,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import type { Project, WorkspaceId } from "../../lib/types";
+import { STAGE_LABELS } from "../_lib/stages";
 
 interface Props {
   project: Project | null;
@@ -94,14 +95,14 @@ export function CommandPalette({
         <Command.List className="cmd-list">
           <Command.Empty className="cmd-empty">No commands match.</Command.Empty>
 
-          <Command.Group heading="Workspaces" className="cmd-group">
-            <CmdItem icon={LayoutDashboard} label="Dashboard" onSelect={run(() => onSwitchWorkspace("dashboard"))} hint="Project overview" />
-            <CmdItem icon={PenLine} label="Screenplay" onSelect={run(() => onSwitchWorkspace("screenplay"))} hint="Script + beats" />
-            <CmdItem icon={Folder} label="Casting" onSelect={run(() => onSwitchWorkspace("casting"))} hint="Characters · Soul IDs" />
-            <CmdItem icon={Boxes} label="Storyboard" onSelect={run(() => onSwitchWorkspace("storyboard"))} hint="4 variants per beat" />
-            <CmdItem icon={Film} label="Stitch" onSelect={run(() => onSwitchWorkspace("stitch"))} hint="Assembly board" />
-            <CmdItem icon={LibraryIcon} label="Library" onSelect={run(() => onSwitchWorkspace("library"))} hint="Every generated asset" />
-            <CmdItem icon={Clapperboard} label="Export" onSelect={run(() => onSwitchWorkspace("export"))} hint="Deliverables" />
+          <Command.Group heading="Stages" className="cmd-group">
+            <CmdItem icon={LayoutDashboard} label={STAGE_LABELS.dashboard} onSelect={run(() => onSwitchWorkspace("dashboard"))} hint="Production home" />
+            <CmdItem icon={PenLine} label={STAGE_LABELS.screenplay} onSelect={run(() => onSwitchWorkspace("screenplay"))} hint="Screenplay and beats" />
+            <CmdItem icon={Folder} label={STAGE_LABELS.casting} onSelect={run(() => onSwitchWorkspace("casting"))} hint="Cast, places, Soul IDs" />
+            <CmdItem icon={Boxes} label={STAGE_LABELS.storyboard} onSelect={run(() => onSwitchWorkspace("storyboard"))} hint="Frames per beat" />
+            <CmdItem icon={Film} label={STAGE_LABELS.stitch} onSelect={run(() => onSwitchWorkspace("stitch"))} hint="Shots and takes" />
+            <CmdItem icon={LibraryIcon} label={STAGE_LABELS.library} onSelect={run(() => onSwitchWorkspace("library"))} hint="Every generated asset" />
+            <CmdItem icon={Clapperboard} label={STAGE_LABELS.export} onSelect={run(() => onSwitchWorkspace("export"))} hint="Master and export" />
           </Command.Group>
 
           <Command.Group heading="Project" className="cmd-group">
@@ -129,19 +130,19 @@ export function CommandPalette({
               icon={PenLine}
               label="Edit script"
               onSelect={run(() => onSwitchWorkspace("screenplay"))}
-              hint="Jump to Screenplay"
+              hint="Open Script"
             />
             <CmdItem
               icon={Boxes}
               label="Generate next beat variants"
               onSelect={run(() => onSwitchWorkspace("storyboard"))}
-              hint="Jump to Storyboard"
+              hint="Open Storyboard"
             />
             <CmdItem
               icon={Film}
               label="Preview animatic"
               onSelect={run(() => onSwitchWorkspace("stitch"))}
-              hint="Jump to Stitch"
+              hint="Open Shots"
             />
           </Command.Group>
         </Command.List>
