@@ -408,7 +408,7 @@ button.sbd-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); 
   text-wrap: pretty;
 }
 .sbd-camera { display: flex; flex-direction: column; gap: var(--sp-3); }
-.sbd-camera-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--sp-3); }
+.sbd-camera-fields { display: flex; flex-direction: column; gap: var(--sp-3); }
 
 /* The 3×3 framing control, drawn as a frame rather than a grid of buttons. */
 .sbd-framing { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; gap: 4px 6px; align-items: center; }
@@ -438,6 +438,9 @@ button.sbd-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); 
   color: var(--text-tertiary);
   align-items: center;
   text-align: right;
+  /* Match the frame's height so each label lands on its own row; the parent
+     centres its items, which otherwise collapses these three rows together. */
+  align-self: stretch;
 }
 .sbd-frame {
   grid-column: 2;
@@ -499,7 +502,7 @@ button.sbd-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); 
 .sbd-cover-toggle:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 .sbd-cover-hint { margin: 0; }
 
-.sbd-presets { display: flex; flex-wrap: wrap; gap: 4px; }
+.sbd-presets { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px; }
 .sbd-preset {
   padding: 3px 9px;
   border: 1px solid var(--border-subtle);
