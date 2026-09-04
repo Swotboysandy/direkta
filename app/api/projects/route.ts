@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { projects } from "../../../lib/db/repo";
+import { getDb } from "../../../lib/db/client";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +9,43 @@ const VALID_ASPECTS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5", "21:9"];
 const VALID_FORMATS: ProjectFormat[] = ["Short Film", "Music Video", "Ad", "Series", "Feature", "Other"];
 const VALID_LENGTHS: LengthEstimate[] = ["Under 1 min", "Under 5 min", "5–15 min", "15–30 min", "30+ min"];
 
-export async function GET() {
-  return NextResponse.json({ projects: projects.list() });
+/** What a production looks like from outside: the counts that say how far it
+ *  has got, when it was last touched, and one image to stand for it. */
+function summary(id: string) {
+  const db = getDb();
+  const counts = db
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM beats WHERE project_id = ?) AS beats,
+         (SELECT COUNT(*) FROM characters WHERE project_id = ?) AS characters,
+         (SELECT COUNT(*) FROM stitch_nodes WHERE project_id = ?) AS shots,
+         (SELECT updated_at FROM projects WHERE id = ?) AS updated_at`
+    )
+    .get(id, id, id, id) as { beats: number; characters: number; shots: number; updated_at: string };
+  // The newest frame or clip in the production, by the same reach as the
+  // assets canvas: storyboard frames, clips on the board, filed sequences.
+  const poster = db
+    .prepare(
+      `SELECT a.url, a.kind
+         FROM assets a
+         LEFT JOIN storyboard_variants v ON v.id = a.target_id AND a.target_kind = 'storyboard_variant'
+         LEFT JOIN stitch_nodes sn ON sn.id = a.target_id AND a.target_kind = 'stitch_clip'
+         LEFT JOIN beats b ON b.id = COALESCE(v.beat_id, sn.beat_id)
+        WHERE (b.project_id = ? OR sn.project_id = ? OR (a.target_kind = 'sequence' AND a.target_id = ?))
+          AND a.kind IN ('image', 'video')
+        ORDER BY a.created_at DESC
+        LIMIT 1`
+    )
+    .get(id, id, id) as { url: string; kind: string } | undefined;
+  return { ...counts, poster_url: poster?.url ?? null, poster_kind: poster?.kind ?? null };
+}
+
+export async function GET(req: Request) {
+  const list = projects.list();
+  if (new URL(req.url).searchParams.get("withCounts") === "1") {
+    return NextResponse.json({ projects: list.map((p) => ({ ...p, ...summary(p.id) })) });
+  }
+  return NextResponse.json({ projects: list });
 }
 
 export async function POST(req: Request) {

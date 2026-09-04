@@ -715,3 +715,38 @@
   .phome-stages { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
   .phome-two { grid-template-columns: 1fr; }
 }
+
+
+/* ============================================================
+   PRODUCTIONS (brief §8) — a poster wall
+   ============================================================ */
+.prods { display: flex; flex-direction: column; gap: var(--sp-5); }
+.prods-head { display: flex; align-items: end; justify-content: space-between; gap: var(--sp-4); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--border-subtle); }
+.prods-title { margin: 4px 0 0; font-family: var(--font-display); font-size: clamp(24px, 2.6vw, 32px); line-height: 1.05; letter-spacing: -0.02em; font-weight: 600; color: var(--text-primary); text-wrap: balance; }
+.prods-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--sp-4) var(--sp-4); }
+
+.prod { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.prod-poster {
+  position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: 0; cursor: pointer;
+  border-radius: var(--r-surface); overflow: hidden; background: var(--surface-raised);
+  transition: box-shadow var(--dur-1) var(--ease-out);
+}
+.prod-poster:hover { box-shadow: 0 0 0 1px var(--border-strong); }
+.prod-poster:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.prod[data-active] .prod-poster { box-shadow: 0 0 0 2px var(--brand-accent); }
+.prod-poster-media { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prod-poster-blank { display: grid; place-items: center; width: 100%; height: 100%; font-family: var(--font-display); font-size: 40px; color: var(--text-disabled); }
+.prod-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.prod-meta-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.prod-name { border: 0; background: none; padding: 0; cursor: pointer; text-align: left; font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prod-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.prod-del { opacity: 0; flex: 0 0 auto; }
+.prod:hover .prod-del, .prod-del:focus-visible { opacity: 1; }
+.prod-line { margin: 0; display: flex; gap: 6px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prod-sep { color: var(--text-tertiary); }
+.prod-counts { margin: 0; font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+/* ── Create ─────────────────────────────────────────────────── */
+.create { display: flex; flex-direction: column; gap: var(--sp-5); }
+.create-head { display: flex; flex-direction: column; gap: 6px; padding-bottom: var(--sp-4); border-bottom: 1px solid var(--border-subtle); }
+.create-lede { margin: 0; max-width: 60ch; font-size: 14px; color: var(--text-secondary); text-wrap: pretty; }

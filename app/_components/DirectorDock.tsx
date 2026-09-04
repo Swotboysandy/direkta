@@ -21,6 +21,8 @@ interface Props {
   generateNote: string | null;
   /** A generation finished; the canvas should refetch. */
   onFinished: () => void;
+  /** Create opens the Dock in Generate; a production opens it in Direct. */
+  initialMode?: Mode;
 }
 
 type Mode = "direct" | "generate";
@@ -64,8 +66,9 @@ function extractSuggestions(text: string) {
  * The panel is an overlay rising from the bar on transform and opacity; it
  * never pushes the workspace, so nothing reflows.
  */
-export function DirectorDock({ project, h3, onGenerate, generating, generateNote, onFinished }: Props) {
-  const [mode, setMode] = useState<Mode>("direct");
+export function DirectorDock({ project, h3, onGenerate, generating, generateNote, onFinished, initialMode = "direct" }: Props) {
+  const [mode, setMode] = useState<Mode>(initialMode);
+  useEffect(() => setMode(initialMode), [initialMode]);
   const [open, setOpen] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [thinking, setThinking] = useState<string | null>(null);

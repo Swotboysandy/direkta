@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TopBar } from "./_components/TopBar";
 import { StageStrip } from "./_components/StageStrip";
 import { useRenderEngine } from "./_components/RenderEngineChip";
@@ -19,6 +19,8 @@ import { SelectionProvider } from "./_state/selection";
 import { TooltipProvider } from "./_components/ui/tooltip";
 import dynamic from "next/dynamic";
 import { ProductionHome } from "./_workspaces/ProductionHome";
+import { Productions } from "./_workspaces/Productions";
+import { CreateHome } from "./_workspaces/CreateHome";
 import { Screenplay } from "./_workspaces/Screenplay";
 import { Casting } from "./_workspaces/Casting";
 // Conditionally-rendered workspaces are code-split so their weight (React Flow
@@ -55,6 +57,10 @@ interface ProjectBundle {
 }
 
 const LAST_PROJECT_KEY = "fylmer:last-project";
+/** The production that Create draws into. Every generation route needs a
+ *  project, so Create gets one of its own rather than a new backend; it is
+ *  hidden from the switcher and the productions wall. */
+const SCRATCH_TITLE = "Scratch";
 
 const DEFAULT_AGENTS: AgentStatus[] = [
   { id: "script-reader", name: "Script Reader", state: "idle" },
@@ -98,6 +104,10 @@ export default function Home() {
   // the others are surfaces that exist without one. Carried in `?m=` so a
   // link to Create or Assets opens there.
   const [mode, setMode] = useState<AppMode>("home");
+  // Bumped when a production is created or deleted so the wall refetches.
+  const [projectsVersion, setProjectsVersion] = useState(0);
+  // The production that was open before Create took the project slot.
+  const lastProduction = useRef<string | null>(null);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [keyVaultOpen, setKeyVaultOpen] = useState(false);
   const [skillsOpen, setSkillsOpen] = useState(false);
@@ -136,8 +146,44 @@ export default function Home() {
     if (mode === "home") url.searchParams.delete("m");
     else url.searchParams.set("m", mode);
     window.history.replaceState(null, "", url.toString());
-    localStorage.setItem(LAST_PROJECT_KEY, projectId);
+    // The scratch production is never the one to come back to.
+    if (mode !== "create") localStorage.setItem(LAST_PROJECT_KEY, projectId);
   }, [projectId, activeWorkspace, mode]);
+
+  const scratchId = useMemo(() => projects.find((p) => p.title === SCRATCH_TITLE)?.id ?? null, [projects]);
+  const visibleProjects = useMemo(() => projects.filter((p) => p.title !== SCRATCH_TITLE), [projects]);
+
+  /** Create needs a production to generate into. Make the scratch one once. */
+  const ensureScratch = useCallback(async (): Promise<string | null> => {
+    if (scratchId) return scratchId;
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: SCRATCH_TITLE, format: "Other", premise: "Generation outside any production." })
+    }).catch(() => null);
+    const body = res && res.ok ? await res.json().catch(() => null) : null;
+    if (!body?.project?.id) return null;
+    const list = await fetch("/api/projects").then((r) => r.json());
+    setProjects(list.projects as Project[]);
+    return body.project.id as string;
+  }, [scratchId]);
+
+  const changeMode = useCallback(
+    async (m: AppMode) => {
+      if (m === mode) return;
+      if (m === "create") {
+        lastProduction.current = projectId;
+        const id = await ensureScratch();
+        if (id) setProjectId(id);
+      } else if (mode === "create" && lastProduction.current) {
+        setProjectId(lastProduction.current);
+      }
+      setMode(m);
+      if (m === "home") setActiveWorkspace("dashboard");
+      if (m === "assets") setActiveWorkspace("library");
+    },
+    [mode, projectId, ensureScratch]
+  );
 
 
   // Lightweight gate refresh — only the counts that unlock later stages.
@@ -329,6 +375,7 @@ export default function Home() {
       const list = await fetch("/api/projects").then((r) => r.json());
       const all = list.projects as Project[];
       setProjects(all);
+      setProjectsVersion((v) => v + 1);
       if (id === projectId) {
         const next = all[0]?.id ?? null;
         setProjectId(next);
@@ -360,7 +407,9 @@ export default function Home() {
       const data = await res.json();
       if (data.project) {
         await reloadProjects();
+        setProjectsVersion((v) => v + 1);
         setProjectId(data.project.id);
+        setMode("home");
         setActiveWorkspace("dashboard");
         setNewProjectOpen(false);
       }
@@ -422,14 +471,10 @@ export default function Home() {
     <div className="workbench">
       <TopBar
         project={bundle?.project ?? null}
-        projects={projects}
+        projects={visibleProjects}
         activeProjectId={projectId}
         mode={mode}
-        onMode={(m) => {
-          setMode(m);
-          if (m === "home") setActiveWorkspace("dashboard");
-          if (m === "assets") setActiveWorkspace("library");
-        }}
+        onMode={(m) => void changeMode(m)}
         onSwitchProject={(id) => {
           if (!id) return;
           setProjectId(id);
@@ -455,7 +500,26 @@ export default function Home() {
       <div className="app-body">
         <div className="work">
           <main className="main">
-          {!bundle && bundleState === "loading" ? (
+          {mode === "productions" ? (
+            <Productions
+              activeId={projectId}
+              hideId={scratchId}
+              version={projectsVersion}
+              onOpen={(id) => {
+                setProjectId(id);
+                setMode("home");
+                setActiveWorkspace("dashboard");
+              }}
+              onNew={() => setNewProjectOpen(true)}
+              onDelete={deleteProject}
+            />
+          ) : mode === "create" ? (
+            scratchId && projectId === scratchId ? (
+              <CreateHome projectId={scratchId} assetsVersion={assetsVersion} />
+            ) : (
+              <SkeletonWorkspace />
+            )
+          ) : !bundle && bundleState === "loading" ? (
             <SkeletonWorkspace />
           ) : !bundle && bundleState === "error" ? (
             <div className="main-inner">
@@ -585,6 +649,7 @@ export default function Home() {
           generating={composing}
           generateNote={composeNote}
           onFinished={() => setAssetsVersion((v) => v + 1)}
+          initialMode={mode === "create" ? "generate" : "direct"}
         />
       )}
 
@@ -612,11 +677,12 @@ export default function Home() {
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
         project={bundle?.project ?? null}
-        projects={projects}
+        projects={visibleProjects}
         activeProjectId={projectId}
         onSwitchWorkspace={switchWorkspace}
         onSwitchProject={(id) => {
           setProjectId(id);
+          setMode("home");
           setActiveWorkspace("dashboard");
         }}
         onNewProject={() => setNewProjectOpen(true)}
