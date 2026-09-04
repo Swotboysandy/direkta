@@ -240,6 +240,9 @@ export function AssetCanvas({ projectId, query: externalQuery, assetsVersion = 0
           <div className="canvas-search">
             <Search size={14} />
             <input
+              // `input` opts out of the global field rule, whose specificity
+              // otherwise beats the padding that clears the glyph.
+              className="input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search this project"
