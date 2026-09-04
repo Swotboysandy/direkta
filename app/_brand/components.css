@@ -533,13 +533,95 @@
 .stage[data-status="complete"] .stage-dot { background: var(--status-success); }
 .stage[data-locked] .stage-dot { background: none; color: var(--text-disabled); width: auto; height: auto; }
 .stage-note { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.02em; color: var(--text-tertiary); }
-.production-bar-agent {
-  height: 28px; padding: 0 10px; border: 1px solid var(--border-subtle); background: none; cursor: pointer;
-  border-radius: var(--r-control); font-size: 12px; color: var(--text-secondary);
-}
-.production-bar-agent:hover, .production-bar-agent.is-active { color: var(--text-primary); background: var(--surface-raised); }
 
 @media (max-width: 900px) {
   .topbar-wordmark { display: none; }
   .mode-btn { padding: 0 8px; }
+}
+
+
+/* ============================================================
+   DIRECTOR DOCK (brief §10–§13)
+   ============================================================ */
+.dock {
+  position: relative;
+  z-index: var(--z-dock);
+}
+.dock-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-canvas);
+}
+.dock-bar .composer { max-width: min(var(--max-w), 100%); margin-inline: auto; width: 100%; }
+.dock-bar .genmon { max-width: min(var(--max-w), 100%); margin-inline: auto; width: 100%; }
+.dock-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  max-width: min(var(--max-w), 100%); margin-inline: auto; width: 100%;
+  min-height: 28px;
+}
+.dock-context {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 40%;
+  height: 28px; padding: 0 10px; border: 1px solid var(--border-subtle); background: none; cursor: pointer;
+  border-radius: var(--r-control); color: var(--text-primary); font-size: 12px;
+}
+.dock-context:hover { background: var(--surface-raised); border-color: var(--border-standard); }
+.dock-context svg:first-child { color: var(--brand-accent); flex: 0 0 auto; }
+.dock-context-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.dock-mode { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-control); background: var(--surface-raised); }
+.dock-mode-btn {
+  position: relative; height: 24px; padding: 0 10px; border: 0; background: none; cursor: pointer;
+  border-radius: 4px; font-size: 12px; color: var(--text-secondary);
+}
+.dock-mode-btn.is-active { color: var(--text-primary); }
+.dock-mode-btn > span { position: relative; z-index: 1; }
+.dock-mode-active { position: absolute; inset: 0; border-radius: 4px; background: var(--surface-canvas); box-shadow: var(--shadow-1); }
+
+.dock-cost { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.dock-cost.is-blocked { color: var(--status-warning); }
+.dock-note { margin: 0; max-width: min(var(--max-w), 100%); margin-inline: auto; width: 100%; font-size: 12px; color: var(--text-secondary); }
+
+/* Director Mode: rises from the bar, over the work, never pushing it. */
+.dock-panel {
+  position: absolute; left: 0; right: 0; bottom: 100%;
+  height: min(52dvh, 520px);
+  display: grid; grid-template-columns: minmax(0, 1fr) 300px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-canvas);
+  box-shadow: 0 -24px 48px rgba(0,0,0,0.35);
+}
+.dock-col { min-height: 0; overflow-y: auto; }
+.dock-col--talk { padding: var(--sp-4) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-3); }
+.dock-col--side { border-left: 1px solid var(--border-subtle); padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); }
+.dock-hint { margin: auto 0 0; max-width: 56ch; font-size: 13px; color: var(--text-tertiary); }
+.dock-turn { max-width: 68ch; }
+.dock-turn.is-user { align-self: flex-end; text-align: right; }
+.dock-turn-text { margin: 0; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; color: var(--text-primary); }
+.dock-turn.is-user .dock-turn-text { color: var(--text-secondary); }
+.dock-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--sp-2); margin-top: var(--sp-2); }
+.dock-card {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; text-align: left; cursor: pointer;
+  border: 1px solid var(--border-subtle); background: var(--surface-base); border-radius: var(--r-surface); color: var(--text-primary);
+}
+.dock-card:hover { border-color: var(--border-standard); background: var(--surface-raised); }
+.dock-card-label { font-size: 12px; font-weight: 600; }
+.dock-card-text { font-size: 12px; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.dock-card-use { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand-accent); }
+.dock-thinking { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+.dock-thinking-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-warning); animation: status-breathe 1.2s ease-in-out infinite; }
+.dock-block-title { margin: 0 0 6px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); font-weight: 500; }
+.dock-kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 12px; }
+.dock-kv dt { color: var(--text-tertiary); }
+.dock-kv dd { margin: 0; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; }
+.dock-muted { font-size: 12px; color: var(--text-tertiary); margin: 0; }
+.dock-plan { margin: 0; padding-left: 1.1em; font-size: 12px; display: grid; gap: 4px; }
+.dock-plan-raw { margin: 0; font-size: 11px; white-space: pre-wrap; color: var(--text-secondary); }
+
+@media (max-width: 900px) {
+  .dock-panel { grid-template-columns: 1fr; height: min(70dvh, 560px); }
+  .dock-col--side { border-left: 0; border-top: 1px solid var(--border-subtle); }
+  .dock-cost { display: none; }
 }

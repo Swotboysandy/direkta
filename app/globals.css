@@ -541,7 +541,6 @@
 
 /* Hairlines brighten rather than shadows blooming. */
 .canvas-card,
-.agent-card { transition: box-shadow var(--dur-2) var(--ease-out); }
 
 /* The composer lifts when it has focus, so the thing being typed into is
    unmistakable on a dark screen with a grid behind it. */
@@ -567,10 +566,6 @@
 }
 
 /* Suggestion cards stagger in behind the agent's reply. */
-.agent-cards > * { animation: fx-card-in var(--dur-3) var(--ease-out) both; }
-.agent-cards > *:nth-child(2) { animation-delay: 60ms; }
-.agent-cards > *:nth-child(3) { animation-delay: 120ms; }
-.agent-cards > *:nth-child(4) { animation-delay: 180ms; }
 @keyframes fx-card-in {
   from { transform: translateY(8px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
@@ -590,184 +585,24 @@
   .canvas-card:hover .canvas-card-img { transform: none; }
   .composer-chip,
   .composer-picker,
-  .agent-cards > *,
   .canvas-grid [data-slot="skeleton"] { animation: none; }
 }
 
-/* ============================================================
-   RAIL
-   ------------------------------------------------------------
-   Six destinations that never change do not need 240px of
-   permanent furniture. Labels appear on hover; status reads off
-   the glyph rather than a second line of text.
-   ============================================================ */
-
-
-
-/* The label is a hover plate rather than a permanent column. */
-
-
-/* ============================================================
-   AGENT PANEL
-   ============================================================ */
-.agent {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  border-left: 1px solid var(--cream-deep);
-  background: var(--bg);
-}
-
-.agent-head {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
-  border-bottom: 1px solid var(--cream-deep);
-  color: var(--mute);
-}
-.agent-title {
-  flex: 1;
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  color: var(--ink);
-}
-.agent-x {
-  display: grid; place-items: center;
-  width: 24px; height: 24px;
-  border: 0; border-radius: var(--r-sm);
-  background: transparent; color: var(--mute); cursor: pointer;
-}
-.agent-x:hover { background: var(--surface-2); color: var(--ink); }
-
-.agent-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-  padding: var(--sp-4);
-}
-
-.agent-hint { margin: 0; font-size: var(--t-body-s); color: var(--mute); }
-
-.agent-turn { display: flex; flex-direction: column; gap: var(--sp-3); }
 /* The user's own words sit right and enclosed; the agent's run full width,
    because they are the thing being read. */
-.agent-turn.is-user { align-items: flex-end; }
-.agent-turn.is-user .agent-text {
-  max-width: 88%;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  color: var(--ink);
-}
-.agent-text {
-  margin: 0;
-  font-size: var(--t-body-s);
-  line-height: var(--leading-body);
-  color: var(--ink-soft);
-  white-space: pre-wrap;
-}
 
-.agent-cards { display: flex; flex-direction: column; gap: var(--sp-2); }
 
-.agent-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  padding: var(--sp-3);
-  border: 0;
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--cream-deep);
-  text-align: left;
-  cursor: pointer;
-  transition: box-shadow var(--dur-1) var(--ease-out);
-}
-.agent-card:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 46%, transparent); }
-.agent-card-label {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.agent-card-text {
-  font-size: var(--t-body-s);
-  line-height: var(--leading-body);
-  color: var(--ink-soft);
-}
-.agent-card-use {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-}
 
-.agent-thinking {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-}
-.agent-thinking-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--accent);
-  animation: fx-pulse-pip 1.4s var(--ease-out) infinite;
-}
 
-.agent-input {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--sp-2);
-  padding: var(--sp-3);
-  border-top: 1px solid var(--cream-deep);
-}
-.agent-input textarea {
-  flex: 1;
-  min-width: 0;
-  resize: none;
-  border: 0;
-  border-radius: var(--r-md);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--cream-deep);
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--t-body-s);
-  line-height: var(--leading-body);
-  outline: none;
-}
-.agent-send {
-  display: grid; place-items: center;
-  width: 30px; height: 30px;
-  border: 0; border-radius: var(--r-pill);
-  background: var(--accent); color: var(--on-accent);
-  cursor: pointer;
-  transition: background var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
-}
-.agent-send:hover:not(:disabled) { background: var(--accent-hover); }
-.agent-send:active:not(:disabled) { transform: scale(0.94); }
-.agent-send:disabled { background: var(--surface-2); color: var(--mute); cursor: not-allowed; }
 
-@media (max-width: 900px) {
-  /* The panel takes the screen rather than squeezing the work into nothing. */
-  .app-body[data-agent="true"] { --agent-w: 0px; }
-  .agent {
-    position: fixed;
-    inset: var(--topnav-h) 0 0 0;
-    z-index: var(--z-inspector);
-    border-left: 0;
-  }
-}
+
+/* The user's own words sit right and enclosed; the agent's run full width,
+   because they are the thing being read. */
+
+
+
+
+
 
 /* ============================================================
    HOME
@@ -822,9 +657,6 @@
 
 
 
-@media (max-width: 900px) {
-  /* Identity survives; the wordmark does not need to. */
-}
 
 /* ============================================================
    ASSET CANVAS
@@ -1190,14 +1022,6 @@
   text-align: center;
 }
 
-.composer-dock {
-  /* In normal flow as the column's second row. It is opaque, because a
-     translucent bar over a scrolling grid showed rows sliding behind the
-     prompt the user was typing into. */
-  padding: var(--sp-3) var(--page-pad) var(--sp-4);
-  background: var(--bg);
-  border-top: 1px solid var(--cream-deep);
-}
 
 
 
@@ -1285,7 +1109,7 @@ strong, b {
   /* Global bar, production bar (absent outside a production), then the work.
      dvh, not vh: on a phone vh includes the browser chrome and the dock ends
      up under it. */
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   grid-template-columns: minmax(0, 1fr);
   height: 100dvh;
   /* Flat. The radial accent wash that used to sit here was the one gradient
@@ -1393,16 +1217,13 @@ strong, b {
 /* ============================================================
    APP BODY — sidebar + main
    ============================================================ */
-/* Work | agent. The agent column collapses to zero when closed, so the work
-   area takes the space rather than the panel leaving a gap behind it. The
-   rail is gone: stages live in the production bar above. */
+/* One column. The rail became the production bar above; the agent panel
+   became the Director Dock below. */
 .app-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--agent-w, 0px);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
-  transition: grid-template-columns var(--dur-3) var(--ease-out);
 }
-.app-body[data-agent="true"] { --agent-w: 380px; }
 
 .sb-ws .head {
   padding: var(--sp-2) var(--sp-3);
@@ -1422,7 +1243,7 @@ strong, b {
    Screenplay. Two grid rows cannot overlap. */
 .work {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
 }

@@ -33,6 +33,8 @@ interface Props {
   seed?: string | null;
   /** Called once the seed has been taken, so the same card can be used again. */
   onSeedConsumed?: () => void;
+  /** How many references are attached right now — the Dock shows it in context. */
+  onRefsChange?: (count: number) => void;
 }
 
 const KIND_LABEL: Record<AssetItem["kind"], string> = {
@@ -61,9 +63,10 @@ const KIND_LABEL: Record<AssetItem["kind"], string> = {
  * textarea for one costs the browser's own undo, spellcheck and IME handling;
  * this keeps those and still shows every attachment with its thumbnail.
  */
-export function Composer({ projectId, onSubmit, busy = false, placeholder, seed, onSeedConsumed }: Props) {
+export function Composer({ projectId, onSubmit, busy = false, placeholder, seed, onSeedConsumed, onRefsChange }: Props) {
   const [text, setText] = useState("");
   const [refs, setRefs] = useState<ComposerSubmission["refs"]>([]);
+  useEffect(() => onRefsChange?.(refs.length), [refs.length, onRefsChange]);
   const [mention, setMention] = useState<{ query: string; at: number } | null>(null);
   const [highlight, setHighlight] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);

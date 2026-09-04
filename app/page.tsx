@@ -4,10 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { TopBar } from "./_components/TopBar";
 import { StageStrip } from "./_components/StageStrip";
 import { useRenderEngine } from "./_components/RenderEngineChip";
-import { AgentPanel } from "./_components/AgentPanel";
+import { DirectorDock } from "./_components/DirectorDock";
 import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
-import { Composer, type ComposerSubmission } from "./_components/Composer";
-import { GenerationMonitor } from "./_components/GenerationMonitor";
+import type { ComposerSubmission } from "./_components/Composer";
 import { NewProjectModal } from "./_components/NewProjectModal";
 import { MovieBibleModal } from "./_components/MovieBibleModal";
 import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
@@ -17,7 +16,6 @@ import { SkillsPanel } from "./_components/SkillsPanel";
 import { ConfirmProvider } from "./_components/ui/alert-dialog";
 import { STAGE_LABELS, LOCK_REASONS, isAppMode, type AppMode } from "./_lib/stages";
 import { SelectionProvider } from "./_state/selection";
-import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
@@ -73,14 +71,10 @@ export default function Home() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [bundle, setBundle] = useState<ProjectBundle | null>(null);
-  const [agentOpen, setAgentOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   // The render engine's state is read once here and handed to whatever shows
   // it, so the bar and the Dock never poll RunPod twice for the same fact.
   const h3 = useRenderEngine();
-  // Set when a suggestion is taken from the agent; the composer consumes it
-  // and clears it, so pressing the same card twice loads it again.
-  const [composerSeed, setComposerSeed] = useState<string | null>(null);
   // Bumped whenever anything finishes generating. The canvas watches it and
   // re-fetches; without it a finished shot never appeared until the filter
   // was changed or the page reloaded.
@@ -448,18 +442,10 @@ export default function Home() {
       {mode === "home" && bundle && (
         <div className="production-bar">
           <StageStrip workspaces={workspaces} active={activeWorkspace} onSwitch={switchWorkspace} />
-          <button
-            type="button"
-            className={cn("production-bar-agent", agentOpen && "is-active")}
-            onClick={() => setAgentOpen((v) => !v)}
-            aria-pressed={agentOpen}
-          >
-            Director
-          </button>
         </div>
       )}
 
-      <div className="app-body" data-agent={agentOpen ? "true" : "false"}>
+      <div className="app-body">
         <div className="work">
           <main className="main">
           {!bundle && bundleState === "loading" ? (
@@ -576,36 +562,21 @@ export default function Home() {
             </>
           )}
           </main>
-
-          {bundle && (
-            <div className="composer-dock">
-              <div className="main-inner">
-                <GenerationMonitor onFinished={() => setAssetsVersion((v) => v + 1)} />
-                <Composer
-                  projectId={bundle.project.id}
-                  onSubmit={compose}
-                  busy={composing}
-                  seed={composerSeed}
-                  onSeedConsumed={() => setComposerSeed(null)}
-                />
-                {composeNote && <p className="composer-note">{composeNote}</p>}
-              </div>
-            </div>
-          )}
-          </div>
-
-        {bundle && (
-          <AgentPanel
-            projectId={bundle.project.id}
-            open={agentOpen}
-            onClose={() => setAgentOpen(false)}
-            onUsePrompt={(text) => {
-              setComposerSeed(text);
-              setAgentOpen(false);
-            }}
-          />
-        )}
+        </div>
       </div>
+
+      {/* The Director Dock is the last row of the shell, in normal flow, so it
+          can never sit on top of the work the way a sticky strip did. */}
+      {bundle && (
+        <DirectorDock
+          project={bundle.project}
+          h3={h3}
+          onGenerate={compose}
+          generating={composing}
+          generateNote={composeNote}
+          onFinished={() => setAssetsVersion((v) => v + 1)}
+        />
+      )}
 
       <KeyVaultPanel open={keyVaultOpen} onClose={() => setKeyVaultOpen(false)} />
       <SkillsPanel open={skillsOpen} onClose={() => setSkillsOpen(false)} />
