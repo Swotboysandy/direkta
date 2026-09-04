@@ -26,6 +26,15 @@ const PRELOAD_MARGIN = "600px";
 
 let playing: HTMLVideoElement | null = null;
 
+/** The nearest ancestor that actually scrolls, or null for the viewport. */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY;
+    if ((o === "auto" || o === "scroll") && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}
+
 function reducedMotion() {
   return typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -63,7 +72,12 @@ export function MediaTile({
           io.disconnect();
         }
       },
-      { rootMargin: PRELOAD_MARGIN }
+      // Against the real scroll container, not the viewport. The stage scrolls
+      // inside .main, and an ancestor scroller clips the intersection rect no
+      // matter what rootMargin says - so with the default root the margin was
+      // discarded and a tile only loaded once it had already reached the edge
+      // of view, which is a blank tile for as long as the fetch takes.
+      { root: scrollParent(el), rootMargin: PRELOAD_MARGIN }
     );
     io.observe(el);
     return () => io.disconnect();
