@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { dropCache, readCache, writeCache } from "./_lib/browser-cache";
 import { TopBar } from "./_components/TopBar";
 import { StageStrip } from "./_components/StageStrip";
 import { useRenderEngine } from "./_components/RenderEngineChip";
@@ -125,11 +126,26 @@ export default function Home() {
     if (fromUrlWs) setActiveWorkspace(fromUrlWs);
     if (isAppMode(fromUrlMode)) setMode(fromUrlMode);
 
+    // The list we saw last time, painted before the network answers.
+    const cachedList = readCache<Project[]>("projects");
+    if (cachedList?.length) setProjects(cachedList);
+
+    // When the URL or the last session already names the production, open it
+    // now rather than after the list round-trip: the bundle and the list then
+    // load side by side instead of one behind the other.
+    const hint = fromUrlProject ?? fromStorage;
+    if (hint) setProjectId(hint);
+
     (async () => {
       const list = await fetch("/api/projects").then((r) => r.json());
       const all = list.projects as Project[];
       setProjects(all);
-      const target = fromUrlProject ?? fromStorage ?? all[0]?.id ?? null;
+      writeCache("projects", all);
+      // A hint can name a production that has since been deleted; fall back
+      // rather than sitting on a bundle that will never load.
+      const hintIsReal = hint ? all.some((p) => p.id === hint) : false;
+      if (hintIsReal) return;
+      const target = all[0]?.id ?? null;
       if (target) setProjectId(target);
       else setNewProjectOpen(true);
     })();
@@ -165,6 +181,7 @@ export default function Home() {
     if (!body?.project?.id) return null;
     const list = await fetch("/api/projects").then((r) => r.json());
     setProjects(list.projects as Project[]);
+    writeCache("projects", list.projects as Project[]);
     return body.project.id as string;
   }, [scratchId]);
 
@@ -191,6 +208,11 @@ export default function Home() {
   // clobbering in-flight edits (e.g. the Screenplay draft).
   const refreshGate = useCallback(async () => {
     if (!projectId) return;
+    const cachedGate = readCache<typeof gate>(`gate:${projectId}`);
+    if (cachedGate) {
+      setGate(cachedGate);
+      setGateLoaded(true);
+    }
     try {
       const [sbRes, stRes, fvRes] = await Promise.all([
         fetch(`/api/projects/${projectId}/storyboard`),
@@ -200,11 +222,13 @@ export default function Home() {
       const sb = sbRes.ok ? await sbRes.json() : { variants: [] };
       const st = stRes.ok ? await stRes.json() : { nodes: [] };
       const fv = fvRes.ok ? await fvRes.json() : { attached: false };
-      setGate({
+      const next = {
         frames: (sb.variants ?? []).filter((v: { asset_url: string | null }) => v.asset_url).length,
         stitchNodes: (st.nodes ?? []).length,
         hasFinalVideo: Boolean(fv.attached)
-      });
+      };
+      setGate(next);
+      writeCache(`gate:${projectId}`, next);
       setGateLoaded(true);
     } catch {
       /* gates simply stay as they were */
@@ -218,12 +242,23 @@ export default function Home() {
 
   const reload = useCallback(async () => {
     if (!projectId) return;
-    setBundleState((prev) => (prev === "ready" ? prev : "loading"));
+    // Show last time's bundle immediately; the fetch below replaces it. While
+    // something real is on screen a failure must not wipe it for an error
+    // card, so the error states only fire when there is nothing to show.
+    const cached = readCache<ProjectBundle>(`bundle:${projectId}`);
+    const painted = Boolean(cached);
+    if (cached) {
+      setBundle(cached);
+      setBundleState("ready");
+    } else {
+      setBundleState((prev) => (prev === "ready" ? prev : "loading"));
+    }
     setBundleError(null);
     let res: Response;
     try {
       res = await fetch(`/api/projects/${projectId}`);
     } catch {
+      if (painted) return;
       setBundleState("error");
       setBundleError("Could not reach the server.");
       return;
@@ -231,12 +266,14 @@ export default function Home() {
     if (!res.ok) {
       // Previously this returned silently, leaving the bundle null and the
       // screen claiming no project existed.
+      if (painted) return;
       setBundleState("error");
       setBundleError(`Could not load this project (${res.status}).`);
       return;
     }
     const data = (await res.json()) as ProjectBundle;
     setBundle(data);
+    writeCache(`bundle:${projectId}`, data);
     setBundleState("ready");
     const agentsRes = await fetch(`/api/projects/${projectId}/agents`);
     if (agentsRes.ok) {
@@ -372,9 +409,12 @@ export default function Home() {
   const deleteProject = useCallback(
     async (id: string) => {
       await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      // Otherwise its bundle and gates would still paint on the next visit.
+      dropCache(id);
       const list = await fetch("/api/projects").then((r) => r.json());
       const all = list.projects as Project[];
       setProjects(all);
+      writeCache("projects", all);
       setProjectsVersion((v) => v + 1);
       if (id === projectId) {
         const next = all[0]?.id ?? null;
