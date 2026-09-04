@@ -649,7 +649,7 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
         </div>
       </motion.header>
 
-      <div className="page-body" style={{ paddingBottom: 200 }}>
+      <div className="page-body">
         <GlobalStyleStrip style={globalStyle} onChange={setGlobalStyle} />
 
         <div className="storyboard-section-head">
@@ -704,12 +704,6 @@ export function Storyboard({ project, onSwitchWorkspace }: Props) {
           </motion.div>
         )}
       </div>
-
-      <BottomStrip
-        beats={beats}
-        variants={variants}
-        stitchedVariantIds={stitchedVariantIds}
-      />
 
       {toast && (
         <div
@@ -1434,59 +1428,10 @@ function defaultPromptFor(beat: Beat, beatStyle: BeatStyle, globalStyle: GlobalS
   return `${shot} shot, ${angle.toLowerCase()} angle, ${lens}, ${movement.toLowerCase()} camera. Shot on ${cameraBody.toLowerCase()}, ${aperture}. ${beat.scene_heading}. ${beat.title}. ${names.length ? `Featuring ${names.join(", ")}. ` : ""}${beat.mood.length ? `Mood: ${beat.mood.join(", ")}. ` : ""}${visual} aesthetic, ${light.toLowerCase()} lighting, ${temp.toLowerCase()} palette. Aspect ${aspect}.`;
 }
 
-/* ───────────────────────── Bottom Strip ───────────────────────── */
-
-function BottomStrip({
-  beats,
-  variants,
-  stitchedVariantIds
-}: {
-  beats: Beat[];
-  variants: StoryboardVariant[];
-  stitchedVariantIds: Set<string>;
-}) {
-  const beatsByN = useMemo(() => Object.fromEntries(beats.map((b) => [b.id, b])), [beats]);
-  // The sequence on Stitch — every stitched variant in beat-number order.
-  const stitched = useMemo(() => {
-    const list = variants.filter((v) => stitchedVariantIds.has(v.id));
-    return list
-      .map((v) => ({ variant: v, beat: beatsByN[v.beat_id] }))
-      .filter((row) => row.beat)
-      .sort((a, b) => (a.beat!.n - b.beat!.n) || (a.variant.n - b.variant.n));
-  }, [variants, stitchedVariantIds, beatsByN]);
-
-  return (
-    <div className="storyboard-bottom-strip">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span className="t-eyebrow">SEQUENCE · {stitched.length} ON STITCH</span>
-        <span className="t-mute" style={{ fontSize: 11 }}>
-          Frames pushed to Stitch, in scene order. This is what Stitch sees.
-        </span>
-      </div>
-      <div className="storyboard-strip-row">
-        {stitched.length === 0 && (
-          <div className="storyboard-strip-slot" data-empty="true">
-            <span className="t-eyebrow">EMPTY</span>
-          </div>
-        )}
-        {stitched.map(({ variant, beat }) => (
-          <div key={variant.id} className="storyboard-strip-slot">
-            {variant.asset_url && (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={variant.asset_url} alt={beat!.title} />
-            )}
-            <span
-              className="storyboard-frame-label"
-              style={{ bottom: 4, left: 4, fontSize: 9, padding: "2px 6px", background: "rgba(8,8,10,0.74)", color: "#F5EDDC" }}
-            >
-              S{String(beat!.n).padStart(2, "0")}·V{String(variant.n).padStart(2, "0")}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* The fixed "sequence on Stitch" strip that used to live here is gone. It was
+   pinned to the bottom with an offset for a sidebar that no longer exists
+   and would have sat on top of the Director Dock; the Shots stage's timeline
+   is the sequence, and it shows the same frames in the same order. */
 
 /* ───────────────────────── Variant Lightbox ───────────────────────── */
 

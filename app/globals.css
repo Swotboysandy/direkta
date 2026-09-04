@@ -2431,13 +2431,15 @@ strong, b {
 .storyboard-toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--sp-6) + 160px);
+  /* Clears the Director Dock when there is one, and nothing else. The old
+     160px cleared a strip that no longer exists. */
+  bottom: calc(var(--dock-h) + var(--sp-5));
   transform: translateX(-50%);
   z-index: var(--z-toast);
   padding: var(--sp-3) var(--sp-5);
   background: var(--ink);
   color: var(--cream);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-surface);
   box-shadow: var(--shadow-3);
   font-family: var(--font-mono);
   font-size: var(--t-body-s);
@@ -2558,57 +2560,16 @@ strong, b {
   margin-right: auto;
 }
 
-.storyboard-bottom-strip {
-  position: fixed;
-  bottom: 0;
-  left: var(--sb-w, 240px);
-  right: 0;
-  z-index: var(--z-sticky);
-  padding: var(--sp-4) var(--page-pad) var(--sp-5);
-  background: linear-gradient(180deg, transparent, var(--bg) 30%);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  transition: left 220ms var(--ease-out);
-}
-
-.storyboard-strip-row {
-  display: flex;
-  gap: var(--sp-2);
-  overflow-x: auto;
-  padding-bottom: var(--sp-1);
-}
-
-.storyboard-strip-slot {
-  flex-shrink: 0;
-  width: 120px;
-  aspect-ratio: 16/9;
-  background: var(--surface);
-  border-radius: 12px;
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-
-.storyboard-strip-slot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.storyboard-strip-slot[data-empty="true"] {
-  background: var(--cream-deep);
-  box-shadow: none;
-  color: var(--mute);
-}
-
 /* ============================================================
    STITCH WORKSPACE (React Flow)
    ============================================================ */
 .stitch-shell {
   position: relative;
-  height: calc(100vh - 64px - 200px);
+  /* The chrome above is named, not guessed: global bar, production bar, and
+     the page head and padding inside the work column. dvh so the board does
+     not run under a phone's browser bar. */
+  height: calc(100dvh - var(--bar-h) - var(--production-bar-h) - var(--dock-h) - 200px);
+  min-height: 420px;
   background: var(--bg);
   border-radius: var(--radius);
   overflow: hidden;

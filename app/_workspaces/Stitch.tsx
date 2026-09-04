@@ -448,7 +448,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
         </div>
       </motion.header>
 
-      <div className="stitch-shell" style={{ height: "calc(100vh - 64px - 230px)", borderRadius: "var(--r-lg)" }}>
+      <div className="stitch-shell">
         {view === "board" ? (
           <div style={{ position: "absolute", inset: 0, background: "#0B0B0D" }}>
             <ReactFlow

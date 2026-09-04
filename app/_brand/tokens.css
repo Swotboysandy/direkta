@@ -196,7 +196,12 @@
   --z-toast:     70;   /* notifications, above whatever caused them */
   --z-palette:   80;   /* the command palette wins over everything */
 
-  --topnav-h:  60px;
+  --topnav-h:  60px;   /* retired: the v5 bar is --bar-h; kept for stragglers */
+  /* The shell's chrome, named so a workspace can size to the space left.
+     --dock-h is 0 until the Director Dock mounts and sets it. */
+  --bar-h:            52px;
+  --production-bar-h: 44px;
+  --dock-h:           0px;
   /* The rail is one fixed width and does not collapse, so there is no second
      width to name. The old --sidebar-w / --sidebar-w-collapsed pair described
      a component that no longer exists. */
