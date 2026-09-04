@@ -4,7 +4,9 @@ import path from "node:path";
 import matter from "gray-matter";
 import type { AgentLayer, SkillFile } from "../types";
 
-const SKILLS_DIR = path.join(process.cwd(), "data", "skills");
+// Same root as the database and media, so a deployment that points DATA_DIR
+// at a real directory keeps the skills a user has edited, not the repo seeds.
+const SKILLS_DIR = path.join(process.env.DATA_DIR || path.join(process.cwd(), "data"), "skills");
 
 let cache: SkillFile[] | null = null;
 
