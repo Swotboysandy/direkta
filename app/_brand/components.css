@@ -600,7 +600,11 @@
 
 /* Director Mode: rises from the bar, over the work, never pushing it. */
 .dock-panel {
-  position: absolute; left: 0; right: 0; bottom: 100%;
+  /* Stops where the inspector begins. The panel sits at the dock's layer,
+     below the inspector's, so spanning the full width would put its right
+     edge behind the inspector rather than beside it. --inspector-w is 0
+     whenever nothing is selected, so with no inspector it spans as before. */
+  position: absolute; left: 0; right: var(--inspector-w, 0px); bottom: 100%;
   height: min(52dvh, 520px);
   display: grid; grid-template-columns: minmax(0, 1fr) 300px;
   border-top: 1px solid var(--border-subtle);
