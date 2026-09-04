@@ -860,15 +860,26 @@
   margin-inline: auto;
 }
 
+/* One line tall until there is more to say. The textarea and the send button
+   share a row; the field grows with its content and the button stays pinned
+   to the bottom of it. The previous stacked layout was ~100px of chrome for
+   an empty prompt, most of it padding. */
 .composer-input {
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-2);
-  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  border-radius: var(--r-overlay);
+  background: var(--surface-base);
+  box-shadow: var(--shadow-1);
+  padding: 6px 6px 6px 14px;
 }
 .composer-input textarea {
+  flex: 1 1 auto;
+  min-height: 32px !important;
+  padding: 6px 0;
   font-family: var(--font-ui);
-  font-size: var(--t-body-l);
+  font-size: var(--t-body);
+  line-height: 20px;
   color: var(--ink);
   background: transparent;
 }
@@ -878,8 +889,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--sp-3);
-  padding-top: var(--sp-2);
+  gap: var(--sp-2);
+  flex: 0 0 auto;
 }
 .composer-actions-right { display: flex; align-items: center; gap: var(--sp-2); }
 
@@ -1976,21 +1987,6 @@ strong, b {
 /* ============================================================
    CO-DIRECTOR LAUNCHER
    ============================================================ */
-.codirector-launcher {
-  position: fixed;
-  right: var(--sp-5);
-  bottom: var(--sp-5);
-  z-index: var(--z-dock);
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--on-accent);
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow-3);
-  cursor: pointer;
-}
 
 /* ============================================================
    DEBOUNCED INLINE EDIT FIELDS (Inspector + dashboard text)

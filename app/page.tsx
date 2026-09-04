@@ -9,7 +9,6 @@ import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
 import type { ComposerSubmission } from "./_components/Composer";
 import { NewProjectModal } from "./_components/NewProjectModal";
 import { MovieBibleModal } from "./_components/MovieBibleModal";
-import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
 import { CommandPalette } from "./_components/CommandPalette";
 import { KeyVaultPanel } from "./_components/KeyVaultPanel";
 import { SkillsPanel } from "./_components/SkillsPanel";
@@ -600,12 +599,6 @@ export default function Home() {
         open={newProjectOpen}
         onClose={() => setNewProjectOpen(false)}
         onCreate={createProject}
-      />
-
-      <CoDirectorOverlay
-        project={bundle?.project ?? null}
-        onSwitchWorkspace={switchWorkspace}
-        onOpenKeyVault={() => setKeyVaultOpen(true)}
       />
 
       <CommandPalette

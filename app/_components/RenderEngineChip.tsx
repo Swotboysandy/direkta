@@ -72,7 +72,9 @@ export function RenderEngineChip({ h3, className }: { h3: H3Status | null; class
         <button
           type="button"
           className={cn(
-            "engine-chip inline-flex h-8 items-center gap-2 rounded-control px-2.5 text-[12px] text-fg-secondary",
+            // bg-transparent is not redundant: preflight is not loaded, so a
+            // bare <button> keeps the browser's grey ButtonFace fill.
+            "engine-chip inline-flex h-8 items-center gap-2 rounded-control bg-transparent px-2.5 text-[12px] text-fg-secondary",
             "hover:bg-surface-raised focus-visible:outline-none focus-visible:shadow-(--shadow-focus)",
             className
           )}
