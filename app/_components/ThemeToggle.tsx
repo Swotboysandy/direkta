@@ -24,11 +24,11 @@ type ViewTransitionDocument = Document & {
  * (or users who prefer reduced motion) just swap instantly.
  */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
   const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const current = (document.documentElement.dataset.theme as Theme) || "light";
+    const current = (document.documentElement.dataset.theme as Theme) || "dark";
     setTheme(current);
   }, []);
 

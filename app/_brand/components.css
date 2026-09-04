@@ -435,7 +435,7 @@
   height: 52px;
   padding: 0 var(--sp-4);
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--surface-canvas);
+  background: var(--chrome-veil);
   position: relative;
   z-index: var(--z-sticky);
 }
@@ -501,8 +501,6 @@
 .topbar-menu-del:hover { color: var(--status-error); background: var(--surface-raised); }
 .topbar-menu-new { margin-top: 4px; border-top: 1px solid var(--border-subtle); border-radius: 0 0 var(--r-control) var(--r-control); color: var(--text-secondary); }
 .topbar-menu--account { min-width: 220px; }
-.topbar-menu-theme { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px 4px; font-size: 13px; color: var(--text-secondary); border-top: 1px solid var(--border-subtle); margin-top: 4px; }
-
 .topbar-kbd {
   display: inline-flex; align-items: center; gap: 3px; height: 28px; padding: 0 8px;
   border: 1px solid var(--border-subtle); background: none; color: var(--text-tertiary); cursor: pointer;
@@ -521,7 +519,7 @@
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--sp-3);
   height: 44px; padding: 0 var(--sp-4);
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--surface-canvas);
+  background: var(--chrome-veil);
 }
 .stage-strip { display: flex; align-items: center; gap: 0; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .stage-strip::-webkit-scrollbar { display: none; }
@@ -567,7 +565,7 @@
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border-subtle);
-  background: var(--surface-canvas);
+  background: var(--chrome-veil);
 }
 .dock-bar .composer { max-width: min(var(--max-w), 100%); margin-inline: auto; width: 100%; }
 .dock-bar .genmon { max-width: min(var(--max-w), 100%); margin-inline: auto; width: 100%; }

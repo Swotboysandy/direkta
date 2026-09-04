@@ -17,14 +17,26 @@
 :root {
   color-scheme: dark;
 
+  /* ─── The theme ────────────────────────────────────────────
+     One gradient, painted once on the shell and never repeated: black at the
+     bottom-left rising to a deep blood red at the top-right. Everything else
+     in the palette exists to sit on it without fighting it. */
+  --theme-gradient: linear-gradient(45deg, #000000 0%, #7A0000 100%);
+  --theme-red:      #7A0000;
+  /* The chrome (top bar, production bar, dock, inspector) is a veil over the
+     gradient rather than an opaque slab — an opaque bar would cut the
+     gradient into bands, and each bar painting its own copy would restart it
+     three times. */
+  --chrome-veil:    rgba(0, 0, 0, 0.52);
+
   /* ─── Core palette — cinema black ──────────────────────── */
-  --cream:        #08090C;   /* page ground — near-black, slightly blue */
+  --cream:        #0A0406;   /* panel ground — near-black, a whisper of the red */
   --cream-warm:   rgba(255,255,255,0.035); /* card surface — a lift, not a pane */
   --cream-deep:   rgba(255,255,255,0.07);  /* hairlines, dividers, tracks */
 
   --cocoa:        #F4F4F7;   /* primary ink */
   --cocoa-soft:   #B9BAC6;   /* secondary ink */
-  --cocoa-mute:   #7C7E8A;   /* captions, metadata — AA on --cream */
+  --cocoa-mute:   #9A9CA8;   /* captions, metadata - lifted for the bright end of the gradient */
 
   /* Signals stay desaturated: on a near-black ground a pure hue
      shouts louder than anything in the actual footage. */
@@ -46,10 +58,14 @@
   --ink-soft:     var(--cocoa-soft);
   --mute:         var(--cocoa-mute);
 
-  /* One accent, used sparingly — active state and primary action only. */
-  --accent:       #6E5BFF;
-  --accent-hover: #8574FF;
-  --accent-quiet: rgba(110, 91, 255, 0.14);
+  /* One accent, used sparingly — active state and primary action only.
+     Violet sat wrong against a red ground, so the accent is now the theme's
+     own hue lifted until it functions as interface: the gradient is too dark
+     to click. Danger stays the desaturated coral below, which reads as a
+     different thing at a glance because it is never a fill. */
+  --accent:       #D41C2A;
+  --accent-hover: #E02430;
+  --accent-quiet: rgba(212, 28, 42, 0.18);
   --accent-2:     rgba(255,255,255,0.06);
   --accent-3:     var(--viridian);
 
@@ -216,13 +232,19 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
+  /* The same idea in daylight: paper rising to a wash of the same red, at the
+     same 45 degrees. Without this the shell would keep painting the dark
+     ramp under light ink. */
+  --theme-gradient: linear-gradient(45deg, #FAFAFB 0%, #EFD8D8 100%);
+  --chrome-veil:    rgba(255, 255, 255, 0.58);
+
   --cream:        #FAFAFB;
   --cream-warm:   #FFFFFF;
   --cream-deep:   rgba(8,9,12,0.09);
 
   --cocoa:        #0E0F14;
   --cocoa-soft:   #3A3B45;
-  --cocoa-mute:   #63646F;
+  --cocoa-mute:   #5A5B66;  /* darkened for the blush end of the gradient */
 
   --tomato:       #CE3B2A;
   --tomato-deep:  #A82B1C;
@@ -240,9 +262,9 @@
   --border-strong:    rgba(8,9,12,0.22);
   --status-info:      #3F6FB5;
 
-  --accent:       #5341E0;
-  --accent-hover: #4433C4;
-  --accent-quiet: rgba(83, 65, 224, 0.10);
+  --accent:       #B01220;
+  --accent-hover: #8E0E1A;
+  --accent-quiet: rgba(176, 18, 32, 0.10);
   --accent-2:     rgba(8,9,12,0.05);
 
   --on-accent:    #FFFFFF;

@@ -521,7 +521,23 @@
 
 /* The toggle is one of the bar's icon buttons and inherits their box; only its
    own animation is its own. */
-.theme-toggle { padding: 0; }
+/* Sits in the top bar beside the command palette and the account button, so
+   it matches them rather than the menu row it used to live in. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  border-radius: var(--r-control);
+  cursor: pointer;
+}
+.theme-toggle:hover { color: var(--text-primary); background: var(--surface-raised); }
+.theme-toggle:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 
 /* ============================================================
    MOTION — production pass
@@ -1131,10 +1147,11 @@ strong, b {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   grid-template-columns: minmax(0, 1fr);
   height: 100dvh;
-  /* Flat. The radial accent wash that used to sit here was the one gradient
-     in the shell, and the brief's first rule is that gradients need a
-     content reason. Footage supplies the light now. */
-  background: var(--surface-canvas);
+  /* The theme gradient, painted here and only here. Every bar above and
+     below is a translucent veil over this one surface, so the ramp runs
+     unbroken from the bottom-left corner of the shell to the top-right. */
+  background: var(--theme-gradient);
+  background-attachment: fixed;
   overflow: hidden;
 }
 

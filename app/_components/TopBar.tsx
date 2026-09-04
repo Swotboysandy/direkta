@@ -176,6 +176,8 @@ export function TopBar({
           <span>K</span>
         </button>
 
+        <ThemeToggle />
+
         <Popover.Root>
           <Popover.Trigger asChild>
             <button type="button" className="topbar-account" aria-label="Account and settings" title="Account">
@@ -196,10 +198,6 @@ export function TopBar({
                 <Settings size={13} />
                 <span>Settings</span>
               </a>
-              <div className="topbar-menu-theme">
-                <span>Theme</span>
-                <ThemeToggle />
-              </div>
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
