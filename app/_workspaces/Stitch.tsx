@@ -16,46 +16,23 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { motion } from "framer-motion";
-import { ArrowRight, Film, Pause, Play, Trash2, X } from "../_components/icons";
-import { fadeUp, popIn } from "../_components/motion";
+import { ArrowRight, Music, Pause, Play } from "../_components/icons";
+import { Button, IconButton } from "../_components/ui/button";
+import { EmptyState } from "../_components/ui/empty-state";
+import { useSelection } from "../_state/selection";
+import { fadeUp } from "../_components/motion";
 import { StitchNodeCard, type StitchNodeData } from "../_components/StitchNodeCard";
-import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, videoModel, CAMERA_MOTIONS } from "../../lib/higgsfield/catalog";
-import { H3Controls, type H3ShotOptions } from "../_components/H3Controls";
-import { H3LiveMonitor } from "../_components/H3LiveMonitor";
-import { ClipFrameTools } from "../_components/ClipFrameTools";
-import { LIPSYNC_MODELS, DEFAULT_LIPSYNC_MODEL } from "../../lib/lipsync/catalog";
+import { DEFAULT_VIDEO_MODEL } from "../../lib/higgsfield/catalog";
+import type { H3ShotOptions } from "../_components/H3Controls";
+import { DEFAULT_LIPSYNC_MODEL } from "../../lib/lipsync/catalog";
+import { Status } from "../_components/ui/status";
+import { publishShotDesk, shotStatus, type ShotBalance, type ShotNode } from "../_components/inspectors/ShotInspector";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
-import { useConfirm } from "../_components/ui/alert-dialog";
 
-interface Balance {
-  connected: boolean;
-  credits: number | null;
-  plan: string | null;
-}
-
-interface StitchNode {
-  id: string;
-  beat_id: string | null;
-  variant_id: string | null;
-  variant_n: number | null;
-  x: number;
-  y: number;
-  duration: number;
-  trim_start: number;
-  beat: {
-    n: number;
-    title: string;
-    scene_heading: string;
-    characters: string[];
-    location_id: string | null;
-  } | null;
-  frame_url: string | null;
-  clip_url: string | null;
-  clip_state: string;
-  dialogue_audio_url: string | null;
-  lipsync_state: string;
-  lipsync_url: string | null;
-}
+/* The shot and balance shapes live with the Shot Desk (ShotInspector.tsx),
+   which reads the same objects this stage publishes. */
+type Balance = ShotBalance;
+type StitchNode = ShotNode;
 
 interface Transition {
   id: string;
@@ -79,17 +56,10 @@ const NODE_TYPES: NodeTypes = { stitch: StitchNodeCard };
    the current theme instead of freezing a hex snapshot (edges/labels are set
    via inline `style`, which resolves CSS custom properties normally). */
 const EDGE_COLOR: Record<Transition["state"], string> = {
-  complete: "var(--viridian)",
-  generating: "var(--mustard)",
-  pending: "var(--mute)",
-  error: "var(--tomato)"
-};
-
-const TRANSITION_PILL_COLOR: Record<Transition["state"], { bg: string; fg: string }> = {
-  complete: { bg: "color-mix(in srgb, var(--viridian) 18%, transparent)", fg: "var(--viridian-deep)" },
-  generating: { bg: "color-mix(in srgb, var(--mustard) 20%, transparent)", fg: "var(--mustard-deep)" },
-  pending: { bg: "var(--surface)", fg: "var(--mute)" },
-  error: { bg: "color-mix(in srgb, var(--tomato) 16%, transparent)", fg: "var(--tomato-deep)" }
+  complete: "var(--status-success)",
+  generating: "var(--status-warning)",
+  pending: "var(--text-tertiary)",
+  error: "var(--status-error)"
 };
 
 function transitionLabel(t: Transition): string {
@@ -106,15 +76,29 @@ function formatTC(sec: number): string {
 }
 
 export function Stitch({ project, onSwitchWorkspace }: Props) {
-  const confirmDialog = useConfirm();
   const [stitchNodes, setStitchNodes] = useState<StitchNode[]>([]);
   const [transitions, setTransitions] = useState<Transition[]>([]);
   const [rfNodes, setRfNodes] = useState<RFNode[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<"board" | "timeline">("timeline");
   const rfInstance = useRef<ReactFlowInstance | null>(null);
   const didFit = useRef(false);
   const [balance, setBalance] = useState<Balance | null>(null);
+  const { primary, select, clear } = useSelection();
+  // The selection is app-wide (brief §58): the Shot Desk, the Dock chip and
+  // this stage's highlight all read the same thing, so closing the inspector
+  // also drops the highlight here.
+  const selectedId = primary?.kind === "shot" && primary.projectId === project.id ? primary.id : null;
+
+  /** One selection for both views: the timeline clip and the graph node are
+   *  the same `kind:'shot'`, so the Shot Desk serves either. */
+  const selectShot = useCallback(
+    (id: string) => {
+      const n = stitchNodes.find((s) => s.id === id);
+      const label = n?.beat?.n != null ? `Shot ${String(n.beat.n).padStart(2, "0")}` : "Shot";
+      select({ kind: "shot", id, label, projectId: project.id });
+    },
+    [stitchNodes, select, project.id]
+  );
 
   const loadBalance = useCallback(() => {
     fetch("/api/higgsfield/balance")
@@ -162,14 +146,35 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
   async function deleteNode(id: string) {
     setStitchNodes((prev) => prev.filter((n) => n.id !== id));
     setTransitions((prev) => prev.filter((t) => t.from_node_id !== id && t.to_node_id !== id));
-    if (selectedId === id) setSelectedId(null);
+    if (selectedId === id) clear();
     await fetch(`/api/stitch/nodes/${id}`, { method: "DELETE" }).catch(() => {});
   }
 
   async function setSceneNumber(node: StitchNode, scene: number) {
-    const newX = Math.max(1, scene) * 280 - 200;
+    const newX = xForScene(scene);
     setStitchNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, x: newX } : n)));
     await patchNode(node.id, { scene_number: scene });
+  }
+
+  /** The timeline's new order, first to last. Every shot whose column no
+   *  longer matches its place gets `scene_number` written — the same field
+   *  the inspector's scene input uses — so the render (ORDER BY x) follows. */
+  async function reorder(orderedIds: string[]) {
+    const byId = new Map(stitchNodes.map((n) => [n.id, n]));
+    const patches: { id: string; scene: number; x: number }[] = [];
+    orderedIds.forEach((id, i) => {
+      const n = byId.get(id);
+      const x = xForScene(i + 1);
+      if (n && n.x !== x) patches.push({ id, scene: i + 1, x });
+    });
+    if (!patches.length) return;
+    setStitchNodes((prev) =>
+      prev.map((n) => {
+        const p = patches.find((q) => q.id === n.id);
+        return p ? { ...n, x: p.x } : n;
+      })
+    );
+    await Promise.all(patches.map((p) => patchNode(p.id, { scene_number: p.scene })));
   }
 
   async function setDuration(node: StitchNode, duration: number) {
@@ -255,6 +260,29 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     return data;
   }
 
+  // The Shot Desk (the registered "shot" inspector) reads this stage's data and
+  // calls its handlers, so every route, body and response field stays here.
+  // Published after every render so the desk never sees a stale closure;
+  // cleared on unmount so it closes instead of showing a dead panel.
+  useEffect(() => {
+    publishShotDesk({
+      projectId: project.id,
+      aspectRatio: project.aspect_ratio,
+      nodes: stitchNodes,
+      balance,
+      setSceneNumber,
+      setDuration,
+      setTrimStart,
+      animate,
+      uploadClip,
+      uploadDialogue,
+      lipsync,
+      remove: deleteNode,
+      openStoryboard: () => onSwitchWorkspace("storyboard")
+    });
+  });
+  useEffect(() => () => publishShotDesk(null), []);
+
   // Sync our data into React Flow's nodes whenever the underlying list changes.
   useEffect(() => {
     setRfNodes(
@@ -301,12 +329,12 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
           fill: EDGE_COLOR[t.state]
         },
         labelBgStyle: {
-          fill: "var(--surface)",
+          fill: "var(--surface-overlay)",
           stroke: EDGE_COLOR[t.state],
           strokeWidth: 1
         },
         labelBgPadding: [6, 10],
-        labelBgBorderRadius: 999
+        labelBgBorderRadius: 6
       })),
     [transitions]
   );
@@ -329,13 +357,17 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     []
   );
 
-  const onNodeClick = useCallback((_evt: unknown, node: RFNode) => {
-    setSelectedId(node.id);
-  }, []);
+  const onNodeClick = useCallback(
+    (_evt: unknown, node: RFNode) => {
+      selectShot(node.id);
+    },
+    [selectShot]
+  );
 
-  const onPaneClick = useCallback(() => setSelectedId(null), []);
+  const onPaneClick = useCallback(() => {
+    if (selectedId) clear();
+  }, [selectedId, clear]);
 
-  const selected = stitchNodes.find((n) => n.id === selectedId) ?? null;
   const totalDuration = stitchNodes.reduce((sum, n) => sum + n.duration, 0);
   // Motion-clip progress: how many SHOTS have a rendered clip.
   const clipsDone = stitchNodes.filter((n) => n.clip_url).length;
@@ -344,7 +376,7 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
     balance?.connected === false ? "Higgsfield off" : balance?.credits != null ? `${balance.credits} credits` : "—";
 
   return (
-    <div className="main-inner" style={{ paddingBottom: 0 }}>
+    <div className="main-inner cut-page">
       <motion.header className="page-head" {...fadeUp}>
         <div>
           <span className="ws-eyebrow">
@@ -359,97 +391,42 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
         </div>
         <div className="actions">
           {stitchNodes.length > 0 && (
-            <div
-              role="tablist"
-              aria-label="Stitch view"
-              style={{ display: "inline-flex", alignItems: "center", gap: 2, padding: 3, background: "var(--surface-2)", borderRadius: "var(--r-pill)" }}
-            >
+            <div role="tablist" aria-label="Cut view" className="cut-view-switch">
               <button
                 role="tab"
+                type="button"
+                className="cut-view-tab"
                 aria-selected={view === "timeline"}
                 onClick={() => setView("timeline")}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  letterSpacing: "0.02em",
-                  padding: "6px 14px",
-                  border: "none",
-                  borderRadius: "var(--r-pill)",
-                  cursor: "pointer",
-                  color: view === "timeline" ? "var(--ink)" : "var(--mute)",
-                  background: view === "timeline" ? "var(--surface)" : "transparent",
-                  boxShadow: view === "timeline" ? "var(--shadow-1)" : "none"
-                }}
               >
                 Timeline
               </button>
               <button
                 role="tab"
+                type="button"
+                className="cut-view-tab"
                 aria-selected={view === "board"}
                 onClick={() => setView("board")}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  letterSpacing: "0.02em",
-                  padding: "6px 14px",
-                  border: "none",
-                  borderRadius: "var(--r-pill)",
-                  cursor: "pointer",
-                  color: view === "board" ? "var(--ink)" : "var(--mute)",
-                  background: view === "board" ? "var(--surface)" : "transparent",
-                  boxShadow: view === "board" ? "var(--shadow-1)" : "none"
-                }}
               >
                 Graph
               </button>
             </div>
           )}
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 10px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              borderRadius: "var(--r-pill)",
-              background: allClipsDone
-                ? "color-mix(in srgb, var(--viridian) 18%, transparent)"
-                : "color-mix(in srgb, var(--mustard) 20%, transparent)",
-              color: allClipsDone ? "var(--viridian-deep)" : "var(--mustard-deep)"
-            }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", opacity: 0.6 }} />
+          <span className="cut-fact" data-tone={allClipsDone ? "good" : "active"}>
             {clipsDone} / {stitchNodes.length || "—"} clips · {totalDuration.toFixed(1)}s
           </span>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 10px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              borderRadius: "var(--r-pill)",
-              background: "var(--cream-deep)",
-              color: "var(--ink-soft)"
-            }}
-          >
+          <span className="cut-fact" data-plain="">
             {balanceLabel}
           </span>
-          <button className="btn btn-primary" onClick={() => onSwitchWorkspace("export")}>
+          <Button intent="primary" onClick={() => onSwitchWorkspace("export")}>
             Continue to Finish <ArrowRight size={14} />
-          </button>
+          </Button>
         </div>
       </motion.header>
 
       <div className="stitch-shell">
         {view === "board" ? (
-          <div style={{ position: "absolute", inset: 0, background: "#0B0B0D" }}>
+          <div className="cut-graph">
             <ReactFlow
               nodes={rfNodes}
               edges={rfEdges}
@@ -467,118 +444,126 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
               maxZoom={2}
               defaultEdgeOptions={{ type: "smoothstep" }}
             >
-              <Background gap={22} size={1} color="rgba(237,232,220,0.07)" />
-              <Controls
-                showInteractive={false}
-                style={{ background: "var(--surface)", border: "none", boxShadow: "var(--shadow-1)", borderRadius: "var(--radius)" }}
-              />
+              <Background gap={22} size={1} color="var(--border-standard)" />
+              <Controls showInteractive={false} className="cut-graph-panel" />
               <MiniMap
+                className="cut-graph-panel"
                 nodeStrokeWidth={0}
-                nodeColor={(n) => (n.selected ? "var(--tomato)" : "var(--viridian)")}
+                nodeColor={(n) => (n.selected ? "var(--brand-accent)" : "var(--text-tertiary)")}
                 nodeBorderRadius={6}
-                maskColor="rgba(11, 12, 16, 0.55)"
-                style={{
-                  background: "var(--surface)",
-                  border: "none",
-                  boxShadow: "var(--shadow-1)",
-                  borderRadius: "var(--radius)"
-                }}
+                maskColor="color-mix(in srgb, var(--surface-canvas) 60%, transparent)"
               />
             </ReactFlow>
-            <div
-              style={{
-                position: "absolute",
-                top: 16,
-                left: 16,
-                zIndex: 10,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "6px 12px",
-                background: "rgba(23,23,27,0.85)",
-                borderRadius: "var(--r-pill)",
-                boxShadow: "var(--shadow-1)",
-                pointerEvents: "none"
-              }}
-            >
+            <div className="cut-graph-hint">
               <span className="ws-meta">
                 Node graph · drag a node to move · drag the canvas to pan · click a node to edit
               </span>
             </div>
           </div>
         ) : (
-          <StitchTimeline nodes={stitchNodes} transitions={transitions} selectedId={selectedId} onSelect={setSelectedId} />
-        )}
-
-        {selected && (
-          <StitchInspector
-            node={selected}
-            view={view}
-            onClose={() => setSelectedId(null)}
-            onSetSceneNumber={(scene) => setSceneNumber(selected, scene)}
-            onSetDuration={(duration) => setDuration(selected, duration)}
-            onSetTrimStart={(trim_start) => setTrimStart(selected, trim_start)}
-            balance={balance}
+          <StitchTimeline
+            nodes={stitchNodes}
+            transitions={transitions}
+            selectedId={selectedId}
+            onSelect={selectShot}
+            projectId={project.id}
             aspectRatio={project.aspect_ratio}
-            onAnimate={(modelId, motion, audio, h3) => animate(selected, modelId, motion, audio, h3)}
-            onUploadClip={(file) => uploadClip(selected, file)}
-            onUploadDialogue={(file) => uploadDialogue(selected, file)}
-            onLipsync={(modelId) => lipsync(selected, modelId)}
-            onDelete={async () => {
-              if (
-                await confirmDialog({
-                  title: "Remove this shot from the board?",
-                  description: "The transition clips connected to it are removed with it. The storyboard frame it came from is kept.",
-                  confirmLabel: "Remove shot",
-                  destructive: true
-                })
-              ) {
-                deleteNode(selected.id);
-              }
-            }}
+            onSetDuration={setDuration}
+            onSetTrimStart={setTrimStart}
+            onReorder={reorder}
+            onGoToStoryboard={() => onSwitchWorkspace("storyboard")}
           />
         )}
+
       </div>
     </div>
   );
 }
 
 /* ───────────────────────── Timeline view ───────────────────────── */
-/* An NLE-style assembly: a monitor (plays the cut in real time), a
-   scrubbable ruler, and a filmstrip of shots with transition pills between
-   them. Replaces the plain filmstrip the app used to show in this slot. */
+/* The cut as a film timeline: a monitor that plays the assembly, a ruler you
+   scrub, and a clip lane with transition marks. Trim handles on the selected
+   clip commit on release; drag (or `[` / `]`) reorders by writing
+   scene_number, which is `x` on the server — the order the render reads. */
 
 const PX_PER_SEC = 46;
+const COL_WIDTH = 280;
+const MIN_SHOT_SEC = 0.5;
+/** The x the server assigns to scene `n` (stitch/nodes PATCH). */
+const xForScene = (scene: number) => (Math.max(1, scene) - 1) * COL_WIDTH + 80;
+
+function isTyping(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+}
 
 function StitchTimeline({
   nodes,
   transitions,
   selectedId,
-  onSelect
+  onSelect,
+  projectId,
+  aspectRatio,
+  onSetDuration,
+  onSetTrimStart,
+  onReorder,
+  onGoToStoryboard
 }: {
   nodes: StitchNode[];
   transitions: Transition[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  projectId: string;
+  aspectRatio: string;
+  onSetDuration: (node: StitchNode, duration: number) => void;
+  onSetTrimStart: (node: StitchNode, trimStart: number) => void;
+  onReorder: (orderedIds: string[]) => void;
+  onGoToStoryboard: () => void;
 }) {
+  // Render order: `x` is what scene_number writes and what the render reads
+  // (ORDER BY x, y); beat number and y break ties.
   const ordered = useMemo(
-    () => [...nodes].sort((a, b) => (a.beat?.n ?? 999) - (b.beat?.n ?? 999) || a.x - b.x),
+    () => [...nodes].sort((a, b) => a.x - b.x || (a.beat?.n ?? 999) - (b.beat?.n ?? 999) || a.y - b.y),
     [nodes]
+  );
+
+  // A trim in progress: the lane shows the draft; the PATCH goes on release.
+  const [draft, setDraft] = useState<{ id: string; duration: number; trim_start: number } | null>(null);
+  const shown = useMemo(
+    () => ordered.map((n) => (draft && draft.id === n.id ? { ...n, duration: draft.duration, trim_start: draft.trim_start } : n)),
+    [ordered, draft]
   );
 
   const offsets = useMemo(() => {
     let t = 0;
-    return ordered.map((n) => {
+    return shown.map((n) => {
       const start = t;
       t += n.duration;
       return { node: n, start, end: t };
     });
-  }, [ordered]);
+  }, [shown]);
 
   const total = offsets.length ? offsets[offsets.length - 1].end : 0;
 
   const [playing, setPlaying] = useState(false);
   const [playheadSec, setPlayheadSec] = useState(0);
+
+  // Audio lane only when a score is attached (GET score.attached).
+  const [scoreAttached, setScoreAttached] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/projects/${projectId}/score`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d) setScoreAttached(Boolean(d.attached));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [projectId]);
 
   // Keep the playhead in range if the assembly's total runtime shrinks
   // (a shot's duration drops, or a shot is removed) while it's parked past the end.
@@ -629,17 +614,96 @@ function StitchTimeline({
     if (!playing && !v.paused) v.pause();
   }, [playing, playheadSec, currentEntry]);
 
+  // Reorder: drag a clip onto another, or `[` / `]` on the selected clip.
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [drop, setDrop] = useState<{ id: string; side: "before" | "after" } | null>(null);
+
+  const moveTo = useCallback(
+    (id: string, index: number) => {
+      const ids = ordered.map((n) => n.id);
+      const from = ids.indexOf(id);
+      if (from < 0) return;
+      ids.splice(from, 1);
+      ids.splice(Math.max(0, Math.min(ids.length, index)), 0, id);
+      if (ids.every((x, i) => x === ordered[i].id)) return;
+      onReorder(ids);
+    },
+    [ordered, onReorder]
+  );
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "[" && e.key !== "]") return;
+      if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      const i = ordered.findIndex((n) => n.id === selectedId);
+      if (i < 0) return;
+      e.preventDefault();
+      moveTo(selectedId, e.key === "[" ? i - 1 : i + 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId, ordered, moveTo]);
+
+  function finishDrop() {
+    if (dragId && drop && drop.id !== dragId) {
+      const target = ordered.findIndex((n) => n.id === drop.id);
+      const from = ordered.findIndex((n) => n.id === dragId);
+      let index = drop.side === "before" ? target : target + 1;
+      if (from < index) index -= 1;
+      moveTo(dragId, index);
+    }
+    setDragId(null);
+    setDrop(null);
+  }
+
+  // Trim: pointer capture on the handle; draft while dragging, PATCH on release.
+  function startTrim(e: React.PointerEvent<HTMLButtonElement>, node: StitchNode, edge: "in" | "out") {
+    e.preventDefault();
+    e.stopPropagation();
+    const handle = e.currentTarget;
+    handle.setPointerCapture(e.pointerId);
+    const x0 = e.clientX;
+    const base = { duration: node.duration, trim_start: node.trim_start };
+    let last = base;
+    setDraft({ id: node.id, ...base });
+    const onMove = (ev: PointerEvent) => {
+      const dSec = (ev.clientX - x0) / PX_PER_SEC;
+      if (edge === "out") {
+        last = { duration: Math.max(MIN_SHOT_SEC, round1(base.duration + dSec)), trim_start: base.trim_start };
+      } else {
+        // The in-point moves: what is cut from the head is added to trim_start.
+        const cut = Math.max(-base.trim_start, Math.min(base.duration - MIN_SHOT_SEC, round1(dSec)));
+        last = { duration: round1(base.duration - cut), trim_start: round1(base.trim_start + cut) };
+      }
+      setDraft({ id: node.id, ...last });
+    };
+    const onUp = () => {
+      handle.removeEventListener("pointermove", onMove);
+      handle.removeEventListener("pointerup", onUp);
+      handle.removeEventListener("pointercancel", onUp);
+      setDraft(null);
+      if (last.duration !== base.duration) onSetDuration(node, last.duration);
+      if (last.trim_start !== base.trim_start) onSetTrimStart(node, last.trim_start);
+    };
+    handle.addEventListener("pointermove", onMove);
+    handle.addEventListener("pointerup", onUp);
+    handle.addEventListener("pointercancel", onUp);
+  }
+
   if (ordered.length === 0) {
     return (
-      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-        <span className="t-eyebrow" style={{ color: "var(--mute)" }}>
-          No shots yet · push frames from Storyboard
-        </span>
+      <div className="cut-empty">
+        <EmptyState
+          title="No shots on the timeline"
+          why="Shots arrive here when you push frames from the Storyboard. Once they do, this is where you play, trim and order the cut."
+          action={{ label: "Open Storyboard", onClick: onGoToStoryboard }}
+        />
       </div>
     );
   }
 
-  const current = offsets.find((e) => playheadSec >= e.start && playheadSec < e.end) ?? offsets[offsets.length - 1];
+  const current = currentEntry ?? offsets[offsets.length - 1];
   const pct = total > 0 ? (playheadSec / total) * 100 : 0;
 
   function togglePlay() {
@@ -649,10 +713,19 @@ function StitchTimeline({
     });
   }
 
-  function onRulerClick(e: React.MouseEvent<HTMLDivElement>) {
+  // Scrub: press anywhere on the ruler and drag.
+  function scrubTo(e: React.PointerEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     setPlayheadSec(Math.max(0, Math.min(total, x / PX_PER_SEC)));
+  }
+  function onRulerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setPlaying(false);
+    scrubTo(e);
+  }
+  function onRulerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.buttons & 1) scrubTo(e);
   }
 
   // Coarser tick spacing on longer assemblies so the ruler doesn't render
@@ -663,16 +736,17 @@ function StitchTimeline({
     ticks.push({ sec: s, x: s * PX_PER_SEC, major: tickStep >= 5 || s % 5 === 0 });
   }
 
-  // Include the filmstrip's flex `gap` so the declared width always contains
-  // the clip row exactly — otherwise the fixed-width clip buttons (plus their
-  // gaps) can exceed this box and overflow the scrollable ancestor.
+  // Include the lane's flex `gap` so the declared width always contains the
+  // clip row exactly — otherwise the fixed-width clips (plus their gaps) can
+  // exceed this box and overflow the scrollable ancestor.
   const tlWidth = total * PX_PER_SEC + Math.max(0, offsets.length - 1) * 2;
+  const monitorAspect = /^\d+:\d+$/.test(aspectRatio) ? aspectRatio.replace(":", " / ") : "16 / 9";
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "grid", gridTemplateRows: "minmax(0, 1fr) 190px", background: "var(--bg)", overflow: "hidden" }}>
+    <div className="cut">
       {/* Monitor */}
-      <div style={{ position: "relative", display: "grid", placeItems: "center", background: "#060607", overflow: "hidden", borderBottom: "1px solid var(--cream-deep)", padding: 20 }}>
-        <div style={{ position: "relative", height: "100%", maxHeight: "100%", aspectRatio: "16/9", maxWidth: "100%", background: "#000", borderRadius: "var(--r-md)", overflow: "hidden", boxShadow: "var(--shadow-2)" }}>
+      <div className="cut-monitor">
+        <div className="cut-monitor-frame" style={{ aspectRatio: monitorAspect }}>
           {current.node.clip_url ? (
             /* eslint-disable-next-line jsx-a11y/media-has-caption */
             <video
@@ -683,236 +757,150 @@ function StitchTimeline({
               muted
               playsInline
               preload="auto"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             />
           ) : current.node.frame_url ? (
             <div
               role="img"
               aria-label={current.node.beat?.title ?? ""}
-              style={{ position: "absolute", inset: 0, backgroundImage: `url(${current.node.frame_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
+              className="cut-monitor-still"
+              style={{ backgroundImage: `url(${current.node.frame_url})` }}
             />
           ) : (
-            <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+            <div className="cut-monitor-pending">
               <span className="ws-meta">
                 Frame pending · S{current.node.beat?.n ? String(current.node.beat.n).padStart(2, "0") : "—"}
               </span>
             </div>
           )}
-          <span
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 14,
-              maxWidth: "calc(100% - 150px)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: "0.02em",
-              color: "rgba(237,232,220,0.85)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.7)"
-            }}
-          >
-            {current.node.beat?.scene_heading ?? "—"}
-          </span>
-          <span
-            style={{
-              position: "absolute",
-              top: 10,
-              right: 14,
-              fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              letterSpacing: "0.08em",
-              color: "rgba(237,232,220,0.85)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.7)"
-            }}
-          >
+          <span className="cut-monitor-heading">{current.node.beat?.scene_heading ?? "—"}</span>
+          <span className="cut-monitor-tc">
             {formatTC(playheadSec)} / {formatTC(total)}
           </span>
-          <button
-            onClick={togglePlay}
-            aria-label="Play / pause assembly"
-            style={{
-              position: "absolute",
-              bottom: 12,
-              left: 14,
-              width: 34,
-              height: 34,
-              display: "grid",
-              placeItems: "center",
-              background: "rgba(10,10,12,0.72)",
-              color: "#EDE8DC",
-              border: "1px solid rgba(237,232,220,0.25)",
-              borderRadius: "var(--r-pill)",
-              cursor: "pointer"
-            }}
-          >
+          <IconButton label={playing ? "Pause" : "Play"} className="cut-monitor-play" onClick={togglePlay}>
             {playing ? <Pause size={14} /> : <Play size={14} />}
-          </button>
-          <span
-            style={{
-              position: "absolute",
-              bottom: 20,
-              right: 14,
-              fontSize: 12,
-              fontWeight: 500,
-              color: "rgba(237,232,220,0.9)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.7)"
-            }}
-          >
-            {current.node.beat?.title ?? "Untitled"}
-          </span>
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, background: "rgba(237,232,220,0.15)" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent)" }} />
+          </IconButton>
+          <span className="cut-monitor-title">{current.node.beat?.title ?? "Untitled"}</span>
+          <div className="cut-monitor-progress">
+            <span style={{ width: `${pct}%` }} />
           </div>
         </div>
       </div>
 
-      {/* Filmstrip */}
-      <div style={{ display: "flex", flexDirection: "column", background: "var(--surface)", minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--cream-deep)" }}>
+      {/* Tracks */}
+      <div className="cut-tracks">
+        <div className="cut-tracks-head">
           <span className="ws-meta">
             {ordered.length} shots · {total.toFixed(1)}s runtime
           </span>
-          <span style={{ fontSize: 11, color: "var(--mute)" }}>Click the ruler to scrub · click a shot to edit · ▶ plays the assembly</span>
+          <span className="cut-tracks-hint">
+            Drag the ruler to scrub · click a shot to edit · drag a shot, or press [ ] on the selected one, to reorder
+          </span>
         </div>
-        <div style={{ flex: 1, overflowX: "auto", overflowY: "hidden", padding: "0 20px 12px" }}>
-          <div style={{ position: "relative", width: tlWidth, minWidth: "100%", height: "100%" }}>
-            <div onClick={onRulerClick} style={{ position: "relative", height: 26, cursor: "pointer", borderBottom: "1px solid var(--cream-deep)" }}>
+        <div className="cut-scroll">
+          <div className="cut-track" style={{ width: tlWidth }}>
+            <div className="cut-ruler" role="slider" aria-label="Playhead" aria-valuemin={0} aria-valuemax={total} aria-valuenow={playheadSec} onPointerDown={onRulerDown} onPointerMove={onRulerMove}>
               {ticks.map((tk) => (
                 <Fragment key={tk.sec}>
-                  <span style={{ position: "absolute", left: tk.x, bottom: 0, width: 1, height: tk.major ? 16 : 8, background: "var(--cream-deep)", pointerEvents: "none" }} />
+                  <span className="cut-tick" data-major={tk.major || undefined} style={{ left: tk.x }} />
                   {tk.major && (
-                    <span style={{ position: "absolute", left: tk.x, top: 1, transform: "translateX(4px)", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--mute)", pointerEvents: "none" }}>
+                    <span className="cut-tick-label" style={{ left: tk.x }}>
                       {formatTC(tk.sec)}
                     </span>
                   )}
                 </Fragment>
               ))}
             </div>
-            <div style={{ position: "absolute", top: 36, left: 0, right: 0, bottom: 0, display: "flex", gap: 2 }}>
+            <div className="cut-lane">
               {offsets.map(({ node: n }, i) => (
-                <button
+                <div
                   key={n.id}
-                  onClick={() => onSelect(n.id)}
-                  title={`${n.beat?.title ?? "Untitled"} · ${n.duration.toFixed(1)}s`}
-                  style={{
-                    position: "relative",
-                    flex: "0 0 auto",
-                    height: "100%",
-                    width: n.duration * PX_PER_SEC,
-                    border: "none",
-                    borderRadius: "var(--r-md)",
-                    overflow: "hidden",
-                    background: "var(--cream-deep)",
-                    boxShadow: n.id === selectedId ? "inset 0 0 0 2px var(--accent), var(--shadow-2)" : "var(--shadow-1)",
-                    cursor: "pointer",
-                    padding: 0
+                  className="cut-clip"
+                  style={{ width: n.duration * PX_PER_SEC }}
+                  data-selected={n.id === selectedId || undefined}
+                  data-dragging={dragId === n.id || undefined}
+                  data-drop={drop?.id === n.id && dragId !== n.id ? drop.side : undefined}
+                  draggable={draft === null}
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", n.id);
+                    setDragId(n.id);
+                  }}
+                  onDragOver={(e) => {
+                    if (!dragId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    const r = e.currentTarget.getBoundingClientRect();
+                    const side = e.clientX < r.left + r.width / 2 ? "before" : "after";
+                    if (drop?.id !== n.id || drop.side !== side) setDrop({ id: n.id, side });
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    finishDrop();
+                  }}
+                  onDragEnd={() => {
+                    setDragId(null);
+                    setDrop(null);
                   }}
                 >
-                  {n.frame_url ? (
-                    <span
-                      role="img"
-                      aria-label={n.beat?.title ?? ""}
-                      style={{ position: "absolute", inset: 0, backgroundImage: `url(${n.frame_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-                    />
-                  ) : (
-                    <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--mute)" }}>
-                      Pending
+                  <button
+                    type="button"
+                    className="shot-strip-item"
+                    data-selected={n.id === selectedId}
+                    onClick={() => onSelect(n.id)}
+                    title={`${n.beat?.title ?? "Untitled"} · ${n.duration.toFixed(1)}s`}
+                    style={{ width: n.duration * PX_PER_SEC }}
+                  >
+                    {n.frame_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="shot-strip-frame" src={n.frame_url} alt={n.beat?.title ?? ""} draggable={false} />
+                    ) : (
+                      <span className="shot-strip-empty">No frame</span>
+                    )}
+                    {shotStatus(n) && <Status domain="generation" value={shotStatus(n)!} className="shot-strip-status" />}
+                    {n.clip_state === "generating" && <span className="shot-strip-shimmer" aria-hidden="true" />}
+                    <span className="shot-strip-foot">
+                      <span className="shot-strip-n">S{String(n.beat?.n ?? i + 1).padStart(2, "0")}</span>
+                      <span className="shot-strip-dur">{n.duration.toFixed(1)}s</span>
                     </span>
-                  )}
-                  <span style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,6,7,0.75), transparent 45%)" }} />
-                  <span style={{ position: "absolute", bottom: 6, left: 8, fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "#EDE8DC" }}>
-                    S{String(n.beat?.n ?? i + 1).padStart(2, "0")}
-                  </span>
-                  <span style={{ position: "absolute", bottom: 6, right: 8, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.06em", color: "var(--accent)" }}>
-                    {n.duration.toFixed(1)}s
-                  </span>
-                  {n.clip_url && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: 6,
-                        left: 8,
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 8.5,
-                        letterSpacing: "0.02em",
-                        padding: "2px 6px",
-                        borderRadius: "var(--r-pill)",
-                        background: "var(--viridian)",
-                        color: "var(--on-accent-3)"
-                      }}
-                    >
-                      ▶ Clip
-                    </span>
-                  )}
-                  {n.clip_state === "generating" && (
+                  </button>
+                  {n.id === selectedId && (
                     <>
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: 6,
-                          left: 8,
-                          fontFamily: "var(--font-mono)",
-                          fontSize: 8.5,
-                          letterSpacing: "0.02em",
-                          padding: "2px 6px",
-                          borderRadius: "var(--r-pill)",
-                          background: "var(--mustard)",
-                          color: "#14100C"
-                        }}
-                      >
-                        Rendering…
-                      </span>
-                      <span
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          background: "linear-gradient(100deg, transparent 35%, rgba(255,251,241,0.35) 50%, transparent 65%)",
-                          transform: "translateX(-100%)",
-                          animation: "fx-shimmer 1.6s ease-out infinite"
-                        }}
+                      <button
+                        type="button"
+                        className="cut-trim"
+                        data-edge="in"
+                        aria-label={`Trim in-point (offset ${n.trim_start.toFixed(1)}s)`}
+                        title="Drag to trim the head of the shot"
+                        onPointerDown={(e) => startTrim(e, n, "in")}
+                      />
+                      <button
+                        type="button"
+                        className="cut-trim"
+                        data-edge="out"
+                        aria-label={`Trim out-point (${n.duration.toFixed(1)}s)`}
+                        title="Drag to change the shot's duration"
+                        onPointerDown={(e) => startTrim(e, n, "out")}
                       />
                     </>
                   )}
-                </button>
+                </div>
               ))}
             </div>
+            {scoreAttached && (
+              <div className="cut-lane cut-lane-audio" aria-label="Score">
+                <Music size={12} /> Score · runs under the whole cut
+              </div>
+            )}
             {transitions.map((t) => {
               const from = offsets.find((e) => e.node.id === t.from_node_id);
               if (!from) return null;
-              const colors = TRANSITION_PILL_COLOR[t.state];
               return (
-                <span
-                  key={t.id}
-                  style={{
-                    position: "absolute",
-                    top: 26,
-                    left: from.end * PX_PER_SEC,
-                    transform: "translate(-50%, -50%)",
-                    zIndex: 5,
-                    display: "inline-flex",
-                    padding: "2px 8px",
-                    background: colors.bg,
-                    color: colors.fg,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 8.5,
-                    letterSpacing: "0.02em",
-                    borderRadius: "var(--r-pill)",
-                    boxShadow: "var(--shadow-1)",
-                    whiteSpace: "nowrap",
-                    pointerEvents: "none"
-                  }}
-                >
+                <span key={t.id} className="cut-transition" data-state={t.state} style={{ left: from.end * PX_PER_SEC }}>
                   {transitionLabel(t)}
                 </span>
               );
             })}
-            <div style={{ position: "absolute", top: 0, bottom: 0, left: playheadSec * PX_PER_SEC, width: 2, background: "var(--accent)", zIndex: 6, pointerEvents: "none" }}>
-              <span style={{ position: "absolute", top: 0, left: -4, width: 10, height: 9, background: "var(--accent)", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
-            </div>
+            <div className="cut-playhead" style={{ left: playheadSec * PX_PER_SEC }} />
           </div>
         </div>
       </div>
@@ -920,591 +908,6 @@ function StitchTimeline({
   );
 }
 
-/* ───────────────────────── Inspector ───────────────────────── */
-
-function StitchInspector({
-  node,
-  aspectRatio,
-  view,
-  onClose,
-  onSetSceneNumber,
-  onSetDuration,
-  onSetTrimStart,
-  balance,
-  onAnimate,
-  onUploadClip,
-  onUploadDialogue,
-  onLipsync,
-  onDelete
-}: {
-  node: StitchNode;
-  aspectRatio: string;
-  view: "board" | "timeline";
-  onClose: () => void;
-  onSetSceneNumber: (n: number) => void;
-  onSetDuration: (d: number) => void;
-  onSetTrimStart: (t: number) => void;
-  balance: Balance | null;
-  onAnimate: (
-    modelId: string,
-    motion: string,
-    audio: boolean,
-    h3?: H3ShotOptions
-  ) => Promise<{ ok?: boolean; simulated?: boolean; error?: string; note?: string; vendor?: string; warnings?: string[] } | null>;
-  onUploadClip: (file: File) => Promise<{ error?: string } | null>;
-  onUploadDialogue: (file: File) => Promise<{ error?: string } | null>;
-  onLipsync: (modelId?: string) => Promise<{ ok?: boolean; error?: string; vendor?: string } | null>;
-  onDelete: () => void;
-}) {
-  const [scene, setScene] = useState<number>(node.beat?.n ?? 1);
-  const [duration, setDurationLocal] = useState<number>(node.duration);
-  const [trimStart, setTrimStartLocal] = useState<number>(node.trim_start);
-  const [animating, setAnimating] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
-  const [modelId, setModelId] = useState<string>(DEFAULT_VIDEO_MODEL);
-  const [motionId, setMotionId] = useState<string>("auto");
-  const [audioOn, setAudioOn] = useState<boolean>(false);
-  const [h3Options, setH3Options] = useState<H3ShotOptions>({ continuityMode: "cut", endFrame: false });
-  const [h3Ready, setH3Ready] = useState(false);
-  const [lipsyncModelId, setLipsyncModelId] = useState<string>(DEFAULT_LIPSYNC_MODEL);
-  const [uploadingClip, setUploadingClip] = useState(false);
-  const [uploadClipNote, setUploadClipNote] = useState<string | null>(null);
-  const [uploadingDialogue, setUploadingDialogue] = useState(false);
-  const [lipsyncing, setLipsyncing] = useState(false);
-  const [lipsyncNote, setLipsyncNote] = useState<string | null>(null);
-  const model = videoModel(modelId);
-  const isH3 = model.provider === "minimax_h3";
-  const isHiggs = model.provider !== "byteplus" && !isH3;
-  const credits = balance?.credits ?? null;
-  const tooPoor = isHiggs && credits != null && credits < model.approxCost;
-
-  useEffect(() => {
-    setScene(node.beat?.n ?? 1);
-    setDurationLocal(node.duration);
-    setTrimStartLocal(node.trim_start);
-    setNote(null);
-  }, [node.id, node.beat?.n, node.duration, node.trim_start]);
-  useEffect(() => { setH3Options({ continuityMode: "cut", endFrame: false }); }, [node.id]);
-
-  return (
-    <motion.aside
-      {...popIn}
-      style={{
-        position: "absolute",
-        top: 16,
-        right: 16,
-        // The timeline view reserves its 190px filmstrip along the bottom; the
-        // graph view has no bottom chrome to clear.
-        bottom: view === "timeline" ? 206 : 16,
-        width: 320,
-        background: "var(--surface)",
-        borderRadius: "var(--r-lg)",
-        boxShadow: "var(--shadow-2)",
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        overflow: "auto"
-      }}
-    >
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, paddingBottom: 12, borderBottom: "1px solid var(--cream-deep)" }}>
-        <div>
-          <span className="ws-meta">
-            SCENE {String(scene).padStart(2, "0")}
-            {node.variant_n ? ` · V${String(node.variant_n).padStart(2, "0")}` : ""}
-          </span>
-          <h3 style={{ margin: "4px 0 0", fontWeight: 600, fontSize: 18, letterSpacing: "-0.005em", color: "var(--ink)" }}>
-            {node.beat?.title ?? "Untitled"}
-          </h3>
-        </div>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: 6,
-            color: "var(--ink)",
-            background: "color-mix(in srgb, var(--ink) 5%, transparent)",
-            border: 0,
-            boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent)",
-            borderRadius: "var(--r-pill)",
-            cursor: "pointer"
-          }}
-        >
-          <X size={14} />
-        </button>
-      </header>
-
-      {node.clip_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: "var(--r-lg)", background: "#14100c", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video
-            src={node.lipsync_url ?? node.clip_url}
-            poster={node.frame_url ?? undefined}
-            controls
-            loop
-            muted
-            playsInline
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          />
-          <span
-            style={{
-              position: "absolute",
-              top: 8,
-              left: 8,
-              fontFamily: "var(--font-mono)",
-              fontSize: 9,
-              letterSpacing: "0.02em",
-              padding: "2px 6px",
-              borderRadius: "var(--r-pill)",
-              background: "var(--viridian)",
-              color: "var(--on-accent-3)",
-              pointerEvents: "none"
-            }}
-          >
-            {node.lipsync_url ? "▶ Lip-synced" : "▶ Clip ready"}
-          </span>
-        </div>
-      ) : node.frame_url ? (
-        <div style={{ position: "relative", overflow: "hidden", borderRadius: "var(--r-lg)", background: "var(--cream-deep)", aspectRatio: "16/9", flexShrink: 0, minHeight: 160 }}>
-          <div
-            role="img"
-            aria-label={node.beat?.title ?? ""}
-            style={{ width: "100%", height: "100%", backgroundImage: `url(${node.frame_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-          />
-          {(animating || node.clip_state === "generating") && (
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.62)" }}>
-              <span className="ws-meta">Rendering clip…</span>
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      <div>
-        <span className="ws-meta">Scene number</span>
-        <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
-          <input
-            type="number"
-            min={1}
-            value={scene}
-            onChange={(e) => setScene(Math.max(1, Number(e.target.value) || 1))}
-            onBlur={() => {
-              if (scene !== (node.beat?.n ?? 1)) onSetSceneNumber(scene);
-            }}
-            style={{
-              width: 80,
-              padding: "8px 10px",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              border: "none",
-              borderRadius: "var(--r-md)",
-              boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-              fontFamily: "var(--font-mono)",
-              fontSize: 13,
-              textAlign: "center",
-              outline: "none"
-            }}
-          />
-          <span style={{ fontSize: 11, color: "var(--mute)", lineHeight: 1.35 }}>Sets the horizontal column on the board.</span>
-        </div>
-      </div>
-
-      <div>
-        <span className="ws-meta">Scene heading</span>
-        <div
-          style={{
-            marginTop: 8,
-            padding: "8px 12px",
-            background: "var(--bg)",
-            borderRadius: "var(--r-lg)",
-            fontFamily: "var(--font-mono)",
-            fontSize: 13,
-            color: "var(--ink-soft)"
-          }}
-        >
-          {node.beat?.scene_heading ?? "—"}
-        </div>
-      </div>
-
-      {(node.beat?.characters?.length ?? 0) > 0 && (
-        <div>
-          <span className="ws-meta">Cast in frame</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-            {(node.beat?.characters ?? []).map((c) => (
-              <span
-                key={c}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "5px 12px",
-                  fontWeight: 500,
-                  fontSize: 13,
-                  borderRadius: "var(--r-pill)",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  boxShadow: "var(--shadow-1)"
-                }}
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <span className="ws-meta">
-          Duration · {duration.toFixed(3)}s
-        </span>
-        <input
-          type="range"
-          min={0.5}
-          max={20}
-          step={1 / 24}
-          value={duration}
-          onChange={(e) => setDurationLocal(Number(e.target.value))}
-          onMouseUp={() => onSetDuration(duration)}
-          onTouchEnd={() => onSetDuration(duration)}
-          onKeyUp={() => onSetDuration(duration)}
-          style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
-        />
-      </div>
-
-      <div>
-        <span className="ws-meta">
-          Trim in-point · {trimStart.toFixed(3)}s into the clip
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={15}
-          step={1 / 24}
-          value={trimStart}
-          onChange={(e) => setTrimStartLocal(Number(e.target.value))}
-          onMouseUp={() => onSetTrimStart(trimStart)}
-          onTouchEnd={() => onSetTrimStart(trimStart)}
-          onKeyUp={() => onSetTrimStart(trimStart)}
-          style={{ width: "100%", marginTop: 8, accentColor: "var(--accent)" }}
-          title="Which second of the generated clip to start keeping from — useful for a short beat that only needs a few seconds out of a longer take"
-        />
-      </div>
-
-      {(node.lipsync_url || node.clip_url) && <ClipFrameTools nodeId={node.id} clipUrl={(node.lipsync_url || node.clip_url)!} />}
-
-      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-        <span className="ws-meta">Camera motion</span>
-        <select
-          value={motionId}
-          onChange={(e) => setMotionId(e.target.value)}
-          title="How Seedance moves the camera for this shot"
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            border: "none",
-            borderRadius: "var(--r-lg)",
-            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13,
-            fontWeight: 500,
-            outline: "none",
-            cursor: "pointer"
-          }}
-        >
-          {CAMERA_MOTIONS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            marginTop: 2,
-            cursor: "pointer",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13,
-            color: "var(--ink)"
-          }}
-          title={isH3 ? "H3 generates audio jointly with picture; this is not a mute switch." : "Let Seedance generate a native audio track for this clip (off = silent, scored later in Export)"}
-        >
-          <span>{isH3 ? "Joint H3 audio (always generated)" : "Native audio"}</span>
-          <input
-            type="checkbox"
-            checked={isH3 || audioOn}
-            disabled={isH3}
-            onChange={(e) => setAudioOn(e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: "var(--accent)", cursor: "pointer" }}
-          />
-        </label>
-
-        <span style={{ marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--mute)" }}>Video model</span>
-        <select
-          value={modelId}
-          onChange={(e) => setModelId(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            border: "none",
-            borderRadius: "var(--r-lg)",
-            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13,
-            fontWeight: 500,
-            outline: "none",
-            cursor: "pointer"
-          }}
-        >
-          {VIDEO_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label} · {m.costText}
-            </option>
-          ))}
-        </select>
-        <p style={{ margin: 0, color: "var(--mute)", fontSize: 11, lineHeight: 1.35 }}>{model.description}</p>
-        {isH3 && <H3Controls duration={node.duration} aspectRatio={aspectRatio} value={h3Options} onChange={setH3Options} onReady={setH3Ready} />}
-        {isH3 && <H3LiveMonitor />}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            color: tooPoor ? "var(--accent)" : "var(--mute)"
-          }}
-        >
-          <span>
-            {isH3 ? "RunPod · metered GPU time" : model.costText}
-            {isH3 ? "" : isHiggs ? " credits" : " / clip"}
-          </span>
-          <span>
-            {isH3 ? "20-step base" : !isHiggs
-              ? "BytePlus · free tokens"
-              : credits != null
-              ? `Balance ${credits}`
-              : balance?.connected === false
-              ? "Higgsfield off"
-              : "—"}
-          </span>
-        </div>
-        <button
-          disabled={animating || (!isH3 && !node.frame_url) || (isH3 && !h3Ready)}
-          onClick={async () => {
-            setNote(null);
-            setAnimating(true);
-            try {
-              const res = await onAnimate(modelId, motionId, audioOn, isH3 ? h3Options : undefined);
-              if (res?.simulated) setNote(res.note ?? "Simulated — connect Higgsfield or add a video key to render real motion.");
-              else if (res?.error) setNote(res.error);
-              else if (res?.ok) setNote([`Clip rendered by ${res.vendor ?? "the video model"}.`, ...(res.warnings ?? [])].join(" "));
-            } finally {
-              setAnimating(false);
-            }
-          }}
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "var(--on-accent)",
-            background: "var(--accent)",
-            border: "none",
-            borderRadius: "var(--r-pill)",
-            boxShadow: "var(--shadow-1)",
-            cursor: "pointer"
-          }}
-        >
-          <Film size={12} /> {animating ? "Rendering…" : node.clip_url ? "Re-roll clip" : "Generate clip"}
-        </button>
-        {tooPoor && (
-          <span style={{ fontSize: 11, color: "var(--accent)", lineHeight: 1.35 }}>
-            Balance is below ≈{model.approxCost} cr — top up Higgsfield or pick a cheaper model.
-          </span>
-        )}
-      </div>
-      {note && (
-        <p style={{ fontSize: 11, marginTop: 8, lineHeight: 1.4, color: "var(--mute)" }}>{note}</p>
-      )}
-
-      <label
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          padding: "8px 14px",
-          fontWeight: 600,
-          fontSize: 13,
-          color: "var(--ink)",
-          background: "var(--surface-2)",
-          borderRadius: "var(--r-pill)",
-          cursor: uploadingClip ? "default" : "pointer",
-          opacity: uploadingClip ? 0.6 : 1
-        }}
-        title="Attach a clip you generated somewhere else (e.g. Higgsfield's own web app) instead of generating one here"
-      >
-        <input
-          type="file"
-          accept=".mp4,.mov,.webm"
-          disabled={uploadingClip}
-          style={{ display: "none" }}
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (!file) return;
-            setUploadingClip(true);
-            setUploadClipNote(null);
-            try {
-              const res = await onUploadClip(file);
-              if (res?.error) setUploadClipNote(res.error);
-            } finally {
-              setUploadingClip(false);
-            }
-          }}
-        />
-        {uploadingClip ? "Uploading…" : "Upload a clip instead"}
-      </label>
-      {uploadClipNote && (
-        <p style={{ fontSize: 11, lineHeight: 1.4, color: "var(--mute)" }}>{uploadClipNote}</p>
-      )}
-
-      <div style={{ borderTop: "1px solid var(--cream-deep)", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-        <span className="ws-meta">
-          Lip sync {node.dialogue_audio_url ? "· dialogue attached" : "· no dialogue yet"}
-        </span>
-        <label
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            padding: "8px 14px",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "var(--ink)",
-            background: "var(--surface-2)",
-            borderRadius: "var(--r-pill)",
-            cursor: uploadingDialogue ? "default" : "pointer",
-            opacity: uploadingDialogue ? 0.6 : 1
-          }}
-        >
-          <input
-            type="file"
-            accept=".mp3,.m4a,.wav,.aac"
-            disabled={uploadingDialogue}
-            style={{ display: "none" }}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              setUploadingDialogue(true);
-              setLipsyncNote(null);
-              try {
-                const res = await onUploadDialogue(file);
-                if (res?.error) setLipsyncNote(res.error);
-              } finally {
-                setUploadingDialogue(false);
-              }
-            }}
-          />
-          {uploadingDialogue ? "Uploading…" : node.dialogue_audio_url ? "Replace dialogue track" : "Upload dialogue track"}
-        </label>
-        <select
-          value={lipsyncModelId}
-          onChange={(e) => setLipsyncModelId(e.target.value)}
-          title="Sync.so lip-sync model — billed on your own Sync.so account, separate from the BytePlus balance above"
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            border: "none",
-            borderRadius: "var(--r-md)",
-            boxShadow: "inset 0 0 0 1.5px var(--cream-deep)",
-            fontFamily: "var(--font-ui)",
-            fontSize: 13
-          }}
-        >
-          {LIPSYNC_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label} · {m.costText}
-            </option>
-          ))}
-        </select>
-        <button
-          disabled={lipsyncing || !node.dialogue_audio_url || (!node.clip_url && !node.frame_url)}
-          onClick={async () => {
-            setLipsyncNote(null);
-            setLipsyncing(true);
-            try {
-              const res = await onLipsync(lipsyncModelId);
-              if (res?.error) setLipsyncNote(res.error);
-              else if (res?.ok) setLipsyncNote(`Lip-synced by ${res.vendor ?? "Sync.so"}.`);
-            } finally {
-              setLipsyncing(false);
-            }
-          }}
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "var(--ink)",
-            background: "var(--surface-2)",
-            border: "none",
-            borderRadius: "var(--r-pill)",
-            cursor: "pointer",
-            opacity: lipsyncing || !node.dialogue_audio_url || (!node.clip_url && !node.frame_url) ? 0.5 : 1
-          }}
-        >
-          {lipsyncing || node.lipsync_state === "generating"
-            ? "Syncing…"
-            : node.lipsync_url
-              ? "Re-sync lips"
-              : "Sync lips to dialogue"}
-        </button>
-        {lipsyncNote && (
-          <p style={{ fontSize: 11, lineHeight: 1.4, color: "var(--mute)" }}>{lipsyncNote}</p>
-        )}
-      </div>
-
-      <button
-        onClick={onDelete}
-        style={{
-          width: "100%",
-          justifyContent: "center",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "8px 14px",
-          fontWeight: 600,
-          fontSize: 13,
-          color: "var(--on-accent)",
-          background: "var(--tomato-deep)",
-          border: "none",
-          borderRadius: "var(--r-pill)",
-          boxShadow: "var(--shadow-1)",
-          cursor: "pointer"
-        }}
-      >
-        <Trash2 size={12} /> Remove from the board
-      </button>
-    </motion.aside>
-  );
+function round1(n: number) {
+  return Math.round(n * 10) / 10;
 }

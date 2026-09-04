@@ -1,1 +1,496 @@
-/* Stage: shots. Owned by the shots rebuild (docs/FYLMER_TASKS.md). */
+/* Stage: shots. Owned by the shots rebuild (docs/FYLMER_TASKS.md).
+   Three surfaces: the shot strip (filmstrip items inside the timeline), the
+   graph node card, and the Shot Desk — the inspector body registered for
+   kind "shot". Tokens only; widths that come from data stay inline. */
+
+/* ───────────────────────── Shot strip ───────────────────────── */
+.shot-strip-item {
+  position: relative;
+  flex: 0 0 auto;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-surface);
+  overflow: hidden;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-1);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow var(--dur-1) var(--ease-out);
+}
+.shot-strip-item[data-selected="true"] {
+  box-shadow: inset 0 0 0 2px var(--brand-accent), var(--shadow-2);
+}
+.shot-strip-item:focus-visible { box-shadow: var(--shadow-focus); }
+.shot-strip-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shot-strip-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+.shot-strip-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: 3px var(--sp-2);
+  background: color-mix(in srgb, var(--surface-canvas) 78%, transparent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  min-width: 0;
+}
+.shot-strip-n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot-strip-dur { color: var(--text-secondary); flex: 0 0 auto; }
+.shot-strip-status {
+  position: absolute;
+  top: var(--sp-1);
+  left: var(--sp-1);
+  z-index: 1;
+  background: var(--surface-overlay);
+  border-radius: var(--r-control);
+}
+.shot-strip-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--text-primary) 18%, transparent);
+  transform: translateX(-100%);
+  animation: fx-shimmer 1.6s var(--ease-out) infinite;
+  mask-image: linear-gradient(100deg, transparent 35%, #000 50%, transparent 65%);
+}
+
+/* ───────────────────────── Graph node card ───────────────────────── */
+/* .stitch-node itself is sized and shadowed in globals.css; this file owns
+   the card's interior. */
+.stitch-node { background: var(--surface-overlay); }
+.stitch-node-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 7px 10px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+  min-width: 0;
+}
+.stitch-node-scene {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  color: var(--brand-accent);
+  white-space: nowrap;
+}
+.stitch-node-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--surface-canvas);
+  overflow: hidden;
+}
+.stitch-node-frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.stitch-node-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+.stitch-node-body {
+  padding: var(--sp-2) 10px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.stitch-node-title {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stitch-node-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+.stitch-node-meta strong { font-weight: 500; color: var(--brand-accent); }
+.stitch-node .stitch-node-handle {
+  top: 86px;
+  width: 11px;
+  height: 11px;
+  transform: none;
+  border-radius: 50%;
+  background: var(--brand-accent);
+  border: 2px solid var(--surface-canvas);
+  opacity: 1;
+}
+.stitch-node .stitch-node-handle.is-target { left: -6px; }
+.stitch-node .stitch-node-handle.is-source { right: -6px; }
+
+/* ───────────────────────── Shot Desk (inspector body) ───────────────────────── */
+.shot-desk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.shot-desk-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.shot-desk-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  min-width: 0;
+}
+.shot-desk-label > span:first-child { white-space: nowrap; }
+.shot-desk-label .shot-desk-value {
+  text-transform: none;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shot-desk-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.shot-desk-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary);
+}
+.shot-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+  text-wrap: pretty;
+}
+.shot-why {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--status-warning);
+  text-wrap: pretty;
+}
+.shot-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+
+/* Preview */
+.shot-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-surface);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-1);
+  min-height: 120px;
+}
+.shot-preview > video,
+.shot-preview > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--surface-canvas);
+  display: block;
+}
+.shot-preview-status {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 1;
+  pointer-events: none;
+  background: var(--surface-overlay);
+  border-radius: var(--r-control);
+}
+.shot-preview-veil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--surface-canvas) 62%, transparent);
+}
+
+/* Takes */
+.shot-takes {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  min-width: 0;
+  padding-bottom: 2px;
+}
+.shot-take {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  width: 96px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+}
+.shot-take-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--r-control);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-1);
+}
+.shot-take-thumb > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.shot-take[aria-pressed="true"] .shot-take-thumb { box-shadow: inset 0 0 0 2px var(--brand-accent); }
+.shot-take[aria-pressed="true"] { color: var(--text-primary); }
+.shot-take-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* References — true chips, so the pill radius is allowed here. */
+.shot-refs { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.shot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-1);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.shot-chip > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot-chip-detail {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary);
+}
+.shot-chip[data-state="trained"] .shot-chip-detail { color: var(--status-success); }
+.shot-chip[data-state="training"] .shot-chip-detail { color: var(--status-warning); }
+.shot-chip[data-state="failed"] .shot-chip-detail { color: var(--status-error); }
+
+/* Direction */
+.shot-direction {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-control);
+  background: var(--surface-raised);
+  font-size: 13px;
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+/* Fields */
+.shot-field { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+.shot-field > span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.shot-select,
+.shot-input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-standard);
+  border-radius: var(--r-control);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  outline: none;
+}
+.shot-select:focus-visible,
+.shot-input:focus-visible { box-shadow: var(--shadow-focus); }
+.shot-input[type="number"] {
+  width: 84px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.shot-range { width: 100%; margin: 0; accent-color: var(--brand-accent); }
+.shot-inline { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.shot-inline > .shot-hint { flex: 1 1 auto; min-width: 0; }
+.shot-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 0;
+}
+.shot-check > span { min-width: 0; overflow-wrap: anywhere; }
+.shot-check input { width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--brand-accent); }
+.shot-check[data-disabled="true"] { color: var(--text-disabled); cursor: default; }
+
+/* Recipe */
+.shot-recipe {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+  padding: var(--sp-2) var(--sp-3);
+}
+.shot-recipe > summary {
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.shot-recipe dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--sp-1) var(--sp-3);
+  margin: var(--sp-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+}
+.shot-recipe dt { color: var(--text-tertiary); }
+.shot-recipe dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+
+/* Continuity: previous ← this → next */
+.shot-continuity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-2);
+}
+.shot-neighbour {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+}
+.shot-neighbour:disabled { cursor: default; color: var(--text-disabled); }
+.shot-neighbour .shot-take-thumb { width: 100%; }
+.shot-neighbour-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: var(--sp-1);
+}
+.shot-continuity-arrow { color: var(--text-tertiary); display: grid; place-items: center; }
+
+/* Generate row: the action and the money beside it. */
+.shot-generate { display: flex; flex-direction: column; gap: var(--sp-2); }
+.shot-generate .shot-cost {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  min-width: 0;
+}
+.shot-generate .shot-cost[data-short="true"] { color: var(--status-warning); }
+.shot-generate .shot-cost > span { min-width: 0; overflow-wrap: anywhere; }
+.shot-full { width: 100%; }
+
+.shot-divider { height: 1px; background: var(--border-subtle); }
+
+/* Reduced motion: the shimmer stays still. */
+@media (prefers-reduced-motion: reduce) {
+  .shot-strip-shimmer { animation: none; transform: none; opacity: 0.35; }
+}

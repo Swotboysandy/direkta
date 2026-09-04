@@ -1,1 +1,169 @@
-/* Stage: script. Owned by the script rebuild (docs/FYLMER_TASKS.md). */
+/* Stage: script. Owned by the script rebuild (docs/FYLMER_TASKS.md).
+
+   A page of screenplay with an outline beside it. The interface is a
+   left column and a hairline; the type on the page is the only thing that
+   gets to be strong. Semantic tokens only. */
+
+.script { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+/* ── header additions ──────────────────────────────────────── */
+.script-actions { align-items: center; flex-wrap: wrap; }
+.script-meta {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: var(--tracking-mono);
+  color: var(--text-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.script-submit { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.script-error { max-width: 72ch; }
+
+/* ── facts row after submission ────────────────────────────── */
+.script-facts {
+  margin: 0; display: flex; align-items: end; gap: var(--sp-5); flex-wrap: wrap;
+  padding-bottom: var(--sp-4); border-bottom: 1px solid var(--border-subtle);
+}
+.script-facts > div { display: flex; flex-direction: column; gap: 2px; }
+.script-facts dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.script-facts dd { margin: 0; font-size: 14px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.script-facts-view { flex-direction: row !important; gap: 2px; margin-left: auto; }
+
+/* ── empty ─────────────────────────────────────────────────── */
+.script-empty { padding-top: var(--sp-5); }
+
+/* ── outline + page ────────────────────────────────────────── */
+.script-body {
+  display: grid; grid-template-columns: 250px minmax(0, 1fr);
+  gap: var(--sp-5); align-items: start;
+}
+
+.script-outline {
+  position: sticky; top: 0; align-self: start;
+  max-height: calc(100vh - var(--bar-h) - var(--production-bar-h) - var(--dock-h) - var(--sp-6));
+  overflow-y: auto; scrollbar-width: thin;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  padding-right: var(--sp-2); min-width: 0;
+}
+.script-outline-head {
+  margin: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--text-primary); padding: 4px 8px;
+}
+.script-outline-note { margin: 0; padding: 0 8px; font-size: 12px; line-height: 1.5; color: var(--text-tertiary); text-wrap: pretty; }
+.script-outline-empty { display: flex; flex-direction: column; gap: var(--sp-2); padding: 0 8px; }
+.script-outline-empty > [role="status"] { padding-top: 4px; padding-bottom: 8px; }
+
+.script-outline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.script-outline-item {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start;
+  width: 100%; padding: 7px 8px; border: 0; border-radius: var(--r-control);
+  background: transparent; color: var(--text-primary); text-align: left; cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+.script-outline-item:hover { background: var(--surface-raised); }
+.script-outline-item.is-active { background: var(--surface-selected); box-shadow: inset 2px 0 0 var(--brand-accent); }
+.script-outline-item:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.script-outline-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.script-outline-title { font-size: 13px; line-height: 1.35; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.script-outline-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--tracking-mono); color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.script-no { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--tracking-mono); color: var(--text-tertiary); font-variant-numeric: tabular-nums; padding-top: 3px; }
+
+/* Chips are the one place a pill is allowed: cast, location, mood. */
+.script-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; min-width: 0; }
+.script-chip {
+  display: inline-block; max-width: 100%; padding: 1px 7px; border-radius: var(--r-pill);
+  font-size: 11px; line-height: 1.5; color: var(--text-secondary); background: var(--surface-raised);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.script-chip.is-location { color: var(--status-info); background: transparent; box-shadow: inset 0 0 0 1px var(--border-standard); }
+.script-chip.is-mood { color: var(--text-tertiary); background: transparent; box-shadow: inset 0 0 0 1px var(--border-subtle); }
+.script-flag {
+  display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: var(--r-control);
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: var(--tracking-mono);
+  color: var(--status-error); background: color-mix(in srgb, var(--status-error) 14%, transparent);
+  white-space: nowrap;
+}
+
+/* ── the page ──────────────────────────────────────────────── */
+.script-surface {
+  display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0;
+}
+.script-surface-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.script-modes { display: inline-flex; gap: 2px; }
+.script-tip { margin: 0; font-size: 12px; color: var(--text-tertiary); max-width: 68ch; text-wrap: pretty; }
+
+/* The shared type of the editor and the rendered page: one mono, one
+   measure, so switching Write/Read does not reflow the writer's eye. */
+.script-type {
+  width: 100%; max-width: 76ch; margin: 0 auto;
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.85; color: var(--text-primary);
+  background: var(--surface-base); border-radius: var(--r-surface); box-shadow: var(--shadow-1);
+  padding: var(--sp-6) var(--sp-7) var(--sp-8);
+}
+
+.script-editor {
+  display: block; min-height: 520px; resize: vertical; border: 0; outline: none;
+  overflow: auto; white-space: pre-wrap; overflow-wrap: break-word; tab-size: 4;
+}
+/* Where the browser can size a field to its content, the page scrolls
+   instead of the field, so the outline's jump lands on the real line. */
+@supports (field-sizing: content) {
+  .script-editor { field-sizing: content; overflow: hidden; resize: none; }
+}
+.script-editor::placeholder { color: var(--text-tertiary); }
+.script-editor:focus { box-shadow: var(--shadow-1), 0 0 0 1px var(--border-strong); }
+.script-editor:read-only { color: var(--text-secondary); }
+
+.script-page { min-height: 520px; outline: none; cursor: text; }
+.script-page:focus-visible { box-shadow: var(--shadow-focus); }
+
+/* Line kinds. Indents are in ch so they scale with the measure. */
+.sl { white-space: pre-wrap; overflow-wrap: break-word; min-height: 1.85em; }
+.sl-heading { margin-top: 1.85em; font-weight: 600; text-transform: uppercase; color: var(--text-primary); }
+.sl-heading:first-child { margin-top: 0; }
+.sl-heading.is-active { box-shadow: -12px 0 0 -10px var(--brand-accent); }
+.sl-action { color: var(--text-primary); }
+.sl-character { padding-left: 24ch; text-transform: uppercase; color: var(--text-primary); }
+.sl-parenthetical { padding-left: 18ch; padding-right: 14ch; color: var(--text-tertiary); }
+.sl-dialogue { padding-left: 12ch; padding-right: 12ch; color: var(--text-secondary); }
+.sl-transition { text-align: right; text-transform: uppercase; color: var(--text-tertiary); }
+.sl-note { color: var(--status-info); }
+
+/* ── beat grid after extraction ────────────────────────────── */
+.script-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--sp-3);
+}
+.script-beat {
+  position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  padding: var(--sp-4); background: var(--surface-base); border-radius: var(--r-surface);
+  box-shadow: var(--shadow-1); transition: box-shadow var(--dur-1) var(--ease-out);
+}
+.script-beat:hover { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.script-beat.is-selected { box-shadow: inset 0 0 0 2px var(--brand-accent); }
+.script-beat-hit { position: absolute; inset: 0; border: 0; background: transparent; cursor: pointer; border-radius: inherit; }
+.script-beat-hit:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.script-beat-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.script-beat-heading {
+  flex: 1 1 auto; min-width: 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--tracking-mono);
+  text-transform: uppercase; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.script-beat-title { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--text-primary); text-wrap: balance; }
+.script-beat-sum { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
+.script-beat .script-chips { position: relative; z-index: 1; pointer-events: none; margin-top: auto; padding-top: 4px; }
+
+/* ── inspector body for a beat ─────────────────────────────── */
+.script-insp { display: flex; flex-direction: column; gap: var(--sp-3); }
+.script-insp-title { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-primary); text-wrap: balance; }
+.script-insp-missing { margin: 0; font-size: 13px; color: var(--text-tertiary); }
+.script-insp-facts { margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.script-insp-facts > div { display: flex; flex-direction: column; gap: 2px; }
+.script-insp-facts dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.script-insp-facts dd { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-primary); text-wrap: pretty; white-space: pre-wrap; }
+
+/* ── narrow ────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .script-body { grid-template-columns: minmax(0, 1fr); }
+  .script-outline { position: static; max-height: none; padding-right: 0; }
+  .script-type { padding: var(--sp-5) var(--sp-5) var(--sp-7); }
+  .sl-character { padding-left: 12ch; }
+  .sl-parenthetical { padding-left: 8ch; padding-right: 4ch; }
+  .sl-dialogue { padding-left: 6ch; padding-right: 4ch; }
+}

@@ -1,1 +1,399 @@
 /* Stage: cut. Owned by the cut rebuild (docs/FYLMER_TASKS.md). */
+
+/* ─── Page head ───────────────────────────────────────────── */
+
+.cut-page { padding-bottom: 0; }
+
+.cut-view-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-raised);
+  border-radius: var(--r-control);
+}
+.cut-view-tab {
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--r-control);
+  cursor: pointer;
+  color: var(--text-tertiary);
+  background: transparent;
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.cut-view-tab:hover { color: var(--text-primary); }
+.cut-view-tab[aria-selected="true"] {
+  color: var(--text-primary);
+  background: var(--surface-base);
+  box-shadow: var(--shadow-1);
+}
+
+/* Facts in the head: a mono tag, not a pill. */
+.cut-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--r-control);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.cut-fact[data-tone="active"] { color: var(--status-warning); background: color-mix(in srgb, var(--status-warning) 15%, transparent); }
+.cut-fact[data-tone="good"]   { color: var(--status-success); background: color-mix(in srgb, var(--status-success) 12%, transparent); }
+.cut-fact::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}
+.cut-fact[data-plain]::before { display: none; }
+
+/* ─── Graph view ──────────────────────────────────────────── */
+
+.cut-graph { position: absolute; inset: 0; background: var(--surface-canvas); }
+.cut-graph .cut-graph-panel,
+.cut-graph .react-flow__controls,
+.cut-graph .react-flow__minimap {
+  background: var(--surface-base);
+  border: none;
+  box-shadow: var(--shadow-1);
+  border-radius: var(--r-surface);
+  overflow: hidden;
+}
+.cut-graph .react-flow__controls-button {
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.cut-graph .react-flow__controls-button:hover { background: var(--surface-raised); color: var(--text-primary); }
+.cut-graph .react-flow__controls-button svg { fill: currentColor; }
+.cut-graph-hint {
+  position: absolute;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  z-index: var(--z-raised);
+  padding: 6px 10px;
+  background: var(--surface-overlay);
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-1);
+  pointer-events: none;
+}
+
+/* ─── Timeline ────────────────────────────────────────────── */
+
+.cut {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--surface-canvas);
+  overflow: hidden;
+}
+.cut-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+}
+
+/* Monitor: the footage is the only colour; the frame is black by intent, in
+   both themes, because the picture is what it is. */
+.cut-monitor {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+.cut-monitor-frame {
+  position: relative;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  background: #000;
+  border-radius: var(--r-surface);
+  overflow: hidden;
+  box-shadow: var(--shadow-2);
+  color: #fff;
+}
+.cut-monitor-frame > video,
+.cut-monitor-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+}
+.cut-monitor-pending {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.cut-monitor-heading,
+.cut-monitor-tc,
+.cut-monitor-title {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+.cut-monitor-heading {
+  top: 10px;
+  left: 14px;
+  max-width: calc(100% - 150px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+}
+.cut-monitor-tc {
+  top: 10px;
+  right: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.cut-monitor-title {
+  bottom: 20px;
+  right: 14px;
+  left: 60px;
+  text-align: right;
+  font-size: var(--t-cap);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cut-monitor-play {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.cut-monitor-play:hover { background: rgba(0, 0, 0, 0.8); color: #fff; }
+.cut-monitor-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.cut-monitor-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--brand-accent);
+}
+
+/* Tracks */
+.cut-tracks {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface-base);
+}
+.cut-tracks-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cut-tracks-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: right;
+  min-width: 0;
+}
+.cut-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 var(--sp-4) var(--sp-3);
+}
+.cut-track {
+  position: relative;
+  min-width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cut-ruler {
+  position: relative;
+  height: 26px;
+  cursor: ew-resize;
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+  touch-action: none;
+}
+.cut-tick {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 8px;
+  background: var(--border-standard);
+  pointer-events: none;
+}
+.cut-tick[data-major] { height: 16px; }
+.cut-tick-label {
+  position: absolute;
+  top: 1px;
+  transform: translateX(4px);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.cut-lane {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 118px;
+  margin-top: 10px;
+}
+.cut-lane-audio {
+  height: 28px;
+  margin-top: 6px;
+  align-items: center;
+  padding: 0 var(--sp-2);
+  gap: var(--sp-2);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--status-info) 10%, transparent);
+  color: var(--status-info);
+  font-family: var(--font-mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--tracking-mono);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* A clip on the lane: the filmstrip item sits inside; the wrapper carries the
+   width, the drag affordance and the trim handles. */
+.cut-clip {
+  position: relative;
+  flex: 0 0 auto;
+  height: 100%;
+  min-width: 0;
+  border-radius: var(--r-surface);
+}
+.cut-clip > button {
+  width: 100% !important;
+  height: 100%;
+}
+.cut-clip[data-selected="true"] { box-shadow: 0 0 0 2px var(--brand-accent); }
+.cut-clip[data-dragging="true"] { opacity: 0.4; }
+.cut-clip[data-drop="before"]::before,
+.cut-clip[data-drop="after"]::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--brand-accent);
+  z-index: var(--z-raised);
+  pointer-events: none;
+}
+.cut-clip[data-drop="before"]::before { left: -3px; }
+.cut-clip[data-drop="after"]::after { right: -3px; }
+
+.cut-trim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: var(--z-raised);
+  cursor: ew-resize;
+  touch-action: none;
+  background: var(--brand-accent);
+  color: var(--brand-accent-fg);
+  border: none;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.cut-trim::after {
+  content: "";
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.8;
+}
+.cut-trim[data-edge="in"]  { left: 0;  border-radius: var(--r-surface) 0 0 var(--r-surface); }
+.cut-trim[data-edge="out"] { right: 0; border-radius: 0 var(--r-surface) var(--r-surface) 0; }
+.cut-trim:hover { background: var(--brand-accent-hover); }
+
+.cut-transition {
+  position: absolute;
+  top: 26px;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-raised);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-mono);
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-1);
+  background: var(--surface-overlay);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.cut-transition[data-state="complete"]   { color: var(--status-success); }
+.cut-transition[data-state="generating"] { color: var(--status-warning); }
+.cut-transition[data-state="error"]      { color: var(--status-error); }
+
+.cut-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--brand-accent);
+  z-index: var(--z-sticky);
+  pointer-events: none;
+}
+.cut-playhead::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 10px;
+  height: 9px;
+  background: var(--brand-accent);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+@media (max-width: 1279px) {
+  .cut-tracks-hint { display: none; }
+}

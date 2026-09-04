@@ -24,6 +24,8 @@ interface NodeRow {
   variant_url: string | null;
   clip_state: string | null;
   clip_url: string | null;
+  clip_meta: string | null;
+  direction: string | null;
 }
 
 interface TransitionRow {
@@ -35,6 +37,16 @@ interface TransitionRow {
   clip_asset_id: string | null;
   duration: number;
   clip_url: string | null;
+}
+
+function parseMeta(raw: string | null): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw);
+    return value && typeof value === "object" && Object.keys(value).length ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +65,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
               sr.selected_variant_id,
               v.n as variant_n,
               COALESCE(a_direct.url, a_selected.url) as variant_url,
-              sn.clip_state, a_clip.url as clip_url, a_lipsync.url as lipsync_url
+              sn.clip_state, a_clip.url as clip_url, a_clip.meta as clip_meta, a_lipsync.url as lipsync_url,
+              COALESCE(sn.direction, b.direction) as direction
        FROM stitch_nodes sn
        LEFT JOIN beats b ON b.id = sn.beat_id
        LEFT JOIN storyboard_rows sr ON sr.beat_id = sn.beat_id
@@ -101,7 +114,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         : null,
       frame_url: n.variant_url,
       clip_url: n.clip_url,
-      clip_state: n.clip_state ?? "none"
+      clip_state: n.clip_state ?? "none",
+      // Additive: the Shot Desk reads the rendered clip's recipe and the
+      // shot's direction; everything above is unchanged.
+      clip_meta: parseMeta(n.clip_meta),
+      direction: n.direction
     })),
     transitions
   });
