@@ -29,7 +29,7 @@ const wsLoading = () => <SkeletonWorkspace />;
 const Storyboard = dynamic(() => import("./_workspaces/Storyboard").then((m) => ({ default: m.Storyboard })), { ssr: false, loading: wsLoading });
 const Stitch = dynamic(() => import("./_workspaces/Stitch").then((m) => ({ default: m.Stitch })), { ssr: false, loading: wsLoading });
 const Library = dynamic(() => import("./_workspaces/Library").then((m) => ({ default: m.Library })), { ssr: false, loading: wsLoading });
-const ExportWorkspace = dynamic(() => import("./_workspaces/Export").then((m) => ({ default: m.Export })), { ssr: false, loading: wsLoading });
+const FinishWorkspace = dynamic(() => import("./_workspaces/Finish").then((m) => ({ default: m.Finish })), { ssr: false, loading: wsLoading });
 import type {
   ActivityItem,
   AgentStatus,
@@ -626,7 +626,7 @@ export default function Home() {
                 <Library project={bundle.project} assetsVersion={assetsVersion} onSwitchWorkspace={switchWorkspace} />
               )}
               {activeWorkspace === "export" && (
-                <ExportWorkspace project={bundle.project} onSwitchWorkspace={switchWorkspace} />
+                <FinishWorkspace project={bundle.project} onSwitchWorkspace={switchWorkspace} />
               )}
             </>
           )}

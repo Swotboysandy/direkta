@@ -361,6 +361,19 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     }
 
     const totalDuration = segDurs.reduce((a, b) => a + b, 0) - (segFiles.length - 1) * TRANSITION;
+    // The master is a generated asset like any other; until this it was never
+    // recorded, so it could not appear in Assets or stand as a poster.
+    getDb()
+      .prepare(
+        "INSERT INTO assets (id, target_kind, target_id, kind, url, prompt, meta) VALUES (?, 'sequence', ?, 'video', ?, ?, ?)"
+      )
+      .run(
+        nanoid(10),
+        id,
+        `/oss/${outName}`,
+        `Master — ${project.title}`,
+        JSON.stringify({ shots: sources.length, duration: Math.round(totalDuration * 10) / 10, scored, titled: Boolean(FONT) })
+      );
     return NextResponse.json({
       ok: true,
       url: `/oss/${outName}`,

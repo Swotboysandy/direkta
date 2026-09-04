@@ -777,3 +777,31 @@
    page's own tertiary text so it survives the light theme. */
 .phome-shot:has(.phome-shot-blank) .phome-shot-label { color: var(--text-tertiary); text-shadow: none; }
 .phome-shot:has(.phome-shot-blank) .phome-shot-state { color: var(--text-tertiary); background: var(--surface-base); }
+
+/* ============================================================
+   FINISH (brief §11) — the cut, the facts, one action
+   ============================================================ */
+.finish { display: flex; flex-direction: column; gap: var(--sp-6); max-width: 1040px; }
+.finish-head { display: flex; flex-direction: column; gap: 6px; }
+.finish-cut { display: flex; flex-direction: column; gap: var(--sp-4); }
+.finish-viewer {
+  width: 100%; border-radius: var(--r-surface); overflow: hidden;
+  background: var(--surface-raised); display: grid; place-items: center;
+}
+.finish-viewer video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+.finish-rendering { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); }
+.finish-idle { font-size: 12px; color: var(--text-tertiary); }
+.finish-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: center; }
+.finish-facts li { display: flex; flex-direction: column; gap: 2px; }
+.finish-fact-k { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.finish-fact-v { font-size: 14px; color: var(--text-primary); }
+.finish-actions { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.finish-download { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; font-size: 13px; color: var(--text-primary); text-decoration: none; border: 1px solid var(--border-subtle); border-radius: var(--r-control); }
+.finish-download:hover { background: var(--surface-raised); border-color: var(--border-standard); }
+.finish-cost { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+.finish-score { display: flex; flex-direction: column; gap: var(--sp-2); padding-top: var(--sp-5); border-top: 1px solid var(--border-subtle); }
+.finish-score-row { display: flex; align-items: center; gap: var(--sp-3); }
+.finish-score-row > svg { flex: 0 0 auto; }
+.finish-score-copy { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.finish-score-title { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.finish-score-why { margin: 0; font-size: 12px; color: var(--text-secondary); text-wrap: pretty; }
