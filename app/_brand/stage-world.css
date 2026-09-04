@@ -399,3 +399,7 @@ select.world-input { cursor: pointer; }
 .insp-delete:hover { color: var(--status-error); }
 .insp-missing { display: flex; flex-direction: column; gap: var(--sp-3); font-size: var(--t-body-s); color: var(--text-secondary); }
 .insp-missing p { margin: 0; }
+
+/* A tile says one thing when something is missing; the actions that fix it
+   live in the inspector. */
+.world-tile-meta[data-warn] { color: var(--status-warning); }

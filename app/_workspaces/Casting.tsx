@@ -446,38 +446,28 @@ function CharacterTile({
           {c.role} · {c.scene_count} scene{c.scene_count === 1 ? "" : "s"}
           {c.dialogue ? " · speaking" : ""}
         </span>
+        {/* The tile is the image, the name and one line. Casting a look,
+            uploading one and the Soul ID's state live in the inspector, and
+            appear here only while something is actually happening or has
+            gone wrong — a grid of twenty-four tiles should read as faces,
+            not as twenty-four toolbars. */}
         {abstract ? (
           <span className="world-tile-meta">Voice-only — no portrait needed</span>
-        ) : (
-          <>
-            <SoulStatus state={state} progress={c.soul_id_progress} consistency={c.consistency} busy={busy} />
-            <div className="world-tile-actions">
-              {state === "failed" ? (
-                <Button size="sm" onClick={retry} disabled={busy}>
-                  <RefreshCcw size={12} /> Retry
-                </Button>
-              ) : state === "training" ? (
-                <Button size="sm" disabled title="A Soul ID is training; wait for it to finish">
-                  Training…
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  intent={refs.length === 0 ? "primary" : "secondary"}
-                  onClick={castLook}
-                  disabled={busy}
-                  title={`Generates one Seedream portrait · ${tokensLabel(IMAGE_TOKENS)}`}
-                >
-                  {busy ? "Casting…" : refs.length === 0 ? "Cast" : "New look"}
-                  {!busy && <span className="world-cost">{tokensLabel(IMAGE_TOKENS)}</span>}
-                </Button>
-              )}
-              <UploadLook endpoint={`/api/characters/${c.id}/upload-portrait`} label="Upload" onUploaded={onChange} />
-            </div>
-            {state === "failed" && c.error && <InlineError message="The last cast failed." detail={c.error} onRetry={retry} />}
-            {error && <InlineError message={error} onRetry={castLook} />}
-          </>
-        )}
+        ) : busy || state === "training" ? (
+          <SoulStatus state={state} progress={c.soul_id_progress} consistency={c.consistency} busy={busy} />
+        ) : state === "failed" ? (
+          <div className="world-tile-actions">
+            <Button size="sm" onClick={retry} disabled={busy}>
+              <RefreshCcw size={12} /> Retry
+            </Button>
+          </div>
+        ) : refs.length === 0 ? (
+          <span className="world-tile-meta" data-warn>
+            No Soul ID yet
+          </span>
+        ) : null}
+        {state === "failed" && c.error && <InlineError message="The last cast failed." detail={c.error} onRetry={retry} />}
+        {error && <InlineError message={error} onRetry={castLook} />}
       </div>
     </article>
   );
@@ -554,20 +544,15 @@ function PlateTile({
           {name}
         </button>
         <span className="world-tile-meta">{meta}</span>
-        <SoulStatus state={state} progress={progress} busy={busy} />
-        <div className="world-tile-actions">
-          <Button
-            size="sm"
-            intent={refs.length === 0 ? "primary" : "secondary"}
-            onClick={scout}
-            disabled={busy}
-            title={`${kind === "location" ? "Generates an establishing plate" : "Generates a reference plate"} · ${tokensLabel(IMAGE_TOKENS)}`}
-          >
-            {busy ? "Scouting…" : refs.length === 0 ? "Scout" : "New plate"}
-            {!busy && <span className="world-cost">{tokensLabel(IMAGE_TOKENS)}</span>}
-          </Button>
-          <UploadLook endpoint={`${base}/upload-plate`} label="Upload" onUploaded={onChange} />
-        </div>
+        {/* Same rule as the cast: the plate, the name, one line. Scouting a
+            plate and uploading one are inspector work. */}
+        {busy || state === "training" ? (
+          <SoulStatus state={state} progress={progress} busy={busy} />
+        ) : refs.length === 0 ? (
+          <span className="world-tile-meta" data-warn>
+            No {kind === "location" ? "World" : "Object"} ID yet
+          </span>
+        ) : null}
         {error && <InlineError message={error} onRetry={scout} />}
       </div>
     </article>

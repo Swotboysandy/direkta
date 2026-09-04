@@ -853,8 +853,13 @@ function StitchTimeline({
                     {n.frame_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img className="shot-strip-frame" src={n.frame_url} alt={n.beat?.title ?? ""} draggable={false} />
+                    ) : n.clip_url ? (
+                      // A shot made outside the Storyboard has no frame; the
+                      // clip it rendered is its own poster. preload="metadata"
+                      // paints the first frame without fetching the video.
+                      <video className="shot-strip-frame" src={n.clip_url} muted playsInline preload="metadata" />
                     ) : (
-                      <span className="shot-strip-empty">No frame</span>
+                      <span className="shot-strip-empty">No frame yet</span>
                     )}
                     {shotStatus(n) && <Status domain="generation" value={shotStatus(n)!} className="shot-strip-status" />}
                     {n.clip_state === "generating" && <span className="shot-strip-shimmer" aria-hidden="true" />}
