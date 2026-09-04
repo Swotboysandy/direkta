@@ -425,6 +425,9 @@
    later rules in the same layer would win); its rows are auto auto 1fr. */
 
 .topbar {
+  /* Rows are named explicitly: when the production bar is absent, auto
+     placement would drop the body into its row and stretch the dock. */
+  grid-row: 1;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -514,6 +517,7 @@
 
 /* ─── Production bar: the stages in a row ───────────────────── */
 .production-bar {
+  grid-row: 2;
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--sp-3);
   height: 44px; padding: 0 var(--sp-4);
   border-bottom: 1px solid var(--border-subtle);
@@ -553,6 +557,7 @@
    DIRECTOR DOCK (brief §10–§13)
    ============================================================ */
 .dock {
+  grid-row: 4;
   position: relative;
   z-index: var(--z-dock);
 }

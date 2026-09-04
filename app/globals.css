@@ -1232,6 +1232,7 @@ strong, b {
 /* One column. The rail became the production bar above; the agent panel
    became the Director Dock below. */
 .app-body {
+  grid-row: 3;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-height: 0;
