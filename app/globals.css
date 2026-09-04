@@ -1241,7 +1241,13 @@ strong, b {
 .app-body {
   grid-row: 3;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  /* The work, then the inspector's column when something is selected and a
+     stage can inspect it. --inspector-w is 0 the rest of the time, so the
+     work keeps the whole width. This declaration has to live here rather
+     than in inspector.css: both sit in the `legacy` layer, and this file's
+     own rules come after its imports, so the one there never won and the
+     panel fell out of the grid entirely. */
+  grid-template-columns: minmax(0, 1fr) var(--inspector-w, 0px);
   min-height: 0;
 }
 

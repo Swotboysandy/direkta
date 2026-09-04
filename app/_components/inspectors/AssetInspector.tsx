@@ -112,20 +112,21 @@ function AssetBody({ selected }: InspectorBodyProps) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
 
   const item = assets?.items.find((i) => i.kind === selected.kind && i.id === selected.id) ?? null;
+  const itemId = item?.id;
 
   useEffect(() => {
     setError(null);
     setRecipe(null);
-    if (!item) return;
+    if (!itemId) return;
     const controller = new AbortController();
-    fetch(`/api/assets/${item.id}`, { signal: controller.signal })
+    fetch(`/api/assets/${itemId}`, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((b) => b?.asset && setRecipe(b.asset))
       .catch(() => {
         /* the recipe is extra detail; its absence is not an error state */
       });
     return () => controller.abort();
-  }, [item?.id]);
+  }, [itemId]);
 
   if (!assets || !item) {
     return (

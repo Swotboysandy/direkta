@@ -4,9 +4,7 @@
    inspect it. Takes a column from the body grid; the work column
    gets it back the moment the selection clears.
    ============================================================ */
-.app-body {
-  grid-template-columns: minmax(0, 1fr) var(--inspector-w, 0px);
-}
+/* The body's columns are declared in globals.css, which wins the cascade. */
 
 .inspector {
   position: relative;

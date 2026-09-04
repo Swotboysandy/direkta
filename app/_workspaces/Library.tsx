@@ -142,7 +142,7 @@ export function Library({ project, assetsVersion = 0, onSwitchWorkspace }: Props
   const collections = useAsync<Collection[]>(`/api/collections?v=${nonce}`, (b) => b.collections ?? [], {
     isEmpty: () => false
   });
-  const sets = collections.data ?? [];
+  const sets = useMemo(() => collections.data ?? [], [collections.data]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 220);
@@ -305,6 +305,13 @@ export function Library({ project, assetsVersion = 0, onSwitchWorkspace }: Props
     }
   };
 
+  /** A clip that is already a shot: the cut is where it lives, so go there and
+   *  hand the Shot Desk the same selection Shots uses. */
+  const openInCut = (item: AssetItem) => {
+    onSwitchWorkspace("stitch");
+    select({ kind: "shot", id: item.source_id!, label: item.title, projectId: item.project_id });
+  };
+
   // Grouping only earns its keep when the list actually spans productions.
   const groups = useMemo(() => {
     if (!global || production) return [{ id: "", title: "", items }];
@@ -461,6 +468,7 @@ export function Library({ project, assetsVersion = 0, onSwitchWorkspace }: Props
                     onFavourite={toggleFavourite}
                     onCollect={setCollecting}
                     onReference={(it) => setReference({ item: it, to: "character" })}
+                    onOpenInCut={openInCut}
                     onGo={onSwitchWorkspace}
                   />
                 ))}
@@ -514,6 +522,7 @@ function Tile({
   onFavourite,
   onCollect,
   onReference,
+  onOpenInCut,
   onGo
 }: {
   item: AssetItem;
@@ -525,6 +534,7 @@ function Tile({
   onFavourite: (item: AssetItem) => void;
   onCollect: (item: AssetItem) => void;
   onReference: (item: AssetItem) => void;
+  onOpenInCut: (item: AssetItem) => void;
   onGo: (ws: WorkspaceId) => void;
 }) {
   const line = global ? item.project_title : (item.subtitle ?? KIND_WORD[item.kind]);
@@ -583,9 +593,12 @@ function Tile({
             Reference
           </button>
         )}
-        {item.kind === "video" && here && (
-          <button type="button" className="asset-act-text" onClick={() => onOpen(item)}>
-            {item.source_kind === "stitch_clip" ? "In the cut" : "To the cut"}
+        {/* A clip that is already a shot can be jumped to; a clip that is not
+            has to be added, and a write belongs in the inspector where the
+            asset is in front of you. */}
+        {item.kind === "video" && here && item.source_kind === "stitch_clip" && item.source_id && (
+          <button type="button" className="asset-act-text" onClick={() => onOpenInCut(item)}>
+            In the cut
           </button>
         )}
         {(item.kind === "character" || item.kind === "location" || item.kind === "prop") && here && (

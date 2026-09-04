@@ -272,6 +272,38 @@ body {
 }
 ::selection { background: var(--accent); color: #FFFFFF; }
 
+/* ─── Scrollbars ────────────────────────────────────────────────
+   The platform's default bar is a wide light-grey slab that reads as a
+   Windows control sitting on top of a dark film tool, and it appeared on
+   every pane that scrolls. This is the same bar everywhere: thin, no
+   arrows, no track, a thumb that only shows itself against the surface it
+   is on and darkens when you take hold of it.
+
+   Firefox gets the two properties it supports; Chromium gets the parts. A
+   pane that wants no bar at all still sets `scrollbar-width: none`
+   itself. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 999px;
+  /* The border is transparent padding: it keeps the thumb clear of the
+     content it sits beside without needing a track to separate them. */
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background-color: var(--text-tertiary); }
+*::-webkit-scrollbar-corner { background: transparent; }
+/* A scroller that opted out keeps its choice. */
+*[style*="scrollbar-width: none"]::-webkit-scrollbar,
+.stage-strip::-webkit-scrollbar,
+.sbd-focus-takes::-webkit-scrollbar,
+.dock-mode::-webkit-scrollbar { display: none; }
+
 /* Keyboard focus only — a visible ring on every mouse click reads as noise,
    but removing it entirely strands keyboard users. */
 :focus-visible {

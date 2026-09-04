@@ -19,7 +19,9 @@ const SheetClose = DialogPrimitive.Close;
 const SIDE = {
   right: "inset-y-0 right-0 h-full w-[min(420px,100vw)] border-l ui-slide-right",
   left: "inset-y-0 left-0 h-full w-[min(420px,100vw)] border-r ui-slide-left",
-  bottom: "inset-x-0 bottom-0 max-h-[85dvh] border-t rounded-t-overlay ui-slide-up"
+  // Above the Dock, not over it: the Dock publishes its own height, and a
+  // sheet that covered it would hide the one control that dismisses it.
+  bottom: "inset-x-0 bottom-(--dock-h) max-h-[calc(85dvh-var(--dock-h))] border-t rounded-t-overlay ui-slide-up"
 } as const;
 
 function SheetContent({
