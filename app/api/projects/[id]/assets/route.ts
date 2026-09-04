@@ -41,18 +41,27 @@ const KINDS: AssetKind[] = ["image", "video", "character", "location", "prop"];
 function media(projectId: string): AssetItem[] {
   const rows = getDb()
     .prepare(
+      // A clip made in Shots is filed against its stitch node, which is the
+      // only thing that knows the project. Without that join every clip the
+      // app itself generated was invisible here, while clips filed by hand
+      // as sequences showed — the canvas was hiding exactly the work the
+      // product exists to make.
       `SELECT a.id, a.url, a.kind, a.prompt, a.created_at, a.target_kind,
-              b.n AS beat_n, b.title AS beat_title
+              b.n AS beat_n, b.title AS beat_title,
+              sn.direction AS node_direction
          FROM assets a
          LEFT JOIN storyboard_variants v
            ON v.id = a.target_id AND a.target_kind = 'storyboard_variant'
+         LEFT JOIN stitch_nodes sn
+           ON sn.id = a.target_id AND a.target_kind = 'stitch_clip'
          LEFT JOIN beats b
-           ON b.id = COALESCE(v.beat_id, CASE WHEN a.target_kind = 'beat' THEN a.target_id END)
+           ON b.id = COALESCE(v.beat_id, sn.beat_id, CASE WHEN a.target_kind = 'beat' THEN a.target_id END)
         WHERE b.project_id = ?
+           OR sn.project_id = ?
            OR (a.target_kind = 'sequence' AND a.target_id = ?)
         ORDER BY a.created_at DESC`
     )
-    .all(projectId, projectId) as Array<{
+    .all(projectId, projectId, projectId) as Array<{
     id: string;
     url: string;
     kind: string;
@@ -61,6 +70,7 @@ function media(projectId: string): AssetItem[] {
     target_kind: string;
     beat_n: number | null;
     beat_title: string | null;
+    node_direction: string | null;
   }>;
 
   return rows.map((r) => {
@@ -75,10 +85,12 @@ function media(projectId: string): AssetItem[] {
       url: r.url,
       // A beat names itself; anything else uses the prompt it was filed with,
       // falling back to the generic word only when there is nothing to say.
+      // A composed shot has no beat; its direction is the closest thing to a
+      // name it has. Lip-synced and uploaded clips carry no prompt at all.
       title: r.beat_n
         ? `${String(r.beat_n).padStart(2, "0")} · ${r.beat_title || "Beat"}`
-        : r.prompt?.trim()
-        ? r.prompt.trim().slice(0, 60)
+        : (r.prompt?.trim() || r.node_direction?.trim())
+        ? (r.prompt?.trim() || r.node_direction!.trim()).slice(0, 60)
         : isVideo
         ? "Sequence"
         : "Frame",

@@ -365,12 +365,24 @@ test("assets route returns media and entities in one shape, newest first", async
   db.prepare("INSERT INTO assets (id,target_kind,target_id,kind,url,created_at) VALUES ('as-img','storyboard_variant','as-v1','image','/oss/a.png','2026-01-01 00:00:01')").run();
   db.prepare("INSERT INTO assets (id,target_kind,target_id,kind,url,created_at) VALUES ('as-seq','sequence','as-test','video','/oss/a.mp4','2026-01-01 00:00:02')").run();
   db.prepare("INSERT INTO characters (id,project_id,name,role) VALUES ('as-c1','as-test','Kalki','Lead')").run();
+  // Two clips made in Shots: one on a beat, one composed with no beat. Neither
+  // is filed as a sequence, so only the stitch-node join can find them.
+  db.prepare("INSERT INTO stitch_nodes (id,project_id,beat_id) VALUES ('as-n1','as-test','as-b1')").run();
+  db.prepare("INSERT INTO assets (id,target_kind,target_id,kind,url,prompt,created_at) VALUES ('as-clip','stitch_clip','as-n1','video','/oss/c.mp4','','2026-01-01 00:00:03')").run();
+  db.prepare("INSERT INTO stitch_nodes (id,project_id,beat_id,direction) VALUES ('as-n2','as-test',NULL,'A lone bell tower at dawn')").run();
+  db.prepare("INSERT INTO assets (id,target_kind,target_id,kind,url,prompt,created_at) VALUES ('as-clip2','stitch_clip','as-n2','video','/oss/d.mp4','','2026-01-01 00:00:04')").run();
 
   const { GET } = require("../app/api/projects/[id]/assets/route.ts");
   const params = Promise.resolve({ id: "as-test" });
 
   const all = await (await GET(new Request("http://x/api/projects/as-test/assets"), { params })).json();
   const byId = Object.fromEntries(all.items.map((a) => [a.id, a]));
+
+  assert.ok(byId["as-clip"], "a clip generated in Shots must reach the canvas");
+  assert.equal(byId["as-clip"].kind, "video");
+  assert.equal(byId["as-clip"].title, "01 · Opening", "a clip on a beat is named by the beat");
+  assert.ok(byId["as-clip2"], "a composed clip must reach the canvas");
+  assert.equal(byId["as-clip2"].title, "A lone bell tower at dawn", "a composed clip is named by its direction");
 
   assert.ok(byId["as-img"], "storyboard frame missing");
   assert.equal(byId["as-img"].kind, "image");
