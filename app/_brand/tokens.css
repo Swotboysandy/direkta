@@ -109,10 +109,13 @@
   /* ─── Type ─────────────────────────────────────────────── */
   /* --font-*-loaded vars are set by next/font/google in app/layout.tsx. */
   --font-ui:      var(--font-ui-loaded), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: var(--font-display-loaded), "Inter Tight", var(--font-ui);
-  /* A real monospace. This previously fell back to Manrope, which is
-     proportional — so timecodes, durations and counters did not align. */
-  --font-mono:    var(--font-mono-loaded), "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* One family. These two stay as tokens because ~170 rules read them and
+     they still mean something — "display" and "countable" are roles — but a
+     role is now size, weight, tracking and case, not a second typeface.
+     Digits keep their column through tabular figures on the body instead of
+     through a monospace. */
+  --font-display: var(--font-ui);
+  --font-mono:    var(--font-ui);
 
   /* Type scale — one clear jump from display to body, nothing in
      between competing. Minimalism needs fewer sizes, not smaller ones. */
@@ -289,6 +292,9 @@ body {
   font-family: var(--font-ui);
   font-size: var(--t-body);
   line-height: var(--leading-body);
+  /* What the monospace used to buy: counters, timecodes, durations and IDs
+     hold their column as the numbers change instead of jittering. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

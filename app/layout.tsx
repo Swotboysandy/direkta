@@ -1,28 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Three voices, matching _brand/type-scale.css: Inter for UI prose and labels,
-// Inter Tight for display headings (its tighter fit is what makes large type
-// read as designed rather than defaulted), JetBrains Mono for anything
-// countable — timecodes, durations, counters, IDs.
+// One voice. Display and mono used to be Inter Tight and JetBrains Mono; three
+// families with three different x-heights meant a 10px label never shared a
+// baseline with the 13px title beside it. They are roles now, separated by
+// size, weight, tracking and case inside the one family — see tokens.css.
 const ui = Inter({
   subsets: ["latin"],
   variable: "--font-ui-loaded",
-  display: "swap"
-});
-
-const display = Inter_Tight({
-  weight: ["500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-display-loaded",
-  display: "swap"
-});
-
-const mono = JetBrains_Mono({
-  weight: ["400", "500"],
-  subsets: ["latin"],
-  variable: "--font-mono-loaded",
   display: "swap"
 });
 
@@ -42,7 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className={`${ui.variable} ${display.variable} ${mono.variable}`}
+      className={ui.variable}
       suppressHydrationWarning
     >
       <head>
