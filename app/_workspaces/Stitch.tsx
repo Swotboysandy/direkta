@@ -861,7 +861,12 @@ function StitchTimeline({
                     ) : (
                       <span className="shot-strip-empty">No frame yet</span>
                     )}
-                    {shotStatus(n) && <Status domain="generation" value={shotStatus(n)!} className="shot-strip-status" />}
+                    {/* Only a shot that needs attention says so. A row of
+                        eighteen COMPLETE badges is noise over the footage
+                        it is covering. */}
+                    {shotStatus(n) && shotStatus(n) !== "Complete" && (
+                      <Status domain="generation" value={shotStatus(n)!} className="shot-strip-status" />
+                    )}
                     {n.clip_state === "generating" && <span className="shot-strip-shimmer" aria-hidden="true" />}
                     <span className="shot-strip-foot">
                       <span className="shot-strip-n">S{String(n.beat?.n ?? i + 1).padStart(2, "0")}</span>
