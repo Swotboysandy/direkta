@@ -30,6 +30,29 @@ import "./director-toolset";
 
 const MAX_STEPS = 6;
 
+/**
+ * A vendor's failure, said in words the director can act on (brief §41).
+ *
+ * A model provider answers a refusal with its own JSON, and pasting that into
+ * a conversation tells a filmmaker nothing about what to do next. The three
+ * cases worth naming are the ones a person can actually resolve.
+ */
+function humanise(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e);
+  if (/usage_limit_reached|429/.test(raw)) {
+    const seconds = Number(/resets_in_seconds\D+(\d+)/.exec(raw)?.[1] ?? 0);
+    const when = seconds > 0 ? ` It comes back in about ${Math.round(seconds / 3600)} hours.` : "";
+    return `The connected text model has no quota left, so I cannot think right now.${when} Adding a key in the Key Vault would let me answer immediately.`;
+  }
+  if (/401|403|invalid[_ ]api[_ ]key|unauthor/i.test(raw)) {
+    return "The text model refused the key it was given. Check it in the Key Vault.";
+  }
+  if (/ENOTFOUND|ECONNREFUSED|fetch failed|network/i.test(raw)) {
+    return "I could not reach the text model. It may be the network, or the service being down.";
+  }
+  return raw;
+}
+
 function systemPrompt(projectId: string): string {
   const p = projects.get(projectId);
   const skill = skillFor("decision")?.body ?? "";
@@ -159,7 +182,7 @@ export async function* runDirector(input: {
         yield { type: "done" };
         return;
       } catch (e: unknown) {
-        yield { type: "error", message: e instanceof Error ? e.message : String(e) };
+        yield { type: "error", message: humanise(e) };
         yield { type: "done" };
         return;
       }
@@ -199,7 +222,7 @@ export async function* runDirector(input: {
     yield { type: "done" };
   } catch (e: unknown) {
     while (queue.length) yield queue.shift()!;
-    yield { type: "error", message: e instanceof Error ? e.message : String(e) };
+    yield { type: "error", message: humanise(e) };
     yield { type: "done" };
   }
 }
