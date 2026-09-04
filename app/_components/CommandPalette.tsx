@@ -14,8 +14,8 @@ import {
   PenLine,
   Settings,
   Sparkles,
-  type LucideIcon
-} from "lucide-react";
+  type IconType
+} from "./icons";
 import type { Project, WorkspaceId } from "../../lib/types";
 import { STAGE_LABELS } from "../_lib/stages";
 
@@ -169,7 +169,7 @@ function CmdItem({
   hint,
   onSelect
 }: {
-  icon: LucideIcon;
+  icon: IconType;
   label: string;
   hint?: string;
   onSelect: () => void;

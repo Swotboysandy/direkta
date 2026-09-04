@@ -5,6 +5,7 @@ import { TopBar } from "./_components/TopBar";
 import { StageStrip } from "./_components/StageStrip";
 import { useRenderEngine } from "./_components/RenderEngineChip";
 import { DirectorDock } from "./_components/DirectorDock";
+import { Inspector } from "./_components/Inspector";
 import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
 import type { ComposerSubmission } from "./_components/Composer";
 import { NewProjectModal } from "./_components/NewProjectModal";
@@ -567,6 +568,11 @@ export default function Home() {
           )}
           </main>
         </div>
+
+        {/* Takes a column only while something is selected and a stage has
+            registered a body for it; otherwise it renders nothing and the
+            work keeps the width. */}
+        <Inspector />
       </div>
 
       {/* The Director Dock is the last row of the shell, in normal flow, so it

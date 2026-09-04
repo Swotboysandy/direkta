@@ -15,6 +15,7 @@
 @import "./_brand/tokens.css" layer(legacy);
 @import "./_brand/type-scale.css" layer(legacy);
 @import "./_brand/components.css" layer(legacy);
+@import "./_brand/inspector.css" layer(legacy);
 @import "./_brand/motion.css" layer(legacy);
 
 @custom-variant dark (&:is(.dark *));

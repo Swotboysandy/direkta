@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, KeyRound, FileText } from "lucide-react";
+import { ArrowLeft, KeyRound, FileText } from "../_components/icons";
 import type { SkillFile, VendorConfig } from "../../lib/types";
 
 type VendorView = Omit<VendorConfig, "api_key"> & { api_key: string };

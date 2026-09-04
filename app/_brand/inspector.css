@@ -1,0 +1,67 @@
+/* ============================================================
+   CONTEXTUAL INSPECTOR (brief §58)
+   Present only while something is selected and something can
+   inspect it. Takes a column from the body grid; the work column
+   gets it back the moment the selection clears.
+   ============================================================ */
+.app-body {
+  grid-template-columns: minmax(0, 1fr) var(--inspector-w, 0px);
+}
+
+.inspector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--surface-canvas);
+  z-index: var(--z-inspector);
+}
+
+.inspector-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.inspector-handle:hover,
+.inspector-handle:focus-visible {
+  background: color-mix(in srgb, var(--brand-accent) 40%, transparent);
+  outline: none;
+}
+
+.inspector-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 44px;
+}
+.inspector-kind {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.inspector-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inspector-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--sp-4);
+}

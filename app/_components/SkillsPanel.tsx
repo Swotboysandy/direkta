@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Drawer } from "vaul";
-import { X, Sparkles, Save, Check } from "lucide-react";
+import { X, Sparkles, Save, Check } from "./icons";
 import type { SkillFile } from "../../lib/types";
 
 interface Props {
