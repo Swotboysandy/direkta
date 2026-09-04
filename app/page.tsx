@@ -13,6 +13,7 @@ import { CoDirectorOverlay } from "./_components/CoDirectorOverlay";
 import { CommandPalette } from "./_components/CommandPalette";
 import { KeyVaultPanel } from "./_components/KeyVaultPanel";
 import { SkillsPanel } from "./_components/SkillsPanel";
+import { ConfirmProvider } from "./_components/ui/alert-dialog";
 import dynamic from "next/dynamic";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
@@ -399,6 +400,7 @@ export default function Home() {
   );
 
   return (
+    <ConfirmProvider>
     <div className="workbench">
       <TopBar
         project={bundle?.project ?? null}
@@ -609,5 +611,6 @@ export default function Home() {
         onOpenKeyVault={() => setKeyVaultOpen(true)}
       />
     </div>
+    </ConfirmProvider>
   );
 }

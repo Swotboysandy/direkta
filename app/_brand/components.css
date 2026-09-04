@@ -146,6 +146,32 @@
 .pip[data-status="draft"]    { background: var(--mute); }
 .pip[data-status="error"]    { background: var(--signal-danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal-danger) 22%, transparent); }
 
+/* ─── Primitive motion (brief §46) ───────────────────────────
+   Enter and exit on transform and opacity only, under 200ms. Radix sets
+   data-state on overlays and content; these read it. Reduced motion is
+   handled globally in tokens.css by collapsing every duration. */
+.ui-fade[data-state="open"]   { animation: ui-fade-in  var(--dur-2) var(--ease-out) both; }
+.ui-fade[data-state="closed"] { animation: ui-fade-out var(--dur-1) var(--ease-in)  both; }
+.ui-pop[data-state="open"]    { animation: ui-pop-in   var(--dur-2) var(--ease-out) both; }
+.ui-pop[data-state="closed"]  { animation: ui-fade-out var(--dur-1) var(--ease-in)  both; }
+.ui-slide-right[data-state="open"]  { animation: ui-slide-right-in var(--dur-3) var(--ease-out) both; }
+.ui-slide-left[data-state="open"]   { animation: ui-slide-left-in  var(--dur-3) var(--ease-out) both; }
+.ui-slide-up[data-state="open"]     { animation: ui-slide-up-in    var(--dur-3) var(--ease-out) both; }
+.ui-slide-right[data-state="closed"],
+.ui-slide-left[data-state="closed"],
+.ui-slide-up[data-state="closed"]   { animation: ui-fade-out var(--dur-1) var(--ease-in) both; }
+
+@keyframes ui-fade-in  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes ui-fade-out { from { opacity: 1 } to { opacity: 0 } }
+@keyframes ui-pop-in   { from { opacity: 0; transform: translate(-50%, -50%) scale(0.97) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }
+@keyframes ui-slide-right-in { from { opacity: 0; transform: translateX(16px) } to { opacity: 1; transform: none } }
+@keyframes ui-slide-left-in  { from { opacity: 0; transform: translateX(-16px) } to { opacity: 1; transform: none } }
+@keyframes ui-slide-up-in    { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
+
+/* A live status breathes; a settled one does not. */
+.status-dot-live { animation: status-breathe 1.6s ease-in-out infinite; }
+@keyframes status-breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
+
 .pip-state {
   display: inline-flex;
   align-items: center;

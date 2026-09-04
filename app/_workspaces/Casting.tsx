@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Check, Plus, RefreshCcw, Sparkles, X } from "../_components/icons";
 import { fadeUp, pageIn, staggerContainer, staggerItem, tap } from "../_components/motion";
 import type { Character, Location, Project, Prop, WorkspaceId } from "../../lib/types";
+import { useConfirm } from "../_components/ui/alert-dialog";
 
 const LOOK_GRADS = [
   "linear-gradient(150deg, var(--tomato), var(--tomato-deep))",
@@ -163,6 +164,7 @@ interface Props {
 }
 
 export function Casting({ project, characters, locations, props: propList, onSwitchWorkspace, onReload }: Props) {
+  const confirmDialog = useConfirm();
   const [adding, setAdding] = useState<"character" | "location" | "prop" | null>(null);
   const [importing, setImporting] = useState(false);
   const [importNote, setImportNote] = useState<string | null>(null);
@@ -192,9 +194,12 @@ export function Casting({ project, characters, locations, props: propList, onSwi
     if (withLooks.length === 0) return;
     const totalImages = withLooks.reduce((n, c) => n + (c.refs?.length ?? 0), 0);
     if (
-      !confirm(
-        `Delete all cast images?\n\n${totalImages} look(s) across ${withLooks.length} character(s) will be removed. Frames already generated keep their picture, but new frames won't be reference-locked until you cast new looks.`
-      )
+      !(await confirmDialog({
+        title: "Delete all cast images?",
+        description: `${totalImages} look(s) across ${withLooks.length} character(s) will be removed. Frames already generated keep their picture, but new frames won't be reference-locked until you cast new looks.`,
+        confirmLabel: "Delete images",
+        destructive: true
+      }))
     )
       return;
     setImportNote(`Clearing looks for ${withLooks.length} character(s)…`);
@@ -973,6 +978,7 @@ function CharacterEditModal({
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
+  const confirmDialog = useConfirm();
   const [name, setName] = useState(character.name);
   const [role, setRole] = useState<Character["role"]>(character.role);
   const [dialogue, setDialogue] = useState(character.dialogue);
@@ -1010,7 +1016,15 @@ function CharacterEditModal({
 
   async function remove() {
     if (busy) return;
-    if (!confirm(`Delete ${character.name}?\n\nTheir looks and reference lock go with them. Frames already generated stay as they are.`)) return;
+    if (
+      !(await confirmDialog({
+        title: `Delete ${character.name}?`,
+        description: "Their looks and reference lock go with them. Frames already generated stay as they are.",
+        confirmLabel: "Delete character",
+        destructive: true
+      }))
+    )
+      return;
     setBusy(true);
     try {
       await fetch(`/api/characters/${character.id}`, { method: "DELETE" });
@@ -1023,7 +1037,15 @@ function CharacterEditModal({
   async function clearLooks() {
     if (busy) return;
     const n = character.refs?.length ?? 0;
-    if (!confirm(`Delete ${character.name}'s ${n} cast image(s)?\n\nThe character stays; cast a new look to re-lock their identity.`)) return;
+    if (
+      !(await confirmDialog({
+        title: `Delete ${character.name}'s ${n} cast image(s)?`,
+        description: "The character stays; cast a new look to re-lock their identity.",
+        confirmLabel: "Delete images",
+        destructive: true
+      }))
+    )
+      return;
     setBusy(true);
     try {
       await fetch(`/api/characters/${character.id}`, {

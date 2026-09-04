@@ -71,10 +71,12 @@
   --color-surface-raised:   var(--surface-raised);
   --color-surface-overlay:  var(--surface-overlay);
   --color-surface-selected: var(--surface-selected);
-  --color-text-primary:     var(--text-primary);
-  --color-text-secondary:   var(--text-secondary);
-  --color-text-tertiary:    var(--text-tertiary);
-  --color-text-disabled:    var(--text-disabled);
+  /* Named `fg-*` in Tailwind so the utility reads `text-fg-secondary`, not
+     `text-text-secondary`. The CSS variables keep the brief's `--text-*`. */
+  --color-fg-primary:       var(--text-primary);
+  --color-fg-secondary:     var(--text-secondary);
+  --color-fg-tertiary:      var(--text-tertiary);
+  --color-fg-disabled:      var(--text-disabled);
   --color-border-subtle:    var(--border-subtle);
   --color-border-standard:  var(--border-standard);
   --color-border-strong:    var(--border-strong);

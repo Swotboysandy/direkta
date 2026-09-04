@@ -3690,10 +3690,6 @@ textarea {
 }
 
 /* `data-s` was our legacy pip-state attribute; brand uses `data-status`. */
-.pip-state[data-s="working"]    { background: rgba(242, 184, 60, 0.20); color: var(--mustard-deep); }
-.pip-state[data-s="done"]       { background: rgba(61, 168, 155, 0.18); color: var(--viridian-deep); }
-.pip-state[data-s="attention"]  { background: rgba(232, 74, 53, 0.16);  color: var(--tomato-deep); }
-.pip-state[data-s="error"]      { background: rgba(232, 74, 53, 0.16);  color: var(--tomato-deep); }
 
 /* `.modal-backdrop` was our legacy overlay; brand uses `.modal-overlay`. */
 .modal-backdrop {

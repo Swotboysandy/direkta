@@ -2,6 +2,7 @@
 
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { X } from "./icons";
+import { useConfirm } from "./ui/alert-dialog";
 
 export interface StitchNodeData {
   frame_url: string | null;
@@ -18,6 +19,7 @@ export interface StitchNodeData {
    of the app's light/dark theme, matching the Stitch graph canvas. */
 
 export function StitchNodeCard({ data, selected }: NodeProps) {
+  const confirmDialog = useConfirm();
   const d = data as StitchNodeData;
   const scene = d.beat_n ? `S${String(d.beat_n).padStart(2, "0")}` : "—";
 
@@ -56,12 +58,20 @@ export function StitchNodeCard({ data, selected }: NodeProps) {
         aria-label="Remove from Stitch"
         title="Remove from Stitch"
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
+        onClick={async (e) => {
           e.stopPropagation();
           const label = d.beat_n
             ? `Beat ${String(d.beat_n).padStart(2, "0")}${d.variant_n ? ` V${String(d.variant_n).padStart(2, "0")}` : ""}`
-            : "this frame";
-          if (confirm(`Remove ${label} from Stitch?`)) d.onDelete();
+            : "this shot";
+          if (
+            await confirmDialog({
+              title: `Remove ${label} from the board?`,
+              description: "Its transition clips go with it. The storyboard frame is kept.",
+              confirmLabel: "Remove shot",
+              destructive: true
+            })
+          )
+            d.onDelete();
         }}
       >
         <X size={12} />

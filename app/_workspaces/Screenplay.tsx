@@ -7,6 +7,7 @@ import { MovieBibleModal } from "../_components/MovieBibleModal";
 import { fadeUp, pageIn, SPRING_SMOOTH, staggerContainer, staggerItem, tap } from "../_components/motion";
 import { ProjectRules } from "../_components/ProjectRules";
 import type { Beat, Bible, Character, Location, Project, WorkspaceId } from "../../lib/types";
+import { useConfirm } from "../_components/ui/alert-dialog";
 
 const TILTS = ["var(--tilt-card-a)", "var(--tilt-card-b)", "var(--tilt-card-c)"];
 
@@ -52,6 +53,7 @@ export function Screenplay({
   onScriptSubmitted,
   onReload
 }: Props) {
+  const confirmDialog = useConfirm();
   const [draft, setDraft] = useState(project.script);
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -581,7 +583,15 @@ export function Screenplay({
                     className="btn btn-sm"
                     style={{ background: "var(--bg)" }}
                     onClick={async () => {
-                      if (!confirm("Edit the script? Beat extraction will need to re-run.")) return;
+                      if (
+                        !(await confirmDialog({
+                          title: "Unlock the script for editing?",
+                          description:
+                            "Beats will be extracted again when you resubmit. Re-extraction replaces every beat, which also clears the storyboard rows and shots attached to them. Characters and their looks are kept.",
+                          confirmLabel: "Unlock script"
+                        }))
+                      )
+                        return;
                       await fetch(`/api/projects/${project.id}`, {
                         method: "PATCH",
                         headers: { "content-type": "application/json" },

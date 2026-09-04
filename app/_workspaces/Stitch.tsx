@@ -25,6 +25,7 @@ import { H3LiveMonitor } from "../_components/H3LiveMonitor";
 import { ClipFrameTools } from "../_components/ClipFrameTools";
 import { LIPSYNC_MODELS, DEFAULT_LIPSYNC_MODEL } from "../../lib/lipsync/catalog";
 import type { Project, TransitionStyle, WorkspaceId } from "../../lib/types";
+import { useConfirm } from "../_components/ui/alert-dialog";
 
 interface Balance {
   connected: boolean;
@@ -105,6 +106,7 @@ function formatTC(sec: number): string {
 }
 
 export function Stitch({ project, onSwitchWorkspace }: Props) {
+  const confirmDialog = useConfirm();
   const [stitchNodes, setStitchNodes] = useState<StitchNode[]>([]);
   const [transitions, setTransitions] = useState<Transition[]>([]);
   const [rfNodes, setRfNodes] = useState<RFNode[]>([]);
@@ -523,8 +525,15 @@ export function Stitch({ project, onSwitchWorkspace }: Props) {
             onUploadClip={(file) => uploadClip(selected, file)}
             onUploadDialogue={(file) => uploadDialogue(selected, file)}
             onLipsync={(modelId) => lipsync(selected, modelId)}
-            onDelete={() => {
-              if (confirm("Remove this frame from Stitch? The transition clips connected to it will also be removed.")) {
+            onDelete={async () => {
+              if (
+                await confirmDialog({
+                  title: "Remove this shot from the board?",
+                  description: "The transition clips connected to it are removed with it. The storyboard frame it came from is kept.",
+                  confirmLabel: "Remove shot",
+                  destructive: true
+                })
+              ) {
                 deleteNode(selected.id);
               }
             }}
