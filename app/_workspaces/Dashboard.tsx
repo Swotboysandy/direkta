@@ -35,7 +35,8 @@ interface Props {
   activity: ActivityItem[];
   agents: AgentStatus[];
   stats: DashStats;
-  query: string;
+  /** Absent now that the top bar carries no search: the canvas owns its own. */
+  query?: string;
   assetsVersion?: number;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }

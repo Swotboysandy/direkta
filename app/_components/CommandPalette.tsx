@@ -26,6 +26,10 @@ interface Props {
   onSwitchProject: (id: string) => void;
   onNewProject: () => void;
   onOpenKeyVault: () => void;
+  /** Controlled from the top bar's ⌘K button; the keyboard shortcut still
+   *  works on its own. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function CommandPalette({
@@ -35,9 +39,17 @@ export function CommandPalette({
   onSwitchWorkspace,
   onSwitchProject,
   onNewProject,
-  onOpenKeyVault
+  onOpenKeyVault,
+  open: openProp,
+  onOpenChange
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean | ((v: boolean) => boolean)) => {
+    const value = typeof next === "function" ? next(open) : next;
+    setOpenState(value);
+    onOpenChange?.(value);
+  };
 
   // ⌘K / Ctrl+K to toggle.
   useEffect(() => {
@@ -51,7 +63,8 @@ export function CommandPalette({
     };
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const run = (fn: () => void) => () => {
     fn();

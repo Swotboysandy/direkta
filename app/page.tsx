@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TopBar } from "./_components/TopBar";
-import { Rail } from "./_components/Rail";
+import { StageStrip } from "./_components/StageStrip";
+import { useRenderEngine } from "./_components/RenderEngineChip";
 import { AgentPanel } from "./_components/AgentPanel";
 import { SkeletonWorkspace, ErrorState } from "./_components/AsyncStates";
 import { Composer, type ComposerSubmission } from "./_components/Composer";
@@ -16,6 +17,7 @@ import { SkillsPanel } from "./_components/SkillsPanel";
 import { ConfirmProvider } from "./_components/ui/alert-dialog";
 import { STAGE_LABELS, LOCK_REASONS, isAppMode, type AppMode } from "./_lib/stages";
 import { SelectionProvider } from "./_state/selection";
+import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { Dashboard } from "./_workspaces/Dashboard";
 import { Screenplay } from "./_workspaces/Screenplay";
@@ -71,9 +73,11 @@ export default function Home() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [bundle, setBundle] = useState<ProjectBundle | null>(null);
-  // One search box on screen: the bar owns the field, the canvas reads it.
-  const [query, setQuery] = useState("");
   const [agentOpen, setAgentOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  // The render engine's state is read once here and handed to whatever shows
+  // it, so the bar and the Dock never poll RunPod twice for the same fact.
+  const h3 = useRenderEngine();
   // Set when a suggestion is taken from the agent; the composer consumes it
   // and clears it, so pressing the same card twice loads it again.
   const [composerSeed, setComposerSeed] = useState<string | null>(null);
@@ -419,24 +423,43 @@ export default function Home() {
         project={bundle?.project ?? null}
         projects={projects}
         activeProjectId={projectId}
-        query={query}
-        onQuery={setQuery}
+        mode={mode}
+        onMode={(m) => {
+          setMode(m);
+          if (m === "home") setActiveWorkspace("dashboard");
+          if (m === "assets") setActiveWorkspace("library");
+        }}
         onSwitchProject={(id) => {
           if (!id) return;
           setProjectId(id);
+          setMode("home");
           setActiveWorkspace("dashboard");
         }}
         onNewProject={() => setNewProjectOpen(true)}
         onDeleteProject={deleteProject}
         onOpenKeys={() => setKeyVaultOpen(true)}
         onOpenSkills={() => setSkillsOpen(true)}
-        onOpenAgent={() => setAgentOpen((v) => !v)}
-        agentOpen={agentOpen}
+        onOpenPalette={() => setPaletteOpen(true)}
+        h3={h3}
       />
 
-      <div className="app-body" data-agent={agentOpen ? "true" : "false"}>
-        <Rail workspaces={workspaces} active={activeWorkspace} onSwitch={switchWorkspace} />
+      {/* The production is the navigation context (brief §9): its stages sit
+          in a row under the global bar, and only while a production is open. */}
+      {mode === "home" && bundle && (
+        <div className="production-bar">
+          <StageStrip workspaces={workspaces} active={activeWorkspace} onSwitch={switchWorkspace} />
+          <button
+            type="button"
+            className={cn("production-bar-agent", agentOpen && "is-active")}
+            onClick={() => setAgentOpen((v) => !v)}
+            aria-pressed={agentOpen}
+          >
+            Director
+          </button>
+        </div>
+      )}
 
+      <div className="app-body" data-agent={agentOpen ? "true" : "false"}>
         <div className="work">
           <main className="main">
           {!bundle && bundleState === "loading" ? (
@@ -508,7 +531,6 @@ export default function Home() {
                     characters: bundle.characters.length,
                     locations: bundle.locations.length
                   }}
-                  query={query}
                   onSwitchWorkspace={switchWorkspace}
                 />
               )}
@@ -612,6 +634,8 @@ export default function Home() {
       />
 
       <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
         project={bundle?.project ?? null}
         projects={projects}
         activeProjectId={projectId}

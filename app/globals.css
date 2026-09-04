@@ -510,12 +510,6 @@
 
 /* Separates the generator status from the controls, so the chip is not read
    as another button. */
-.topbar-sep {
-  width: 1px;
-  height: 18px;
-  margin: 0 var(--sp-1);
-  background: var(--cream-deep);
-}
 
 /* The toggle is one of the bar's icon buttons and inherits their box; only its
    own animation is its own. */
@@ -607,88 +601,11 @@
    permanent furniture. Labels appear on hover; status reads off
    the glyph rather than a second line of text.
    ============================================================ */
-.rail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-  padding: var(--sp-3) var(--sp-2);
-  border-right: 1px solid var(--cream-deep);
-  overflow: visible;
-}
 
-.rail-btn {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 0;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--mute);
-  cursor: pointer;
-  transition: color var(--dur-1) var(--ease-out);
-}
-.rail-btn:hover:not([data-locked]) { color: var(--ink); }
-.rail-btn.is-active { color: var(--ink); }
-.rail-btn[data-locked="true"] { opacity: 0.3; cursor: not-allowed; }
 
-.rail-active {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-}
-.rail-glyph { position: relative; z-index: 1; display: grid; place-items: center; }
 
 /* The label is a hover plate rather than a permanent column. */
-.rail-label {
-  position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%) translateX(-4px);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 6px var(--sp-3);
-  border-radius: var(--r-sm);
-  background: var(--bg);
-  box-shadow: var(--shadow-3);
-  color: var(--ink);
-  font-size: var(--t-body-s);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 60;
-  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
-}
-.rail-label em {
-  font-style: normal;
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-}
-.rail-btn:hover .rail-label,
-.rail-btn:focus-visible .rail-label {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
 
-.rail-pip {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  z-index: 2;
-}
-.rail-pip[data-status="complete"]    { background: var(--signal-success); }
-.rail-pip[data-status="in-progress"] {
-  background: var(--signal-warning);
-  animation: fx-pulse-pip 1.6s var(--ease-out) infinite;
-}
 
 /* ============================================================
    AGENT PANEL
@@ -879,8 +796,6 @@
 /* Five stages as one measured row: this is progress through a fixed
    sequence, which is a reading rather than a menu. */
 
-@media (max-width: 720px) {
-}
 
 /* ============================================================
    TOP BAR
@@ -894,208 +809,21 @@
    GPU that does the work, bills by the hour, and can run out of
    credit mid-project was the one thing not shown.
    ============================================================ */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  height: var(--topnav-h);
-  padding: 0 var(--sp-4);
-  border-bottom: 1px solid var(--cream-deep);
-  background: var(--bg);
-}
 
-.topbar-brand {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  color: var(--ink);
-  flex: none;
-  cursor: default;
-}
-.topbar-wordmark {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-}
 
-.topbar-project {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  max-width: 30ch;
-  padding: 5px var(--sp-3);
-  border: 0;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--t-body-s);
-  font-weight: 500;
-  cursor: pointer;
-  flex: none;
-  transition: background var(--dur-1) var(--ease-out);
-}
-.topbar-project:hover { background: var(--surface-2); }
-.topbar-project-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.topbar-menu {
-  display: flex;
-  flex-direction: column;
-  /* A long project list otherwise runs past the bottom of the window with no
-     way to reach the end of it. */
-  max-height: min(60vh, 420px);
-  overflow-y: auto;
-  min-width: 260px;
-  padding: var(--sp-1);
-  border-radius: var(--r-md);
-  background: var(--bg);
-  box-shadow: var(--shadow-3);
-  z-index: var(--z-overlay);
-}
-.topbar-menu-row { display: flex; align-items: center; gap: 2px; }
-.topbar-menu-row .topbar-menu-item { flex: 1; min-width: 0; }
-.topbar-menu-del {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--mute);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
-}
-/* Destructive, so it stays out of the way until the row is being considered,
-   and is reachable by keyboard rather than hover alone. */
-.topbar-menu-row:hover .topbar-menu-del,
-.topbar-menu-del:focus-visible { opacity: 1; }
-.topbar-menu-del:hover { color: var(--signal-danger); }
 
-.topbar-menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--t-body-s);
-  text-align: left;
-  cursor: pointer;
-}
-.topbar-menu-item:hover { background: var(--surface-2); }
-.topbar-menu-item.is-active { background: var(--surface-2); }
-.topbar-menu-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.topbar-menu-meta {
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-  flex: none;
-}
-.topbar-menu-new { color: var(--mute); justify-content: flex-start; }
-.topbar-menu-new:hover { color: var(--ink); }
 
 /* The search takes whatever room is left, so the bar never overflows. */
-.topbar-search {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 5px var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--cream-deep);
-  color: var(--mute);
-}
-.topbar-search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--t-body-s);
-  outline: none;
-}
-.topbar-search input::placeholder { color: var(--mute); }
 
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  flex: none;
-}
 
 /* Generator state. Colour carries the meaning, and the text repeats it, so it
    is not colour alone doing the work. */
-.topbar-gen {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 4px var(--sp-3);
-  margin-right: var(--sp-2);
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-eyebrow);
-  letter-spacing: var(--tracking-mono);
-  color: var(--mute);
-  white-space: nowrap;
-}
-.topbar-gen-pip {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--mute);
-  flex: none;
-}
-.topbar-gen[data-tone="warm"]   { color: var(--signal-success); }
-.topbar-gen[data-tone="warm"]   .topbar-gen-pip { background: var(--signal-success); }
-.topbar-gen[data-tone="waking"] { color: var(--signal-warning); }
-.topbar-gen[data-tone="waking"] .topbar-gen-pip {
-  background: var(--signal-warning);
-  animation: fx-pulse-pip 1.6s var(--ease-out) infinite;
-}
-.topbar-gen[data-tone="down"]   { color: var(--signal-danger); }
-.topbar-gen[data-tone="down"]   .topbar-gen-pip { background: var(--signal-danger); }
 
-.topbar-gen-balance {
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
 
-.topbar-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--mute);
-  cursor: pointer;
-  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
-}
-.topbar-icon:hover { background: var(--surface-2); color: var(--ink); }
-.topbar-icon.is-active { background: var(--surface-2); color: var(--accent); }
 
 @media (max-width: 900px) {
   /* Identity survives; the wordmark does not need to. */
-  .topbar-wordmark { display: none; }
-  .topbar-gen span:not(.topbar-gen-pip):not(.topbar-gen-balance) { display: none; }
-}
-@media (max-width: 640px) {
-  .topbar-search { display: none; }
 }
 
 /* ============================================================
@@ -1554,14 +1282,16 @@ strong, b {
 
 .workbench {
   display: grid;
-  grid-template-rows: var(--topnav-h) minmax(0, 1fr);
+  /* Global bar, production bar (absent outside a production), then the work.
+     dvh, not vh: on a phone vh includes the browser chrome and the dock ends
+     up under it. */
+  grid-template-rows: auto auto minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr);
-  height: 100vh;
-  /* One very faint wash, high and to the right, so the screen has a light
-     source without anything on it competing with footage. */
-  background:
-    radial-gradient(1200px 620px at 78% -18%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 64%),
-    var(--bg);
+  height: 100dvh;
+  /* Flat. The radial accent wash that used to sit here was the one gradient
+     in the shell, and the brief's first rule is that gradients need a
+     content reason. Footage supplies the light now. */
+  background: var(--surface-canvas);
   overflow: hidden;
 }
 
@@ -1663,11 +1393,12 @@ strong, b {
 /* ============================================================
    APP BODY — sidebar + main
    ============================================================ */
-/* Rail | work | agent. The agent column collapses to zero when closed, so the
-   work area takes the space rather than the panel leaving a gap behind it. */
+/* Work | agent. The agent column collapses to zero when closed, so the work
+   area takes the space rather than the panel leaving a gap behind it. The
+   rail is gone: stages live in the production bar above. */
 .app-body {
   display: grid;
-  grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--agent-w, 0px);
+  grid-template-columns: minmax(0, 1fr) var(--agent-w, 0px);
   min-height: 0;
   transition: grid-template-columns var(--dur-3) var(--ease-out);
 }
@@ -3832,8 +3563,6 @@ textarea {
   z-index: 1;
 }
 
-@media (max-width: 1100px) {
-}
 
 @media (max-width: 720px) {
 
