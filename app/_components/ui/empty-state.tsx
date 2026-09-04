@@ -28,8 +28,8 @@ export function EmptyState({
   return (
     <div className={cn("flex max-w-[52ch] flex-col items-start gap-3 py-6", className)} role="status">
       <div className="flex flex-col gap-1">
-        <p className="text-[14px] font-semibold text-fg-primary text-balance">{title}</p>
-        <p className="text-[13px] leading-relaxed text-fg-secondary text-pretty">{why}</p>
+        <p className="m-0 text-[14px] font-semibold text-fg-primary text-balance">{title}</p>
+        <p className="m-0 text-[13px] leading-relaxed text-fg-secondary text-pretty">{why}</p>
       </div>
       <div className="flex items-center gap-2">
         <Button intent="primary" size="sm" onClick={action.onClick} disabled={action.disabled}>

@@ -47,7 +47,7 @@ function AlertDialogTitle({ className, ...props }: React.ComponentProps<typeof A
 function AlertDialogDescription({ className, ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
   return (
     <AlertDialogPrimitive.Description
-      className={cn("mt-1.5 text-[13px] leading-relaxed text-fg-secondary text-pretty whitespace-pre-line", className)}
+      className={cn("mt-1.5 mb-0 text-[13px] leading-relaxed text-fg-secondary text-pretty whitespace-pre-line", className)}
       {...props}
     />
   );

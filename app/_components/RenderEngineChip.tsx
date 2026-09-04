@@ -99,7 +99,7 @@ export function RenderEngineChip({ h3, className }: { h3: H3Status | null; class
           collisionPadding={12}
           className="z-(--z-overlay) w-[300px] rounded-overlay bg-surface-overlay p-4 text-[12px] text-fg-secondary shadow-(--shadow-3) ui-pop-anchor"
         >
-          <p className="mb-3 text-[13px] font-semibold text-fg-primary">Render engine</p>
+          <p className="mt-0 mb-3 text-[13px] font-semibold text-fg-primary">Render engine</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 font-mono text-[11px]">
             <dt className="text-fg-tertiary">Model</dt>
             <dd>MiniMax H3 · ComfyUI</dd>
@@ -120,8 +120,8 @@ export function RenderEngineChip({ h3, className }: { h3: H3Status | null; class
               {h3?.canStart === false ? " · below the balance needed" : ""}
             </dd>
           </dl>
-          {h3?.reason && <p className="mt-3 text-status-error">{h3.reason}</p>}
-          <p className="mt-3 text-[11px] text-fg-tertiary">
+          {h3?.reason && <p className="mt-3 mb-0 text-status-error">{h3.reason}</p>}
+          <p className="mt-3 mb-0 text-[11px] text-fg-tertiary">
             The engine starts when a shot is generated and stops when it finishes. Nothing bills while it is offline.
           </p>
         </Popover.Content>
