@@ -633,3 +633,47 @@ test("gemini image surfaces the model's own words when it returns no image", asy
     global.fetch = realFetch;
   }
 });
+
+/* ── The Director's tool layer ──────────────────────────────────────────
+   The model chooses what to call. These prove that what it chooses cannot
+   step outside the registry, cannot pass an argument the tool rejects, and
+   cannot spend money without a person. */
+
+test("the Director cannot call a tool that does not exist", async () => {
+  const tools = require("../lib/agents/director-tools.ts");
+  require("../lib/agents/director-toolset.ts");
+  const res = await tools.runTool("delete_everything", {}, { projectId: "p" });
+  assert.equal(res.ok, false);
+  assert.match(res.message, /no tool called/);
+});
+
+test("an argument the schema rejects never reaches the tool", async () => {
+  const tools = require("../lib/agents/director-tools.ts");
+  require("../lib/agents/director-toolset.ts");
+  // update_beat needs a beat number; a string is not one.
+  const res = await tools.runTool("update_beat", { beat_number: "the first one" }, { projectId: "p" });
+  assert.equal(res.ok, false, "a bad argument must be refused before the tool runs");
+  assert.match(res.message, /beat_number/);
+});
+
+test("a tool that throws returns its reason rather than crashing the run", async () => {
+  const tools = require("../lib/agents/director-tools.ts");
+  require("../lib/agents/director-toolset.ts");
+  // No such production, so the tool throws; the loop must survive it.
+  const res = await tools.runTool("read_project", {}, { projectId: "does-not-exist" });
+  assert.equal(res.ok, false);
+  assert.match(res.message, /no longer exists/);
+});
+
+test("every registered tool declares a cost, and only reading is free", () => {
+  const tools = require("../lib/agents/director-tools.ts");
+  require("../lib/agents/director-toolset.ts");
+  const all = tools.allTools();
+  assert.ok(all.length > 0, "the registry must not be empty");
+  for (const def of all) {
+    assert.ok(["free", "spend", "destructive"].includes(def.cost), `${def.name} has no valid cost`);
+    assert.ok(def.running && def.description, `${def.name} must say what it is doing, in words`);
+    // needsApproval is what the executor gates on; it must agree with cost.
+    assert.equal(tools.needsApproval(def), def.cost !== "free", `${def.name}: approval gate disagrees with its cost`);
+  }
+});

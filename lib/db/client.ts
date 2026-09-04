@@ -228,6 +228,30 @@ function migrate(db: DatabaseSync) {
 
     CREATE INDEX IF NOT EXISTS idx_favourites_project ON asset_favourites(project_id);
 
+    /* A collection is a named set the user makes: "Kali's looks", "night
+       plates", "things to reuse". Deliberately NOT scoped to a production —
+       Assets can show every production at once, and a set that could not
+       cross a production line would be the one thing the global view is for.
+       Membership is addressed by (project_id, kind, item_id), the same triple
+       favourites use, because an asset is either a row in the assets table or
+       a character/location/prop in its own table. */
+    CREATE TABLE IF NOT EXISTS asset_collections (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_collection_items (
+      collection_id TEXT NOT NULL REFERENCES asset_collections(id) ON DELETE CASCADE,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (collection_id, kind, item_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_collection_items_project ON asset_collection_items(project_id);
+
     CREATE TABLE IF NOT EXISTS stitch_nodes (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
