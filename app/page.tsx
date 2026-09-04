@@ -240,7 +240,10 @@ export default function Home() {
 
     const castingUnlocked = Boolean(submitted);
     const storyboardUnlocked = castingUnlocked && hasCast;
-    const stitchUnlocked = storyboardUnlocked && gate.frames > 0;
+    // A frame on the storyboard opens Shots — and so does a shot already on
+    // the board. Kaliyug's shots were made outside the Storyboard, and the
+    // old predicate locked the stage on a board with eighteen shots on it.
+    const stitchUnlocked = storyboardUnlocked && (gate.frames > 0 || gate.stitchNodes > 0);
     const exportUnlocked = (stitchUnlocked && gate.stitchNodes > 0) || gate.hasFinalVideo;
 
     return [

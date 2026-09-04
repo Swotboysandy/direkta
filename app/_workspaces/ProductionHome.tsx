@@ -82,11 +82,14 @@ export function ProductionHome({ project, beats, characters, activity, workspace
   const next = useMemo<{ ws: WorkspaceId; label: string }>(() => {
     if (!project.script_submitted) return { ws: "screenplay", label: "Write the script" };
     if (characters.length === 0) return { ws: "casting", label: "Build the world" };
+    // Shots on the board outrank frames on the storyboard: a production can
+    // have shots that never passed through Storyboard, and they are the
+    // furthest thing along.
+    if (nodes.length > 0 && clipsDone < nodes.length) return { ws: "stitch", label: "Render the remaining shots" };
+    if (nodes.length > 0 && !gate.hasFinalVideo) return { ws: "export", label: "Assemble the cut" };
+    if (nodes.length > 0) return { ws: "export", label: "Open the finished cut" };
     if (gate.frames === 0) return { ws: "storyboard", label: "Storyboard the first beat" };
-    if (nodes.length === 0) return { ws: "stitch", label: "Put frames on the board" };
-    if (clipsDone < nodes.length) return { ws: "stitch", label: "Render the remaining shots" };
-    if (!gate.hasFinalVideo) return { ws: "export", label: "Assemble the cut" };
-    return { ws: "export", label: "Open the finished cut" };
+    return { ws: "stitch", label: "Put frames on the board" };
   }, [project.script_submitted, characters.length, gate.frames, gate.hasFinalVideo, nodes.length, clipsDone]);
 
   const decisions = useMemo<Decision[]>(() => {
@@ -106,16 +109,20 @@ export function ProductionHome({ project, beats, characters, activity, workspace
   // One suggestion. The most useful gap, phrased as the director would.
   const suggestion = useMemo(() => {
     const beatsWithoutShots = beats.filter((b) => !nodes.some((n) => n.beat?.n === b.n)).length;
-    if (gate.frames > 0 && nodes.length > 0 && beatsWithoutShots > 0)
+    if (nodes.length > 0 && beatsWithoutShots > 0)
       return { text: `${beats.length - beatsWithoutShots} beats have shots; ${beatsWithoutShots} do not.`, action: "Generate the missing shots", go: "stitch" as WorkspaceId };
-    if (characters.length > 0 && gate.frames === 0)
+    if (nodes.length > 0 && clipsDone < nodes.length)
+      return { text: `${nodes.length - clipsDone} of ${nodes.length} shots on the board still need a render.`, action: "Render the remaining shots", go: "stitch" as WorkspaceId };
+    if (nodes.length > 0 && !gate.hasFinalVideo)
+      return { text: "Every shot is rendered. The cut has not been assembled.", action: "Assemble the cut", go: "export" as WorkspaceId };
+    if (characters.length > 0 && gate.frames === 0 && nodes.length === 0)
       return { text: `${castable.length - untrained.length} of ${castable.length} characters have a Soul ID and nothing is storyboarded yet.`, action: "Storyboard the whole script", go: "storyboard" as WorkspaceId };
     if (project.script_submitted && characters.length === 0)
       return { text: "The script is in and nobody has been cast.", action: "Pull the cast from the script", go: "casting" as WorkspaceId };
     if (!project.script_submitted)
       return { text: "There is no script yet. Everything downstream comes from it.", action: "Start the script", go: "screenplay" as WorkspaceId };
     return null;
-  }, [beats, nodes, gate.frames, characters.length, castable.length, untrained.length, project.script_submitted]);
+  }, [beats, nodes, clipsDone, gate.frames, gate.hasFinalVideo, characters.length, castable.length, untrained.length, project.script_submitted]);
 
   const last = activity[0];
   const open = (item: CanvasItem) => {
@@ -164,8 +171,8 @@ export function ProductionHome({ project, beats, characters, activity, workspace
               return (
                 <button key={n.id} type="button" className="phome-shot" onClick={() => onSwitchWorkspace("stitch")} title={n.beat?.title ?? "Composed shot"}>
                   {url ? <MediaTile url={url} kind={n.clip_url ? "video" : "image"} className="phome-shot-media" /> : <span className="phome-shot-blank" />}
-                  <span className="phome-shot-label">{n.beat ? String(n.beat.n).padStart(2, "0") : "·"}</span>
-                  {!n.clip_url && <span className="phome-shot-state">frame</span>}
+                  <span className="phome-shot-label">{n.beat ? String(n.beat.n).padStart(2, "0") : "new"}</span>
+                  {!n.clip_url && <span className="phome-shot-state">{url ? "frame" : "empty"}</span>}
                 </button>
               );
             })}

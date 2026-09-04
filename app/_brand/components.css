@@ -457,9 +457,9 @@
 .mode-active { position: absolute; inset: 0; border-radius: var(--r-control); background: var(--surface-raised); }
 
 .topbar-project {
-  display: inline-flex; align-items: baseline; gap: 8px; max-width: 100%;
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
   height: 32px; padding: 0 10px; border: 0; background: none; cursor: pointer;
-  border-radius: var(--r-control); color: var(--text-primary);
+  border-radius: var(--r-control); color: var(--text-primary); line-height: 1;
 }
 .topbar-project:hover { background: var(--surface-raised); }
 .topbar-project-kicker { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
@@ -480,7 +480,10 @@
 }
 .topbar-menu-item:hover, .topbar-menu-item.is-active { background: var(--surface-raised); }
 .topbar-menu-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.topbar-menu-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+/* The meta never wraps: a two-line "SHORT / FILM" made one row taller than
+   its neighbours. It yields to the title, which truncates with an ellipsis. */
+.topbar-menu-meta { flex: 0 0 auto; white-space: nowrap; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+.topbar-menu-item > svg { flex: 0 0 auto; }
 .topbar-menu-del {
   width: 30px; border: 0; background: none; color: var(--text-tertiary); cursor: pointer; border-radius: var(--r-control);
   opacity: 0; transition: opacity var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
@@ -682,7 +685,11 @@
 .phome-stage[data-status="complete"] .phome-stage-dot { background: var(--status-success); }
 .phome-stage.is-locked .phome-stage-dot { background: none; width: auto; height: auto; }
 .phome-stage-name { font-size: 13px; font-weight: 500; }
-.phome-stage-note { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A lock reason is a sentence; it wraps to a second line rather than being
+   cut mid-word. Two lines is enough for every reason we write. */
+.phome-stage-note { font-family: var(--font-mono); font-size: 10px; line-height: 1.35; color: var(--text-tertiary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-wrap: pretty; }
+.phome-stage { align-items: start; }
+.phome-stage-dot { margin-top: 5px; }
 
 .phome-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 0.6fr); gap: var(--sp-6); align-items: start; }
 .phome-decisions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
