@@ -106,6 +106,9 @@ export default function Home() {
   const [mode, setMode] = useState<AppMode>("home");
   // Bumped when a production is created or deleted so the wall refetches.
   const [projectsVersion, setProjectsVersion] = useState(0);
+  /** The list has come back from the server at least once. Until it has, we
+   *  cannot tell "there is no scratch production" from "we have not looked". */
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
   // The production that was open before Create took the project slot.
   const lastProduction = useRef<string | null>(null);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -139,6 +142,7 @@ export default function Home() {
       const list = await fetch("/api/projects").then((r) => r.json());
       const all = list.projects as Project[];
       setProjects(all);
+      setProjectsLoaded(true);
       writeCache("projects", all);
       // A hint can name a production that has since been deleted; fall back
       // rather than sitting on a bundle that will never load.
@@ -201,6 +205,23 @@ export default function Home() {
     [mode, projectId, ensureScratch]
   );
 
+
+  // Create renders against the scratch production, which changeMode() sets on
+  // the way in. Arriving by URL - a bookmark, or just a reload, since the mode
+  // is written into the address - skipped that and left the workspace showing
+  // loading skeletons that never resolved. Reaching it any way now settles it.
+  useEffect(() => {
+    if (mode !== "create" || !projectsLoaded) return;
+    if (scratchId && projectId === scratchId) return;
+    let cancelled = false;
+    void (async () => {
+      const id = await ensureScratch();
+      if (!cancelled && id) setProjectId(id);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, projectsLoaded, scratchId, projectId, ensureScratch]);
 
   // Lightweight gate refresh — only the counts that unlock later stages.
   // Kept separate from the full bundle reload so it can poll without
