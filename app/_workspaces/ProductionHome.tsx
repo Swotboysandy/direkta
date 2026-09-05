@@ -7,17 +7,14 @@ import { MediaTile } from "../_components/ui/media-tile";
 import { Button } from "../_components/ui/button";
 import { pageIn } from "../_components/motion";
 import { useAsync } from "../_hooks/useAsync";
-import { STAGE_LABELS, PRODUCTION_STAGES } from "../_lib/stages";
-import { ArrowRight, Lock } from "../_components/icons";
-import type { ActivityItem, Beat, Character, Project, WorkspaceId, WorkspaceMeta } from "../../lib/types";
-import { cn } from "@/lib/utils";
+import { ArrowRight } from "../_components/icons";
+import type { ActivityItem, Beat, Character, Project, WorkspaceId } from "../../lib/types";
 
 interface Props {
   project: Project;
   beats: Beat[];
   characters: Character[];
   activity: ActivityItem[];
-  workspaces: WorkspaceMeta[];
   gate: { frames: number; stitchNodes: number; hasFinalVideo: boolean };
   assetsVersion?: number;
   onSwitchWorkspace: (ws: WorkspaceId) => void;
@@ -49,7 +46,7 @@ interface Decision {
  * director for what to do next. No charts, because nothing here is a metric
  * — every number is a count of things you can go and look at.
  */
-export function ProductionHome({ project, beats, characters, activity, workspaces, gate, assetsVersion, onSwitchWorkspace }: Props) {
+export function ProductionHome({ project, beats, characters, activity, gate, assetsVersion, onSwitchWorkspace }: Props) {
   const stitch = useAsync<StitchNode[]>(`/api/projects/${project.id}/stitch?v=${assetsVersion ?? 0}`, (b) => b.nodes ?? []);
   const board = useAsync<{ pending: number; total: number }>(
     `/api/projects/${project.id}/storyboard?v=${assetsVersion ?? 0}`,
@@ -178,31 +175,6 @@ export function ProductionHome({ project, beats, characters, activity, workspace
             })}
           </div>
         )}
-      </section>
-
-      {/* ── Stages, compact ─────────────────────────────────────── */}
-      <section className="phome-section">
-        <div className="phome-stages">
-          {PRODUCTION_STAGES.map((id) => {
-            const w = workspaces.find((x) => x.id === id);
-            if (!w) return null;
-            return (
-              <button
-                key={id}
-                type="button"
-                className={cn("phome-stage", !w.unlocked && "is-locked")}
-                data-status={w.status}
-                onClick={() => w.unlocked && onSwitchWorkspace(id)}
-                disabled={!w.unlocked}
-                title={w.lockReason}
-              >
-                <span className="phome-stage-dot">{!w.unlocked && <Lock size={9} />}</span>
-                <span className="phome-stage-name">{STAGE_LABELS[id]}</span>
-                <span className="phome-stage-note">{w.unlocked ? (w.note ?? (w.status === "complete" ? "done" : w.status === "in-progress" ? "in progress" : "open")) : w.lockReason}</span>
-              </button>
-            );
-          })}
-        </div>
       </section>
 
       {/* ── Decisions and the director's suggestion ─────────────── */}

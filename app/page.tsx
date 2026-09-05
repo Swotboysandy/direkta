@@ -643,7 +643,6 @@ export default function Home() {
                   beats={bundle.beats}
                   characters={bundle.characters}
                   activity={bundle.activity}
-                  workspaces={workspaces}
                   gate={gate}
                   assetsVersion={assetsVersion}
                   onSwitchWorkspace={switchWorkspace}

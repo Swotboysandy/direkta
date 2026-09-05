@@ -545,6 +545,14 @@ function StitchTimeline({
     });
   }, [shown]);
 
+  /** Shots on the board with no motion clip yet, in cut order. Declared here
+   *  with the other memos: below the empty-board early return it would be a
+   *  conditional hook. */
+  const needsRender = useMemo(
+    () => offsets.map(({ node }, i) => ({ node, i })).filter(({ node }) => !node.clip_url),
+    [offsets]
+  );
+
   const total = offsets.length ? offsets[offsets.length - 1].end : 0;
 
   const [playing, setPlaying] = useState(false);
@@ -784,6 +792,52 @@ function StitchTimeline({
             <span style={{ width: `${pct}%` }} />
           </div>
         </div>
+
+        {/* A 16:9 frame in a short, wide row letterboxes whatever we do, so
+            the space it cannot use says what is on screen and what is still
+            missing — the two things this page was silent about. */}
+        <aside className="cut-now" aria-label="Current shot">
+          <span className="ws-eyebrow">Now playing</span>
+          <p className="cut-now-title">
+            S{String(offsets.findIndex((o) => o.node.id === current.node.id) + 1).padStart(2, "0")} ·{" "}
+            {current.node.beat?.title ?? "Untitled"}
+          </p>
+          <p className="cut-now-heading">{current.node.beat?.scene_heading ?? "No scene heading"}</p>
+          <dl className="cut-now-facts">
+            <dt>Duration</dt>
+            <dd>{current.node.duration.toFixed(1)}s</dd>
+            <dt>State</dt>
+            <dd>{current.node.clip_url ? "Motion clip" : current.node.frame_url ? "Still frame" : "Nothing yet"}</dd>
+            {current.node.beat && (
+              <>
+                <dt>From beat</dt>
+                <dd>{String(current.node.beat.n).padStart(2, "0")}</dd>
+              </>
+            )}
+          </dl>
+
+          {needsRender.length > 0 && (
+            <div className="cut-now-todo">
+              <span className="ws-eyebrow">
+                Still to render · {needsRender.length}
+              </span>
+              <ul>
+                {needsRender.slice(0, 6).map(({ node: n, i }) => (
+                  <li key={n.id}>
+                    <button type="button" onClick={() => onSelect(n.id)}>
+                      <span className="cut-now-todo-n">S{String(i + 1).padStart(2, "0")}</span>
+                      <span className="cut-now-todo-name">{n.beat?.title ?? "Untitled"}</span>
+                      {n.clip_state === "error" && <span className="cut-now-todo-bad">failed</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {needsRender.length > 6 && (
+                <span className="ws-meta">and {needsRender.length - 6} more</span>
+              )}
+            </div>
+          )}
+        </aside>
       </div>
 
       {/* Tracks */}
@@ -847,7 +901,7 @@ function StitchTimeline({
                     className="shot-strip-item"
                     data-selected={n.id === selectedId}
                     onClick={() => onSelect(n.id)}
-                    title={`${n.beat?.title ?? "Untitled"} · ${n.duration.toFixed(1)}s`}
+                    title={`${n.beat ? `Beat ${String(n.beat.n).padStart(2, "0")} · ` : ""}${n.beat?.title ?? "Untitled"} · ${n.duration.toFixed(1)}s`}
                     style={{ width: n.duration * PX_PER_SEC }}
                   >
                     {n.frame_url ? (
@@ -869,7 +923,7 @@ function StitchTimeline({
                     )}
                     {n.clip_state === "generating" && <span className="shot-strip-shimmer" aria-hidden="true" />}
                     <span className="shot-strip-foot">
-                      <span className="shot-strip-n">S{String(n.beat?.n ?? i + 1).padStart(2, "0")}</span>
+                      <span className="shot-strip-n">S{String(i + 1).padStart(2, "0")}</span>
                       <span className="shot-strip-dur">{n.duration.toFixed(1)}s</span>
                     </span>
                   </button>

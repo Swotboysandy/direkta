@@ -113,11 +113,95 @@
 .cut-monitor {
   position: relative;
   display: grid;
-  place-items: center;
+  /* A 16:9 frame in a short, wide row is height-bound: it letterboxes with
+     several hundred px of black either side whatever we do about it. So the
+     row is picture plus panel, and the space the picture cannot use says what
+     is playing and what has still to be rendered. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  align-items: center;
+  gap: var(--sp-5);
   min-height: 0;
   padding: var(--sp-4);
   border-bottom: 1px solid var(--border-subtle);
   overflow: hidden;
+}
+.cut-monitor > .cut-monitor-frame { justify-self: center; }
+
+/* ─── Now playing ───────────────────────────────────────────── */
+.cut-now {
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4) 0;
+  overflow-y: auto;
+}
+.cut-now-title {
+  margin: 0;
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+.cut-now-heading {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.cut-now-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px var(--sp-4);
+  margin: var(--sp-2) 0 0;
+  font-size: var(--t-cap);
+}
+.cut-now-facts dt { color: var(--text-tertiary); }
+.cut-now-facts dd { margin: 0; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+.cut-now-todo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.cut-now-todo ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1px; }
+.cut-now-todo button {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--r-control);
+  color: var(--text-secondary);
+  font-size: var(--t-cap);
+  text-align: left;
+}
+.cut-now-todo button:hover { background: var(--surface-raised); color: var(--text-primary); }
+.cut-now-todo button:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.cut-now-todo-n {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.cut-now-todo-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cut-now-todo-bad { flex: 0 0 auto; font-size: 10px; color: var(--status-error); }
+
+/* Narrow: the picture takes the whole row back. */
+@media (max-width: 1180px) {
+  .cut-monitor { grid-template-columns: minmax(0, 1fr); }
+  .cut-now { display: none; }
 }
 .cut-monitor-frame {
   position: relative;
