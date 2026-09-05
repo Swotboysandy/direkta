@@ -62,7 +62,18 @@ export function engineState(h3: H3Status | null): { status: GpuStatus | null; la
   return { status: "Offline", label: "Render Engine" };
 }
 
-export function RenderEngineChip({ h3, className }: { h3: H3Status | null; className?: string }) {
+/** `compact` is the sidebar's form: the label on its own line with the state
+ *  and balance beneath it, because the horizontal chip wrapped mid-phrase in a
+ *  216px column. Same trigger, same popover. */
+export function RenderEngineChip({
+  h3,
+  className,
+  compact = false
+}: {
+  h3: H3Status | null;
+  className?: string;
+  compact?: boolean;
+}) {
   const { status, label } = engineState(h3);
   const balance = typeof h3?.balanceUsd === "number" ? h3.balanceUsd : null;
 
@@ -74,21 +85,26 @@ export function RenderEngineChip({ h3, className }: { h3: H3Status | null; class
           className={cn(
             // bg-transparent is not redundant: preflight is not loaded, so a
             // bare <button> keeps the browser's grey ButtonFace fill.
-            "engine-chip inline-flex h-8 items-center gap-2 rounded-control bg-transparent px-2.5 text-[12px] text-fg-secondary",
+            "engine-chip rounded-control bg-transparent text-fg-secondary",
             "hover:bg-surface-raised focus-visible:outline-none focus-visible:shadow-(--shadow-focus)",
+            compact
+              ? "flex w-full flex-col items-start gap-1 px-2 py-1.5 text-[12px]"
+              : "inline-flex h-8 items-center gap-2 px-2.5 text-[12px]",
             className
           )}
           aria-label={`${label}${status ? ` · ${status}` : ""}. Details`}
         >
-          <span className="hidden md:inline">{label}</span>
-          {status ? (
-            <Status domain="gpu" value={status} />
-          ) : (
-            <span className="font-mono text-[10px] uppercase tracking-[0.02em] text-fg-tertiary">…</span>
-          )}
-          {balance !== null && (
-            <span className="font-mono text-[11px] tabular-nums text-fg-primary">${balance.toFixed(2)}</span>
-          )}
+          <span className={compact ? "w-full truncate text-left" : "hidden md:inline"}>{label}</span>
+          <span className={cn("flex items-center gap-2", compact && "w-full")}>
+            {status ? (
+              <Status domain="gpu" value={status} />
+            ) : (
+              <span className="font-mono text-[10px] uppercase tracking-[0.02em] text-fg-tertiary">…</span>
+            )}
+            {balance !== null && (
+              <span className="font-mono text-[11px] tabular-nums text-fg-primary">${balance.toFixed(2)}</span>
+            )}
+          </span>
         </button>
       </Popover.Trigger>
       <Popover.Portal>

@@ -18,16 +18,26 @@
   color-scheme: dark;
 
   /* ─── The theme ────────────────────────────────────────────
-     One gradient, painted once on the shell and never repeated: black at the
-     bottom-left rising to a deep blood red at the top-right. Everything else
-     in the palette exists to sit on it without fighting it. */
-  --theme-gradient: linear-gradient(45deg, #000000 0%, #7A0000 100%);
-  --theme-red:      #7A0000;
+     A four-spot mesh, painted once on the shell and never repeated. The spot
+     positions and hues are the design as given (#F3D3E4, #4C5FD5, #FF8FA3,
+     #8B6BAE); what changes per theme is how strongly each blooms.
+
+     At full strength the mesh cannot carry text in either direction —
+     measured, white falls to 1.38:1 over the pale pink and dark ink to
+     3.56:1 over the indigo. So the spots are laid at alpha over a base:
+     the colour and the placement survive, the luminance stays in a range
+     type can live on. */
+  --theme-base: #07070E;
+  --theme-gradient:
+    radial-gradient(at 20% 26%, rgba(243, 211, 228, 0.18) 0px, transparent 62%),
+    radial-gradient(at 80% 22%, rgba(76, 95, 213, 0.45) 0px, transparent 62%),
+    radial-gradient(at 72% 80%, rgba(255, 143, 163, 0.22) 0px, transparent 62%),
+    radial-gradient(at 24% 76%, rgba(139, 107, 174, 0.35) 0px, transparent 62%);
   /* The chrome (top bar, production bar, dock, inspector) is a veil over the
      gradient rather than an opaque slab — an opaque bar would cut the
      gradient into bands, and each bar painting its own copy would restart it
      three times. */
-  --chrome-veil:    rgba(0, 0, 0, 0.52);
+  --chrome-veil:    rgba(7, 7, 14, 0.55);
 
   /* ─── Core palette — cinema black ──────────────────────── */
   --cream:        #0A0406;   /* panel ground — near-black, a whisper of the red */
@@ -58,14 +68,14 @@
   --ink-soft:     var(--cocoa-soft);
   --mute:         var(--cocoa-mute);
 
-  /* One accent, used sparingly — active state and primary action only.
-     Violet sat wrong against a red ground, so the accent is now the theme's
-     own hue lifted until it functions as interface: the gradient is too dark
-     to click. Danger stays the desaturated coral below, which reads as a
-     different thing at a glance because it is never a fill. */
-  --accent:       #D41C2A;
-  --accent-hover: #E02430;
-  --accent-quiet: rgba(212, 28, 42, 0.18);
+  /* One accent, used sparingly — active state and primary action only. It is
+     the mesh's own indigo, unchanged: white on it measures 5.38:1 and it
+     holds 3.73:1 against the base, so it works as interface without being
+     retuned. Danger stays the coral below — a different hue family now, so
+     the two can no longer be confused. */
+  --accent:       #4C5FD5;
+  --accent-hover: #5D6FE0;
+  --accent-quiet: rgba(76, 95, 213, 0.20);
   --accent-2:     rgba(255,255,255,0.06);
   --accent-3:     var(--viridian);
 
@@ -239,11 +249,16 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  /* The same idea in daylight: paper rising to a wash of the same red, at the
-     same 45 degrees. Without this the shell would keep painting the dark
-     ramp under light ink. */
-  --theme-gradient: linear-gradient(45deg, #FAFAFB 0%, #EFD8D8 100%);
-  --chrome-veil:    rgba(255, 255, 255, 0.58);
+  /* The same four spots in daylight — same hues, same positions, blooming
+     off paper instead of out of the dark. The indigo is held back hardest
+     because it is the one that dark ink cannot sit on. */
+  --theme-base: #F7F7FC;
+  --theme-gradient:
+    radial-gradient(at 20% 26%, rgba(243, 211, 228, 0.85) 0px, transparent 62%),
+    radial-gradient(at 80% 22%, rgba(76, 95, 213, 0.20) 0px, transparent 62%),
+    radial-gradient(at 72% 80%, rgba(255, 143, 163, 0.45) 0px, transparent 62%),
+    radial-gradient(at 24% 76%, rgba(139, 107, 174, 0.28) 0px, transparent 62%);
+  --chrome-veil:    rgba(255, 255, 255, 0.62);
 
   --cream:        #FAFAFB;
   --cream-warm:   #FFFFFF;
@@ -269,9 +284,9 @@
   --border-strong:    rgba(8,9,12,0.22);
   --status-info:      #3F6FB5;
 
-  --accent:       #B01220;
-  --accent-hover: #8E0E1A;
-  --accent-quiet: rgba(176, 18, 32, 0.10);
+  --accent:       #3E4FBC;
+  --accent-hover: #3646AE;
+  --accent-quiet: rgba(62, 79, 188, 0.10);
   --accent-2:     rgba(8,9,12,0.05);
 
   --on-accent:    #FFFFFF;

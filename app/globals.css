@@ -1147,10 +1147,11 @@ strong, b {
   grid-template-rows: minmax(0, 1fr) auto;
   grid-template-columns: var(--sidebar-w, 232px) minmax(0, 1fr);
   height: 100dvh;
-  /* The theme gradient, painted here and only here. Every bar above and
-     below is a translucent veil over this one surface, so the ramp runs
-     unbroken from the bottom-left corner of the shell to the top-right. */
-  background: var(--theme-gradient);
+  /* The theme, painted here and only here. The sidebar is a translucent veil
+     over this one surface, so the spots bloom behind it unbroken rather than
+     restarting inside it. */
+  background-color: var(--theme-base);
+  background-image: var(--theme-gradient);
   background-attachment: fixed;
   overflow: hidden;
 }

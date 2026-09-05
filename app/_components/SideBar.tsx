@@ -5,21 +5,19 @@ import * as Popover from "@radix-ui/react-popover";
 import { motion } from "framer-motion";
 import { SPRING_SMOOTH } from "./motion";
 import { ThemeToggle } from "./ThemeToggle";
+import { AccountMenu } from "./AccountMenu";
 import { RenderEngineChip, type H3Status } from "./RenderEngineChip";
 import { useConfirm } from "./ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
-  BookOpen,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Key,
   LayoutDashboard,
   Library,
   Lock,
   Film,
   Plus,
-  Settings,
   Sparkles,
   Trash2
 } from "./icons";
@@ -311,7 +309,7 @@ export function SideBar({
 
       <div className="nav-foot">
         <div className="nav-engine">
-          <RenderEngineChip h3={h3} />
+          <RenderEngineChip h3={h3} compact />
         </div>
         <div className="nav-tools">
           {withLabel(
@@ -330,35 +328,7 @@ export function SideBar({
 
           <ThemeToggle />
 
-          <Popover.Root>
-            <Popover.Trigger asChild>
-              <button type="button" className="nav-tool" aria-label="Account and settings" title="Account">
-                <Settings size={15} />
-              </button>
-            </Popover.Trigger>
-            <Popover.Portal>
-              <Popover.Content
-                className="topbar-menu topbar-menu--account"
-                sideOffset={8}
-                side="right"
-                align="end"
-                collisionPadding={16}
-              >
-                <button type="button" className="topbar-menu-item" onClick={onOpenKeys}>
-                  <Key size={13} />
-                  <span>Keys and connections</span>
-                </button>
-                <button type="button" className="topbar-menu-item" onClick={onOpenSkills}>
-                  <BookOpen size={13} />
-                  <span>Skills</span>
-                </button>
-                <a className="topbar-menu-item" href="/settings">
-                  <Settings size={13} />
-                  <span>Settings</span>
-                </a>
-              </Popover.Content>
-            </Popover.Portal>
-          </Popover.Root>
+          <AccountMenu onOpenKeys={onOpenKeys} onOpenSkills={onOpenSkills} />
         </div>
       </div>
     </aside>
