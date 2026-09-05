@@ -258,7 +258,10 @@ function Panel({ children, padding = 16, style }: { children: ReactNode; padding
 /** Colour treatment for a nav item's secondary text lines — full mute when
     resting, a dimmed on-ink tone once the pill inverts to active. */
 function navSubStyle(active: boolean): CSSProperties {
-  return active ? { color: "var(--on-ink)", opacity: 0.7 } : { color: "var(--mute)" };
+  // --on-ink is near-black: it was written for an active item with a light
+  // fill. The active item is a tinted surface carrying light text now, so
+  // both states read from the normal text scale.
+  return active ? { color: "var(--text-secondary)" } : { color: "var(--text-tertiary)" };
 }
 
 function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {

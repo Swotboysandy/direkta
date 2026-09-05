@@ -16,6 +16,15 @@ interface Props {
   onSwitchWorkspace: (ws: WorkspaceId) => void;
 }
 
+/** Only what this page reads off a shot on the board. */
+interface BoardShot {
+  id: string;
+  duration: number;
+  frame_url: string | null;
+  clip_url: string | null;
+  beat: { n: number; title: string } | null;
+}
+
 interface RenderResult {
   url: string;
   shots: number;
@@ -44,8 +53,10 @@ export function Finish({ project, onSwitchWorkspace }: Props) {
   const [scoreErr, setScoreErr] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Whether there is anything to render, before offering to.
-  const board = useAsync<number>(`/api/projects/${project.id}/stitch`, (b) => (b.nodes ?? []).length);
+  // The whole board, not just its size: everything this page can say before a
+  // render — how long the cut runs, what is in it, what is still a still —
+  // is a fact about these nodes.
+  const board = useAsync<BoardShot[]>(`/api/projects/${project.id}/stitch`, (b) => (b.nodes ?? []) as BoardShot[]);
 
   useEffect(() => {
     fetch(`/api/projects/${project.id}/score`)
@@ -105,7 +116,13 @@ export function Finish({ project, onSwitchWorkspace }: Props) {
   // The render pads and scales to the production's own canvas, so this is
   // the real output shape — the one dynamic style on the page.
   const aspect = project.aspect_ratio.replace(":", " / ");
-  const shots = board.data ?? 0;
+  const nodes = board.data ?? [];
+  const shots = nodes.length;
+  const runtime = nodes.reduce((t, n) => t + (n.duration ?? 0), 0);
+  // A shot with no motion clip still makes the cut — the render falls back to
+  // its still. That is a reasonable default and a terrible surprise, so it is
+  // said here rather than discovered in the finished file.
+  const stillsOnly = nodes.filter((n) => !n.clip_url);
   const nothingToRender = board.status === "ready" && shots === 0 && !cut;
 
   return (
@@ -137,38 +154,73 @@ export function Finish({ project, onSwitchWorkspace }: Props) {
               // eslint-disable-next-line jsx-a11y/media-has-caption
               <video src={cut.url} controls playsInline preload="metadata" />
             ) : (
-              <div className="finish-idle">
-                <span className="font-mono">
-                  {shots} shot{shots === 1 ? "" : "s"} on the board
-                </span>
-              </div>
+              /* What the master will be, in order. An empty rectangle with a
+                 count in it was the largest thing on the page and the least
+                 informative; these are the actual shots, in the actual cut
+                 order, at the production's own aspect. */
+              <ol className="finish-strip" aria-label={`${shots} shots, in cut order`}>
+                {nodes.map((n, i) => (
+                  <li key={n.id} className="finish-strip-shot" data-still={!n.clip_url || undefined}>
+                    {n.frame_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={n.frame_url} alt="" loading="lazy" decoding="async" />
+                    ) : n.clip_url ? (
+                      <video src={n.clip_url} muted playsInline preload="none" />
+                    ) : (
+                      <span className="finish-strip-blank" aria-hidden="true" />
+                    )}
+                    <span className="finish-strip-n">{String(i + 1).padStart(2, "0")}</span>
+                  </li>
+                ))}
+              </ol>
             )}
           </div>
 
-          {cut && !rendering && (
-            <ul className="finish-facts" aria-label="What the master contains">
+          {!rendering && (
+            <ul className="finish-facts" aria-label={cut ? "What the master contains" : "What the master will contain"}>
               <li>
                 <span className="finish-fact-k">Length</span>
-                <span className="finish-fact-v font-mono tabular-nums">{cut.duration}s</span>
+                <span className="finish-fact-v font-mono tabular-nums">
+                  {(cut ? cut.duration : runtime).toFixed(1)}s
+                </span>
               </li>
-              {cut.shots > 0 && (
-                <li>
-                  <span className="finish-fact-k">Shots</span>
-                  <span className="finish-fact-v font-mono tabular-nums">{cut.shots}</span>
-                </li>
-              )}
               <li>
-                <span className="finish-fact-k">Title card</span>
-                <span className="finish-fact-v">{cut.titled ? "Yes" : "No"}</span>
+                <span className="finish-fact-k">Shots</span>
+                <span className="finish-fact-v font-mono tabular-nums">{cut?.shots || shots}</span>
+              </li>
+              <li>
+                <span className="finish-fact-k">Canvas</span>
+                <span className="finish-fact-v font-mono">1080p · {project.aspect_ratio}</span>
               </li>
               <li>
                 <span className="finish-fact-k">Audio</span>
-                <span className="finish-fact-v">{cut.scored ? "Score" : cut.hasAudio ? "Clip audio" : "Silent"}</span>
+                <span className="finish-fact-v">
+                  {cut ? (cut.scored ? "Score" : cut.hasAudio ? "Clip audio" : "Silent") : score?.attached ? "Score" : "Clip audio"}
+                </span>
               </li>
-              <li>
-                <Status domain="creative" value="Approved" detail="master" />
-              </li>
+              {cut ? (
+                <li>
+                  <Status domain="creative" value="Approved" detail="master" />
+                </li>
+              ) : (
+                <li>
+                  <span className="finish-fact-k">Motion</span>
+                  <span className="finish-fact-v font-mono tabular-nums">
+                    {shots - stillsOnly.length} / {shots} clips
+                  </span>
+                </li>
+              )}
             </ul>
+          )}
+
+          {!cut && !rendering && stillsOnly.length > 0 && (
+            <p className="finish-warn">
+              {stillsOnly.length === 1 ? "One shot has" : `${stillsOnly.length} shots have`} no motion clip yet —{" "}
+              {stillsOnly.length === 1 ? "its still" : "their stills"} will be used, with a slow push in.{" "}
+              <button type="button" className="phome-link" onClick={() => onSwitchWorkspace("stitch")}>
+                Open Shots
+              </button>
+            </p>
           )}
 
           <div className="finish-actions">

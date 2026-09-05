@@ -363,13 +363,35 @@
   animation: modal-fade var(--dur-2) var(--ease-out);
 }
 .modal {
-  background: var(--surface);
+  /* Opaque, not the 3.5%-white lift: a modal that lets the page through is a
+     modal you cannot read. On the mesh the bleed showed as a washed-out band
+     across the Bible's header wherever a bright spot sat behind it. */
+  background: var(--surface-overlay);
   border-radius: var(--r-lg);
   padding: var(--sp-6);
   max-width: 480px; width: calc(100% - var(--sp-7));
   box-shadow: var(--shadow-3);
   animation: modal-pop var(--dur-3) var(--ease-spring);
 }
+/* The Bible's section nav. Without this the buttons fell back to the
+   browser's ButtonFace grey: preflight is not loaded, and the global
+   `button { border: 0 }` removes the border but not the fill. */
+.sidebar-item {
+  width: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.sidebar-item:hover { background: var(--surface-raised); color: var(--text-primary); }
+.sidebar-item:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.sidebar-item[data-active="true"] {
+  background: var(--surface-selected);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
+}
+
 @keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-pop  { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
 
@@ -881,7 +903,58 @@
 }
 .finish-viewer video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .finish-rendering { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); }
-.finish-idle { font-size: 12px; color: var(--text-tertiary); }
+
+/* The cut it is about to make, in order. Replaces an empty rectangle with a
+   count in it — the largest thing on the page and the least informative. */
+.finish-strip {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-3);
+  width: 100%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(72px, 1fr);
+  gap: 3px;
+  align-items: stretch;
+  overflow-x: auto;
+}
+.finish-strip-shot {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  min-width: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--surface-base);
+}
+.finish-strip-shot > img,
+.finish-strip-shot > video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.finish-strip-blank { position: absolute; inset: 0; background: var(--surface-raised); }
+/* A shot with no clip is what the warning below is about; mark it here so the
+   sentence has something to point at. */
+.finish-strip-shot[data-still] { box-shadow: inset 0 0 0 1px var(--status-warning); }
+.finish-strip-n {
+  position: absolute;
+  left: 3px;
+  bottom: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+  pointer-events: none;
+}
+
+.finish-warn {
+  margin: 0;
+  font-size: var(--t-body-s);
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
 .finish-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: center; }
 .finish-facts li { display: flex; flex-direction: column; gap: 2px; }
 .finish-fact-k { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
@@ -898,4 +971,4 @@
 .finish-score-why { margin: 0; font-size: 12px; color: var(--text-secondary); text-wrap: pretty; }
 /* Before a render exists the viewer has nothing to show; it does not need to
    be the height of a video to say so. */
-.finish-viewer[data-state="idle"] { aspect-ratio: auto; min-height: 120px; padding: var(--sp-5); }
+.finish-viewer[data-state="idle"] { aspect-ratio: auto; min-height: 0; align-items: start; }

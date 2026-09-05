@@ -1,34 +1,26 @@
 "use client";
 
 /**
- * Icon system — Keyline first, HugeIcons for what Keyline lacks (brief §48).
+ * Icon system — Keyline, and only Keyline (brief §48).
  *
  * One barrel, one call signature (`<Film size={14} />`), so a file never
  * imports an icon library directly and the family can change here without a
- * hunt. Keyline is the primary set: consistent 1.5px stroke, one optical
- * size, corners that match the interface. It has no film vocabulary — no
- * clapperboard, aperture, film strip, sparkle or wand — so those few come
- * from HugeIcons at a stroke weight chosen to sit beside Keyline without
- * reading as a second family.
+ * hunt. Consistent 1.5px stroke, one optical size, corners that match the
+ * interface.
  *
- * Both render with `currentColor`, so colour is set by the parent's text
- * colour exactly as it was before.
+ * Eleven names used to come from HugeIcons because Keyline has no film
+ * vocabulary — no clapperboard, aperture, film strip, sparkle or wand. A
+ * second family reads as exactly that, though: the sidebar had three Keyline
+ * glyphs and one HugeIcons sparkle sitting between them at a different weight.
+ * So each of those now names the nearest Keyline concept rather than the
+ * literal object — Record for rolling a take, Plug for connections, Toolbox
+ * for skills — which is both one family and, mostly, a better label.
+ *
+ * Every icon renders with `currentColor`, so colour is set by the parent's
+ * text colour.
  */
 
 import * as K from "@keyline-icons/react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  SparklesIcon,
-  MagicWand01Icon,
-  Film01Icon,
-  ClapperboardIcon,
-  ApertureIcon,
-  Stamp01Icon,
-  Scissor01Icon,
-  Key01Icon,
-  Flag02Icon,
-  BookOpen01Icon
-} from "@hugeicons/core-free-icons";
 
 export interface IconProps {
   size?: number | string;
@@ -47,24 +39,9 @@ type KeylineIcon = React.ComponentType<{ size?: number | string } & React.SVGPro
 
 function keyline(Icon: KeylineIcon): IconType {
   return function KeylineWrapped({ size = 16, color, style, strokeWidth: _sw, title, ...rest }: IconProps) {
-    // Keyline draws its own stroke; a caller's strokeWidth is for the
-    // HugeIcons fallbacks and is dropped here so both families stay uniform.
+    // Keyline draws its own stroke, so a caller's strokeWidth is dropped
+    // rather than honoured: one weight across the whole interface.
     return <Icon size={size} style={color ? { color, ...style } : style} aria-hidden={title ? undefined : true} {...rest} />;
-  };
-}
-
-/* HugeIcons at 1.6 reads as the same weight as Keyline's 1.5 at these sizes. */
-function huge(icon: unknown): IconType {
-  return function HugeWrapped({ size = 16, strokeWidth = 1.6, color = "currentColor", ...rest }: IconProps) {
-    return (
-      <HugeiconsIcon
-        icon={icon as Parameters<typeof HugeiconsIcon>[0]["icon"]}
-        size={size}
-        strokeWidth={strokeWidth}
-        color={color}
-        {...rest}
-      />
-    );
   };
 }
 
@@ -119,14 +96,17 @@ export const Users = keyline(K.Users);
 export const ListChecks = keyline(K.ListCheck);
 
 /* ── Film vocabulary Keyline does not have ────────────────────── */
-export const Sparkles = huge(SparklesIcon);
-export const Wand2 = huge(MagicWand01Icon);
-export const Film = huge(Film01Icon);
-export const Clapperboard = huge(ClapperboardIcon);
-export const Aperture = huge(ApertureIcon);
-export const Stamp = huge(Stamp01Icon);
-export const Scissors = huge(Scissor01Icon);
-export const Key = huge(Key01Icon);
-export const KeyRound = huge(Key01Icon);
-export const Flag = huge(Flag02Icon);
-export const BookOpen = huge(BookOpen01Icon);
+/* The film vocabulary, named by what the control does rather than by the
+   object the old icon drew. Keyline has no clapperboard or wand; it does have
+   the idea behind each one. */
+export const Sparkles = keyline(K.Lightbulb);     /* the AI does this for you; the plain bulb, so it is not
+                                                     mistaken for the theme toggle's sun */
+export const Wand2 = keyline(K.Record);           /* roll a take */
+export const Film = keyline(K.SquarePlay);        /* a production, a shot on the board */
+export const Clapperboard = keyline(K.Package);   /* the finished master */
+export const Aperture = keyline(K.Camera);        /* camera settings */
+export const Stamp = keyline(K.DoubleCheck);      /* approve, more than a tick */
+export const Key = keyline(K.Plug);               /* keys and connections */
+export const KeyRound = keyline(K.Plug);
+export const Flag = keyline(K.Alert);             /* sent back, needs work */
+export const BookOpen = keyline(K.Toolbox);       /* skills */
