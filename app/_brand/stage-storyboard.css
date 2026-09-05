@@ -5,15 +5,25 @@
    told apart from the thing beside it. */
 
 /* ─── Header ───────────────────────────────────────────────── */
+/* Wraps rather than compressing. As a two-column grid the copy column was
+   minmax(0, 1fr) against an auto action cluster that never shrinks, so a
+   narrower work column squeezed the sentence into a stack of single words
+   instead of dropping the buttons onto their own line. */
 .sbd-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: var(--sp-4);
   padding-bottom: var(--sp-4);
   border-bottom: 1px solid var(--border-subtle);
 }
-.sbd-head-copy { min-width: 0; max-width: 62ch; display: flex; flex-direction: column; gap: 6px; }
+.sbd-head-copy {
+  flex: 1 1 40ch;
+  min-width: min(40ch, 100%);
+  max-width: 62ch;
+  display: flex; flex-direction: column; gap: 6px;
+}
 .sbd-head-actions { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
 
 /* Segmented control — density, and takes-per-roll. A true segmented

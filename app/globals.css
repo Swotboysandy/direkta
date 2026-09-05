@@ -1141,11 +1141,11 @@ strong, b {
 
 .workbench {
   display: grid;
-  /* Global bar, production bar (absent outside a production), then the work.
+  /* The sidebar down the left, then the work with the Dock beneath it.
      dvh, not vh: on a phone vh includes the browser chrome and the dock ends
      up under it. */
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: var(--sidebar-w, 232px) minmax(0, 1fr);
   height: 100dvh;
   /* The theme gradient, painted here and only here. Every bar above and
      below is a translucent veil over this one surface, so the ramp runs
@@ -1253,10 +1253,10 @@ strong, b {
 /* ============================================================
    APP BODY — sidebar + main
    ============================================================ */
-/* One column. The rail became the production bar above; the agent panel
-   became the Director Dock below. */
+/* The work column of the shell grid, beside the sidebar. */
 .app-body {
-  grid-row: 3;
+  grid-column: 2;
+  grid-row: 1;
   display: grid;
   /* The work, then the inspector's column when something is selected and a
      stage can inspect it. --inspector-w is 0 the rest of the time, so the
@@ -1818,8 +1818,11 @@ strong, b {
   min-width: 0;
   /* A basis rather than only a max: without one the block sizes to its text and
      the actions sit hard against the last word. Below 1000px it takes the whole
-     row and the actions drop beneath it. */
+     row and the actions drop beneath it. The min-width is what makes it wrap
+     rather than compress: the action cluster does not shrink, so without it a
+     narrow work column squeezed the sentence into a column of single words. */
   flex: 1 1 44ch;
+  min-width: min(40ch, 100%);
   max-width: 68ch;
 }
 
@@ -2424,7 +2427,7 @@ strong, b {
   /* The chrome above is named, not guessed: global bar, production bar, and
      the page head and padding inside the work column. dvh so the board does
      not run under a phone's browser bar. */
-  height: calc(100dvh - var(--bar-h) - var(--production-bar-h) - var(--dock-h) - 200px);
+  height: calc(100dvh - var(--dock-h) - 200px);
   min-height: 420px;
   background: var(--bg);
   border-radius: var(--radius);

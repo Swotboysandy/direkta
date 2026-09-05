@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dropCache, readCache, writeCache } from "./_lib/browser-cache";
-import { TopBar } from "./_components/TopBar";
-import { StageStrip } from "./_components/StageStrip";
+import { SideBar } from "./_components/SideBar";
 import { useRenderEngine } from "./_components/RenderEngineChip";
 import { DirectorDock } from "./_components/DirectorDock";
 import { Inspector } from "./_components/Inspector";
@@ -509,7 +508,11 @@ export default function Home() {
     <ConfirmProvider>
     <SelectionProvider>
     <div className="workbench">
-      <TopBar
+      {/* Everything the global bar and the stage strip used to carry, down
+          the side and collapsible (brief §8-§9). The stages are still the
+          production's navigation context, so they appear only while one is
+          open. */}
+      <SideBar
         project={bundle?.project ?? null}
         projects={visibleProjects}
         activeProjectId={projectId}
@@ -527,15 +530,11 @@ export default function Home() {
         onOpenSkills={() => setSkillsOpen(true)}
         onOpenPalette={() => setPaletteOpen(true)}
         h3={h3}
+        workspaces={workspaces}
+        activeWorkspace={activeWorkspace}
+        onSwitchWorkspace={switchWorkspace}
+        showStages={mode === "home" && Boolean(bundle)}
       />
-
-      {/* The production is the navigation context (brief §9): its stages sit
-          in a row under the global bar, and only while a production is open. */}
-      {mode === "home" && bundle && (
-        <div className="production-bar">
-          <StageStrip workspaces={workspaces} active={activeWorkspace} onSwitch={switchWorkspace} />
-        </div>
-      )}
 
       <div className="app-body">
         <div className="work">

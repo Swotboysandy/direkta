@@ -36,7 +36,7 @@
 
 .script-outline {
   position: sticky; top: 0; align-self: start;
-  max-height: calc(100vh - var(--bar-h) - var(--production-bar-h) - var(--dock-h) - var(--sp-6));
+  max-height: calc(100dvh - var(--dock-h) - var(--sp-6));
   overflow-y: auto; scrollbar-width: thin;
   display: flex; flex-direction: column; gap: var(--sp-2);
   padding-right: var(--sp-2); min-width: 0;
