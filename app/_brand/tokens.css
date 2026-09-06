@@ -40,7 +40,7 @@
   --chrome-veil:    rgba(7, 7, 14, 0.55);
 
   /* ─── Core palette — cinema black ──────────────────────── */
-  --cream:        #0A0406;   /* panel ground — near-black, a whisper of the red */
+  --cream:        #101018;   /* panel ground — near-black, cool, to sit with the mesh */
   --cream-warm:   rgba(255,255,255,0.035); /* card surface — a lift, not a pane */
   --cream-deep:   rgba(255,255,255,0.07);  /* hairlines, dividers, tracks */
 

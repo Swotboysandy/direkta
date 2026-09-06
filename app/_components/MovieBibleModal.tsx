@@ -245,11 +245,21 @@ function Meta({ children, color, style }: { children: ReactNode; color?: string;
   );
 }
 
-/** A flat recessed panel — the document's base surface, one step darker than
-    the reader background it sits on (no shadow, no hover-lift). */
+/** A field of the document. It used to be a recess — one step DARKER than the
+    reader behind it — which on a near-black modal is just a hole: the page
+    read as black rectangles separated by black gutters. On a dark surface a
+    card has to come forward, so it is a lift with a hairline. */
 function Panel({ children, padding = 16, style }: { children: ReactNode; padding?: number | string; style?: CSSProperties }) {
   return (
-    <div style={{ background: "var(--bg)", borderRadius: RADIUS, padding, ...style }}>
+    <div
+      style={{
+        background: "var(--surface-raised)",
+        boxShadow: "inset 0 0 0 1px var(--border-subtle)",
+        borderRadius: RADIUS,
+        padding,
+        ...style
+      }}
+    >
       {children}
     </div>
   );
