@@ -522,5 +522,9 @@ function seed(db: DatabaseSync) {
   ensureVendor(db, "byteplus-image-default", "BytePlus · Seedream 4.5", "byteplus-image", "seedream-4-5-251128", "image", 1);
   ensureVendor(db, "sync-lipsync-default", "Sync.so (Lip Sync)", "sync-lipsync", "lipsync-2", "lipsync", 0);
 
-  seedLisbonPact(db);
+  // The demo production is a first-run convenience, not a fixture. Its guard is
+  // "does `lisbon` exist", so deleting it on a real instance just brings it back
+  // at the next restart. SEED_DEMO=0 says this instance is somebody's actual
+  // workspace and should stay as they left it.
+  if (process.env.SEED_DEMO !== "0") seedLisbonPact(db);
 }
