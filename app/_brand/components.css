@@ -392,6 +392,35 @@
   box-shadow: inset 0 0 0 1px var(--brand-accent);
 }
 
+/* ─── New project ───────────────────────────────────────────
+   Was a 480px column of eleven stacked fields, which on a wide screen is a
+   tall thin ribbon down the middle. The writing and the choices are two
+   different jobs, so they sit side by side and the dialog takes the width it
+   has: this is layout, so it lives here and not in a style attribute, which
+   cannot carry the media query that collapses it again. */
+.npm {
+  width: 100%;
+  max-width: 1280px;
+  padding: var(--sp-6);
+  border-radius: var(--r-lg);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-3);
+  max-height: calc(100dvh - 56px);
+  overflow: auto;
+}
+.npm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--sp-6) var(--sp-7);
+  align-items: start;
+  margin-top: var(--sp-5);
+}
+.npm-col { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+/* One column again before the two get too narrow to write in. */
+@media (max-width: 860px) {
+  .npm-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+}
+
 @keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-pop  { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
 

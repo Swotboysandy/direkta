@@ -174,16 +174,7 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
         initial={{ opacity: 0, scale: 0.96, y: 14 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={SPRING_SMOOTH}
-        style={{
-          background: "var(--surface)",
-          borderRadius: "var(--r-lg)",
-          padding: 32,
-          maxWidth: 480,
-          width: "100%",
-          boxShadow: "var(--shadow-3)",
-          maxHeight: "calc(100vh - 56px)",
-          overflow: "auto"
-        }}
+        className="npm"
       >
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.02em", color: "var(--accent)" }}>
           New project
@@ -192,7 +183,8 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
           Brief the crew
         </h2>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 20 }}>
+        <div className="npm-grid">
+          <div className="npm-col">
           <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <span style={fieldLabelStyle}>Project title</span>
             <input
@@ -238,7 +230,9 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
               style={fieldInputStyle}
             />
           </label>
+          </div>
 
+          <div className="npm-col">
           <div>
             <span style={fieldLabelStyle}>Format</span>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
@@ -289,6 +283,7 @@ export function NewProjectModal({ open, onClose, onCreate }: Props) {
                 </motion.button>
               ))}
             </div>
+          </div>
           </div>
         </div>
 
