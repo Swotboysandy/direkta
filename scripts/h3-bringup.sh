@@ -111,6 +111,10 @@ find "$MODELS" -name '*.safetensors' -printf '  %-70p %10s\n' | numfmt --to=iec 
 df -h $DATA | awk 'NR==2{print "  /data now: "$4" free"}'
 
 say "Done. Start ComfyUI with:"
+# --preview-method is not optional here: without it ComfyUI never emits the
+# binary latent frames, so the app's generation monitor can show a progress bar
+# but never the picture forming. A 15-minute render then looks like a stalled
+# spinner from the UI.
 cat <<EOF
-  cd $COMFY && $VENV/bin/python main.py --listen 0.0.0.0 --port 8188
+  cd $COMFY && $VENV/bin/python main.py --listen 0.0.0.0 --port 8188 --preview-method auto
 EOF

@@ -1,21 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SPRING_SMOOTH } from "./motion";
-import { X } from "./icons";
-
-interface Live {
-  connected: boolean;
-  /** Sampler progress within the running job. */
-  step?: number;
-  steps?: number;
-  /** Jobs waiting behind this one. */
-  queued?: number;
-  /** Latest latent preview, when the server is emitting them. */
-  preview?: string;
-  error?: string;
-}
+import { useH3Live, useElapsed } from "./useH3Live";
 
 /**
  * What the generator is doing, right now.
@@ -33,57 +20,12 @@ interface Live {
  * Progress reaches this at all only because generation and this feed share one
  * ComfyUI client id — that service addresses progress events to the submitting
  * client, so a listener using any other id sees the queue count and nothing
- * else.
+ * else. The preview image needs the pod started with --preview-method; without
+ * it the panel still works, it just has no picture to show.
  */
 export function GenerationMonitor({ onFinished }: { onFinished?: () => void }) {
-  const [live, setLive] = useState<Live>({ connected: false });
-  const [elapsed, setElapsed] = useState(0);
-  const startedAt = useRef<number | undefined>(undefined);
-  // Held in a ref so the subscription is not torn down and rebuilt each time
-  // the parent re-renders with a new inline callback.
-  const finishedRef = useRef(onFinished);
-  finishedRef.current = onFinished;
-
-  useEffect(() => {
-    const source = new EventSource("/api/minimax-h3/stream");
-    const on = (name: string, handler: (data: any) => void) =>
-      source.addEventListener(name, (event) => {
-        try {
-          handler(JSON.parse((event as MessageEvent).data));
-        } catch {
-          /* the text channel is JSON only; anything else is not ours */
-        }
-      });
-
-    on("open", () => setLive((l) => ({ ...l, connected: true, error: undefined })));
-    on("error", (d) => setLive((l) => ({ ...l, connected: false, error: d?.message })));
-    on("status", (d) =>
-      setLive((l) => ({ ...l, queued: d?.status?.exec_info?.queue_remaining })));
-    on("execution_start", () => {
-      startedAt.current = Date.now();
-      setLive((l) => ({ ...l, step: 0, preview: undefined }));
-    });
-    on("executing", (d) => {
-      if (d?.node == null) {
-        // A null node marks the end of a job, not a node with no id — which is
-        // the only signal that a result now exists to be shown.
-        startedAt.current = undefined;
-        setLive((l) => ({ ...l, step: undefined, steps: undefined, preview: undefined }));
-        finishedRef.current?.();
-      }
-    });
-    on("progress", (d) => setLive((l) => ({ ...l, step: d?.value, steps: d?.max })));
-    on("preview", (d) => setLive((l) => ({ ...l, preview: d?.image })));
-
-    const tick = setInterval(() => {
-      setElapsed(startedAt.current ? Math.round((Date.now() - startedAt.current) / 1000) : 0);
-    }, 1000);
-
-    return () => {
-      clearInterval(tick);
-      source.close();
-    };
-  }, []);
+  const live = useH3Live(onFinished);
+  const elapsed = useElapsed(live.startedAt);
 
   const running = live.step != null && live.steps != null && live.steps > 0;
   const pct = running ? Math.min(100, Math.round((live.step! / live.steps!) * 100)) : 0;
@@ -94,7 +36,8 @@ export function GenerationMonitor({ onFinished }: { onFinished?: () => void }) {
       ? Math.round((elapsed / live.step!) * (live.steps! - live.step!))
       : null;
 
-  const show = running || (live.queued ?? 0) > 0;
+  const queued = live.queued ?? 0;
+  const show = running || queued > 0;
 
   return (
     <AnimatePresence>
@@ -117,27 +60,21 @@ export function GenerationMonitor({ onFinished }: { onFinished?: () => void }) {
 
           <div className="genmon-body">
             <div className="genmon-top">
-              <span className="genmon-label">
-                {running ? "Generating" : "Queued"}
-              </span>
+              <span className="genmon-label">{running ? "Generating" : "Queued"}</span>
               {running && (
                 <span className="genmon-nums">
                   {live.step}/{live.steps} · {elapsed}s{eta != null ? ` · ~${eta}s left` : ""}
                 </span>
               )}
-              {!running && (live.queued ?? 0) > 0 && (
-                <span className="genmon-nums">
-                  {live.queued} in queue
-                </span>
-              )}
+              {!running && queued > 0 && <span className="genmon-nums">{queued} in queue</span>}
             </div>
 
             <div className="genmon-track">
               <span style={{ width: `${pct}%` }} />
             </div>
 
-            {(live.queued ?? 0) > 1 && running && (
-              <span className="genmon-after">{(live.queued ?? 0) - 1} more after this</span>
+            {queued > 1 && running && (
+              <span className="genmon-after">{queued - 1} more after this</span>
             )}
           </div>
         </motion.div>
