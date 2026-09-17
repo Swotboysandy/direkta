@@ -523,6 +523,12 @@ test("the middleware sends signed-out pages to sign-in and refuses cross-site wr
   assert.equal(new URL(home.headers.get("location")).search, "");
   const deep = run("/admin/users?tab=1");
   assert.equal(new URL(deep.headers.get("location")).searchParams.get("next"), "/admin/users?tab=1");
+  // Behind Caddy the app listens on localhost:3002; the redirect must name the
+  // public host, or a signed-out visitor is sent somewhere their browser cannot reach.
+  const proxied = run("/admin/users", { headers: { host: "localhost:3002", "x-forwarded-host": "direkta.example.io", "x-forwarded-proto": "https" } });
+  assert.equal(proxied.headers.get("location"), "https://direkta.example.io/login?next=%2Fadmin%2Fusers");
+  const proxiedHome = run("/", { headers: { host: "localhost:3002", "x-forwarded-host": "direkta.example.io", "x-forwarded-proto": "https" } });
+  assert.equal(proxiedHome.headers.get("location"), "https://direkta.example.io/login");
   assert.ok(passes(run("/login")));
   assert.ok(passes(run("/oss/frame.png")));
   assert.ok(passes(run("/api/projects", { headers: session })));

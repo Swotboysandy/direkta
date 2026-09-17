@@ -29,12 +29,22 @@ const OPEN = [/^\/login\/?$/, /^\/api\/auth\/login\/?$/, /^\/oss\//, /^\/api\/mc
 
 const WRITES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+/** The first value of a header a chain of proxies may have appended to. */
+function first(value: string | null): string | null {
+  return value ? value.split(",")[0].trim() || null : null;
+}
+
+/** The host the visitor actually used. Behind a proxy, req.nextUrl carries the
+ *  address `next start` listens on (localhost:3002), which no browser can reach. */
+function publicHost(req: NextRequest): string {
+  return first(req.headers.get("x-forwarded-host")) ?? first(req.headers.get("host")) ?? req.nextUrl.host;
+}
+
 function fromAnotherOrigin(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   if (!origin) return false; // same-origin GETs and non-browser clients send none
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
   try {
-    return new URL(origin).host !== host;
+    return new URL(origin).host !== publicHost(req);
   } catch {
     return true; // "null" and anything unparseable
   }
@@ -56,9 +66,10 @@ export function middleware(req: NextRequest) {
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
-  const url = req.nextUrl.clone();
-  url.pathname = "/login";
-  url.search = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname + search)}`;
+  // Absolute, because Next rejects a relative Location from middleware.
+  const proto = first(req.headers.get("x-forwarded-proto")) ?? req.nextUrl.protocol.replace(/:$/, "");
+  const url = new URL(`${proto}://${publicHost(req)}/login`);
+  if (pathname !== "/") url.searchParams.set("next", pathname + search);
   return NextResponse.redirect(url);
 }
 
