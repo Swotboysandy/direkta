@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { handleCallback, baseUrl } from "../../../../lib/higgsfield/oauth";
+import { requireAdmin } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /** OAuth redirect target — exchanges the code for tokens, then returns to the app. */
 export async function GET(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   const u = new URL(req.url);
   const err = u.searchParams.get("error");
   if (err) {

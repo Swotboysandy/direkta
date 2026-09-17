@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { assets, nodes, projects, vendors } from "../../../../../lib/db/repo";
 import { generateVideo } from "../../../../../lib/agents/video";
+import { requireAccess } from "../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "node", id);
+  if (access instanceof Response) return access;
   const node = nodes.get(id);
   if (!node) return NextResponse.json({ error: "Node not found" }, { status: 404 });
 
@@ -23,6 +27,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const prompt = buildVideoPrompt(node.kind, node.title, node.body, project.premise);
   const referenceImage = typeof node.meta?.image === "string" ? (node.meta.image as string) : undefined;
+
+  const reservation = reserveOrRefuse(access.user, 1, "node_video");
+  if (reservation instanceof Response) return reservation;
 
   try {
     const video = await generateVideo({
@@ -43,6 +50,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     nodes.update(id, { meta });
     return NextResponse.json({ node: nodes.get(id), asset });
   } catch (error: any) {
+    reservation.refund();
     return NextResponse.json({ error: error.message ?? String(error) }, { status: 500 });
   }
 }

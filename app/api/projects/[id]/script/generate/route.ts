@@ -4,12 +4,15 @@ import { activeModel } from "../../../../../../lib/vendors/resolver";
 import { projects } from "../../../../../../lib/db/repo";
 import { isCodexConnected } from "../../../../../../lib/codex/token";
 import { streamTextViaCodex } from "../../../../../../lib/codex/generate";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const project = projects.get(id);
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 

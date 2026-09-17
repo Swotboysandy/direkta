@@ -4,6 +4,8 @@ import { getDb } from "../../../../../../lib/db/client";
 import { vendors } from "../../../../../../lib/db/repo";
 import { generateLipsyncViaSync } from "../../../../../../lib/agents/sync-lipsync";
 import { lipsyncModel } from "../../../../../../lib/lipsync/catalog";
+import { requireAccess } from "../../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,6 +26,8 @@ interface NodeRow {
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "stitch_node", id);
+  if (access instanceof Response) return access;
   const body = await req.json().catch(() => ({} as { model?: string }));
   const chosen = lipsyncModel(typeof body.model === "string" ? body.model : undefined);
   const db = getDb();
@@ -63,6 +67,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const origin = `${proto}://${host}`;
   const toAbs = (u: string) => (u.startsWith("http") ? u : `${origin}${u}`);
 
+  const reservation = reserveOrRefuse(access.user, 1, "lipsync");
+  if (reservation instanceof Response) return reservation;
   db.prepare("UPDATE stitch_nodes SET lipsync_state = 'generating' WHERE id = ?").run(id);
 
   try {
@@ -80,6 +86,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     db.prepare("UPDATE stitch_nodes SET lipsync_asset_id = ?, lipsync_state = 'complete' WHERE id = ?").run(assetId, id);
     return NextResponse.json({ ok: true, url: video.url, vendor: `${vendor.label} · ${chosen.label}` });
   } catch (error: any) {
+    reservation.refund();
     db.prepare("UPDATE stitch_nodes SET lipsync_state = 'error' WHERE id = ?").run(id);
     return NextResponse.json({ error: error?.message ?? String(error) }, { status: 500 });
   }

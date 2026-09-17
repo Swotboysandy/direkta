@@ -9,7 +9,7 @@ import { isHiggsfieldMcpConnected, generateVideoViaMcp } from "../../../../../..
 import { isBrowserSessionSaved, generateVideoViaBrowser } from "../../../../../../lib/higgsfield/browser";
 import { getFlag } from "../../../../../../lib/settings";
 import { generateVideoViaByteplus } from "../../../../../../lib/agents/byteplus-video";
-import { generateVideoViaMiniMaxH3, H3BudgetError } from "../../../../../../lib/agents/minimax-h3";
+import { generateVideoViaMiniMaxH3, H3BudgetError, h3ClientId } from "../../../../../../lib/agents/minimax-h3";
 import { h3References, h3Settings, H3_CANVAS, type H3ContinuityMode } from "../../../../../../lib/agents/h3-settings";
 import { h3GenerationPrompt } from "../../../../../../lib/agents/h3-workflow";
 import { extractLastVideoFrame, ossFile } from "../../../../../../lib/media/video-frames";
@@ -19,6 +19,8 @@ import { videoModel, cameraMotion } from "../../../../../../lib/higgsfield/catal
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../../lib/usage";
 import type { AspectRatio } from "../../../../../../lib/types";
+import { requireAccess } from "../../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -52,6 +54,8 @@ interface NodeRow {
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "stitch_node", id);
+  if (access instanceof Response) return access;
   const body = await req
     .json()
     .catch(
@@ -396,6 +400,8 @@ ${node.avoid_prompt}` : "";
       warnings: ["Preview only: no LLM call, GPU startup or generation. Endpoint conditioning still needs a paid visual test."]
     });
   }
+  const reservation = reserveOrRefuse(access.user, 1, "clip");
+  if (reservation instanceof Response) return reservation;
   db.prepare("UPDATE stitch_nodes SET clip_state = 'generating' WHERE id = ?").run(id);
 
   // H3 responds far better to a structured, timeline-shaped prompt than to the
@@ -433,7 +439,9 @@ ${node.avoid_prompt}` : "";
           lastFrameImageUrl: promptRefs ? undefined : h3Refs.last,
           refs: promptRefs,
           refMode: continuityMode,
-          keepWarm: body.keepWarm === true
+          keepWarm: body.keepWarm === true,
+          // Live progress and previews go to this person's monitor only.
+          clientId: h3ClientId(access.user.id)
         })
       : useBrowser
       ? await generateVideoViaBrowser({
@@ -490,6 +498,7 @@ ${node.avoid_prompt}` : "";
       actual: h3Video?.actual
     });
   } catch (error: any) {
+    reservation.refund();
     db.prepare("UPDATE stitch_nodes SET clip_state = 'error' WHERE id = ?").run(id);
     return NextResponse.json({ error: error?.message ?? String(error), warnings, ...(error instanceof H3BudgetError ? { budget: error.preflight } : {}) }, { status: error instanceof H3BudgetError ? 402 : 500 });
   }

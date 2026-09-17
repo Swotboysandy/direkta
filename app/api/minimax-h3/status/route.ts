@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getH3Preflight } from "../../../../lib/agents/minimax-h3";
+import { requireUser } from "../../../../lib/auth/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,9 @@ export const dynamic = "force-dynamic";
  *  page down with it, so a missing key or an unreachable RunPod is reported as
  *  state, not as an error page.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
   try {
     const p = await getH3Preflight([{}]);
     return NextResponse.json({
@@ -26,7 +29,8 @@ export async function GET() {
       podStatus: p.podStatus,
       /** True when ComfyUI answered, i.e. a shot can start without a cold boot. */
       warm: p.warm,
-      balanceUsd: p.balanceUsd,
+      /** The GPU account's money is the operator's business, not a tester's. */
+      balanceUsd: viewer.role === "admin" ? p.balanceUsd : null,
       hourlyRateUsd: p.hourlyRateUsd,
       /** Whether one 5s shot is affordable right now. */
       canStart: p.canStart,

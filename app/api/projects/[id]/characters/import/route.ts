@@ -5,6 +5,7 @@ import { isCodexConnected } from "../../../../../../lib/codex/token";
 import { generateTextViaCodex } from "../../../../../../lib/codex/generate";
 import { activeModel } from "../../../../../../lib/vendors/resolver";
 import type { Character, Location } from "../../../../../../lib/types";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -44,8 +45,10 @@ Even a commercial/montage script with no named characters usually implies people
 
 /** Import the cast + locations from the project's script WITHOUT touching
  *  beats — safe to run on projects that already have storyboard work. */
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const project = projects.get(id);
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!project.script || project.script.trim().length < 30) {

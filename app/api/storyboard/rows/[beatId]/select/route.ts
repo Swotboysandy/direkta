@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../../lib/db/client";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request, { params }: { params: Promise<{ beatId: string }> }) {
   const { beatId } = await params;
+  const access = requireAccess(req, "beat", beatId);
+  if (access instanceof Response) return access;
   const body = await req.json().catch(() => ({}));
   const variantId = typeof body.variant_id === "string" ? body.variant_id : null;
   if (!variantId) {

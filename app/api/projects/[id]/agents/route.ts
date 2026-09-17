@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { beats, bible, characters, locations, projects } from "../../../../../lib/db/repo";
 import type { AgentStatus } from "../../../../../lib/types";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -8,8 +9,10 @@ export const dynamic = "force-dynamic";
  * V1 derives agent state from project state. Once the live orchestrator wires through,
  * this returns the actual in-flight state per agent.
  */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const project = projects.get(id);
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 

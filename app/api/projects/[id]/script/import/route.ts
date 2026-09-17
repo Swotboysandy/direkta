@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -8,8 +9,13 @@ export const runtime = "nodejs";
  * multipart form with field `file`. Plain-text formats (.txt/.fountain/.fdx/.md)
  * are read client-side; only PDFs come here, because they're compressed binary
  * and need real text extraction (FileReader.readAsText yields garbage).
+ *
+ * It reads no production data, so it needs a signed-in user rather than an
+ * owner — but not an anonymous one, since parsing PDFs costs server time.
  */
 export async function POST(req: Request) {
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) {

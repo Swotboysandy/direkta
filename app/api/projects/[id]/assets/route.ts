@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getDb } from "../../../../../lib/db/client";
 import { characters, locations, props } from "../../../../../lib/db/repo";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -193,6 +194,8 @@ function entities(p: Production): AssetItem[] {
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const url = new URL(req.url);
 
   const kindParam = url.searchParams.get("kind");
@@ -315,6 +318,8 @@ const COMPOSED_ROW_Y = 520;
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const body = (await req.json().catch(() => null)) as
     | { url?: string; kind?: string; title?: string; as?: string }
     | null;

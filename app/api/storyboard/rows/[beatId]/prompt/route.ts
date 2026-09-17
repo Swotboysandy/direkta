@@ -4,6 +4,7 @@ import { getDb } from "../../../../../../lib/db/client";
 import { activeModel } from "../../../../../../lib/vendors/resolver";
 import { isCodexConnected } from "../../../../../../lib/codex/token";
 import { generateTextViaCodex } from "../../../../../../lib/codex/generate";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,8 +18,10 @@ Rules:
 - 60-110 words, one paragraph. Output ONLY the prompt text — no preamble, no quotes, no markdown.`;
 
 /** Directs the text model to write the frame prompt from the script context. */
-export async function POST(_req: Request, { params }: { params: Promise<{ beatId: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ beatId: string }> }) {
   const { beatId } = await params;
+  const access = requireAccess(req, "beat", beatId);
+  if (access instanceof Response) return access;
   const db = getDb();
 
   const beat = db

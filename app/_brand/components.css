@@ -1001,3 +1001,71 @@
 /* Before a render exists the viewer has nothing to show; it does not need to
    be the height of a video to say so. */
 .finish-viewer[data-state="idle"] { aspect-ratio: auto; min-height: 0; align-items: start; }
+
+/* ─── Sign in and People ──────────────────────────────────────────
+   Standalone pages outside the workbench, so they paint the theme
+   themselves. One column and no cards: the form is the page. */
+.auth {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-6) var(--sp-4);
+  background-color: var(--theme-base);
+  background-image: var(--theme-gradient);
+  background-attachment: fixed;
+  color: var(--text-primary);
+}
+.auth-panel { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: var(--sp-4); }
+.auth-head { display: flex; flex-direction: column; gap: var(--sp-1); margin-bottom: var(--sp-2); }
+.auth-title { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.auth-note { margin: 0; font-size: 13px; color: var(--text-secondary); text-wrap: pretty; }
+.auth-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.auth-field > span { font-size: 12px; color: var(--text-secondary); }
+.auth-error { margin: 0; font-size: 13px; color: var(--status-error); text-wrap: pretty; }
+.auth-submit { justify-content: center; margin-top: var(--sp-2); }
+
+.people {
+  min-height: 100dvh;
+  padding: var(--sp-6) var(--sp-4) var(--sp-8);
+  background-color: var(--theme-base);
+  background-image: var(--theme-gradient);
+  background-attachment: fixed;
+  color: var(--text-primary);
+}
+.people-head { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.people-head h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.people-back { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 13px; color: var(--text-secondary); }
+.people-back:hover { color: var(--text-primary); }
+.people-quiet { font-size: 12px; color: var(--text-tertiary); overflow-wrap: anywhere; }
+.people-create {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sp-3);
+  padding-bottom: var(--sp-5); margin-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.people-create .auth-field { flex: 1 1 200px; }
+.people-create .people-narrow { flex: 0 1 120px; }
+.people-secret {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  padding: var(--sp-3) 0 var(--sp-4); margin-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle); font-size: 13px;
+}
+.people-secret p { margin: 0; color: var(--text-secondary); text-wrap: pretty; }
+.people-secret-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.people-secret code {
+  font-family: var(--font-mono); font-size: 15px; padding: 6px 10px;
+  border-radius: var(--r-control); background: var(--surface-raised);
+  user-select: all; overflow-wrap: anywhere;
+}
+.people-list { list-style: none; margin: 0; padding: 0; }
+.people-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  padding: var(--sp-3) 0; border-bottom: 1px solid var(--border-subtle);
+}
+.people-row--off .people-who strong { color: var(--text-tertiary); }
+.people-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 280px; }
+.people-who strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.people-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.people-limit { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.people-limit .input { width: 64px; padding: 6px 8px; font-size: 13px; }
+/* Last, so its side margins win over any child's own margin shorthand. */
+.people > * { max-width: 880px; margin-inline: auto; }

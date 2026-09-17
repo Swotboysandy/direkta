@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { characters } from "../../../../lib/db/repo";
+import { requireAccess } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "character", id);
+  if (access instanceof Response) return access;
   const body = await req.json().catch(() => ({}));
   characters.update(id, {
     name: typeof body.name === "string" ? body.name : undefined,
@@ -21,8 +24,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   return NextResponse.json({ character: characters.get(id) });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "character", id);
+  if (access instanceof Response) return access;
   characters.delete(id);
   return NextResponse.json({ ok: true });
 }

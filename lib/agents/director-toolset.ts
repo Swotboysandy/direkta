@@ -256,12 +256,17 @@ defineTool({
   schema: z.object({
     shots: z.number().int().min(1).max(50).optional().describe("How many shots to price. Defaults to one.")
   }),
-  async run(args) {
+  async run(args, ctx) {
     const count = args.shots ?? 1;
     const pre = await getH3Preflight(Array.from({ length: count }, () => ({})));
     const state = pre.warm ? "ready" : pre.podStatus === "RUNNING" ? "starting" : "offline";
+    // The GPU account's money is the operator's business, not a tester's.
     return {
-      summary: pre.canStart
+      summary: !ctx.admin
+        ? pre.canStart
+          ? `The engine is ${state}. ${count === 1 ? "One shot" : `${count} shots`} costs about $${pre.estimatedCostUsd.toFixed(2)}.`
+          : `The engine is ${state} and cannot start a render right now.`
+        : pre.canStart
         ? `The engine is ${state}. ${count === 1 ? "One shot" : `${count} shots`} costs about $${pre.estimatedCostUsd.toFixed(2)}; the balance is $${pre.balanceUsd.toFixed(2)}.`
         : `The engine is ${state} and cannot finish a render: ${count === 1 ? "one shot" : `${count} shots`} needs $${pre.requiredBalanceUsd.toFixed(2)} and the balance is $${pre.balanceUsd.toFixed(2)}.`,
       render: {
@@ -270,7 +275,7 @@ defineTool({
           label: count === 1 ? "One 5-second shot" : `${count} shots`,
           costUsd: pre.estimatedCostUsd,
           minutes: Math.round(pre.estimatedMinutes),
-          balanceUsd: pre.balanceUsd,
+          balanceUsd: ctx.admin ? pre.balanceUsd : null,
           canStart: pre.canStart
         }
       }
@@ -284,17 +289,17 @@ defineTool({
   running: "Pricing the work",
   cost: "free",
   schema: z.object({ shots: z.number().int().min(1).max(50) }),
-  async run(args) {
+  async run(args, ctx) {
     const pre = await getH3Preflight(Array.from({ length: args.shots }, () => ({})));
     return {
-      summary: `${args.shots} shots: about $${pre.estimatedCostUsd.toFixed(2)} and ${Math.round(pre.estimatedMinutes)} minutes. The balance is $${pre.balanceUsd.toFixed(2)}.`,
+      summary: `${args.shots} shots: about $${pre.estimatedCostUsd.toFixed(2)} and ${Math.round(pre.estimatedMinutes)} minutes.${ctx.admin ? ` The balance is $${pre.balanceUsd.toFixed(2)}.` : ""}`,
       render: {
         as: "estimate",
         estimate: {
           label: `${args.shots} shot${args.shots === 1 ? "" : "s"}`,
           costUsd: pre.estimatedCostUsd,
           minutes: Math.round(pre.estimatedMinutes),
-          balanceUsd: pre.balanceUsd,
+          balanceUsd: ctx.admin ? pre.balanceUsd : null,
           canStart: pre.canStart
         }
       }

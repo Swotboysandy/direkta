@@ -21,6 +21,9 @@ export interface ToolContext {
   projectId: string;
   /** What the user had selected when they spoke, so "this shot" resolves. */
   selection?: { kind: string; id: string; label: string } | null;
+  /** Whether the person is an admin. The GPU account balance is the operator's
+   *  business, so it is left out of what anyone else is told. */
+  admin?: boolean;
 }
 
 export interface ToolResult {

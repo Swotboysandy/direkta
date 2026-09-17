@@ -264,9 +264,11 @@ and latent previews, provided §5's `--preview-method` flag is set.
 **Two cautions.**
 
 The client id must match. ComfyUI addresses progress and preview events **only to
-the submitting client**, so jobs must be submitted with `client_id: "direkta-h3"`
-(the value of `H3_CLIENT_ID`). A listener on any other id sees queue counts and
-nothing else.
+the submitting client**. Direkta submits each person's jobs as
+`direkta-h3-<their user id>` (`h3ClientId()`), and each person's live monitor
+listens on that same id, so testers only ever see their own previews. A listener
+on any other id — including a hand-run script using plain `direkta-h3` — sees
+queue counts and nothing else.
 
 Port 8188 is **plain HTTP and open to the internet with no authentication** while
 the pod is up. The SSE relay is server-side so the browser mixed-content rule is

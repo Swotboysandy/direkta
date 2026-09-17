@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import { characters } from "../../../../../lib/db/repo";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,6 +22,8 @@ const MAX_BYTES = 20 * 1024 * 1024;
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "character", id);
+  if (access instanceof Response) return access;
   const character = characters.get(id);
   if (!character) return NextResponse.json({ error: "Character not found" }, { status: 404 });
 

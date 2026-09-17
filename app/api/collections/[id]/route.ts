@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../lib/db/client";
+import { canAccessProject, requireCollection } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ const KINDS = ["image", "video", "character", "location", "prop"];
  */
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireCollection(req, id);
+  if (access instanceof Response) return access;
   const body = (await req.json().catch(() => null)) as
     | { project_id?: string; kind?: string; item_id?: string; member?: boolean }
     | null;
@@ -41,10 +44,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     | { id: string }
     | undefined;
   if (!collection) return NextResponse.json({ error: "Collection not found." }, { status: 404 });
+  // An item can only be filed from a production this person can reach.
   const project = db.prepare("SELECT id FROM projects WHERE id = ?").get(projectId) as
     | { id: string }
     | undefined;
-  if (!project) return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  if (!project || !canAccessProject(access.user, projectId)) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
 
   if (member) {
     db.prepare(
@@ -60,8 +66,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 /** Removing a collection removes the set, never the assets in it. */
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireCollection(req, id);
+  if (access instanceof Response) return access;
   getDb().prepare("DELETE FROM asset_collections WHERE id = ?").run(id);
   return NextResponse.json({ ok: true });
 }

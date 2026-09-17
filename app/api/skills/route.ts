@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { loadSkills, saveSkill } from "../../../lib/skills/loader";
+import { requireAdmin } from "../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   return NextResponse.json({ skills: loadSkills(true) });
 }
 
 export async function PATCH(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   const body = await req.json().catch(() => ({} as { id?: string; body?: string }));
   const id = typeof body.id === "string" ? body.id : "";
   const content = typeof body.body === "string" ? body.body : "";

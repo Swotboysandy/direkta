@@ -477,8 +477,47 @@ function migrate(db: DatabaseSync) {
   ensureColumn(db, "characters", "wardrobe_direction", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "characters", "relationships", "TEXT NOT NULL DEFAULT '[]'");
 
+  /* === Accounts (multi-user beta) === */
+  // Sessions store only a SHA-256 of the cookie token, so a copied database
+  // does not hand out live logins. The generation ledger is what the per-user
+  // daily limit counts; rows are refunded when a vendor call fails.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      name TEXT NOT NULL DEFAULT '',
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+      daily_limit INTEGER,
+      disabled INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_login_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+    CREATE TABLE IF NOT EXISTS generation_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      units INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_generation_events_user ON generation_events(user_id, created_at);
+  `);
+  // Ownership. Everything else in a production hangs off its project, so the
+  // project is the one place an owner is recorded. Collections are the only
+  // thing that can span productions, so they carry their own owner.
+  ensureColumn(db, "projects", "owner_id", "TEXT");
+  ensureColumn(db, "asset_collections", "owner_id", "TEXT");
+
   // Indexes that depend on upgraded columns must run after ensureColumn.
   db.exec("CREATE INDEX IF NOT EXISTS idx_assets_target ON assets(target_kind, target_id)");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id)");
 }
 
 function ensureColumn(db: DatabaseSync, table: string, column: string, decl: string) {

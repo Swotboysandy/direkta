@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
 import { getDb } from "../../../../../../lib/db/client";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -20,6 +21,8 @@ const MAX_BYTES = 25 * 1024 * 1024;
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "stitch_node", id);
+  if (access instanceof Response) return access;
   const db = getDb();
   const node = db.prepare("SELECT id, dialogue_audio_url FROM stitch_nodes WHERE id = ?").get(id) as
     | { id: string; dialogue_audio_url: string | null }
@@ -53,8 +56,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json({ ok: true, url });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "stitch_node", id);
+  if (access instanceof Response) return access;
   const db = getDb();
   const node = db.prepare("SELECT dialogue_audio_url FROM stitch_nodes WHERE id = ?").get(id) as
     | { dialogue_audio_url: string | null }

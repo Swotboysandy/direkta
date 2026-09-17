@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db/client";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ interface PatchBody {
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "stitch_node", id);
+  if (access instanceof Response) return access;
   const body = (await req.json().catch(() => ({}))) as PatchBody;
   const db = getDb();
 
@@ -51,8 +54,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "stitch_node", id);
+  if (access instanceof Response) return access;
   const db = getDb();
   // Drop any transitions that reference this node first, then the node itself.
   db.prepare("DELETE FROM transitions WHERE from_node_id = ? OR to_node_id = ?").run(id, id);

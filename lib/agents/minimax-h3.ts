@@ -51,6 +51,12 @@ async function rp(pathSuffix: string, init?: RequestInit): Promise<any> {
  *  a per-submission random id makes progress unobservable. */
 export const H3_CLIENT_ID = "direkta-h3";
 
+/** The id one person's renders are submitted and watched under. Per user, so
+ *  a tester's live preview shows their own shot and never someone else's. */
+export function h3ClientId(userId?: string | null): string {
+  return userId ? `${H3_CLIENT_ID}-${userId}` : H3_CLIENT_ID;
+}
+
 export function proxyBase(): string {
   // RunPod will not add a port mapping to a running pod, so a pod that came back
   // without 8188 exposed has no proxy at all. This override lets the server
@@ -332,11 +338,11 @@ async function uploadReferenceImage(file: string): Promise<string> {
 
 type PromptResult = { videoUrl: string; audioUrl: string };
 
-async function submitAndWait(workflow: Record<string, any>): Promise<PromptResult> {
+async function submitAndWait(workflow: Record<string, any>, clientId: string = H3_CLIENT_ID): Promise<PromptResult> {
   const submitRes = await fetch(`${proxyBase()}/prompt`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ prompt: workflow, client_id: H3_CLIENT_ID }),
+    body: JSON.stringify({ prompt: workflow, client_id: clientId }),
     signal: AbortSignal.timeout(30_000)
   });
   if (!submitRes.ok) throw new Error(`ComfyUI submit failed (${submitRes.status}): ${(await submitRes.text()).slice(0, 300)}`);
@@ -397,6 +403,8 @@ export type H3VideoInput = H3SettingsInput & {
   refMode?: "cut" | "continue";
   /** Explicit batch use only. Errors still stop the pod; the batch must stop it on success. */
   keepWarm?: boolean;
+  /** Whose live monitor receives progress and previews — see h3ClientId. */
+  clientId?: string;
 };
 
 export async function generateVideoViaMiniMaxH3(input: H3VideoInput) {
@@ -472,7 +480,7 @@ async function generateH3WithLock(input: H3VideoInput, batchOwnsLock: boolean) {
     } else {
       built = buildH3Workflow({ ...input, firstFrameName, lastFrameName });
     }
-    const { videoUrl, audioUrl } = await submitAndWait(built.workflow);
+    const { videoUrl, audioUrl } = await submitAndWait(built.workflow, input.clientId);
     const tag = `${Date.now()}-${nanoid(6)}`;
     const webm = path.join(os.tmpdir(), `h3-${tag}.webm`);
     const flac = path.join(os.tmpdir(), `h3-${tag}.flac`);

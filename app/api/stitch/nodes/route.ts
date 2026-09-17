@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getDb } from "../../../../lib/db/client";
+import { canAccessProject, projectIdOf, requireUser } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ interface AddNodeBody {
 }
 
 export async function POST(req: Request) {
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
   const body = (await req.json().catch(() => ({}))) as AddNodeBody;
   const db = getDb();
 
@@ -43,6 +46,9 @@ export async function POST(req: Request) {
     if (!beatRow) return NextResponse.json({ error: "Beat not found" }, { status: 404 });
   } else {
     return NextResponse.json({ error: "variant_id or beat_id required" }, { status: 400 });
+  }
+  if (!canAccessProject(viewer, beatRow.project_id)) {
+    return NextResponse.json({ error: body.variant_id ? "Variant not found" : "Beat not found" }, { status: 404 });
   }
 
   const scene = Number.isFinite(body.scene_number)
@@ -88,12 +94,20 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
   const url = new URL(req.url);
   const variantId = url.searchParams.get("variant_id");
   const nodeId = url.searchParams.get("node_id");
   if (!variantId && !nodeId) {
     return NextResponse.json({ error: "variant_id or node_id required" }, { status: 400 });
   }
+
+  // Nothing there is already the outcome asked for; something there that
+  // belongs to another production is not this person's to remove.
+  const projectId = nodeId ? projectIdOf("stitch_node", nodeId) : projectIdOf("variant", variantId!);
+  if (!projectId) return NextResponse.json({ ok: true });
+  if (!canAccessProject(viewer, projectId)) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const db = getDb();
   if (nodeId) {

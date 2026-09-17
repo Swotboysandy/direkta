@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import { getDb } from "../../../../../../lib/db/client";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +24,8 @@ const MAX_BYTES = 100 * 1024 * 1024; // 100MB — a few minutes of compressed 10
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "stitch_node", id);
+  if (access instanceof Response) return access;
   const db = getDb();
   const node = db.prepare("SELECT id FROM stitch_nodes WHERE id = ?").get(id) as { id: string } | undefined;
   if (!node) return NextResponse.json({ error: "Shot not found" }, { status: 404 });

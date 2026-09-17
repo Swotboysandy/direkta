@@ -12,7 +12,7 @@ export function H3Controls({ duration, aspectRatio, value, onChange, onReady }: 
   onChange: (value: H3ShotOptions) => void;
   onReady: (ready: boolean) => void;
 }) {
-  const [preview, setPreview] = useState<{ error?: string; estimatedCostUsd?: number; requiredBalanceUsd?: number; balanceUsd?: number; canStart?: boolean; promptExpansionAvailable?: boolean } | null>(null);
+  const [preview, setPreview] = useState<{ error?: string; estimatedCostUsd?: number; requiredBalanceUsd?: number | null; balanceUsd?: number | null; canStart?: boolean; promptExpansionAvailable?: boolean } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     setPreview(null);
@@ -47,7 +47,7 @@ export function H3Controls({ duration, aspectRatio, value, onChange, onReady }: 
     <p style={{ color: "var(--mute)", margin: "8px 0", lineHeight: 1.45 }}>Pin only a compatible end state in the same action. Matching output pixels are not guaranteed.</p>
     <div role="status" aria-live="polite" style={{ lineHeight: 1.45 }}>
       {!preview ? "Checking cost without starting the pod…" : preview.error ||
-        `Estimated $${preview.estimatedCostUsd?.toFixed(2)} · balance $${preview.balanceUsd?.toFixed(2)} · required with reserve $${preview.requiredBalanceUsd?.toFixed(2)}.`}
+        `Estimated $${preview.estimatedCostUsd?.toFixed(2)}${typeof preview.balanceUsd === "number" ? ` · balance $${preview.balanceUsd.toFixed(2)} · required with reserve $${preview.requiredBalanceUsd?.toFixed(2)}` : ""}.`}
       {preview && !preview.error && !preview.canStart && <p>Insufficient balance. The pod will stay stopped.</p>}
       {preview?.promptExpansionAvailable === false && <p style={{ color: "var(--accent)" }}>No text-model key is configured. H3 will use your original direction without prompt expansion.</p>}
     </div>

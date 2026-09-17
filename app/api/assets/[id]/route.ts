@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../lib/db/client";
 import { assets } from "../../../../lib/db/repo";
+import { requireAccess } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +11,10 @@ export const dynamic = "force-dynamic";
  *  timings, continuity — and it is too big to ride along on every item in a
  *  list of hundreds. Read it when something is actually being inspected.
  */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "asset", id);
+  if (access instanceof Response) return access;
   const row = getDb()
     .prepare(
       `SELECT id, kind, url, prompt, vendor_id, meta, target_kind, target_id, created_at
@@ -42,8 +45,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json({ asset: { ...row, meta } });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "asset", id);
+  if (access instanceof Response) return access;
   assets.delete(id);
   return NextResponse.json({ ok: true });
 }

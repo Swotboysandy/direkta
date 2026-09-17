@@ -4,6 +4,8 @@ import { generateImage } from "../../../../../lib/agents/image";
 import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../lib/skills/loader";
 import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../lib/usage";
+import { requireAccess } from "../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,8 +15,10 @@ export const runtime = "nodejs";
  * Mirrors the character portrait route: keyed image vendor first, Higgsfield
  * OAuth fallback; new plates reference prior ones so the place stays the same.
  */
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "location", id);
+  if (access instanceof Response) return access;
 
   const location = locations.get(id);
   if (!location) return NextResponse.json({ error: "Location not found" }, { status: 404 });
@@ -58,6 +62,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     }
   }
 
+  const reservation = reserveOrRefuse(access.user, 1, "location_plate");
+  if (reservation instanceof Response) return reservation;
+
   try {
     const image = useMcp
       ? await generateImageViaMcp({ prompt, aspectRatio: project.aspect_ratio })
@@ -66,6 +73,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     locations.update(id, { refs, soul_id_state: "trained", soul_id_progress: 1 });
     return NextResponse.json({ ok: true, url: image.url });
   } catch (error: any) {
+    reservation.refund();
     locations.update(id, { soul_id_state: "failed" });
     return NextResponse.json({ error: error?.message ?? String(error) }, { status: 500 });
   }

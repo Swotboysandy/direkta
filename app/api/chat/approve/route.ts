@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pendingApprovals, prunePending } from "../../../../lib/agents/director";
 import { getTool, runTool } from "../../../../lib/agents/director-tools";
+import { canAccessProject, requireUser } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,6 +15,8 @@ export const runtime = "nodejs";
  * hour later.
  */
 export async function POST(req: Request) {
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
   prunePending();
   const body = await req.json().catch(() => ({}));
   const id = String(body.approval_id ?? "");
@@ -21,8 +24,10 @@ export async function POST(req: Request) {
 
   if (!id) return NextResponse.json({ error: "approval_id required" }, { status: 400 });
 
-  const pending = pendingApprovals.get(id);
-  if (!pending) {
+  // Keyed by the person who was asked, so nobody can answer someone else's.
+  const key = `${viewer.id}:${id}`;
+  const pending = pendingApprovals.get(key);
+  if (!pending || !canAccessProject(viewer, pending.projectId)) {
     return NextResponse.json(
       { error: "That request is no longer waiting — it was answered already, or it expired. Ask the Director again." },
       { status: 410 }
@@ -30,7 +35,7 @@ export async function POST(req: Request) {
   }
 
   // Single use, whichever way it is answered.
-  pendingApprovals.delete(id);
+  pendingApprovals.delete(key);
 
   if (!approved) {
     return NextResponse.json({ ok: true, approved: false, summary: "Not approved. Nothing ran." });
@@ -39,7 +44,7 @@ export async function POST(req: Request) {
   const def = getTool(pending.name);
   if (!def) return NextResponse.json({ error: `There is no tool called "${pending.name}".` }, { status: 400 });
 
-  const res = await runTool(pending.name, pending.args, { projectId: pending.projectId });
+  const res = await runTool(pending.name, pending.args, { projectId: pending.projectId, admin: viewer.role === "admin" });
   if (!res.ok) return NextResponse.json({ error: res.message }, { status: 500 });
 
   return NextResponse.json({ ok: true, approved: true, name: pending.name, result: res.result });

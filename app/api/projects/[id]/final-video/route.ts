@@ -4,6 +4,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { projects } from "../../../../../lib/db/repo";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,8 +41,10 @@ async function probeDuration(file: string): Promise<number> {
  * assembled outside the Stitch pipeline and uploaded directly), and its URL.
  * Mirrors the score route's attached/ext check.
  */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const file = finalVideoPath(id);
   const attached = fs.existsSync(file);
   const duration = attached ? await probeDuration(file) : 0;
@@ -56,6 +59,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   if (!projects.get(id)) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const form = await req.formData().catch(() => null);
@@ -74,8 +79,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json({ ok: true, url: `/oss/final_${id}.mp4` });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const file = finalVideoPath(id);
   if (fs.existsSync(file)) fs.rmSync(file, { force: true });
   return NextResponse.json({ ok: true });

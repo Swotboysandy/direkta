@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db/client";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,8 @@ interface RowState {
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ beatId: string }> }) {
   const { beatId } = await params;
+  const access = requireAccess(req, "beat", beatId);
+  if (access instanceof Response) return access;
   const body = (await req.json().catch(() => ({}))) as RowState;
 
   const db = getDb();

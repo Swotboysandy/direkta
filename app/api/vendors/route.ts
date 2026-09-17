@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { vendors } from "../../../lib/db/repo";
+import { requireAdmin } from "../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   const list = vendors.list().map((vendor) => ({
     ...vendor,
     api_key: vendor.api_key ? "•••" + vendor.api_key.slice(-4) : ""
@@ -12,6 +15,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   const body = await req.json().catch(() => ({}));
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
   vendors.update(String(body.id), {

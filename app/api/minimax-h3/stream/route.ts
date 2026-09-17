@@ -1,4 +1,5 @@
-import { proxyBase, H3_CLIENT_ID } from "../../../../lib/agents/minimax-h3";
+import { proxyBase, h3ClientId } from "../../../../lib/agents/minimax-h3";
+import { requireUser } from "../../../../lib/auth/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,11 +13,14 @@ export const dynamic = "force-dynamic";
  *
  *  Binary preview frames arrive as an 8-byte header (event type, image type)
  *  followed by the encoded image; they are forwarded as data URLs. */
-export async function GET() {
+export async function GET(req: Request) {
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
   // Must match the id generations are submitted under, or ComfyUI addresses
   // progress and preview events elsewhere and this feed only sees queue status.
-  const clientId = H3_CLIENT_ID;
-  const wsUrl = `${proxyBase().replace(/^https/, "wss")}/ws?clientId=${clientId}`;
+  // Per person, so this feed only ever carries the viewer's own renders.
+  const clientId = h3ClientId(viewer.id);
+  const wsUrl = `${proxyBase().replace(/^https/, "wss")}/ws?clientId=${encodeURIComponent(clientId)}`;
 
   const encoder = new TextEncoder();
   let socket: WebSocket | null = null;

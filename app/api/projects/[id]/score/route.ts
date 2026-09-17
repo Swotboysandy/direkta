@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
 import { projects } from "../../../../../lib/db/repo";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,8 +27,10 @@ function findExisting(id: string): { ext: string; file: string } | null {
 }
 
 /** Whether this project has a music score attached, and its filename. */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const existing = findExisting(id);
   return NextResponse.json({ attached: Boolean(existing), ext: existing?.ext ?? null });
 }
@@ -39,6 +42,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   if (!projects.get(id)) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const form = await req.formData().catch(() => null);
@@ -66,8 +71,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json({ ok: true, ext });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const existing = findExisting(id);
   if (existing) fs.rmSync(existing.file, { force: true });
   return NextResponse.json({ ok: true });

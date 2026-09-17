@@ -7,6 +7,7 @@ import { nanoid } from "nanoid";
 import { getDb } from "../../../../../lib/db/client";
 import { projects } from "../../../../../lib/db/repo";
 import type { AspectRatio } from "../../../../../lib/types";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -111,8 +112,10 @@ async function hasAudioStream(file: string): Promise<boolean> {
   }
 }
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const project = projects.get(id);
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 

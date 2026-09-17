@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { assets, nodes, projects, vendors } from "../../../../../lib/db/repo";
 import { generateImage } from "../../../../../lib/agents/image";
+import { requireAccess } from "../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "node", id);
+  if (access instanceof Response) return access;
   const node = nodes.get(id);
   if (!node) return NextResponse.json({ error: "Node not found" }, { status: 404 });
 
@@ -23,6 +27,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const prompt = buildPrompt(node.kind, node.title, node.body, project.premise);
 
+  const reservation = reserveOrRefuse(access.user, 1, "node_image");
+  if (reservation instanceof Response) return reservation;
+
   try {
     const image = await generateImage({ prompt, aspectRatio: project.aspect_ratio, vendor });
     const asset = assets.create({
@@ -37,6 +44,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     nodes.update(id, { meta });
     return NextResponse.json({ node: nodes.get(id), asset });
   } catch (error: any) {
+    reservation.refund();
     return NextResponse.json({ error: error.message ?? String(error) }, { status: 500 });
   }
 }

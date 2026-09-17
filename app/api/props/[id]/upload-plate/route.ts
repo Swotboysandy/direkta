@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import { props } from "../../../../../lib/db/repo";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,6 +19,8 @@ const MAX_BYTES = 20 * 1024 * 1024;
  *  prop — same refs/soul_id_state slot the real plate route writes to. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "prop", id);
+  if (access instanceof Response) return access;
   const prop = props.get(id);
   if (!prop) return NextResponse.json({ error: "Prop not found" }, { status: 404 });
 

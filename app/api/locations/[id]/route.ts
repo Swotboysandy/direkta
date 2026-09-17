@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { locations } from "../../../../lib/db/repo";
+import { requireAccess } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
  *  location reference" is (brief §35). */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "location", id);
+  if (access instanceof Response) return access;
   const body = await req.json().catch(() => ({}));
   if (!locations.get(id)) return NextResponse.json({ error: "Location not found." }, { status: 404 });
   locations.update(id, {

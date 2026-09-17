@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db/client";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "variant", id);
+  if (access instanceof Response) return access;
   const body = await req
     .json()
     .catch(() => ({}) as { prompt?: string; state?: string; approval?: string; note?: string });
@@ -38,8 +41,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "variant", id);
+  if (access instanceof Response) return access;
   const db = getDb();
   db.prepare("DELETE FROM assets WHERE target_kind = 'storyboard_variant' AND target_id = ?").run(id);
   db.prepare("DELETE FROM storyboard_variants WHERE id = ?").run(id);

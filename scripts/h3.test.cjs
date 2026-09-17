@@ -23,6 +23,17 @@ const prompts = require("../lib/agents/h3-prompt-expander.ts");
 const assembly = require("../lib/mcp/stitch.ts");
 const { getDb } = require("../lib/db/client.ts");
 
+// Route handlers need a signed-in user. These tests act as an admin, who can
+// reach every production; ownership and limits are covered in auth.test.cjs.
+const { users, sessions } = require("../lib/auth/store.ts");
+const testAdmin = users.create({ email: "h3-tests@example.com", name: "H3 tests", passwordHash: "unused", role: "admin", dailyLimit: null });
+const adminCookie = `direkta_session=${sessions.create(testAdmin.id).token}`;
+function signedIn(url, init = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("cookie", adminCookie);
+  return new Request(url, { ...init, headers });
+}
+
 function ff(args) {
   const r = spawnSync(process.env.FFMPEG_PATH || "ffmpeg", ["-v", "error", "-y", ...args], { encoding: "utf8", timeout: 30_000 });
   assert.equal(r.status, 0, r.stderr || r.error?.message);
@@ -41,6 +52,7 @@ function pixels(file) {
 function mockPod(t, options = {}) {
   const calls = [];
   const submitted = [];
+  const clientIds = [];
   const uploads = [];
   let state = options.warm === false ? "EXITED" : "RUNNING";
   const previousFetch = global.fetch;
@@ -55,7 +67,7 @@ function mockPod(t, options = {}) {
     if (url.endsWith("/pods/test-pod/stop")) { state = "EXITED"; return new Response(null, { status: 204 }); }
     if (url.endsWith("/queue")) return json({ queue_running: options.busy ? [[1, "other-job"]] : [], queue_pending: [] });
     if (url.endsWith("/upload/image")) { const file = init.body.get("image"); uploads.push(Buffer.from(await file.arrayBuffer())); return json({ name: file.name }); }
-    if (url.endsWith("/prompt")) { submitted.push(JSON.parse(init.body).prompt); return json({ prompt_id: "job" }); }
+    if (url.endsWith("/prompt")) { const body = JSON.parse(init.body); submitted.push(body.prompt); clientIds.push(body.client_id); return json({ prompt_id: "job" }); }
     if (url.endsWith("/history/job")) return json({ job: options.executionError
       ? { status: { status_str: "error", completed: true, messages: [["execution_error", "synthetic terminal error"]] } }
       : { status: { completed: true }, outputs: { "11": { images: [{ filename: "video", subfolder: "", type: "output" }] }, "12": { audio: [{ filename: "audio", subfolder: "", type: "output" }] } } } });
@@ -64,7 +76,7 @@ function mockPod(t, options = {}) {
     throw new Error(`Unmocked H3 request: ${url}`);
   };
   t.after(() => { global.fetch = previousFetch; });
-  return { calls, submitted, uploads };
+  return { calls, submitted, clientIds, uploads };
 }
 
 test("base quality, frame grid and the true five-frame still minimum", () => {
@@ -259,7 +271,7 @@ test("animate dry-run uses timeline order and endpoint flags without an LLM call
   }
   const route = require("../app/api/stitch/nodes/[id]/animate/route.ts");
   const id = require("../lib/higgsfield/catalog.ts").VIDEO_MODELS.find((m) => m.provider === "minimax_h3").id;
-  const request = (body) => route.POST(new Request("http://localhost/api/stitch/nodes/node-b/animate", { method: "POST", body: JSON.stringify({ model: id, dryRun: true, ...body }) }), { params: Promise.resolve({ id: "node-b" }) });
+  const request = (body) => route.POST(signedIn("http://localhost/api/stitch/nodes/node-b/animate", { method: "POST", body: JSON.stringify({ model: id, dryRun: true, ...body }) }), { params: Promise.resolve({ id: "node-b" }) });
   const response = await request({ continuityMode: "continue", endFrame: true });
   const preview = await response.json();
   assert.equal(response.status, 200, JSON.stringify(preview));
@@ -277,10 +289,10 @@ test("animate dry-run uses timeline order and endpoint flags without an LLM call
 });
 
 test("animate records the submitted H3 prompt, fallback warning and boundary metadata", async (t) => {
-  mockPod(t);
+  const mock = mockPod(t);
   const route = require("../app/api/stitch/nodes/[id]/animate/route.ts");
   const id = require("../lib/higgsfield/catalog.ts").VIDEO_MODELS.find((m) => m.provider === "minimax_h3").id;
-  const response = await route.POST(new Request("http://localhost/api/stitch/nodes/node-b/animate", { method: "POST", body: JSON.stringify({ model: id, lastFrameImageUrl: "/oss/source.png" }) }), { params: Promise.resolve({ id: "node-b" }) });
+  const response = await route.POST(signedIn("http://localhost/api/stitch/nodes/node-b/animate", { method: "POST", body: JSON.stringify({ model: id, lastFrameImageUrl: "/oss/source.png" }) }), { params: Promise.resolve({ id: "node-b" }) });
   const result = await response.json();
   assert.equal(response.status, 200, JSON.stringify(result));
   assert.equal(result.promptExpansion, "fallback");
@@ -292,6 +304,8 @@ test("animate records the submitted H3 prompt, fallback warning and boundary met
   assert.equal(meta.promptExpansion, "fallback");
   assert.equal(meta.actual.frames, 72);
   assert.equal(meta.lastFrameUrl, result.lastFrameUrl);
+  // Live progress goes only to the person who asked for the shot.
+  assert.equal(mock.clientIds.at(-1), h3.h3ClientId(testAdmin.id));
 });
 
 test.after(() => {
@@ -346,15 +360,17 @@ test("reference workflow rejects the reference mistakes that cost real GPU time"
   }
 });
 
-test("generation and the live monitor share one ComfyUI client id", () => {
+test("generation and the live monitor share one ComfyUI client id per person", () => {
   // ComfyUI addresses progress and preview events to the submitting client_id;
-  // a per-submission random id makes live progress structurally unobservable.
-  assert.equal(typeof h3.H3_CLIENT_ID, "string");
-  assert.ok(h3.H3_CLIENT_ID.length > 0);
+  // a per-submission random id makes live progress structurally unobservable,
+  // and one id for everyone streams a tester's preview to every other tester.
+  assert.equal(h3.h3ClientId(), h3.H3_CLIENT_ID);
+  assert.equal(h3.h3ClientId("u1"), `${h3.H3_CLIENT_ID}-u1`);
+  assert.notEqual(h3.h3ClientId("u1"), h3.h3ClientId("u2"));
   const source = fs.readFileSync(path.resolve(__dirname, "../lib/agents/minimax-h3.ts"), "utf8");
-  assert.ok(source.includes("client_id: H3_CLIENT_ID"), "submission must use the shared client id");
+  assert.ok(source.includes("client_id: clientId"), "submission must use the requester's client id");
   const route = fs.readFileSync(path.resolve(__dirname, "../app/api/minimax-h3/stream/route.ts"), "utf8");
-  assert.ok(route.includes("H3_CLIENT_ID"), "the live feed must listen on the same client id");
+  assert.ok(route.includes("h3ClientId(viewer.id)"), "the live feed must listen on the viewer's own client id");
 });
 
 test("assets route returns media and entities in one shape, newest first", async () => {
@@ -375,7 +391,7 @@ test("assets route returns media and entities in one shape, newest first", async
   const { GET } = require("../app/api/projects/[id]/assets/route.ts");
   const params = Promise.resolve({ id: "as-test" });
 
-  const all = await (await GET(new Request("http://x/api/projects/as-test/assets"), { params })).json();
+  const all = await (await GET(signedIn("http://x/api/projects/as-test/assets"), { params })).json();
   const byId = Object.fromEntries(all.items.map((a) => [a.id, a]));
 
   assert.ok(byId["as-clip"], "a clip generated in Shots must reach the canvas");
@@ -407,15 +423,15 @@ test("assets route filters by kind and rejects an unknown one", async () => {
   const { GET } = require("../app/api/projects/[id]/assets/route.ts");
   const params = Promise.resolve({ id: "as-test" });
 
-  const imagesRes = await GET(new Request("http://x/a?kind=image"), { params });
+  const imagesRes = await GET(signedIn("http://x/a?kind=image"), { params });
   const images = await imagesRes.json();
   assert.ok(images.items.length > 0);
   assert.ok(images.items.every((a) => a.kind === "image"), "kind=image returned other kinds");
 
-  const chars = await (await GET(new Request("http://x/a?kind=character"), { params })).json();
+  const chars = await (await GET(signedIn("http://x/a?kind=character"), { params })).json();
   assert.ok(chars.items.every((a) => a.kind === "character"));
 
-  const bad = await GET(new Request("http://x/a?kind=banana"), { params });
+  const bad = await GET(signedIn("http://x/a?kind=banana"), { params });
   assert.equal(bad.status, 400, "an unknown kind must fail loudly, not silently return everything");
 });
 
@@ -433,12 +449,12 @@ test("assets route paginates with a cursor that survives identical timestamps", 
   const { GET } = require("../app/api/projects/[id]/assets/route.ts");
   const params = Promise.resolve({ id: "as-test" });
 
-  const first = await (await GET(new Request("http://x/a?kind=character&limit=2"), { params })).json();
+  const first = await (await GET(signedIn("http://x/a?kind=character&limit=2"), { params })).json();
   assert.equal(first.items.length, 2);
   assert.ok(first.next_cursor, "more rows remain, so a cursor must be returned");
 
   const second = await (
-    await GET(new Request(`http://x/a?kind=character&limit=2&cursor=${encodeURIComponent(first.next_cursor)}`), { params })
+    await GET(signedIn(`http://x/a?kind=character&limit=2&cursor=${encodeURIComponent(first.next_cursor)}`), { params })
   ).json();
 
   const firstIds = first.items.map((a) => a.id);
@@ -449,9 +465,9 @@ test("assets route paginates with a cursor that survives identical timestamps", 
 test("assets route searches titles and subtitles", async () => {
   const { GET } = require("../app/api/projects/[id]/assets/route.ts");
   const params = Promise.resolve({ id: "as-test" });
-  const hit = await (await GET(new Request("http://x/a?q=kalki"), { params })).json();
+  const hit = await (await GET(signedIn("http://x/a?q=kalki"), { params })).json();
   assert.ok(hit.items.some((a) => a.title === "Kalki"), "case-insensitive search should match");
-  const miss = await (await GET(new Request("http://x/a?q=zzzzz"), { params })).json();
+  const miss = await (await GET(signedIn("http://x/a?q=zzzzz"), { params })).json();
   assert.equal(miss.items.length, 0);
 });
 
@@ -463,7 +479,7 @@ test("compose creates a beat-less shot that stores its own direction", async () 
   const params = Promise.resolve({ id: "cmp" });
 
   const res = await POST(
-    new Request("http://x/c", {
+    signedIn("http://x/c", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ prompt: "Kalki turns to face the ridge." })
@@ -481,7 +497,7 @@ test("compose creates a beat-less shot that stores its own direction", async () 
   assert.equal(row.direction, "Kalki turns to face the ridge.");
 
   const empty = await POST(
-    new Request("http://x/c", { method: "POST", body: JSON.stringify({ prompt: "   " }) }),
+    signedIn("http://x/c", { method: "POST", body: JSON.stringify({ prompt: "   " }) }),
     { params }
   );
   assert.equal(empty.status, 400, "a shot with no description must be rejected");
@@ -526,12 +542,12 @@ test("favourites are addressed by kind and id, so two sources cannot collide", a
   const params = Promise.resolve({ id: "fav" });
 
   const star = await PUT(
-    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: true }) }),
+    signedIn("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: true }) }),
     { params }
   );
   assert.equal(star.status, 200);
 
-  const all = await (await GET(new Request("http://x/a"), { params })).json();
+  const all = await (await GET(signedIn("http://x/a"), { params })).json();
   const frame = all.items.find((a) => a.kind === "image" && a.id === "shared-id");
   const character = all.items.find((a) => a.kind === "character" && a.id === "shared-id");
   assert.equal(frame.favourite, true, "the starred frame should be marked");
@@ -539,21 +555,21 @@ test("favourites are addressed by kind and id, so two sources cannot collide", a
 
   // Starring twice is a no-op, because the UI toggles optimistically and may resend.
   const again = await PUT(
-    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: true }) }),
+    signedIn("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: true }) }),
     { params }
   );
   assert.equal(again.status, 200);
 
-  const only = await (await GET(new Request("http://x/a?favourite=1"), { params })).json();
+  const only = await (await GET(signedIn("http://x/a?favourite=1"), { params })).json();
   assert.equal(only.items.length, 1);
   assert.equal(only.items[0].kind, "image");
 
   const off = await PUT(
-    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: false }) }),
+    signedIn("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "shared-id", favourite: false }) }),
     { params }
   );
   assert.equal(off.status, 200);
-  const cleared = await (await GET(new Request("http://x/a?favourite=1"), { params })).json();
+  const cleared = await (await GET(signedIn("http://x/a?favourite=1"), { params })).json();
   assert.equal(cleared.items.length, 0);
 });
 
@@ -566,11 +582,11 @@ test("favourites route rejects a malformed toggle", async () => {
     { kind: "image", item_id: "x" }
   ];
   for (const body of bad) {
-    const res = await PUT(new Request("http://x/f", { method: "PUT", body: JSON.stringify(body) }), { params });
+    const res = await PUT(signedIn("http://x/f", { method: "PUT", body: JSON.stringify(body) }), { params });
     assert.equal(res.status, 400, `should reject ${JSON.stringify(body)}`);
   }
   const missingProject = await PUT(
-    new Request("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "x", favourite: true }) }),
+    signedIn("http://x/f", { method: "PUT", body: JSON.stringify({ kind: "image", item_id: "x", favourite: true }) }),
     { params: Promise.resolve({ id: "no-such-project" }) }
   );
   assert.equal(missingProject.status, 404);

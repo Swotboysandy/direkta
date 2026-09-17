@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db/client";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -49,8 +50,10 @@ function parseMeta(raw: string | null): Record<string, unknown> | null {
   }
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const db = getDb();
 
   /* Each stitch node prefers its own variant_id for the frame. If that's

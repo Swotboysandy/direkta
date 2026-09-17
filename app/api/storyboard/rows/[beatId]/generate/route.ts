@@ -9,6 +9,8 @@ import { getFlag } from "../../../../../../lib/settings";
 import { skillForPart } from "../../../../../../lib/skills/loader";
 import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../../lib/usage";
 import type { AspectRatio } from "../../../../../../lib/types";
+import { requireAccess } from "../../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,6 +23,8 @@ export const runtime = "nodejs";
  */
 export async function POST(req: Request, { params }: { params: Promise<{ beatId: string }> }) {
   const { beatId } = await params;
+  const access = requireAccess(req, "beat", beatId);
+  if (access instanceof Response) return access;
   const body = await req
     .json()
     .catch(() => ({} as { variants?: number; prompt?: string; model?: string; resolution?: string }));
@@ -288,6 +292,11 @@ ${beat.direction}` : "";
     }
   }
 
+  // Every frame counts toward the daily limit. Checked before the old takes
+  // are cleared, so a refusal leaves the row exactly as it was.
+  const reservation = reserveOrRefuse(access.user, variantCount, "storyboard_frame");
+  if (reservation instanceof Response) return reservation;
+
   // ── Real generator — persist the prompt onto the row and flip it to generating.
   const existing = db.prepare("SELECT style FROM storyboard_rows WHERE beat_id = ?").get(beatId) as
     | { style: string }
@@ -367,6 +376,9 @@ ${beat.direction}` : "";
       failed++;
     }
   });
+
+  // Frames that failed were never delivered, so they are not used up.
+  if (failed > 0) reservation.refund(failed);
 
   db.prepare("UPDATE storyboard_rows SET state = ?, updated_at = datetime('now') WHERE beat_id = ?").run(
     generated > 0 ? "complete" : "error",

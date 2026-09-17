@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { activity, beats, bible, characters, edges, locations, nodes, projects, props } from "../../../../lib/db/repo";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../../../../lib/types";
+import { requireAccess } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -8,8 +9,10 @@ const VALID_ASPECTS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5", "21:9"];
 const VALID_FORMATS: ProjectFormat[] = ["Short Film", "Music Video", "Ad", "Series", "Feature", "Other"];
 const VALID_LENGTHS: LengthEstimate[] = ["Under 1 min", "Under 5 min", "5–15 min", "15–30 min", "30+ min"];
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const project = projects.get(id);
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({
@@ -27,6 +30,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const body = await req.json().catch(() => ({}));
   const aspect_ratio =
     typeof body.aspect_ratio === "string" && VALID_ASPECTS.includes(body.aspect_ratio as AspectRatio)
@@ -60,8 +65,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   return NextResponse.json({ project: projects.get(id) });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   projects.delete(id);
   return NextResponse.json({ ok: true });
 }

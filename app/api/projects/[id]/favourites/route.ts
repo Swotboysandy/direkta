@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db/client";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,8 @@ const KINDS = ["image", "video", "character", "location", "prop"];
  */
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const body = (await req.json().catch(() => null)) as
     | { kind?: string; item_id?: string; favourite?: boolean }
     | null;

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { listTools, callTool } from "../../../lib/mcp/server";
+import { currentUser } from "../../../lib/auth/guard";
 
 /**
  * Fylmer MCP endpoint — Streamable HTTP (JSON-RPC 2.0).
  * Any MCP client connects to  {PUBLIC_BASE}/api/mcp  with a Bearer token
- * (env DIREKTA_MCP_TOKEN; open if unset). Implements initialize / tools/list /
+ * (env DIREKTA_MCP_TOKEN). With no token set, only a signed-in admin's session
+ * gets in — never anyone at all. Implements initialize / tools/list /
  * tools/call / ping. Hand-rolled so it needs no extra deps.
  */
 
@@ -22,7 +24,9 @@ function cors<T extends NextResponse>(res: T): T {
   return res;
 }
 function authed(req: Request): boolean {
-  if (!TOKEN) return true;
+  // The tools create productions and spend on vendors with no owner and no
+  // daily limit, so they are an admin's, whichever way the caller proves it.
+  if (!TOKEN) return currentUser(req)?.role === "admin";
   const h = req.headers.get("authorization") || "";
   const bearer = h.match(/^Bearer\s+(.+)$/i)?.[1];
   const token = bearer || req.headers.get("x-api-key") || "";

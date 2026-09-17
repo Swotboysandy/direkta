@@ -1,23 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { BookOpen, Key, Settings, Trash2 } from "./icons";
+import { BookOpen, Key, Settings, SignOut, Trash2, Users } from "./icons";
 import { dropCache } from "../_lib/browser-cache";
 
 /**
  * The account button and its menu.
  *
- * Fylmer is self-hosted and has no sign-in, so this deliberately does not
- * invent an identity: the header names the instance you are actually looking
- * at, which is the thing worth knowing when the same person runs it locally
- * and on a box. Everything below it is a real destination.
+ * The header names who is signed in and how much of today's generation
+ * allowance is left — the one number a tester needs before starting a render.
+ * Keys, skills, settings and people change the instance for everyone, so they
+ * are listed for admins only; the server refuses them to anyone else anyway.
  *
- * The one destructive item clears the browser's copy of the production list,
- * bundle and stage gates — the cache the shell paints from before the network
- * answers. Nothing on the server is touched, which is why it asks for no
- * confirmation; it reloads so the next paint comes from the network.
+ * Signing out, and a session that has ended (expired, or the account was
+ * disabled), both drop the browser's cached production list and go to the
+ * sign-in page, so the next person on this browser never sees the last one's
+ * work painted from cache.
+ *
+ * "Clear local cache" clears only that browser copy. Nothing on the server is
+ * touched, which is why it asks for no confirmation.
  */
+
+interface Me {
+  user: { id: string; email: string; name: string; role: "admin" | "user" };
+  generations: { used: number; limit: number | null };
+}
+
 export function AccountMenu({
   onOpenKeys,
   onOpenSkills
@@ -25,14 +34,51 @@ export function AccountMenu({
   onOpenKeys: () => void;
   onOpenSkills: () => void;
 }) {
-  const [host, setHost] = useState("");
+  const [me, setMe] = useState<Me | null>(null);
   const [open, setOpen] = useState(false);
 
-  // After mount: the server does not know the host the browser reached it on.
-  useEffect(() => setHost(window.location.host), []);
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      if (res.status === 401) {
+        dropCache();
+        window.location.replace(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        return;
+      }
+      if (res.ok) setMe((await res.json()) as Me);
+    } catch {
+      /* offline: keep what we had */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function signOut() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      dropCache();
+      window.location.replace("/login");
+    }
+  }
+
+  const admin = me?.user.role === "admin";
+  const usage = !me
+    ? ""
+    : me.generations.limit === null
+    ? `${admin ? "Admin" : "Tester"} · ${me.generations.used} generated today`
+    : `${me.generations.used} of ${me.generations.limit} generations today`;
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) void refresh();
+      }}
+    >
       <Popover.Trigger asChild>
         <button type="button" className="nav-avatar" aria-label="Account and settings" title="Account">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -44,37 +90,50 @@ export function AccountMenu({
       <Popover.Portal>
         <Popover.Content className="acct" side="right" align="end" sideOffset={10} collisionPadding={16}>
           <div className="acct-head">
-            <span className="acct-host">{host || "this instance"}</span>
-            <span className="acct-kind">Self-hosted · no sign-in</span>
+            <span className="acct-host">{me ? me.user.name || me.user.email : "Signed in"}</span>
+            <span className="acct-kind">{usage}</span>
           </div>
 
+          {admin ? (
+            <div className="acct-group">
+              <button
+                type="button"
+                className="acct-item"
+                onClick={() => {
+                  setOpen(false);
+                  onOpenKeys();
+                }}
+              >
+                <Key size={14} />
+                <span>Keys and connections</span>
+              </button>
+              <button
+                type="button"
+                className="acct-item"
+                onClick={() => {
+                  setOpen(false);
+                  onOpenSkills();
+                }}
+              >
+                <BookOpen size={14} />
+                <span>Skills</span>
+              </button>
+              <a className="acct-item" href="/settings">
+                <Settings size={14} />
+                <span>Settings</span>
+              </a>
+              <a className="acct-item" href="/admin/users">
+                <Users size={14} />
+                <span>People</span>
+              </a>
+            </div>
+          ) : null}
+
           <div className="acct-group">
-            <button
-              type="button"
-              className="acct-item"
-              onClick={() => {
-                setOpen(false);
-                onOpenKeys();
-              }}
-            >
-              <Key size={14} />
-              <span>Keys and connections</span>
+            <button type="button" className="acct-item" onClick={() => void signOut()}>
+              <SignOut size={14} />
+              <span>Sign out</span>
             </button>
-            <button
-              type="button"
-              className="acct-item"
-              onClick={() => {
-                setOpen(false);
-                onOpenSkills();
-              }}
-            >
-              <BookOpen size={14} />
-              <span>Skills</span>
-            </button>
-            <a className="acct-item" href="/settings">
-              <Settings size={14} />
-              <span>Settings</span>
-            </a>
           </div>
 
           <button

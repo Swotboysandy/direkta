@@ -1,4 +1,5 @@
 import { runDirector, pendingApprovals, prunePending } from "../../../lib/agents/director";
+import { requireAccess } from "../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,6 +34,10 @@ export async function POST(req: Request) {
       headers: { "content-type": "application/json" }
     });
   }
+  const access = requireAccess(req, "project", projectId);
+  if (access instanceof Response) return access;
+  const { user } = access;
+  const admin = user.role === "admin";
 
   prunePending();
 
@@ -45,9 +50,11 @@ export async function POST(req: Request) {
     async start(controller) {
       const send = (event: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       try {
-        for await (const event of runDirector({ projectId, message, selection, pending })) {
+        for await (const event of runDirector({ projectId, message, selection, pending, admin })) {
           if (event.type === "approval") {
-            pendingApprovals.set(event.id, { name: event.name, args: event.args, projectId, at: Date.now() });
+            // Approval ids are only unique within one conversation, so the key
+            // carries the person: nobody can answer, or collide with, another's.
+            pendingApprovals.set(`${user.id}:${event.id}`, { name: event.name, args: event.args, projectId, userId: user.id, admin, at: Date.now() });
           }
           send(event);
         }

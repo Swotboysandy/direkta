@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nodes } from "../../../lib/db/repo";
 import type { NodeKind } from "../../../lib/types";
+import { requireAccess } from "../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
   if (!VALID_KINDS.includes(body.kind)) {
     return NextResponse.json({ error: `kind must be one of ${VALID_KINDS.join(", ")}` }, { status: 400 });
   }
+  const access = requireAccess(req, "project", String(body.project_id));
+  if (access instanceof Response) return access;
   const node = nodes.create({
     project_id: String(body.project_id),
     kind: body.kind as NodeKind,

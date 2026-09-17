@@ -150,8 +150,9 @@ export async function* runDirector(input: {
   message: string;
   selection?: ToolContext["selection"];
   pending: Map<string, { name: string; args: unknown }>;
+  admin?: boolean;
 }): AsyncGenerator<DirectorEvent> {
-  const ctx: ToolContext = { projectId: input.projectId, selection: input.selection ?? null };
+  const ctx: ToolContext = { projectId: input.projectId, selection: input.selection ?? null, admin: input.admin === true };
   const queue: DirectorEvent[] = [];
   const emit = (e: DirectorEvent) => queue.push(e);
 
@@ -230,7 +231,7 @@ export async function* runDirector(input: {
 /** Approvals waiting on a person, keyed by the id sent to the browser.
  *  In memory on purpose: an approval that did not survive a restart should
  *  be asked for again rather than run against a stale intention. */
-export const pendingApprovals = new Map<string, { name: string; args: unknown; projectId: string; at: number }>();
+export const pendingApprovals = new Map<string, { name: string; args: unknown; projectId: string; userId: string; admin: boolean; at: number }>();
 
 /** Drop anything a person never answered, so the map cannot grow forever. */
 export function prunePending(maxAgeMs = 30 * 60_000) {

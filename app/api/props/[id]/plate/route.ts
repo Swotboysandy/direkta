@@ -4,6 +4,8 @@ import { generateImage } from "../../../../../lib/agents/image";
 import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../lib/higgsfield/mcp";
 import { skillForPart } from "../../../../../lib/skills/loader";
 import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../lib/usage";
+import { requireAccess } from "../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,8 +16,10 @@ export const runtime = "nodejs";
  * of a place: isolated on a neutral backdrop so the material/shape reads
  * clearly, with no person or hand in frame to confuse the reference.
  */
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "prop", id);
+  if (access instanceof Response) return access;
 
   const prop = props.get(id);
   if (!prop) return NextResponse.json({ error: "Prop not found" }, { status: 404 });
@@ -56,6 +60,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     }
   }
 
+  const reservation = reserveOrRefuse(access.user, 1, "prop_plate");
+  if (reservation instanceof Response) return reservation;
+
   try {
     const image = useMcp
       ? await generateImageViaMcp({ prompt, aspectRatio: project.aspect_ratio })
@@ -64,6 +71,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     props.update(id, { refs, soul_id_state: "trained", soul_id_progress: 1 });
     return NextResponse.json({ ok: true, url: image.url });
   } catch (error: any) {
+    reservation.refund();
     props.update(id, { soul_id_state: "failed" });
     return NextResponse.json({ error: error?.message ?? String(error) }, { status: 500 });
   }

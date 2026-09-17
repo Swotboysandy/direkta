@@ -7,6 +7,7 @@ import {
   checkBrowserSession,
   isBrowserSessionSaved
 } from "../../../../lib/higgsfield/browser";
+import { requireAdmin } from "../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,6 +27,8 @@ export async function OPTIONS() {
 
 /** Is a logged-in Higgsfield browser session stored, and is it still working? */
 export async function GET(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   // ?check=1 launches a headless login probe (slow, ~15s); default is instant status.
   if (new URL(req.url).searchParams.get("check") === "1") {
     // HIGGS_CDP_URL drives the real, already-logged-in browser directly — no
@@ -50,6 +53,8 @@ export async function GET(req: Request) {
  * cookie-export extension) for the higgsfield.ai domain.
  */
 export async function POST(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   const body = await req.json().catch(() => ({}));
   const raw = body?.cookies;
   if (!Array.isArray(raw) || !raw.length) {
@@ -75,7 +80,9 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, saved: cookies.length, ...browserSessionStatus() }, { headers: CORS });
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  const admin = requireAdmin(req);
+  if (admin instanceof Response) return admin;
   clearBrowserSession();
   return NextResponse.json({ ok: true, ...browserSessionStatus() });
 }

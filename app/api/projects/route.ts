@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { projects } from "../../../lib/db/repo";
 import { getDb } from "../../../lib/db/client";
 import type { AspectRatio, LengthEstimate, ProjectFormat } from "../../../lib/types";
+import { requireUser } from "../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,16 @@ function summary(id: string) {
 }
 
 export async function GET(req: Request) {
-  const list = projects.list();
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
+  // Admins see every production; everyone else only their own.
+  const owned =
+    viewer.role === "admin"
+      ? null
+      : new Set(
+          (getDb().prepare("SELECT id FROM projects WHERE owner_id = ?").all(viewer.id) as { id: string }[]).map((r) => r.id)
+        );
+  const list = projects.list().filter((p) => !owned || owned.has(p.id));
   if (new URL(req.url).searchParams.get("withCounts") === "1") {
     return NextResponse.json({ projects: list.map((p) => ({ ...p, ...summary(p.id) })) });
   }
@@ -49,6 +59,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const viewer = requireUser(req);
+  if (viewer instanceof Response) return viewer;
   const body = await req.json().catch(() => ({}));
   const title = String(body.title ?? "Untitled").slice(0, 200);
   const premise = String(body.premise ?? "").slice(0, 2000);
@@ -63,6 +75,7 @@ export async function POST(req: Request) {
     : "Under 5 min";
 
   const project = projects.create({ title, premise, logline, aspect_ratio, format, length_estimate });
+  getDb().prepare("UPDATE projects SET owner_id = ? WHERE id = ?").run(viewer.id, project.id);
 
   // Optional creative direction, set at birth so the very first script
   // generation already follows it.

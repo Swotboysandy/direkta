@@ -3,6 +3,7 @@ import path from "node:path";
 import { nanoid } from "nanoid";
 import { getDb } from "../../../../../../lib/db/client";
 import { videoInfo, exportVideoFrame, ossFile } from "../../../../../../lib/media/video-frames";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,9 @@ function sourceFor(id: string) {
   return row?.url ? ossFile(row.url, ossRoot()) : null;
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const access = requireAccess(req, "stitch_node", (await params).id);
+  if (access instanceof Response) return access;
   try {
     const file = sourceFor((await params).id);
     if (!file) return NextResponse.json({ error: "This shot has no local video clip." }, { status: 404 });
@@ -24,6 +27,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const access = requireAccess(req, "stitch_node", (await params).id);
+  if (access instanceof Response) return access;
   try {
     const file = sourceFor((await params).id);
     if (!file) return NextResponse.json({ error: "This shot has no local video clip." }, { status: 404 });

@@ -93,6 +93,9 @@ export const ScrollText = keyline(K.FileText);
 export const PenLine = keyline(K.PenLine);
 export const Share2 = keyline(K.Share);
 export const Users = keyline(K.Users);
+export const UserPlus = keyline(K.UserPlus);
+export const Copy = keyline(K.Copy);
+export const SignOut = keyline(K.Power);          /* end this session */
 export const ListChecks = keyline(K.ListCheck);
 
 /* ── Film vocabulary Keyline does not have ────────────────────── */

@@ -5,6 +5,8 @@ import { isHiggsfieldMcpConnected, generateImageViaMcp } from "../../../../../li
 import { skillForPart } from "../../../../../lib/skills/loader";
 import { assertBudget, BudgetExceededError, TOKEN_COSTS } from "../../../../../lib/usage";
 import type { Character } from "../../../../../lib/types";
+import { requireAccess } from "../../../../../lib/auth/guard";
+import { reserveOrRefuse } from "../../../../../lib/auth/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,8 +18,10 @@ export const runtime = "nodejs";
  * With no key it degrades to the prior simulation (flip to training), so the
  * keyless demo still does something visible.
  */
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "character", id);
+  if (access instanceof Response) return access;
 
   const character = characters.get(id);
   if (!character) return NextResponse.json({ error: "Character not found" }, { status: 404 });
@@ -78,6 +82,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     }
   }
 
+  const reservation = reserveOrRefuse(access.user, 1, "portrait");
+  if (reservation instanceof Response) return reservation;
+
   try {
     // Subsequent looks must keep the same face: pass the existing looks as
     // reference images so Seedream locks identity across the wardrobe change.
@@ -92,6 +99,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     characters.update(id, { refs, soul_id_state: "trained", error: null });
     return NextResponse.json({ ok: true, url: image.url, vendor: providerLabel });
   } catch (error: any) {
+    reservation.refund();
     characters.update(id, { soul_id_state: "failed", error: error?.message ?? String(error) });
     return NextResponse.json({ error: error?.message ?? String(error) }, { status: 500 });
   }

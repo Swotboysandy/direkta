@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getDb } from "../../../../../lib/db/client";
+import { requireAccess } from "../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,8 @@ const COMPOSED_ROW_Y = 620;
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const body = (await req.json().catch(() => null)) as { prompt?: string; duration?: number } | null;
 
   if (!body || typeof body !== "object") {

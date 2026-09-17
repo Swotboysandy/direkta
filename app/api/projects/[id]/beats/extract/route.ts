@@ -5,6 +5,7 @@ import { isCodexConnected } from "../../../../../../lib/codex/token";
 import { generateTextViaCodex } from "../../../../../../lib/codex/generate";
 import { activeModel } from "../../../../../../lib/vendors/resolver";
 import type { Character, Location } from "../../../../../../lib/types";
+import { requireAccess } from "../../../../../../lib/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -82,8 +83,10 @@ const VALID_INT_EXT = ["INT", "EXT", "INT/EXT", "ABSTRACT"];
 // against the heading substring in the storyboard generate route.
 const NON_LOCATION_NAME = /^(BLACK|WHITE|BLANK)\s*(SCREEN)?$|^TITLE\s*(CARD)?$|^SUPER:?$|^CREDITS?$|^END$|^FADE\s*(IN|OUT)$|^MONTAGE$/i;
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const access = requireAccess(req, "project", id);
+  if (access instanceof Response) return access;
   const project = projects.get(id);
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!project.script || project.script.trim().length < 30) {
